@@ -3,6 +3,10 @@
 Endpoint mirrors the ScrapedListing shape from lib/firecrawl.ts so the
 Next.js route can delegate to this service with zero downstream changes.
 
+Two-tier extraction:
+  1. CSS-first: read Open Graph product metadata (deterministic, no LLM).
+  2. LLM fallback: scoped to platform-specific main content via target_elements.
+
 Stub mode: when LLM_PROVIDER is empty (or its matching API key is missing),
 the sidecar still fetches the page via Playwright and returns the page
 metadata title, but leaves price/currency/isSold/condition/imageUrl as
@@ -14,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -21,7 +26,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from extractors import LISTING_SCHEMA, get_crawler_options, get_extraction_options, get_prompt
+from extractors import (
+    LISTING_SCHEMA,
+    get_crawler_options,
+    get_extraction_options,
+    get_prompt,
+)
+from structured_extractors import PLATFORM_EXTRACTORS, extract_structured
 
 # Load .env from parent directory (project root)
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -36,14 +47,13 @@ crawler = None  # type: ignore[assignment]
 
 # ── Provider / key resolution ────────────────────────────────────────────────
 
-# Map litellm-style provider prefixes to the env-var holding their key.
 _PROVIDER_KEY_ENV = {
     "anthropic": "ANTHROPIC_API_KEY",
     "openai": "OPENAI_API_KEY",
     "gemini": "GEMINI_API_KEY",
     "groq": "GROQ_API_KEY",
     "mistral": "MISTRAL_API_KEY",
-    "ollama": None,  # local, no key required
+    "ollama": None,
 }
 
 
@@ -55,7 +65,6 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
     prefix = provider.split("/", 1)[0]
     key_env = _PROVIDER_KEY_ENV.get(prefix)
     if key_env is None:
-        # Either unknown prefix (let litellm try anyway with no key) or ollama
         return provider, None
     api_key = os.environ.get(key_env, "").strip()
     if not api_key:
@@ -71,9 +80,6 @@ async def lifespan(app: FastAPI):
     global crawler
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
-    # enable_stealth defeats the bot challenges on eBay (/splashui/challenge)
-    # and StockX. user_agent_mode='random' avoids the static "HeadlessChrome" UA
-    # that ebay-proxy-server uses as a tripwire.
     browser_cfg = BrowserConfig(
         headless=True,
         verbose=False,
@@ -119,14 +125,35 @@ class ScrapeResponse(BaseModel):
 
 # ── Coercion ─────────────────────────────────────────────────────────────────
 
+_NUM_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
+
+
+def _parse_price(value) -> Optional[float]:
+    """Accept int, float, or string with currency symbol/commas/whitespace."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        m = _NUM_RE.search(value.replace(",", ""))
+        if m:
+            try:
+                return float(m.group(0))
+            except ValueError:
+                return None
+    return None
+
+
 def coerce_listing(url: str, raw: dict) -> ScrapedListing:
-    """Mirror the lib/firecrawl.ts:119-127 coercion."""
     title = raw.get("title") if isinstance(raw.get("title"), str) else None
-    price_val = raw.get("price")
-    price = float(price_val) if isinstance(price_val, (int, float)) else None
+    price = _parse_price(raw.get("price"))
     currency_val = raw.get("currency")
     currency = currency_val.upper() if isinstance(currency_val, str) and currency_val else "USD"
     is_sold = raw.get("isSold") is True
+    # Derive isSold from OG availability when present.
+    avail = raw.get("availability")
+    if isinstance(avail, str):
+        lower = avail.lower()
+        if any(token in lower for token in ("oos", "out of stock", "sold", "discontinued")):
+            is_sold = True
     condition = raw.get("condition") if isinstance(raw.get("condition"), str) else None
     image_url = raw.get("imageUrl") if isinstance(raw.get("imageUrl"), str) else None
     return ScrapedListing(
@@ -138,6 +165,84 @@ def coerce_listing(url: str, raw: dict) -> ScrapedListing:
         condition=condition,
         imageUrl=image_url,
     )
+
+
+# ── Crawl helpers ────────────────────────────────────────────────────────────
+
+_POSHMARK_NAV_ERROR = "Unable to retrieve content because the page is navigating"
+
+
+def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1, scope_to_target: bool = False):
+    """Build a CrawlerRunConfig with platform-specific tuning.
+
+    scope_to_target: when True, apply target_elements from
+    PLATFORM_CRAWLER_OPTIONS so the LLM only sees the main product container.
+    When False (CSS tier), keep full HTML so <head> meta tags survive.
+    """
+    from crawl4ai import CacheMode, CrawlerRunConfig
+
+    platform_opts = dict(get_crawler_options(platform))
+    if not scope_to_target:
+        platform_opts.pop("target_elements", None)
+
+    # All target sites are React/Vue SPAs: the main product card paints
+    # several seconds after DOMContentLoaded. 1.5s is far too short (Depop's
+    # JSON-LD Product block hadn't rendered) and caused the LLM to pick prices
+    # from the "More from seller" / related-items rails. 5s + domcontentloaded
+    # is empirically enough on Depop/StockX/Grailed/Poshmark.
+    cfg_kwargs = dict(
+        cache_mode=CacheMode.BYPASS,
+        page_timeout=45_000,
+        wait_until="domcontentloaded",
+        delay_before_return_html=5.0,
+        remove_overlay_elements=True,
+        remove_consent_popups=True,
+    )
+
+    # Poshmark redirects mid-load (login wall / locale wall). Be even more
+    # generous so Page.content() lands on a stable document.
+    if platform == "poshmark":
+        cfg_kwargs["page_timeout"] = 50_000
+        cfg_kwargs["delay_before_return_html"] = 6.0
+    # On retry, be more patient regardless of platform.
+    if attempt > 1:
+        cfg_kwargs["page_timeout"] = 60_000
+        cfg_kwargs["delay_before_return_html"] = 7.0
+
+    if extraction_strategy is not None:
+        cfg_kwargs["extraction_strategy"] = extraction_strategy
+
+    cfg_kwargs.update(platform_opts)
+    return CrawlerRunConfig(**cfg_kwargs)
+
+
+async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False):
+    """Run a crawl; on Poshmark-style navigation errors, retry once."""
+    assert crawler is not None
+    cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target)
+    result = await crawler.arun(url=url, config=cfg)
+    err = (result.error_message or "") if result is not None else ""
+    if (not result.success or _POSHMARK_NAV_ERROR in err) and platform == "poshmark":
+        log.info("[retry] poshmark crawl hit navigation error, retrying with networkidle wait")
+        cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target)
+        result = await crawler.arun(url=url, config=cfg)
+    return result
+
+
+def _try_structured_extract(platform: str, html: str) -> Optional[dict]:
+    """Run platform-specific structured extractor (JSON-LD or testid CSS).
+
+    Returns a dict on hit, None on miss → caller falls back to LLM.
+    Special case: StockX may return a dict with price=None when the listing
+    legitimately has no Lowest Ask; that IS a valid result (don't fall back).
+    """
+    if not html:
+        return None
+    try:
+        return extract_structured(platform, html)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[structured] %s extractor error: %s", platform, exc)
+        return None
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -154,25 +259,38 @@ async def health():
 
 @app.post("/scrape", response_model=ScrapeResponse)
 async def scrape(req: ScrapeRequest) -> ScrapeResponse:
-    from crawl4ai import CacheMode, CrawlerRunConfig
     from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
     assert crawler is not None, "crawler not initialised"
 
-    platform_opts = get_crawler_options(req.platform)
     llm = resolve_llm()
 
     try:
+        # ── Tier 1: structured-data extraction (JSON-LD / testid CSS) ───────
+        # Verified empirically: Depop/Grailed/Poshmark emit Schema.org
+        # JSON-LD with offers.price; StockX exposes Lowest Ask via
+        # data-testid="trade-box-buy-amount" (None means no Ask available —
+        # that's a valid result, don't fall back to LLM and risk a guess).
+        if req.platform in PLATFORM_EXTRACTORS:
+            result = await _arun_with_retry(req.url, req.platform)
+            if result.success:
+                # Prefer raw HTML — cleaned_html may strip <script> tags that
+                # carry JSON-LD product data.
+                raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
+                extracted = _try_structured_extract(req.platform, raw_html)
+                if extracted is not None:
+                    # StockX legitimately returns price=None for no-Ask listings.
+                    # Other platforms only return non-None if they found a price.
+                    log.info("[structured] hit for %s (price=%s)", req.url, extracted.get("price"))
+                    return ScrapeResponse(result=coerce_listing(req.url, extracted))
+                log.info("[structured] miss for %s — falling back to LLM", req.url)
+            else:
+                log.warning("[structured] crawl failed for %s: %s", req.url, result.error_message)
+
+        # ── Tier 2: LLM extraction (or stub) ─────────────────────────────────
         if llm is None:
-            # Stub mode: fetch the page, return only the page title (if any).
-            run_cfg = CrawlerRunConfig(
-                cache_mode=CacheMode.BYPASS,
-                page_timeout=30_000,
-                remove_overlay_elements=True,
-                remove_consent_popups=True,
-                **platform_opts,
-            )
-            result = await crawler.arun(url=req.url, config=run_cfg)
+            # Stub mode: fetch + return only the page title.
+            result = await _arun_with_retry(req.url, req.platform)
             if not result.success:
                 log.warning("[stub] crawl failed for %s: %s", req.url, result.error_message)
                 return ScrapeResponse(result=None)
@@ -182,7 +300,6 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
             )
 
         provider, api_token = llm
-        # crawl4ai >= 0.4 exposes LLMConfig; older versions accepted provider/api_token directly.
         try:
             from crawl4ai import LLMConfig as _LLMConfig
             llm_config = _LLMConfig(provider=provider, api_token=api_token)
@@ -203,21 +320,12 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
             strategy_kwargs["api_token"] = api_token
 
         strategy = LLMExtractionStrategy(**strategy_kwargs)
-        run_cfg = CrawlerRunConfig(
-            cache_mode=CacheMode.BYPASS,
-            page_timeout=30_000,
-            remove_overlay_elements=True,
-            remove_consent_popups=True,
-            extraction_strategy=strategy,
-            **platform_opts,
-        )
-        result = await crawler.arun(url=req.url, config=run_cfg)
+        result = await _arun_with_retry(req.url, req.platform, extraction_strategy=strategy, scope_to_target=True)
 
         if not result.success or not result.extracted_content:
             log.warning("[llm] no extracted content for %s", req.url)
             return ScrapeResponse(result=None)
 
-        # extracted_content is typically a JSON string (or a list of objects)
         raw = result.extracted_content
         if isinstance(raw, str):
             parsed = json.loads(raw)

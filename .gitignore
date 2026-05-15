@@ -49,6 +49,7 @@ next-env.d.ts
 /crawl4ai-service/.env.example
 /crawl4ai-service/__pycache__
 /crawl4ai-service/.crawl4ai
+/crawl4ai-service/debug_dumps
 *.pyc
 __pycache__/
 *.egg-info/

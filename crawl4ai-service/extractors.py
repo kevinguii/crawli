@@ -14,20 +14,28 @@ LISTING_SCHEMA = {
 
 PLATFORM_PROMPTS = {
     "stockx": (
-        "Extract the Buy Now (Lowest Ask) price as the price field. "
-        "Do NOT use the Last Sale price. "
-        "Do NOT include prices from related products at the bottom of the page. "
-        "If no Buy Now price exists, set price to null."
+        "Extract the Lowest Ask price (also labeled 'Buy Now') as the price field. "
+        "Ignore the Last Sale price, the Highest Bid price, and any prices in "
+        "'Related Products', 'More from this Brand', or 'Recently Viewed' sections. "
+        "If no Lowest Ask / Buy Now price is shown, set price to null."
     ),
     "grailed": (
-        "Extract the listing price. "
-        'If the item shows a Sold badge or the text says "Sorry, this listing is no longer available", '
-        "set isSold to true."
+        "Extract the current listing price as the price field. "
+        'If the page shows a Sold badge or the text "Sorry, this listing is no longer available", '
+        "set isSold to true. Ignore prices from suggested/related listings."
     ),
     "depop": (
-        "Extract the current price after any discounts or sales. "
-        "Include the currency field (USD, GBP, EUR, etc). "
+        "Extract the CURRENT sale price as the price field — this is the live price the "
+        "buyer would pay right now. If both an original price and a discounted price are shown, "
+        "use the discounted price (NOT the strikethrough/original). "
+        "Ignore prices from 'More from this seller', 'Similar items', or 'Recently viewed' sections. "
+        "Include the currency code (USD, GBP, EUR, etc). "
         "If the item is sold or unavailable, set isSold to true."
+    ),
+    "poshmark": (
+        "Extract the current listing price (not the original retail price) as the price field. "
+        "Ignore prices from related/similar listings shown lower on the page. "
+        "If the listing is sold or no longer available, set isSold to true."
     ),
     "default": (
         "Extract the listing price and currency. "
@@ -35,15 +43,31 @@ PLATFORM_PROMPTS = {
     ),
 }
 
-# Depop requires full-page content — main-content extraction picks up the
-# "Similar Items" sidebar instead of the listing details.
-# In crawl4ai, lowering word_count_threshold keeps short blocks (price chips).
+# Scope the markdown/HTML that the LLM (or extractor) sees to the main product
+# container, dropping headers, footers, sidebars, related items, and ad rails.
+# Reduces token count + dramatically improves accuracy.
+#
+# word_count_threshold: 0 keeps short blocks (price chips) that the default
+# filter strips.
 PLATFORM_CRAWLER_OPTIONS = {
-    "depop": {"word_count_threshold": 0},
-    # eBay: listing pages have short structured blocks (price, condition, shipping
-    # rows) that the default word-count filter strips, leaving the LLM with no
-    # content to extract from.
+    "depop": {
+        "word_count_threshold": 0,
+        "target_elements": ["main", "[data-testid='product__container']", "article"],
+    },
     "ebay": {"word_count_threshold": 0},
+    "stockx": {
+        "target_elements": [
+            "[data-component='MainContent']",
+            "[data-component='ProductDetailsHeader']",
+            "main",
+        ],
+    },
+    "grailed": {
+        "target_elements": ["#listing-page", "main", "article"],
+    },
+    "poshmark": {
+        "target_elements": [".listing-page", "main", "[data-test='listing-details']"],
+    },
 }
 
 
@@ -66,3 +90,8 @@ PLATFORM_EXTRACTION_OPTIONS = {
 
 def get_extraction_options(platform: str) -> dict:
     return PLATFORM_EXTRACTION_OPTIONS.get(platform, {})
+
+
+# Structured-data extraction (JSON-LD for Depop/Grailed/Poshmark, testid CSS
+# for StockX) lives in structured_extractors.py — that module is the primary
+# extraction tier. LLM extraction below remains as a last resort.

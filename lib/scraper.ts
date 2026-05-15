@@ -17,7 +17,7 @@ export async function scrapeViaSidecar(
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url, platform }),
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!res.ok) {
