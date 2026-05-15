@@ -1,0 +1,6 @@
+crawl4ai>=0.4.0
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.8
+python-dotenv>=1.0
+litellm>=1.50
