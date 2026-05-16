@@ -1,6 +1,12 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import {
+  CSSProperties,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from './platformColors';
 
@@ -53,22 +59,28 @@ export const CLOTHING_SIZE_OPTIONS = [
   { key: 'xxl', label: 'XXL', queryTerm: 'XXL' },
 ];
 
-// Shoe sizes split by men's / women's. Same numeric labels in both — the key +
-// query term carry the gender so search engines pick up the distinction.
+// Combined men's / women's sneaker sizes. Women's = Men's + 1.5 (Nike convention).
+// Label shows both so a single chip serves both shopper types; queryTerm uses
+// the men's number since that's how listings are predominantly indexed.
 export const SHOE_SIZE_OPTIONS = [
-  { key: 'm8',  label: "Men's 8",  queryTerm: "men's size 8" },
-  { key: 'm9',  label: "Men's 9",  queryTerm: "men's size 9" },
-  { key: 'm10', label: "Men's 10", queryTerm: "men's size 10" },
-  { key: 'm11', label: "Men's 11", queryTerm: "men's size 11" },
-  { key: 'm12', label: "Men's 12", queryTerm: "men's size 12" },
-  { key: 'w8',  label: "Women's 8",  queryTerm: "women's size 8" },
-  { key: 'w9',  label: "Women's 9",  queryTerm: "women's size 9" },
-  { key: 'w10', label: "Women's 10", queryTerm: "women's size 10" },
-  { key: 'w11', label: "Women's 11", queryTerm: "women's size 11" },
-  { key: 'w12', label: "Women's 12", queryTerm: "women's size 12" },
+  { key: 'm6',    label: 'M 6 / W 7.5',    queryTerm: 'size 6' },
+  { key: 'm6_5',  label: 'M 6.5 / W 8',    queryTerm: 'size 6.5' },
+  { key: 'm7',    label: 'M 7 / W 8.5',    queryTerm: 'size 7' },
+  { key: 'm7_5',  label: 'M 7.5 / W 9',    queryTerm: 'size 7.5' },
+  { key: 'm8',    label: 'M 8 / W 9.5',    queryTerm: 'size 8' },
+  { key: 'm8_5',  label: 'M 8.5 / W 10',   queryTerm: 'size 8.5' },
+  { key: 'm9',    label: 'M 9 / W 10.5',   queryTerm: 'size 9' },
+  { key: 'm9_5',  label: 'M 9.5 / W 11',   queryTerm: 'size 9.5' },
+  { key: 'm10',   label: 'M 10 / W 11.5',  queryTerm: 'size 10' },
+  { key: 'm10_5', label: 'M 10.5 / W 12',  queryTerm: 'size 10.5' },
+  { key: 'm11',   label: 'M 11 / W 12.5',  queryTerm: 'size 11' },
+  { key: 'm11_5', label: 'M 11.5 / W 13',  queryTerm: 'size 11.5' },
+  { key: 'm12',   label: 'M 12 / W 13.5',  queryTerm: 'size 12' },
+  { key: 'm13',   label: 'M 13',           queryTerm: 'size 13' },
+  { key: 'm14',   label: 'M 14',           queryTerm: 'size 14' },
 ];
 
-// Combined lookup for query-term resolution regardless of which set is active.
+// Combined lookup so filtersToQuerySuffix() can resolve any stored key.
 export const SIZE_OPTIONS = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS];
 
 export interface FilterState {
@@ -82,7 +94,6 @@ export function emptyFilterState(): FilterState {
   return { color: null, category: null, condition: null, size: null };
 }
 
-// Build the keyword fragment that should be appended to the user's query.
 export function filtersToQuerySuffix(filters: FilterState): string {
   const parts: string[] = [];
   if (filters.color) parts.push(filters.color);
@@ -98,16 +109,6 @@ export function filtersToQuerySuffix(filters: FilterState): string {
   return parts.join(' ');
 }
 
-function activeFilterCount(platforms: string[], filters: FilterState): number {
-  let n = 0;
-  if (platforms.length !== ALL_PLATFORMS.length) n += 1;
-  if (filters.color) n += 1;
-  if (filters.category) n += 1;
-  if (filters.condition) n += 1;
-  if (filters.size) n += 1;
-  return n;
-}
-
 interface Props {
   platforms: string[];
   onPlatformsChange: (next: string[]) => void;
@@ -121,8 +122,6 @@ export default function FilterPanel({
   filters,
   onFiltersChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
-
   function togglePlatform(key: string) {
     onPlatformsChange(
       platforms.includes(key)
@@ -133,11 +132,12 @@ export default function FilterPanel({
   function setAllPlatforms() {
     onPlatformsChange(ALL_PLATFORMS);
   }
+  function clearPlatforms() {
+    onPlatformsChange([]);
+  }
   function setField<K extends keyof FilterState>(field: K, value: FilterState[K]) {
     const next = { ...filters, [field]: value };
-    // Switching category between footwear and non-footwear invalidates the
-    // current size pick (different option sets). Clear it so the user doesn't
-    // unknowingly carry over an out-of-range size.
+    // Footwear ↔ non-footwear uses different size sets — clear the stale pick.
     if (field === 'category') {
       const wasFootwear = filters.category === 'footwear';
       const willBeFootwear = value === 'footwear';
@@ -146,167 +146,222 @@ export default function FilterPanel({
     onFiltersChange(next);
   }
 
+  const allOn = platforms.length === ALL_PLATFORMS.length;
   const sizeOptions =
     filters.category === 'footwear' ? SHOE_SIZE_OPTIONS : CLOTHING_SIZE_OPTIONS;
-
-  const count = activeFilterCount(platforms, filters);
+  const sizeLabel = filters.category === 'footwear' ? 'Shoe size' : 'Size';
 
   return (
-    <div
-      className="rounded-xl"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-    >
+    <div className="space-y-3">
+      {/* Platform chips — always visible, brand-colored when active. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={allOn ? clearPlatforms : setAllPlatforms}
+          className="text-xs font-medium underline underline-offset-2 transition-colors"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          {allOn ? 'Clear all' : 'Select all'}
+        </button>
+        {ALL_PLATFORMS.map((p) => {
+          const active = platforms.includes(p);
+          const ps = platformStyle(p);
+          return (
+            <label
+              key={p}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+              style={
+                active
+                  ? { background: ps.background, color: ps.color, border: '1px solid transparent' }
+                  : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
+              }
+            >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={active}
+                onChange={() => togglePlatform(p)}
+              />
+              {active && (
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              {PLATFORM_NAMES[p] ?? p}
+            </label>
+          );
+        })}
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--border)' }} />
+
+      {/* Filter pills — always visible, never collapsed. */}
+      <div className="flex flex-wrap gap-2">
+        <FilterDropdown
+          label="Category"
+          value={filters.category}
+          options={CATEGORY_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
+          onChange={(v) => setField('category', v)}
+        />
+        <FilterDropdown
+          label={sizeLabel}
+          value={filters.size}
+          options={sizeOptions.map((o) => ({ key: o.key, label: o.label }))}
+          onChange={(v) => setField('size', v)}
+        />
+        <FilterDropdown
+          label="Condition"
+          value={filters.condition}
+          options={CONDITION_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
+          onChange={(v) => setField('condition', v)}
+        />
+        <FilterDropdown
+          label="Color"
+          value={filters.color}
+          options={COLOR_OPTIONS.map((o) => ({
+            key: o.key,
+            label: o.label,
+            leading: (
+              <span
+                className="inline-block h-3 w-3 shrink-0 rounded-full"
+                style={{
+                  background: o.swatch,
+                  boxShadow: o.ring ? `inset 0 0 0 1px ${o.ring}` : undefined,
+                }}
+              />
+            ),
+          }))}
+          onChange={(v) => setField('color', v)}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------- Custom dropdown pill ----------
+
+interface DropdownOption {
+  key: string;
+  label: string;
+  leading?: ReactNode;
+}
+
+interface DropdownProps {
+  label: string;
+  value: string | null;
+  options: DropdownOption[];
+  onChange: (next: string | null) => void;
+}
+
+function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Click-outside + Escape to close.
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const active = value !== null;
+  const selectedLabel =
+    value === null ? 'Any' : options.find((o) => o.key === value)?.label ?? 'Any';
+
+  const pillStyle: CSSProperties = active
+    ? {
+        background: 'var(--surface)',
+        border: '1px solid var(--accent)',
+        color: 'var(--accent-text)',
+      }
+    : {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        color: 'var(--text)',
+      };
+
+  return (
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium transition-colors"
-        style={{ color: 'var(--text-muted)' }}
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
+        style={pillStyle}
       >
-        <span className="flex items-center gap-2">
-          <span>Additional configurations</span>
-          {count > 0 && (
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{ background: 'var(--accent)', color: '#FFFFFF' }}
-            >
-              {count}
-            </span>
-          )}
+        <span style={{ color: active ? 'var(--accent-text)' : 'var(--text-muted)' }}>
+          {label}:
         </span>
+        <span>{selectedLabel}</span>
         <svg
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="h-4 w-4 transition-transform duration-200"
-          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+          className="h-3.5 w-3.5 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
         >
           <path
             fillRule="evenodd"
-            d="M7.05 4.05a1 1 0 0 1 1.4 0l5.3 5.3a1 1 0 0 1 0 1.4l-5.3 5.3a1 1 0 1 1-1.4-1.4l4.6-4.6-4.6-4.6a1 1 0 0 1 0-1.4z"
+            d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 0 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z"
             clipRule="evenodd"
           />
         </svg>
       </button>
 
-      {/* Smooth slide using the grid 0fr → 1fr trick (no fixed max-height). */}
+      {/* Smooth grid 0fr → 1fr open. Absolute below the pill. */}
       <div
-        className="grid transition-all duration-300 ease-out"
+        className="absolute left-0 z-20 mt-1 grid transition-all duration-200 ease-out"
         style={{
           gridTemplateRows: open ? '1fr' : '0fr',
           opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          minWidth: '180px',
         }}
+        aria-hidden={!open}
       >
         <div className="overflow-hidden">
           <div
-            className="space-y-5 px-4 pb-4 pt-4"
-            style={{ borderTop: '1px solid var(--border)' }}
+            className="rounded-xl py-1 shadow-lg"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-strong)',
+              maxHeight: '260px',
+              overflowY: 'auto',
+            }}
           >
-            {/* Platforms — multi-select. "All" sets every platform on. */}
-            <Section title="Platforms">
-              <Chip
-                label="All"
-                active={platforms.length === ALL_PLATFORMS.length}
-                onClick={setAllPlatforms}
+            <DropdownItem
+              label="Any"
+              selected={value === null}
+              onClick={() => {
+                onChange(null);
+                setOpen(false);
+              }}
+            />
+            {options.map((o) => (
+              <DropdownItem
+                key={o.key}
+                label={o.label}
+                leading={o.leading}
+                selected={value === o.key}
+                onClick={() => {
+                  onChange(value === o.key ? null : o.key);
+                  setOpen(false);
+                }}
               />
-              {ALL_PLATFORMS.map((p) => {
-                const active = platforms.includes(p);
-                const ps = platformStyle(p);
-                return (
-                  <Chip
-                    key={p}
-                    label={PLATFORM_NAMES[p] ?? p}
-                    active={active}
-                    activeStyle={{ background: ps.background, color: ps.color }}
-                    onClick={() => togglePlatform(p)}
-                  />
-                );
-              })}
-            </Section>
-
-            {/* Color — single-select. "Any" clears the filter. */}
-            <Section title="Color">
-              <Chip
-                label="Any"
-                active={filters.color === null}
-                onClick={() => setField('color', null)}
-              />
-              {COLOR_OPTIONS.map((c) => (
-                <Chip
-                  key={c.key}
-                  label={c.label}
-                  active={filters.color === c.key}
-                  leading={
-                    <span
-                      className="inline-block h-3.5 w-3.5 shrink-0 rounded-full"
-                      style={{
-                        background: c.swatch,
-                        boxShadow: c.ring ? `inset 0 0 0 1px ${c.ring}` : undefined,
-                      }}
-                    />
-                  }
-                  onClick={() =>
-                    setField('color', filters.color === c.key ? null : c.key)
-                  }
-                />
-              ))}
-            </Section>
-
-            <Section title="Category">
-              <Chip
-                label="Any"
-                active={filters.category === null}
-                onClick={() => setField('category', null)}
-              />
-              {CATEGORY_OPTIONS.map((c) => (
-                <Chip
-                  key={c.key}
-                  label={c.label}
-                  active={filters.category === c.key}
-                  onClick={() =>
-                    setField('category', filters.category === c.key ? null : c.key)
-                  }
-                />
-              ))}
-            </Section>
-
-            <Section title="Condition">
-              <Chip
-                label="Any"
-                active={filters.condition === null}
-                onClick={() => setField('condition', null)}
-              />
-              {CONDITION_OPTIONS.map((c) => (
-                <Chip
-                  key={c.key}
-                  label={c.label}
-                  active={filters.condition === c.key}
-                  onClick={() =>
-                    setField('condition', filters.condition === c.key ? null : c.key)
-                  }
-                />
-              ))}
-            </Section>
-
-            <Section
-              title={
-                filters.category === 'footwear' ? 'Shoe size' : 'Clothing size'
-              }
-            >
-              <Chip
-                label="Any"
-                active={filters.size === null}
-                onClick={() => setField('size', null)}
-              />
-              {sizeOptions.map((s) => (
-                <Chip
-                  key={s.key}
-                  label={s.label}
-                  active={filters.size === s.key}
-                  onClick={() =>
-                    setField('size', filters.size === s.key ? null : s.key)
-                  }
-                />
-              ))}
-            </Section>
+            ))}
           </div>
         </div>
       </div>
@@ -314,48 +369,44 @@ export default function FilterPanel({
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="space-y-2">
-      <p
-        className="text-[11px] font-semibold uppercase tracking-wide"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        {title}
-      </p>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
-  );
-}
-
-function Chip({
+function DropdownItem({
   label,
-  active,
+  selected,
   onClick,
   leading,
-  activeStyle,
 }: {
   label: string;
-  active: boolean;
+  selected: boolean;
   onClick: () => void;
   leading?: ReactNode;
-  activeStyle?: { background: string; color: string };
 }) {
-  const style = active
-    ? activeStyle ?? { background: 'var(--accent)', color: '#FFFFFF' }
-    : { background: 'var(--bg-elevated)', color: 'var(--text)' };
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
+      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] transition-colors"
       style={{
-        ...style,
-        border: active ? '1px solid transparent' : '1px solid var(--border)',
+        background: selected ? 'var(--accent-soft)' : 'transparent',
+        color: selected ? 'var(--accent-text)' : 'var(--text)',
+      }}
+      onMouseEnter={(e) => {
+        if (!selected) e.currentTarget.style.background = 'var(--surface-hover)';
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) e.currentTarget.style.background = 'transparent';
       }}
     >
       {leading}
-      {label}
+      <span>{label}</span>
+      {selected && (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="ml-auto h-3.5 w-3.5">
+          <path
+            fillRule="evenodd"
+            d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
     </button>
   );
 }

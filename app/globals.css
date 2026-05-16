@@ -15,6 +15,7 @@
   --accent: #534AB7;
   --accent-hover: #635AC7;
   --accent-soft: rgba(83, 74, 183, 0.18);
+  --accent-text: #AFA9EC;
   --success: #4ade80;
   --success-soft: rgba(74, 222, 128, 0.14);
   --danger: #ef4444;
@@ -36,6 +37,7 @@
   --accent: #534AB7;
   --accent-hover: #4339a8;
   --accent-soft: rgba(83, 74, 183, 0.12);
+  --accent-text: #534AB7;
   --success: #16a34a;
   --success-soft: rgba(22, 163, 74, 0.12);
   --danger: #dc2626;
