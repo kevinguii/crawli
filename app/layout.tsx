@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fashion Resale Search",
+  title: "Crawli — Resale Price Search",
   description:
-    "Search prices across Grailed, Depop, StockX, Vestiaire, Vinted, and Mercari.",
+    "Search live prices across Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire in one query.",
 };
 
 // Inline script runs before paint to avoid theme flash.

@@ -30,9 +30,9 @@ export default function ThemeToggle() {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       className="inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors"
       style={{
-        borderColor: 'var(--border)',
-        background: 'var(--surface)',
-        color: 'var(--text)',
+        borderColor: 'rgba(226, 75, 74, 0.45)',
+        background: 'var(--accent-soft)',
+        color: '#EF9F27',
       }}
     >
       {mounted && theme === 'dark' ? (

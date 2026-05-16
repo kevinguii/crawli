@@ -61,7 +61,12 @@ export default function SearchSection() {
     <div className="space-y-6">
       <div
         className="rounded-2xl p-5"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        style={{
+          background: 'var(--search-container-bg)',
+          border: '1px solid transparent',
+          backgroundClip: 'padding-box',
+          boxShadow: '0 0 0 1px rgba(226, 75, 74, 0.28), inset 0 1px 0 rgba(250, 199, 117, 0.08)',
+        }}
       >
         <SearchForm
           onResults={handleResults}

@@ -145,18 +145,24 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
             border: '1px solid var(--border)',
             color: 'var(--text)',
           }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(226, 75, 74, 0.18)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-          style={{ background: 'var(--accent)' }}
+          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ background: 'linear-gradient(to right, #E24B4A, #D85A30)' }}
           onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--accent-hover)';
+            if (!e.currentTarget.disabled) e.currentTarget.style.background = 'linear-gradient(to right, #D85A30, #E84D1D)';
           }}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'linear-gradient(to right, #E24B4A, #D85A30)')}
         >
           {isLoading ? 'Searching…' : 'Search'}
         </button>

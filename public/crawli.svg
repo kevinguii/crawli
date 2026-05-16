@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <defs>
+    <linearGradient id="crawli-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#E24B4A"/>
+      <stop offset="25%"  stop-color="#E84D1D"/>
+      <stop offset="50%"  stop-color="#D85A30"/>
+      <stop offset="75%"  stop-color="#EF9F27"/>
+      <stop offset="100%" stop-color="#FAC775"/>
+    </linearGradient>
+  </defs>
+  <text
+    x="4"
+    y="46"
+    font-family="'Trebuchet MS', 'Segoe UI', sans-serif"
+    font-size="52"
+    font-weight="700"
+    letter-spacing="-1"
+    fill="url(#crawli-gradient)"
+  >Crawli</text>
+</svg>

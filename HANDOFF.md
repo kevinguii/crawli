@@ -1,6 +1,24 @@
-# Fashion Resale Price Aggregator — Consolidated Handoff
+# Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (late evening — relevance filter + StockX last-sale gate)
+**Last updated:** 2026-05-16 (Crawli rebrand — logo, name, Peach Rings candy theme)
+
+**Latest change (2026-05-16 — Crawli rebrand + Peach Rings candy theme):**
+- **App renamed to "Crawli".** Nav wordmark replaced the purple box + "Resale/Search" text with a CSS gradient text span using `fontFamily: 'Trebuchet MS', 'Segoe UI'`, `fontWeight: 700`, `letterSpacing: -0.5px`, gradient left-to-right `#E24B4A → #E84D1D → #D85A30 → #EF9F27 → #FAC775` via `WebkitBackgroundClip: 'text'`.
+- **Theme colors replaced across globals.css.** All purple accent tokens removed:
+  - `--accent`: `#E24B4A` (Primary Red) in both dark and light modes
+  - `--accent-hover`: `#D85A30` (Primary Orange)
+  - `--accent-soft`: `rgba(226, 75, 74, 0.18)` dark / `rgba(226, 75, 74, 0.12)` light
+  - `--accent-text`: `#FAC775` (warm yellow for dark) / `#D85A30` (orange for light)
+  - Added CSS vars for all brand stops: `--brand-red`, `--brand-red-orange`, `--brand-orange`, `--brand-orange-yellow`, `--brand-yellow`
+- **Metadata updated** in `layout.tsx`: title → "Crawli — Resale Price Search", description updated to include all 8 platforms.
+- **Logo SVG file** created at `public/crawli.svg` (200×60 viewBox, full wordmark with Peach Rings gradient). Use for any exports.
+- **Favicon** at `app/icon.svg` — "C" lettermark on gradient orange-red rounded rectangle, auto-detected by Next.js App Router.
+- **`tsc --noEmit`** passes clean.
+- **NOT verified in browser:** gradient text rendering on Safari (WebkitTextFillColor / backgroundClip may need fallback on very old Safari; modern Safari is fine). Verify search button, active platform chips, active filter pills all read correctly in the new red/orange palette rather than purple.
+
+---
+
+**Last updated (previous):** 2026-05-16 (late evening — relevance filter + StockX last-sale gate)
 **Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable). **`/api/search` now streams NDJSON** so the UI can show a live per-platform progress bar instead of a frozen "Searching…" button.
 
 **Latest change (2026-05-16 late evening — title-relevance filter + StockX Last-Sale guard):**
