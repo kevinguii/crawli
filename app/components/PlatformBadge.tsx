@@ -13,6 +13,22 @@ export default function PlatformBadge({ platform, className = '' }: Props) {
   const { background, color } = platformStyle(platform);
   const label = PLATFORM_NAMES[platform] ?? platform;
 
+  if (platform === 'ebay') {
+    return (
+      <span
+        className={`inline-block rounded-full overflow-hidden text-[10px] font-semibold uppercase tracking-wide ${className}`}
+        style={{ background, color: 'transparent', lineHeight: '1.5', padding: 0 }}
+      >
+        <span
+          className="block px-2 py-0.5"
+          style={{ color, mixBlendMode: 'normal' }}
+        >
+          {label}
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${className}`}

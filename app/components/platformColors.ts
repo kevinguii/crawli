@@ -23,7 +23,7 @@ function platformText(platform: string): string {
 // eBay's 4-stripe gradient (top → bottom): red, blue, yellow, green.
 // Each stripe is exactly 25% of the height.
 const EBAY_GRADIENT =
-  'linear-gradient(to bottom, #E53238 0% 25%, #0064D2 25% 50%, #F5AF02 50% 75%, #86B817 75% 100%)';
+  'linear-gradient(to bottom, #E53238 0%, #E53238 25%, #0064D2 25%, #0064D2 50%, #F5AF02 50%, #F5AF02 75%, #86B817 75%, #86B817 100%)';
 
 export interface PlatformStyle {
   background: string;
