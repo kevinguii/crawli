@@ -39,6 +39,12 @@ PLATFORM_PROMPTS = {
         "main listing, the text 'This listing has been sold', or the listing being marked "
         "out of stock / no longer available. Look near the top of the page for sold status."
     ),
+    "vestiaire": (
+        "Extract the current asking price as the price field. "
+        "Use the currency shown (EUR, GBP, USD, etc). "
+        "Set isSold=true if the item is marked as sold or no longer available. "
+        "Ignore prices from 'Similar items', 'You may also like', or recommendation sections."
+    ),
     "default": (
         "Extract the listing price and currency. "
         "If the item is sold or unavailable, set isSold to true."

@@ -6,7 +6,7 @@ export const PLATFORM_DOMAINS: Record<string, string> = {
   ebay: 'ebay.com',
   mercari: 'mercari.com',
   vinted: 'vinted.com',
-  vestiaire: 'vestiaire.com',
+  vestiaire: 'vestiairecollective.com',
 };
 
 export const PLATFORM_NAMES: Record<string, string> = {
@@ -17,7 +17,7 @@ export const PLATFORM_NAMES: Record<string, string> = {
   ebay: 'eBay',
   mercari: 'Mercari',
   vinted: 'Vinted',
-  vestiaire: 'Vestiaire',
+  vestiaire: 'Vestiaire Collective',
 };
 
 export interface Listing {

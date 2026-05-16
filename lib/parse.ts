@@ -10,7 +10,7 @@ const LISTING_URL_PATTERNS: Record<string, RegExp> = {
   depop: /depop\.com\/products\//,
   // Single slug after stockx.com — excludes /sneakers, /mens/shoes, /news/..., etc.
   stockx: /^https?:\/\/(?:www\.)?stockx\.com\/[a-z0-9][a-z0-9-]+[a-z0-9](?:\?[^/]*)?$/i,
-  vestiaire: /vestiaire\.com\/.*\d{5,}/,
+  vestiaire: /vestiairecollective\.com\/.*\d{5,}/,
   vinted: /vinted\.com\/items\/\d+/,
   mercari: /mercari\.com\/us\/item\//,  
   poshmark: /poshmark\.com\/listing\//,
