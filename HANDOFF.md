@@ -1,8 +1,58 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (Crawli rebrand — logo, name, Peach Rings candy theme)
+**Last updated:** 2026-05-16 (night — Phase 2 auth groundwork: Supabase dashboard + DB schema configured, code not yet written)
 
-**Latest change (2026-05-16 — Crawli rebrand + Peach Rings candy theme):**
+**Latest change (2026-05-16 night — Phase 2 auth groundwork, dashboard + DB only, no code yet):**
+
+Goal: lay the foundation for user accounts so saved searches, watchlist, and price alerts can be tied to a real identity. **No code was changed this round** — only Supabase dashboard config and database schema. The Next.js side has **zero auth code** still (no packages installed, no `lib/supabase/`, no `middleware.ts`, no auth UI).
+
+What was configured (user-completed in external dashboards; Claude can't directly verify those):
+- **Supabase Auth providers** — Email enabled with magic links + email confirmations; Google OAuth enabled with Client ID + Secret from a Google Cloud Console OAuth 2.0 credential.
+- **Google Cloud Console** — Web-app OAuth 2.0 client created; authorized redirect URI is `https://peyqxfijdrziqfjkxjsn.supabase.co/auth/v1/callback` (Supabase's standard callback host).
+- **Supabase URL configuration** — Site URL set to `http://localhost:3000`; redirect URLs include `http://localhost:3000/**` for local dev.
+- **`SUPABASE_SERVICE_ROLE_KEY` added to `.env`** — verified present at line 4. **Minor format nit (worth fixing):** the line is `SUPABASE_SERVICE_ROLE_KEY = <value>` with a space before `=`. Standard dotenv parsers (Next.js's `@next/env` included) trim this correctly, so it works — but it's non-standard and worth cleaning up to `SUPABASE_SERVICE_ROLE_KEY=<value>` to avoid future parser quirks. Every other env var in the file has no space.
+- **`profiles` table** created in Supabase Postgres with:
+  - Columns: `id UUID PK → auth.users(id) ON DELETE CASCADE`, `email TEXT`, `display_name TEXT`, `avatar_url TEXT`, `created_at`, `updated_at`.
+  - RLS enabled. Policies: `SELECT WHERE auth.uid() = id`, `UPDATE WHERE auth.uid() = id`. No INSERT policy — handled by the trigger below, which is `SECURITY DEFINER` and bypasses RLS.
+  - Trigger `on_auth_user_created` → `handle_new_user()` on `auth.users` insert → auto-inserts a matching profile row.
+  - Trigger `on_profile_updated` → `handle_updated_at()` on `profiles` update → bumps `updated_at`.
+
+**Cost posture (verified from Supabase public pricing):** Google OAuth itself is free with no per-user charge. Supabase free tier covers 50k MAU and magic-link emails are included. We're nowhere near scale-out concerns — proceed without cost worry.
+
+**What's NOT done yet (the actual implementation work, blocked on nothing):**
+1. `npm install @supabase/supabase-js @supabase/ssr` (use `@supabase/ssr`, NOT the deprecated `@supabase/auth-helpers-nextjs`)
+2. `lib/supabase/client.ts` (browser client) + `lib/supabase/server.ts` (server client, cookie-based for SSR)
+3. `middleware.ts` at project root — session-refresh on every request
+4. `app/auth/callback/route.ts` — OAuth + magic-link code exchange
+5. `app/(auth)/login/page.tsx`, `app/(auth)/signup/page.tsx`, `app/(auth)/check-email/page.tsx` — must match Crawli theme (dark `#111110` bg, accent `#E24B4A` red-to-yellow gradient, Geist font, `data-theme` aware, smooth `transition-all duration-200` on interactives)
+6. `app/components/AuthButton.tsx` + nav integration in `app/page.tsx` — session-aware sign-in / account dropdown
+7. Auth is **optional** for search — unauthenticated users still search freely; auth only gates Phase 2B+ persistence features. **Do not** add auth to `/api/search`.
+
+**Things Claude could not directly verify (user-asserted, trust-but-flag):**
+- That the Google OAuth credentials in Supabase actually match the ones in Google Cloud Console (a typo on either side → `redirect_uri_mismatch` at sign-in).
+- That the `profiles` table + triggers were actually applied (no DB introspection available from this session).
+- That magic-link emails actually deliver (Supabase free-tier email sometimes lands in spam; configure custom SMTP later if it becomes a problem).
+
+**Test plan when the auth code lands (for the next session):**
+1. `npm run dev:all` boots clean; `npx tsc --noEmit` clean.
+2. `/login` renders correctly in dark + light mode.
+3. Email magic link: enter email → email arrives → click → lands on `/` logged in → nav shows user state.
+4. Google OAuth: click Continue with Google → Google consent → redirect to `/auth/callback` → lands on `/` logged in.
+5. Verify a `profiles` row exists in Supabase for each newly signed-in user (the trigger should auto-create it).
+6. Sign out from nav → session clears → reload page → still logged out.
+7. Hard refresh while signed in → session persists (cookie-based).
+
+**Phase 2 sequence (decided 2026-05-16; supersedes the older "Phase 2 — saved searches, price history, watchlist, auth" bullet in §7 D):**
+- **Phase 2A — Auth** (current). Email magic link + Google OAuth. Foundation for everything that follows.
+- **Phase 2B — Watchlist.** `watchlist (id, user_id, listing_url, platform, title, price_at_add, image_url, created_at)`. Heart icon on `ListingCard` (only when logged in). `/watchlist` page shows saved listings with current vs original price. URL is the natural key — listings get deleted by sellers, handle 404 gracefully.
+- **Phase 2C — Saved Searches.** `saved_searches (id, user_id, query, filters jsonb, platforms text[], created_at)`. "Save this search" button in `SearchForm`. `/saved-searches` page with "Run again" links. (User explicitly deferred this until after watchlist.)
+- **Phase 2D — Price alerts.** Hardest. Deferred until 2B is solid. Needs a scheduled re-scrape job (Supabase Edge Function + `pg_cron`, or external cron). On cadence, re-fetch each watchlist URL via the sidecar, write a price snapshot, trigger email on price drop. Cost watchpoint: each re-scrape costs 0 Firecrawl credits (URL is already known — sidecar only) and a few cents per 100 listings in OpenAI tokens.
+
+Reference: detailed implementation plan at `/Users/kevingui/.claude/plans/i-want-to-have-enchanted-clock.md`.
+
+---
+
+**Previous change (2026-05-16 — Crawli rebrand + Peach Rings candy theme):**
 - **App renamed to "Crawli".** Nav wordmark replaced the purple box + "Resale/Search" text with a CSS gradient text span using `fontFamily: 'Trebuchet MS', 'Segoe UI'`, `fontWeight: 700`, `letterSpacing: -0.5px`, gradient left-to-right `#E24B4A → #E84D1D → #D85A30 → #EF9F27 → #FAC775` via `WebkitBackgroundClip: 'text'`.
 - **Theme colors replaced across globals.css.** All purple accent tokens removed:
   - `--accent`: `#E24B4A` (Primary Red) in both dark and light modes
