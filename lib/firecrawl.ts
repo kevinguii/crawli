@@ -43,9 +43,7 @@ export async function searchPlatform(
 
   const siteQuery = `site:${domain} ${query}`;
 
-  // TEST_MODE: Use 10 results (2 credits per search) instead of 15 (4 credits)
-  // Credit tiers: 1-10 = 2 credits, 11-20 = 4 credits, 21-30 = 6 credits
-  const searchLimit = process.env.TEST_MODE === 'true' ? 10 : 15;
+  const searchLimit = 20;
 
   const data = await withRetry(() =>
     client.search(siteQuery, { limit: searchLimit })
