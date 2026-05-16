@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Optional
 
 from bs4 import BeautifulSoup
@@ -179,14 +180,6 @@ def extract_grailed(html: str) -> Optional[dict]:
     return _extract_from_jsonld(soup)
 
 
-def extract_poshmark(html: str) -> Optional[dict]:
-    """Poshmark emits JSON-LD Product for listings."""
-    if not html:
-        return None
-    soup = BeautifulSoup(html, "lxml")
-    return _extract_from_jsonld(soup)
-
-
 def extract_stockx(html: str) -> Optional[dict]:
     """StockX does NOT emit listing-level JSON-LD with the Lowest Ask.
     Instead, the main listing's Lowest Ask / Buy Now price is rendered into
@@ -235,11 +228,194 @@ def extract_stockx(html: str) -> Optional[dict]:
     }
 
 
+def extract_poshmark(html: str) -> Optional[dict]:
+    """Poshmark doesn't emit JSON-LD on listing pages, but:
+      - <meta property="og:title"> / <meta property="og:image"> give us title + image
+      - The main listing's price is in <p class="h1"><span>$68</span><span>$180</span></p>
+        where $68 is the listing price and $180 is the original/MSRP.
+      - data-et-prop-listing_price="68" is also present (clean number) but appears
+        only on tracking-tile elements — using the h1 is safer.
+      - data-et-prop-inventory_status="available"|"sold" gates isSold.
+
+    Verified against Fear-of-God-State-Black-Hoodie listing (2026-05-15).
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+
+    og_title = soup.find("meta", property="og:title")
+    og_image = soup.find("meta", property="og:image")
+    og_type = soup.find("meta", property="og:type")
+    # Bail if this isn't a product page (e.g. anti-bot wall or login redirect)
+    if not og_title or (og_type and og_type.get("content") != "product"):
+        return None
+
+    title = og_title.get("content")
+    image = og_image.get("content") if og_image else None
+
+    price = None
+    h1 = soup.find("p", class_="h1")
+    if h1:
+        # First <span> is the listing price, e.g. "$68". Take its text and parse a number.
+        spans = h1.find_all("span")
+        for s in spans:
+            txt = s.get_text(strip=True)
+            m = re.search(r"[\d]+(?:\.\d+)?", txt)
+            if m:
+                price = m.group(0)
+                break
+
+    # Sold detection — multiple defense-in-depth signals on Poshmark:
+    #   - data-et-prop-inventory_status="sold_out" (tracking attribute on usage element)
+    #   - schema.org/OutOfStock as an availability value (embedded microdata/JSON-LD)
+    #   - An ELEMENT with class containing "listing__status-banner__title--sold" — note:
+    #     the CSS RULE for this class is in every page's <style> block, so a plain
+    #     substring search false-fires. Use BeautifulSoup to query the DOM.
+    sold_banner = soup.find(class_="listing__status-banner__title--sold") is not None
+    is_sold = bool(
+        re.search(r'data-et-prop-inventory_status="sold(?:_out|out)?"', html, re.IGNORECASE)
+        or re.search(r'"availability":"[^"]*schema\.org/OutOfStock"', html)
+        or sold_banner
+    )
+
+    if price is None and not is_sold:
+        # Page rendered but we couldn't find a price — let LLM try.
+        return None
+
+    return {
+        "title": title,
+        "price": price,
+        "currency": "USD",  # Poshmark .com listings are USD
+        "isSold": is_sold,
+        "condition": None,
+        "imageUrl": image,
+    }
+
+
+def extract_mercari(html: str) -> Optional[dict]:
+    """Mercari is Next.js. The real listing data lives in __NEXT_DATA__ at:
+        props.pageProps.serverState['ItemDetail:<itemId>']
+    with fields { name, price (in CENTS), originalPrice (cents), photos[].imageUrl, status }.
+
+    The page's <meta property="og:image"> is a generic Mercari placeholder
+    (ogp_image_1.png) — DO NOT use it. Use photos[0].imageUrl.
+
+    Status enum observed: "on_sale" (available), "trading" / "sold_out" (sold).
+
+    Verified against m21075527136 (price=11000 cents = $110.00) on 2026-05-15.
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+    nd = soup.find("script", id="__NEXT_DATA__")
+    if not nd or not nd.string:
+        return None
+    try:
+        data = json.loads(nd.string)
+    except Exception:  # noqa: BLE001
+        return None
+
+    server_state = (
+        data.get("props", {})
+        .get("pageProps", {})
+        .get("serverState", {})
+    )
+    item = None
+    for key, value in server_state.items():
+        if isinstance(key, str) and key.startswith("ItemDetail:") and isinstance(value, dict):
+            item = value
+            break
+    if not item:
+        return None
+
+    price_cents = item.get("price")
+    price = None
+    if isinstance(price_cents, (int, float)):
+        price = price_cents / 100.0
+
+    name = item.get("name") if isinstance(item.get("name"), str) else None
+
+    photos = item.get("photos") or []
+    image = None
+    if isinstance(photos, list) and photos:
+        first = photos[0]
+        if isinstance(first, dict):
+            image = first.get("imageUrl") or first.get("thumbnail")
+
+    status = item.get("status")
+    is_sold = isinstance(status, str) and status.lower() in (
+        "sold_out", "trading", "sold", "completed",
+    )
+
+    if price is None and name is None:
+        return None
+
+    return {
+        "title": name,
+        "price": price,
+        "currency": "USD",  # mercari.com/us is USD-only
+        "isSold": is_sold,
+        "condition": None,
+        "imageUrl": image,
+    }
+
+
+# Vinted uses Next.js RSC streaming. The item's price is serialized into one of
+# the inline <script> chunks as escaped JSON like:
+#   \"price\":{\"amount\":\"75.0\",\"currency_code\":\"USD\"}    ← listing price (USE THIS)
+#   \"price\":{\"amount\":\"40\",\"currencyCode\":\"CZK\"}       ← shipping option in Czech market (IGNORE)
+# Note the underscore in currency_code — that's the listing-pricing block.
+# camelCase currencyCode is the shipping-options block.
+#
+# Multiple matches with currency_code exist (item price, service fee, total);
+# the FIRST one is the item's list price.
+_VINTED_PRICE_RE = re.compile(
+    r'\\"price\\":\{\\"amount\\":\\"([0-9.]+)\\",\\"currency_code\\":\\"([A-Z]{3})\\"'
+)
+
+
+def extract_vinted(html: str) -> Optional[dict]:
+    """Verified against items 8139626124 ($75 USD) and 7287762265 ($32.25 USD)
+    on 2026-05-15.
+
+    og:image IS the listing photo on Vinted (not a placeholder).
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+
+    og_title = soup.find("meta", property="og:title")
+    og_image = soup.find("meta", property="og:image")
+    title = og_title.get("content") if og_title else None
+    # Strip the trailing " | Vinted" branding suffix
+    if isinstance(title, str):
+        title = re.sub(r"\s*\|\s*Vinted\s*$", "", title)
+    image = og_image.get("content") if og_image else None
+
+    m = _VINTED_PRICE_RE.search(html)
+    price = m.group(1) if m else None
+    currency = m.group(2) if m else "USD"
+
+    if price is None and title is None:
+        return None
+
+    return {
+        "title": title,
+        "price": price,
+        "currency": currency,
+        "isSold": False,
+        "condition": None,
+        "imageUrl": image,
+    }
+
+
 PLATFORM_EXTRACTORS = {
     "depop": extract_depop,
     "grailed": extract_grailed,
     "poshmark": extract_poshmark,
     "stockx": extract_stockx,
+    "mercari": extract_mercari,
+    "vinted": extract_vinted,
 }
 
 

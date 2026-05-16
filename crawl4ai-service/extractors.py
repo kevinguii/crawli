@@ -35,7 +35,9 @@ PLATFORM_PROMPTS = {
     "poshmark": (
         "Extract the current listing price (not the original retail price) as the price field. "
         "Ignore prices from related/similar listings shown lower on the page. "
-        "If the listing is sold or no longer available, set isSold to true."
+        "Set isSold=true if ANY of the following are visible: a 'SOLD' badge or banner on the "
+        "main listing, the text 'This listing has been sold', or the listing being marked "
+        "out of stock / no longer available. Look near the top of the page for sold status."
     ),
     "default": (
         "Extract the listing price and currency. "

@@ -20,10 +20,9 @@ import sys
 from typing import Optional
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
-from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 from bs4 import BeautifulSoup
 
-from extractors import OG_PRODUCT_SCHEMA
+from structured_extractors import extract_structured
 
 
 def _short(s: str, n: int = 140) -> str:
@@ -151,15 +150,7 @@ def dump(html: str, raw_html: str, url: str) -> None:
         if seen_scripts >= 8:
             break
 
-    # ── What our schema would return ─────────────────────────────────────
-    print("\n-- OG_PRODUCT_SCHEMA extraction --")
-    try:
-        strategy = JsonCssExtractionStrategy(schema=OG_PRODUCT_SCHEMA)
-        items = strategy.run(url=url, sections=[html])
-        for it in items[:3]:
-            print(f"  {json.dumps(it, indent=2)}")
-    except Exception as exc:  # noqa: BLE001
-        print(f"  (schema error: {exc})")
+    # (No more OG-schema check — replaced by per-platform structured extractors)
 
 
 import hashlib, os as _os

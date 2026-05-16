@@ -190,12 +190,21 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     # JSON-LD Product block hadn't rendered) and caused the LLM to pick prices
     # from the "More from seller" / related-items rails. 5s + domcontentloaded
     # is empirically enough on Depop/StockX/Grailed/Poshmark.
+    #
+    # CRITICAL: remove_overlay_elements=False. Crawl4ai runs JS in the page to
+    # remove overlay nodes; on Poshmark this either triggers a navigation or
+    # mutates the DOM such that the resulting HTML loses <meta property="og:type">
+    # and other key signals (verified 2026-05-15: with overlay-removal ON the
+    # sold listing's og:type=product disappears and the structured extractor
+    # falls through to a hallucinating LLM). Side benefit: eliminates the
+    # "Failed to remove overlay elements: Execution context was destroyed"
+    # warning and the cascading "Page.content: page is navigating" errors.
     cfg_kwargs = dict(
         cache_mode=CacheMode.BYPASS,
         page_timeout=45_000,
         wait_until="domcontentloaded",
         delay_before_return_html=5.0,
-        remove_overlay_elements=True,
+        remove_overlay_elements=False,
         remove_consent_popups=True,
     )
 
