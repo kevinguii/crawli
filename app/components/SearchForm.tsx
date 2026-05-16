@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import {
-  PLATFORM_DOMAINS,
   PlatformResults,
   SearchResponse,
   SearchStreamEvent,
@@ -13,10 +12,9 @@ import FilterPanel, {
   FilterState,
 } from './FilterPanel';
 
-const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS);
 // Start with a small reliable set rather than every platform. Keeps the first
 // search fast and avoids the two known-broken platforms (eBay, Vestiaire).
-const DEFAULT_PLATFORMS = ['grailed', 'depop', 'stockx'];
+const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
 
 interface Props {
   onResults: (data: SearchResponse) => void;

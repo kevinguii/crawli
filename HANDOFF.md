@@ -1,9 +1,15 @@
 # Fashion Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-15 (evening — UI refresh)
+**Last updated:** 2026-05-16 (evening — platform order reordered)
 **Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable). **`/api/search` now streams NDJSON** so the UI can show a live per-platform progress bar instead of a frozen "Searching…" button.
 
-**Latest change (2026-05-16 — inline dropdown-pill filters + combined M/W shoe sizes):**
+**Latest change (2026-05-16 — platform display order reordered):**
+- **Platform chip order** in `PLATFORM_DOMAINS` and `PLATFORM_NAMES` (lib/types.ts) changed from: Grailed, Depop, StockX, Poshmark, eBay, Mercari, Vinted, Vestiaire Collective
+- **To:** Grailed, Depop, Poshmark, Mercari, Vinted, eBay, Vestiaire Collective, StockX
+- **Default selected platforms** on page load changed from [Grailed, Depop, StockX] to [Grailed, Depop, Poshmark, StockX] (SearchForm.tsx:19).
+- This affects the order of platform chips in FilterPanel and the order they appear when iterating over PLATFORM_DOMAINS.
+
+**Previous change (2026-05-16 — inline dropdown-pill filters + combined M/W shoe sizes):**
 - **Replaced the "Additional configurations" accordion with always-visible inline filter pills.** The collapsed/expanded panel state is gone. New layout in [FilterPanel.tsx](app/components/FilterPanel.tsx), top to bottom:
   1. Platform chips row (back outside any dropdown — brand colors when active, same chip styling as the earlier external row). "Select all" / "Clear all" link prefixes the row.
   2. Thin divider (`border-top: 1px solid var(--border)`).

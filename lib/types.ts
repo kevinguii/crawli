@@ -1,23 +1,23 @@
 export const PLATFORM_DOMAINS: Record<string, string> = {
   grailed: 'grailed.com',
   depop: 'depop.com',
-  stockx: 'stockx.com',
   poshmark: 'poshmark.com',
-  ebay: 'ebay.com',
   mercari: 'mercari.com',
   vinted: 'vinted.com',
+  ebay: 'ebay.com',
   vestiaire: 'vestiairecollective.com',
+  stockx: 'stockx.com',
 };
 
 export const PLATFORM_NAMES: Record<string, string> = {
   grailed: 'Grailed',
   depop: 'Depop',
-  stockx: 'StockX',
   poshmark: 'Poshmark',
-  ebay: 'eBay',
   mercari: 'Mercari',
   vinted: 'Vinted',
+  ebay: 'eBay',
   vestiaire: 'Vestiaire Collective',
+  stockx: 'StockX',
 };
 
 export interface Listing {
