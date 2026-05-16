@@ -51,3 +51,19 @@ export interface SearchRequest {
 }
 
 export type PlatformKey = keyof typeof PLATFORM_DOMAINS;
+
+export type SearchStreamEvent =
+  | { type: 'start'; query: string; platforms: string[] }
+  | {
+      type: 'platform_done';
+      platform: string;
+      status: 'ok' | 'failed';
+      listings: Listing[];
+      count: number;
+      error?: string;
+    }
+  | {
+      type: 'final';
+      priceRange: { min: number; max: number } | null;
+      averagePrice: number | null;
+    };

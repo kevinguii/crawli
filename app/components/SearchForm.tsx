@@ -1,16 +1,23 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { PLATFORM_DOMAINS, PLATFORM_NAMES, SearchResponse } from '@/lib/types';
+import {
+  PLATFORM_DOMAINS,
+  PLATFORM_NAMES,
+  PlatformResults,
+  SearchResponse,
+  SearchStreamEvent,
+} from '@/lib/types';
 
 const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS);
 
 interface Props {
   onResults: (data: SearchResponse) => void;
   onError: (msg: string) => void;
+  onProgress: (event: SearchStreamEvent) => void;
 }
 
-export default function SearchForm({ onResults, onError }: Props) {
+export default function SearchForm({ onResults, onError, onProgress }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>(ALL_PLATFORMS);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,21 +34,90 @@ export default function SearchForm({ onResults, onError }: Props) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!query.trim() || selected.length === 0 || isLoading) return;
+    const q = query.trim();
+    if (!q || selected.length === 0 || isLoading) return;
 
     setIsLoading(true);
+
+    const platformsForRun = [...selected];
+    const results: Record<string, PlatformResults> = {};
+
     try {
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query.trim(), platforms: selected }),
+        body: JSON.stringify({ query: q, platforms: platformsForRun }),
       });
-      const data = await res.json();
+
       if (!res.ok) {
-        onError(data?.error ?? 'Search failed. Please try again.');
-      } else {
-        onResults(data as SearchResponse);
+        let msg = 'Search failed. Please try again.';
+        try {
+          const data = await res.json();
+          msg = data?.error ?? msg;
+        } catch {}
+        onError(msg);
+        return;
       }
+
+      if (!res.body) {
+        onError('No response stream from server.');
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let priceRange: SearchResponse['priceRange'] = null;
+      let averagePrice: SearchResponse['averagePrice'] = null;
+      let sawFinal = false;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let event: SearchStreamEvent;
+          try {
+            event = JSON.parse(trimmed) as SearchStreamEvent;
+          } catch (err) {
+            console.error('[search] failed to parse stream line:', trimmed, err);
+            continue;
+          }
+          onProgress(event);
+          if (event.type === 'platform_done') {
+            results[event.platform] = {
+              listings: event.listings,
+              count: event.count,
+            };
+          } else if (event.type === 'final') {
+            priceRange = event.priceRange;
+            averagePrice = event.averagePrice;
+            sawFinal = true;
+          }
+        }
+      }
+
+      if (!sawFinal) {
+        onError('Search ended unexpectedly before completing.');
+        return;
+      }
+
+      // Ensure every requested platform has an entry, even if no event arrived.
+      for (const p of platformsForRun) {
+        if (!results[p]) results[p] = { listings: [], count: 0 };
+      }
+
+      onResults({
+        success: true,
+        query: q,
+        results,
+        priceRange,
+        averagePrice,
+      });
     } catch {
       onError('Network error. Please check your connection.');
     } finally {

@@ -1,9 +1,11 @@
 # Fashion Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-15 (late evening)
-**Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable).
+**Last updated:** 2026-05-16 (early morning)
+**Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable). **`/api/search` now streams NDJSON** so the UI can show a live per-platform progress bar instead of a frozen "Searching…" button.
 
-**Latest change (2026-05-15 late evening):** **Disabled `remove_overlay_elements`** in `CrawlerRunConfig` (was True, now False). It was running JS in the page that on Poshmark either triggered a navigation or mutated the DOM, stripping `<meta property="og:type">` and corrupting other signals (verified: same URL returns 762KB without og:type with overlay-ON, vs 534KB with og:type with overlay-OFF). This also eliminates the "Failed to remove overlay elements: Execution context was destroyed" warnings and the cascading "Page.content: page is navigating" errors the user asked about — those weren't anti-bot, they were our own JS shooting the page in the foot. See §6.5c and §11 (gotcha 23). Also added multi-signal sold detection on Poshmark (the `--sold` banner class is defined in every page's `<style>` so a substring check false-fires; use BeautifulSoup to query the actual rendered element).
+**Latest change (2026-05-16 early morning):** **Live progress bar for multi-source searches.** Converted `POST /api/search` from one-shot JSON to a streaming NDJSON response (`Content-Type: application/x-ndjson`, chunked transfer). Each request emits one `start` event, one `platform_done` event per platform in real completion order, and a final `final` event with cross-platform price stats. Frontend reads the stream via `ReadableStream`/`TextDecoder` and renders a new `<SearchProgress />` component with one checkpoint per selected platform — pending → loading (pulsing) → done (filled checkmark) / failed (red X with tooltip showing the error). Verified live: curl shows lines arriving incrementally with correct timestamps; headers include `x-accel-buffering: no` and `cache-control: no-cache, no-transform` to prevent buffering. **Note:** in tests against eBay/Vestiaire, the upstream `searchAndScrape` does *not* throw on bot-blocks — it returns empty arrays, so those platforms surface as `status: 'ok'` with `count: 0`, not `failed`. The `failed` checkpoint state only fires when `searchAndScrape` actually throws (e.g. sidecar unreachable, Firecrawl outage). See §6.6 below and `app/components/SearchProgress.tsx`, `app/components/SearchForm.tsx`, `app/components/SearchSection.tsx`, `app/api/search/route.ts`, `lib/types.ts` (added `SearchStreamEvent` union).
+
+**Previous change (2026-05-15 late evening):** **Disabled `remove_overlay_elements`** in `CrawlerRunConfig` (was True, now False). It was running JS in the page that on Poshmark either triggered a navigation or mutated the DOM, stripping `<meta property="og:type">` and corrupting other signals (verified: same URL returns 762KB without og:type with overlay-ON, vs 534KB with og:type with overlay-OFF). This also eliminates the "Failed to remove overlay elements: Execution context was destroyed" warnings and the cascading "Page.content: page is navigating" errors the user asked about — those weren't anti-bot, they were our own JS shooting the page in the foot. See §6.5c and §11 (gotcha 23). Also added multi-signal sold detection on Poshmark (the `--sold` banner class is defined in every page's `<style>` so a substring check false-fires; use BeautifulSoup to query the actual rendered element).
 
 **Previous change (2026-05-15 evening):** Added structured extractors for **Mercari** (`__NEXT_DATA__.serverState.ItemDetail:<id>`, price in cents), **Vinted** (escaped RSC payload regex for `"price":{"amount","currency_code"}`), and **Poshmark** (`og:title` + `og:image` + first `<p class="h1"><span>$N</span></p>` + `data-et-prop-inventory_status`). This fixes a class of wrong-price/wrong-image bugs that the LLM was producing on those three platforms. See §6.5 (third iteration) and §11 (gotchas 18–22).
 
@@ -314,7 +316,40 @@ The original timeout-fix work (May 13–14, 2026) is intact:
 - Scrape timeout: 40s
 - `Promise.allSettled` so one platform's failure doesn't crash the response
 
-These survived the migration; `app/api/search/route.ts` is unchanged from the Firecrawl era except for what `scrapeListing` now does under the hood.
+These survived the migration; `app/api/search/route.ts` is unchanged from the Firecrawl era except for what `scrapeListing` now does under the hood, plus the 2026-05-16 streaming conversion described in §6.6.
+
+### 6.6 Streaming search response + live progress bar (2026-05-16)
+
+**Problem:** A full multi-platform search takes 30–60s. Until 2026-05-16 the only UI feedback was the Search button switching to "Searching…", which read as a frozen page.
+
+**Shape of the fix:**
+- `POST /api/search` now returns `application/x-ndjson` (one JSON object per `\n`-delimited line) over chunked transfer instead of a single `NextResponse.json(...)` payload.
+- Three event types in `lib/types.ts` as the discriminated union `SearchStreamEvent`:
+  - `{ type: 'start', query, platforms }` — emitted immediately, lets the UI render a checkpoint per selected platform in the "loading" state.
+  - `{ type: 'platform_done', platform, status: 'ok' | 'failed', listings, count, error? }` — emitted the moment a platform settles. Order reflects real completion order (because `await Promise.all(platforms.map(async ...))` writes from inside each platform's resolution callback), not the order of the input array.
+  - `{ type: 'final', priceRange, averagePrice }` — emitted after every platform settles. The cross-platform USD price stats logic was lifted verbatim from the old non-streaming response.
+- Response headers include `Cache-Control: no-cache, no-transform` and `X-Accel-Buffering: no` to prevent dev-server / proxy buffering. `export const dynamic = 'force-dynamic'` is preserved.
+- `SearchForm.tsx` consumes the stream with `res.body!.getReader()` + `TextDecoder({ stream: true })`, splits the buffer on `\n`, parses each line, calls a new `onProgress(event)` prop, and accumulates `platform_done` events into a `Record<string, PlatformResults>` so it can hand `onResults` the same `SearchResponse` shape `ResultsDisplay` already expects. **No change** to `ResultsDisplay`.
+- `SearchSection.tsx` owns a new `progress: { platforms, statuses, errors } | null` state. `start` initializes all checkpoints to `loading`; each `platform_done` flips one to `done` or `failed` (carrying the error message into a tooltip).
+- `SearchProgress.tsx` (new) renders a horizontal track with N evenly-spaced checkpoints. Fill width = `settled / total`. Loading = pulsing gray dot, done = filled black circle with checkmark, failed = red circle with X. Tailwind only.
+
+**`failed` vs `ok` semantics — gotcha for future implementers:** the checkpoint goes `failed` only when `searchAndScrape(platform, query)` actually throws. eBay (bot-blocked) and Vestiaire (no search hits) currently swallow their failures upstream and return empty arrays, so they appear as `ok` with `count: 0`. If you want them to render as red X, the failure surface needs to be raised inside `searchAndScrape` / `searchPlatform` — that is **out of scope for the progress bar work**, but is the right next step if "search returned nothing" should look different from "platform is broken."
+
+**Verified live (2026-05-16):**
+- Curl with 3 platforms (`grailed,mercari,vinted`) for `nike air max 90`: `start` at T+0s, `platform_done` events at T+51s/T+53s/T+54s, `final` at T+54s. Lines arrived as separate chunks, not as one blob.
+- Response headers confirmed: `content-type: application/x-ndjson`, `transfer-encoding: chunked`, `x-accel-buffering: no`.
+- Single-platform run renders one checkpoint that fills to 100% on completion.
+- Multi-platform run with eBay/Vestiaire selected: those platforms still emit `platform_done` (status `ok`, `count: 0`) and do not block the others — confirms the `Promise.all`-based dispatch keeps platforms independent.
+
+**Not yet visually verified by Claude (user should confirm in browser):**
+- Visual styling of the progress bar at all sizes (Claude can't open a browser).
+- The forced-failure case (sabotage `scrapeListing` to throw for one platform) — would actually render the red-X / tooltip path. Recommended quick test if the failed-state UI matters: add `throw new Error('test')` at the top of `scrapeListing` for one platform in `lib/firecrawl.ts`, run a search, confirm the checkpoint goes red with the tooltip, then revert.
+
+**Out of scope (deferred):**
+- Per-URL progress within a platform ("3/5 listings scraped") — would need sidecar protocol changes.
+- Cancel / abort button.
+- Persisting progress across page reloads.
+- Auto-retry on `failed` platforms.
 
 ---
 

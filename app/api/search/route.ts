@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { searchPlatform, scrapeListing, ScrapedListing } from '@/lib/firecrawl';
 import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
-import { PLATFORM_DOMAINS, Listing, SearchResponse } from '@/lib/types';
+import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,21 +37,15 @@ async function allSettledWithConcurrency<T>(
 }
 
 async function searchAndScrape(platform: string, query: string): Promise<Listing[]> {
-  // 1. Get URLs from Google-indexed search results
   const raw = await searchPlatform(platform, query);
 
-  // 2. Keep only individual listing URLs, drop browse/category pages + deduplicate
   const filtered = filterListingUrls(raw, platform).filter(
     (r, i, arr) => arr.findIndex((x) => x.url === r.url) === i
   );
   if (filtered.length === 0) return [];
 
-  // Cap at 5 URLs per platform — in-house Playwright scraping is sequential and
-  // CPU-heavy; scraping all 15 search results would saturate a laptop.
   const toScrape = filtered.slice(0, 5);
 
-  // 4. Scrape each listing page for live price, sold status, image, condition.
-  //    Cap at 2 concurrent to avoid timeouts under parallel load across platforms.
   const scrapeSettled = await allSettledWithConcurrency(
     toScrape.map((r) => () => scrapeListing(r.url, platform)),
     2
@@ -62,7 +56,6 @@ async function searchAndScrape(platform: string, query: string): Promise<Listing
     .map((s) => s.value)
     .filter((s): s is ScrapedListing => s !== null);
 
-  // 4. Map to Listing objects, filtering out sold items
   return parseScrapedListings(scraped, platform);
 }
 
@@ -83,47 +76,68 @@ export async function POST(request: Request) {
   }
 
   const { query, platforms } = parsed.data;
+  const encoder = new TextEncoder();
 
-  // Search + scrape all platforms in parallel; failures return empty results
-  const settled = await Promise.allSettled(
-    platforms.map((platform) => searchAndScrape(platform, query))
-  );
+  const stream = new ReadableStream({
+    async start(controller) {
+      const write = (event: SearchStreamEvent) => {
+        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+      };
 
-  const results: SearchResponse['results'] = {};
-  for (let i = 0; i < platforms.length; i++) {
-    const platform = platforms[i];
-    const outcome = settled[i];
-    if (outcome.status === 'fulfilled') {
-      results[platform] = { listings: outcome.value, count: outcome.value.length };
-    } else {
-      console.error(`[search] ${platform} failed:`, outcome.reason);
-      results[platform] = { listings: [], count: 0 };
-    }
-  }
+      write({ type: 'start', query, platforms });
 
-  // Compute price stats across all platforms (USD prices only for accuracy)
-  const allPrices = Object.values(results)
-    .flatMap((r) => r.listings)
-    .filter((l) => l.price !== null && l.currency === 'USD')
-    .map((l) => l.price as number);
+      const allListings: Listing[] = [];
 
-  const priceRange =
-    allPrices.length > 0
-      ? { min: Math.min(...allPrices), max: Math.max(...allPrices) }
-      : null;
+      await Promise.all(
+        platforms.map(async (platform) => {
+          try {
+            const listings = await searchAndScrape(platform, query);
+            allListings.push(...listings);
+            write({
+              type: 'platform_done',
+              platform,
+              status: 'ok',
+              listings,
+              count: listings.length,
+            });
+          } catch (err) {
+            console.error(`[search] ${platform} failed:`, err);
+            write({
+              type: 'platform_done',
+              platform,
+              status: 'failed',
+              listings: [],
+              count: 0,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        })
+      );
 
-  const averagePrice =
-    allPrices.length > 0
-      ? Math.round(allPrices.reduce((a, b) => a + b, 0) / allPrices.length)
-      : null;
+      const usdPrices = allListings
+        .filter((l) => l.price !== null && l.currency === 'USD')
+        .map((l) => l.price as number);
 
-  const response: SearchResponse = {
-    success: true,
-    query,
-    results,
-    priceRange,
-    averagePrice,
-  };
+      const priceRange =
+        usdPrices.length > 0
+          ? { min: Math.min(...usdPrices), max: Math.max(...usdPrices) }
+          : null;
 
-  return NextResponse.json(response);
+      const averagePrice =
+        usdPrices.length > 0
+          ? Math.round(usdPrices.reduce((a, b) => a + b, 0) / usdPrices.length)
+          : null;
+
+      write({ type: 'final', priceRange, averagePrice });
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+    },
+  });
 }
