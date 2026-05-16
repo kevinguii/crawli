@@ -35,10 +35,21 @@ export default function ResultsDisplay({ data }: Props) {
     [results, priceRange]
   );
 
-  const visibleListings: Listing[] =
-    activeTab === 'all'
-      ? platformKeys.flatMap((p) => results[p].listings)
-      : (results[activeTab]?.listings ?? []);
+  const visibleListings: Listing[] = useMemo(() => {
+    const raw =
+      activeTab === 'all'
+        ? platformKeys.flatMap((p) => results[p].listings)
+        : (results[activeTab]?.listings ?? []);
+    // Sort: USD listings with prices first (ascending), then everything else.
+    return [...raw].sort((a, b) => {
+      const aValid = a.price !== null && a.currency === 'USD';
+      const bValid = b.price !== null && b.currency === 'USD';
+      if (aValid && bValid) return (a.price as number) - (b.price as number);
+      if (aValid) return -1;
+      if (bValid) return 1;
+      return 0;
+    });
+  }, [activeTab, platformKeys, results]);
 
   const tabLabel = (tab: string) => {
     if (tab === 'all') return `All (${totalCount})`;

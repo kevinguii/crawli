@@ -30,7 +30,7 @@ export default function ListingCard({ listing, isLowest }: Props) {
       rel="noopener noreferrer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group flex flex-col overflow-hidden rounded-2xl transition-colors"
+      className="group flex flex-col overflow-hidden rounded-2xl transition-all cursor-pointer hover:opacity-90 hover:scale-[1.02]"
       style={{
         background: 'var(--surface)',
         border: `1px solid ${hovered ? 'var(--accent)' : 'var(--border)'}`,
@@ -59,8 +59,8 @@ export default function ListingCard({ listing, isLowest }: Props) {
 
         {isLowest && (
           <span
-            className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-            style={{ background: 'var(--success-soft)', color: 'var(--success)' }}
+            className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            style={{ background: 'var(--success)', color: '#FFFFFF' }}
           >
             Lowest price
           </span>
@@ -68,7 +68,7 @@ export default function ListingCard({ listing, isLowest }: Props) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <PlatformBadge platform={listing.platform} />
+        <PlatformBadge platform={listing.platform} className="self-start" />
 
         <p
           className="line-clamp-2 text-[13px] leading-snug"

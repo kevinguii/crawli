@@ -3,7 +3,83 @@
 **Last updated:** 2026-05-15 (evening — UI refresh)
 **Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable). **`/api/search` now streams NDJSON** so the UI can show a live per-platform progress bar instead of a frozen "Searching…" button.
 
-**Latest change (2026-05-16):** Removed test mode (env var) and changed Firecrawl search limit from 15 to 20 results per platform (was 2 credits/search for 10 results or 4 credits for 15; now 4 credits for 20 to get more coverage).
+**Latest change (2026-05-16 — context-aware size section + platform defaults + no-platform guard + placeholder fix):**
+- **Size section is now category-aware.** Two option sets live in [FilterPanel.tsx](app/components/FilterPanel.tsx): `CLOTHING_SIZE_OPTIONS` (XS–XXL) and `SHOE_SIZE_OPTIONS` (Men's 8–12 + Women's 8–12). The Size section renders `SHOE_SIZE_OPTIONS` when `filters.category === 'footwear'`, otherwise `CLOTHING_SIZE_OPTIONS`. Section title swaps between "Shoe size" and "Clothing size" so the user always knows which scale they're picking. The `SIZE_OPTIONS` export is preserved as a combined list — `filtersToQuerySuffix()` still resolves any size key regardless of which set was active when the user picked it.
+- **Gender clarification on shoe sizes.** Shoe chips are labeled `Men's 10` / `Women's 10` (not bare numbers). The `queryTerm` carries the gender too (`"men's size 10"`), so each platform's own search index can distinguish them. Numbers alone would collide on platforms that don't return faceted results.
+- **Auto-clear on category switch.** Toggling category between footwear and non-footwear clears `filters.size` to avoid a stale shoe-key sitting in state while the clothing chip row is showing (and vice versa). Switching among non-footwear categories (Tops → Outerwear) does NOT clear size since both use `CLOTHING_SIZE_OPTIONS`.
+- **Default platform set is now Grailed + Depop + StockX** (`DEFAULT_PLATFORMS` in [SearchForm.tsx](app/components/SearchForm.tsx)) instead of all 8. Rationale: covers streetwear / used clothing / sneakers, all three are confirmed reliable, and the first search no longer waits on the two known-broken platforms (eBay 307s, Vestiaire URL discovery gap). User can expand from the dropdown.
+- **No-platform guard with notification.** `handleSubmit` now: returns silently if `isLoading` or empty query; calls `onError('Please select at least one platform before searching.')` and returns when `selected.length === 0`. The error is rendered by `SearchSection` ([app/components/SearchSection.tsx:82-91](app/components/SearchSection.tsx#L82-L91)), so the user sees a visible message instead of a silently-disabled button. Removed `selected.length === 0` from the submit button's `disabled` predicate so the button stays clickable and triggers the error path (otherwise the disabled button would just sit dead with no feedback).
+- **Placeholder typo fix.** "Search a product — e.g. ..." → "Search for a product — e.g. ...".
+
+**Verified by Claude:** `npx tsc --noEmit` clean on project code.
+
+**NOT verified by Claude (needs browser):**
+- That picking Category: Footwear visibly swaps the chip row to Men's/Women's sizes and re-titles the section.
+- That switching from Footwear to Outerwear clears the previously-picked shoe size.
+- That clicking Search with zero platforms selected shows the red error banner via `SearchSection`'s error renderer.
+
+---
+
+**Previous change (2026-05-16 — Additional configurations panel: smooth slide, platforms moved in, single-select sections):**
+- **Renamed "Filters" → "Additional configurations"** in the dropdown header. Replaces the prior color-only dropdown with a full multi-section panel.
+- **Smooth slide-down animation** using the CSS grid `grid-template-rows: 0fr → 1fr` trick (not `max-height`, which is hard to size right without overflow flicker). The collapsing wrapper is a `<div className="grid transition-all duration-300 ease-out">` with `gridTemplateRows` and `opacity` driven by the open state, and its only child is `<div className="overflow-hidden">`. Animates both height *and* opacity over 300ms with ease-out. No JS measurement, no fixed height — works at any content size. Chevron rotation transition bumped to 200ms to match.
+- **Platforms moved inside the dropdown**, as the first section (above Color). Stayed multi-select. The "All" chip selects every platform; clicking individual platform chips toggles them. Active platform chips render in that platform's brand color (same `platformStyle()` used elsewhere), so the chip palette doubles as a legend. Removed the previous external "Select all / Clear all" link + chip row from `SearchForm`.
+- **Single-select sections (Color, Category, Condition, Size)** each lead with an "Any" chip (instead of the corner-button "Any" the user disliked). Selecting a real option highlights it in accent; clicking it again deselects back to "Any". Color is no longer multi-select.
+- **New sections added:** Category (Tops / Bottoms / Outerwear / Footwear / Accessories), Condition (New / Like New / Used), Size (XS–XXL clothing + Size 7–13 shoes; shoe sizes are explicitly prefixed "Size N" in both the chip label and the query term so they don't collide with non-existent clothing-numeric sizes).
+- **Query construction** ([FilterPanel.tsx:filtersToQuerySuffix](app/components/FilterPanel.tsx)): exported helper that maps the current `FilterState` to a space-joined keyword suffix. Order is color → category → condition → size. Condition uses a `queryTerm` field (e.g. `"like new"` for the `like-new` key) so display labels and query terms can diverge. Size does the same (chip `"S"` → query `"size S"`, chip `"Size 10"` → query `"size 10"`). `SearchForm.handleSubmit` concatenates `baseQ + ' ' + suffix` and sends that to `/api/search`. **No backend changes** — same keyword-stuffing strategy as before.
+- **Active-filter counter pill** next to the panel title now counts platforms-not-all + each non-null filter, so the user sees "Additional configurations [3]" when they have non-default settings stowed.
+- **Exported from `FilterPanel.tsx`**: `FilterState`, `emptyFilterState()`, `filtersToQuerySuffix()`, plus the `COLOR_OPTIONS / CATEGORY_OPTIONS / CONDITION_OPTIONS / SIZE_OPTIONS` arrays — so future work (e.g. faceted-URL builders per platform) can reuse the same vocabulary without re-defining it.
+
+**Verified by Claude:** `npx tsc --noEmit` clean on project code (one unrelated warning in `.next/dev/types/validator.ts`, a Next-generated file).
+
+**NOT verified by Claude (needs browser):**
+- That the slide-down feels smooth in both directions on a real browser. (The `0fr → 1fr` grid trick is well-supported but has had Safari quirks in older versions; if you see a jump, swap to `max-height: 0 → 1000px` as a fallback.)
+- That none of the chips wrap awkwardly at narrow widths — there are now ~30 chips in the panel.
+- That a search like `nike air max 90` + Color: Red + Category: Footwear + Size: Size 10 returns sensibly filtered listings on all six working platforms.
+
+**Removed:** the prior color-only `FilterPanel` is replaced (color is now a single-select section inside the new panel). The external platform chip row in `SearchForm` is removed (platforms live in the dropdown now).
+
+---
+
+**Previous change (2026-05-16 — color filter dropdown):**
+- **New `FilterPanel` component** ([app/components/FilterPanel.tsx](app/components/FilterPanel.tsx)) renders as a collapsible card under the platform chips in `SearchForm`. Closed state is a single row: "Filters" label + a small pill counter showing how many filters are active + a chevron. Open state reveals a `Color` section with multi-select chips. Each chip is a small swatch (rounded color dot) + the color name. White/silver swatches use an `inset box-shadow` ring so they stay visible on light backgrounds. An "Any" button on the right clears all color selections.
+- **Color palette** ([FilterPanel.tsx:9-24](app/components/FilterPanel.tsx#L9-L24)): black, white, gray, red, orange, yellow, green, blue, purple, pink, brown, beige, gold, silver. Stored as `COLOR_OPTIONS: ColorOption[]` and exported in case other components want the same list later.
+- **Wiring** ([SearchForm.tsx](app/components/SearchForm.tsx)): added `colors: string[]` state. On submit, if any colors are selected, the final query sent to `/api/search` is `${baseQ} ${colors.join(' ')}` — e.g. `"nike air max 90" + ["red","white"]` → `"nike air max 90 red white"`. **Backend is untouched** — this works because Firecrawl's `site:<domain> <query>` already does keyword matching on the platform's own search index, and the LLM/structured extractors don't care what the user typed.
+- **Why append-to-query instead of a structured `filters` field**: the working platforms don't expose color facets in their search URLs uniformly (Grailed has them, Depop has them in different shapes, Mercari doesn't, etc.). Keyword stuffing is the lowest-friction path that improves results across all six working platforms. When/if we move to per-platform facet builders, the UI state shape (`colors: string[]`) is already correct — only the query-builder layer needs to change.
+- The structured-filters TODO from the prior change block now has color partially shipped. Remaining sub-TODOs in that area: garment type (upper / lower / outerwear / footwear / accessories), size, gender, condition.
+
+**Verified by Claude:** `npx tsc --noEmit` passes clean. The dropdown opens/closes via local state and the chip multi-select uses the same `<input type="checkbox" className="sr-only">` pattern as the platform chips for accessibility.
+
+**NOT verified by Claude (needs browser):**
+- That the swatches render at a readable size on both light and dark themes (white/silver in particular — those rely on `box-shadow: inset 0 0 0 1px var(--border)` which should be visible against `var(--bg-elevated)`).
+- That an actual color-filtered search returns visibly better-matched results (this depends on each platform's own search index, not on our code).
+- That the accent counter pill is positioned correctly when one or more colors are active.
+
+---
+
+**Previous change (2026-05-16 — UI polish: clickability, badge fit, lowest-price emphasis, sort):**
+- **ListingCard now signals "clickable" more clearly.** Added `cursor-pointer`, a subtle `hover:opacity-90`, and a gentle `hover:scale-[1.02]` on top of the existing accent-border hover. All three live on the `<a>` element via Tailwind classes — no new state.
+- **Platform badge no longer stretches edge-to-edge.** Root cause: `ListingCard`'s inner card body is `flex flex-col`, which defaults `align-items: stretch`, so the `inline-block` `PlatformBadge` was being stretched to the column's full cross-axis width. The beige (Vestiaire) / grey (Grailed) / etc. background then visibly spanned the entire card. Fix: pass `className="self-start"` to `PlatformBadge` so just that one child opts out of stretch — title/price still take full width via the existing flow. Affects ALL platforms, not just Vestiaire/Grailed (any badge would have had this problem; the lighter-colored ones just made it most obvious).
+  - `PlatformBadge.tsx` already accepted a `className` prop and forwards it; no badge component changes needed.
+- **SearchProgress (the "pending search" status panel) tightened.** The status-dot + badge cluster was sitting inside a `flex w-32 shrink-0 items-center gap-2` div — the fixed `w-32` (128px) reserved a wide column even when the badge label was short. Removed `w-32`. Cluster now auto-sizes to content; the adjacent progress bar reclaims the freed space.
+- **"Lowest price" badge is now solid + readable on busy images.** Was `background: var(--success-soft)` (~14% alpha green) with green text — almost invisible against light/colorful clothing photos. Now `background: var(--success)` (solid `#16a34a` light / `#4ade80` dark) with `color: #FFFFFF` and uppercase-tracking type, matching the visual language of the platform badges.
+- **Listings now sort lowest USD price first.** `ResultsDisplay.visibleListings` is now a `useMemo`-sorted copy: USD listings with a numeric price ascend by price; non-USD or price-null listings sink to the bottom in their original order. Sort applies on every tab (All + per-platform). The `cheapestId` lookup for the "Lowest price" badge is unchanged — it still finds the global USD min — so the first card in the grid is the badged one.
+
+**Verified by Claude:** `npx tsc --noEmit` passes clean.
+
+**NOT verified by Claude (needs browser):**
+- Hover effect actually feels right (the `scale-[1.02]` is gentle but if it feels jumpy with the border-color transition, drop the scale and keep only `opacity-90`).
+- Vestiaire / Grailed / all other badge backgrounds now hug the label text.
+- "Lowest price" badge contrasts well on real listing photos in both light and dark modes.
+- Lowest-price card actually appears in the top-left of the grid after a real search.
+
+**TODOs the user added for future sessions (not implemented this round):**
+1. **Scrape and surface the listing's posted date.** Then expose a "Sort by date (oldest → newest / newest → oldest)" filter alongside the current price sort. Will require: (a) adding a `postedAt: string | null` field to `ScrapedListing` in `extractors.py` and `lib/types.ts`, (b) per-platform date extraction in `structured_extractors.py` (JSON-LD `datePosted` / `__NEXT_DATA__` timestamps / etc.), (c) UI sort toggle in `ResultsDisplay.tsx`. Each platform will need its own date source — none is universal.
+2. **Structured filter chips instead of free-text query refinement.** Today users have to encode everything in the search string ("nike air max 90 red"). Add UI chips for common filters: color, garment type (upper / lower / outerwear / footwear / accessories), size, gender, etc. Will probably need: (a) a `filters` object passed alongside `query` to `/api/search`, (b) per-platform query-builder logic (some platforms have facet URLs, others need keyword smashing), (c) frontend chip components.
+
+---
+
+**Previous change (2026-05-16):** Removed test mode (env var) and changed Firecrawl search limit from 15 to 20 results per platform (was 2 credits/search for 10 results or 4 credits for 15; now 4 credits for 20 to get more coverage).
 
 **Previous change (2026-05-15 evening — platform badge pass):** **Brand-color pill badges for every platform + eBay 4-stripe gradient.**
 - `app/components/platformColors.ts` — replaced all placeholder colors with exact brand values: Grailed `#3A3A3A`, Depop `#FF2300`, StockX `#00B341`, Poshmark `#9B4C5C`, eBay `#0064D2` (bar/dot only), Mercari `#5E6DF2`, Vinted `#007782`, Vestiaire Collective `#C4A17A`. Added `PLATFORM_TEXT` map (Vestiaire Collective → black `#000000`; all others → white `#FFFFFF`). Added `platformStyle()` helper that returns `{ background, color, isGradient }`. eBay's `background` is `linear-gradient(to bottom, #E53238 0% 25%, #0064D2 25% 50%, #F5AF02 50% 75%, #86B817 75% 100%)`. The shimmer-bar `platformColor()` for eBay returns `#0064D2` (single solid color — the gradient is too busy at 6px bar height).

@@ -3,14 +3,20 @@
 import { FormEvent, useState } from 'react';
 import {
   PLATFORM_DOMAINS,
-  PLATFORM_NAMES,
   PlatformResults,
   SearchResponse,
   SearchStreamEvent,
 } from '@/lib/types';
-import { platformStyle } from './platformColors';
+import FilterPanel, {
+  emptyFilterState,
+  filtersToQuerySuffix,
+  FilterState,
+} from './FilterPanel';
 
 const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS);
+// Start with a small reliable set rather than every platform. Keeps the first
+// search fast and avoids the two known-broken platforms (eBay, Vestiaire).
+const DEFAULT_PLATFORMS = ['grailed', 'depop', 'stockx'];
 
 interface Props {
   onResults: (data: SearchResponse) => void;
@@ -20,23 +26,24 @@ interface Props {
 
 export default function SearchForm({ onResults, onError, onProgress }: Props) {
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string[]>(ALL_PLATFORMS);
+  const [selected, setSelected] = useState<string[]>(DEFAULT_PLATFORMS);
+  const [filters, setFilters] = useState<FilterState>(emptyFilterState());
   const [isLoading, setIsLoading] = useState(false);
-
-  function togglePlatform(platform: string) {
-    setSelected((prev) =>
-      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
-    );
-  }
-
-  function toggleAll() {
-    setSelected((prev) => (prev.length === ALL_PLATFORMS.length ? [] : ALL_PLATFORMS));
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const q = query.trim();
-    if (!q || selected.length === 0 || isLoading) return;
+    const baseQ = query.trim();
+    if (isLoading) return;
+    if (!baseQ) return;
+    if (selected.length === 0) {
+      onError('Please select at least one platform before searching.');
+      return;
+    }
+
+    // Append every active filter (color, category, condition, size) as keywords
+    // so each platform's own search index gets the extra signal.
+    const suffix = filtersToQuerySuffix(filters);
+    const q = suffix ? `${baseQ} ${suffix}` : baseQ;
 
     setIsLoading(true);
 
@@ -126,8 +133,6 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
     }
   }
 
-  const allSelected = selected.length === ALL_PLATFORMS.length;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -135,7 +140,7 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search a product — e.g. Nike Air Jordan 1 Chicago size 10"
+          placeholder="Search for a product — e.g. Nike Air Jordan 1 Chicago size 10"
           className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
           style={{
             background: 'var(--surface)',
@@ -147,7 +152,7 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
         />
         <button
           type="submit"
-          disabled={isLoading || !query.trim() || selected.length === 0}
+          disabled={isLoading || !query.trim()}
           className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           style={{ background: 'var(--accent)' }}
           onMouseEnter={(e) => {
@@ -159,48 +164,12 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleAll}
-          className="text-xs font-medium underline underline-offset-2 transition-colors"
-          style={{ color: 'var(--text-dim)' }}
-        >
-          {allSelected ? 'Clear all' : 'Select all'}
-        </button>
-        {ALL_PLATFORMS.map((platform) => {
-          const active = selected.includes(platform);
-          const ps = platformStyle(platform);
-          return (
-            <label
-              key={platform}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-              style={
-                active
-                  ? { background: ps.background, color: ps.color, border: '1px solid transparent' }
-                  : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
-              }
-            >
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={active}
-                onChange={() => togglePlatform(platform)}
-              />
-              {active && (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                  <path
-                    fillRule="evenodd"
-                    d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-              {PLATFORM_NAMES[platform] ?? platform}
-            </label>
-          );
-        })}
-      </div>
+      <FilterPanel
+        platforms={selected}
+        onPlatformsChange={setSelected}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
     </form>
   );
 }

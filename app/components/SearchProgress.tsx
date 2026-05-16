@@ -120,7 +120,7 @@ function PlatformRow({
   return (
     <div className="rounded-xl p-3 transition-colors" style={rowStyle}>
       <div className="flex items-center gap-3">
-        <div className="flex w-32 shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <StatusDot status={status} color={color} />
           <PlatformBadge platform={platform} />
         </div>
