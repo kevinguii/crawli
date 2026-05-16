@@ -1,5 +1,7 @@
 'use client';
 
+import { Listing } from '@/lib/types';
+
 const fmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -10,32 +12,79 @@ interface Props {
   priceRange: { min: number; max: number } | null;
   averagePrice: number | null;
   totalCount: number;
+  lowSource?: string | null;
+  highSource?: string | null;
 }
 
-export default function PriceSummary({ priceRange, averagePrice, totalCount }: Props) {
+export default function PriceSummary({
+  priceRange,
+  averagePrice,
+  totalCount,
+  lowSource,
+  highSource,
+}: Props) {
   if (!priceRange || totalCount === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-xl bg-gray-50 border border-gray-200 px-5 py-3 text-sm">
-      <span className="font-medium text-gray-600">
-        {totalCount} listing{totalCount !== 1 ? 's' : ''} found
-      </span>
-      <div className="flex gap-4">
-        <Stat label="Low" value={fmt.format(priceRange.min)} color="text-green-700" />
-        <Stat label="High" value={fmt.format(priceRange.max)} color="text-red-600" />
-        {averagePrice !== null && (
-          <Stat label="Avg" value={fmt.format(averagePrice)} color="text-gray-800" />
-        )}
-      </div>
+    <div className="grid grid-cols-3 gap-3">
+      <Metric label="Low" value={fmt.format(priceRange.min)} source={lowSource} accent />
+      <Metric
+        label="Average"
+        value={averagePrice !== null ? fmt.format(averagePrice) : '—'}
+        source={`${totalCount} listing${totalCount !== 1 ? 's' : ''}`}
+      />
+      <Metric label="High" value={fmt.format(priceRange.max)} source={highSource} />
     </div>
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+function Metric({
+  label,
+  value,
+  source,
+  accent,
+}: {
+  label: string;
+  value: string;
+  source?: string | null;
+  accent?: boolean;
+}) {
   return (
-    <span>
-      <span className="text-gray-500">{label}: </span>
-      <span className={`font-semibold ${color}`}>{value}</span>
-    </span>
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: 'var(--surface)',
+        border: `1px solid ${accent ? 'var(--accent)' : 'var(--border)'}`,
+      }}
+    >
+      <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
+        {value}
+      </p>
+      {source && (
+        <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          {source}
+        </p>
+      )}
+    </div>
   );
+}
+
+export function pickPriceSources(
+  results: Record<string, { listings: Listing[] }>,
+  priceRange: { min: number; max: number } | null
+): { lowSource: string | null; highSource: string | null } {
+  if (!priceRange) return { lowSource: null, highSource: null };
+  let lowSource: string | null = null;
+  let highSource: string | null = null;
+  for (const [platform, { listings }] of Object.entries(results)) {
+    for (const l of listings) {
+      if (l.price === null || l.currency !== 'USD') continue;
+      if (l.price === priceRange.min && !lowSource) lowSource = platform;
+      if (l.price === priceRange.max && !highSource) highSource = platform;
+    }
+  }
+  return { lowSource, highSource };
 }

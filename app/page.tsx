@@ -1,21 +1,41 @@
-import type { Metadata } from 'next';
 import SearchSection from './components/SearchSection';
-
-export const metadata: Metadata = {
-  title: 'Fashion Resale Search',
-  description: 'Search prices across Grailed, Depop, StockX, Vestiaire, Vinted, and Mercari.',
-};
+import ThemeToggle from './components/ThemeToggle';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Fashion Resale Search
+    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      {/* Top nav */}
+      <nav
+        className="sticky top-0 z-20 backdrop-blur"
+        style={{
+          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-2">
+            <div
+              className="h-6 w-6 rounded-md"
+              style={{ background: 'var(--accent)' }}
+            />
+            <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
+              Resale<span style={{ color: 'var(--text-muted)' }}>/Search</span>
+            </span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </nav>
+
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="mb-8">
+          <h1
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: 'var(--text)' }}
+          >
+            Find the best resale price.
           </h1>
-          <p className="mt-2 text-gray-500">
-            Search across Grailed, Depop, StockX, Vestiaire, Vinted &amp; Mercari at once.
+          <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+            One query — live pricing from Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire.
           </p>
         </div>
 

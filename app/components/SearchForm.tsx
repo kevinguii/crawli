@@ -129,51 +129,75 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Query input */}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Nike Air Jordan 1 Chicago size 10"
-          className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+          placeholder="Search a product — e.g. Nike Air Jordan 1 Chicago size 10"
+          className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            color: 'var(--text)',
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
         />
         <button
           type="submit"
           disabled={isLoading || !query.trim() || selected.length === 0}
-          className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ background: 'var(--accent)' }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--accent-hover)';
+          }}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent)')}
         >
           {isLoading ? 'Searching…' : 'Search'}
         </button>
       </div>
 
-      {/* Platform checkboxes */}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={toggleAll}
-          className="text-xs font-medium text-gray-500 hover:text-gray-800 underline underline-offset-2"
+          className="text-xs font-medium underline underline-offset-2 transition-colors"
+          style={{ color: 'var(--text-dim)' }}
         >
           {allSelected ? 'Clear all' : 'Select all'}
         </button>
-        {ALL_PLATFORMS.map((platform) => (
-          <label
-            key={platform}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
-              selected.includes(platform)
-                ? 'border-gray-900 bg-gray-900 text-white'
-                : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400'
-            }`}
-          >
-            <input
-              type="checkbox"
-              className="sr-only"
-              checked={selected.includes(platform)}
-              onChange={() => togglePlatform(platform)}
-            />
-            {PLATFORM_NAMES[platform] ?? platform}
-          </label>
-        ))}
+        {ALL_PLATFORMS.map((platform) => {
+          const active = selected.includes(platform);
+          return (
+            <label
+              key={platform}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{
+                background: active ? 'var(--accent-soft)' : 'var(--surface)',
+                border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                color: active ? 'var(--text)' : 'var(--text-muted)',
+              }}
+            >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={active}
+                onChange={() => togglePlatform(platform)}
+              />
+              {active && (
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" style={{ color: 'var(--accent)' }}>
+                  <path
+                    fillRule="evenodd"
+                    d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              {PLATFORM_NAMES[platform] ?? platform}
+            </label>
+          );
+        })}
       </div>
     </form>
   );

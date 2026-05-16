@@ -10,6 +10,7 @@ interface ProgressState {
   platforms: string[];
   statuses: Record<string, CheckpointStatus>;
   errors: Record<string, string>;
+  counts: Record<string, number>;
 }
 
 export default function SearchSection() {
@@ -34,7 +35,7 @@ export default function SearchSection() {
       setError(null);
       const statuses: Record<string, CheckpointStatus> = {};
       for (const p of event.platforms) statuses[p] = 'loading';
-      setProgress({ platforms: event.platforms, statuses, errors: {} });
+      setProgress({ platforms: event.platforms, statuses, errors: {}, counts: {} });
       return;
     }
     if (event.type === 'platform_done') {
@@ -46,6 +47,7 @@ export default function SearchSection() {
             ...prev.statuses,
             [event.platform]: event.status === 'ok' ? 'done' : 'failed',
           },
+          counts: { ...prev.counts, [event.platform]: event.count },
           errors:
             event.status === 'failed' && event.error
               ? { ...prev.errors, [event.platform]: event.error }
@@ -56,8 +58,11 @@ export default function SearchSection() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="space-y-6">
+      <div
+        className="rounded-2xl p-5"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
         <SearchForm
           onResults={handleResults}
           onError={handleError}
@@ -70,11 +75,19 @@ export default function SearchSection() {
           platforms={progress.platforms}
           statuses={progress.statuses}
           errors={progress.errors}
+          counts={progress.counts}
         />
       )}
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: 'var(--danger-soft)',
+            border: '1px solid var(--danger)',
+            color: 'var(--danger)',
+          }}
+        >
           {error}
         </div>
       )}

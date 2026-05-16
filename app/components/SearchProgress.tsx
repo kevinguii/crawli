@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { PLATFORM_NAMES } from '@/lib/types';
 
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
@@ -8,93 +9,229 @@ interface Props {
   platforms: string[];
   statuses: Record<string, CheckpointStatus>;
   errors: Record<string, string>;
+  counts?: Record<string, number>;
 }
 
-export default function SearchProgress({ platforms, statuses, errors }: Props) {
+const STAGES = [
+  'Submitting search…',
+  'Filtering URLs…',
+  'Scraping listings…',
+  'Parsing prices…',
+];
+
+const STAGE_INTERVAL_MS = 2000;
+
+export default function SearchProgress({ platforms, statuses, errors, counts }: Props) {
   const total = platforms.length;
   const settled = platforms.filter(
     (p) => statuses[p] === 'done' || statuses[p] === 'failed'
   ).length;
-  const fillPct = total === 0 ? 0 : (settled / total) * 100;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-900">
+    <div
+      className="rounded-2xl p-5"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {settled === total ? 'Search complete' : 'Searching platforms…'}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
           {settled} / {total}
         </p>
       </div>
 
-      <div className="relative px-3 pt-2 pb-1">
-        {/* Track */}
-        <div className="absolute left-3 right-3 top-1/2 h-0.5 -translate-y-1/2 bg-gray-200" />
-        {/* Fill */}
-        <div
-          className="absolute left-3 top-1/2 h-0.5 -translate-y-1/2 bg-gray-900 transition-all duration-500"
-          style={{ width: `calc((100% - 24px) * ${fillPct / 100})` }}
-        />
-
-        <div className="relative flex items-center justify-between">
-          {platforms.map((platform) => {
-            const status = statuses[platform] ?? 'loading';
-            const error = errors[platform];
-            return (
-              <div key={platform} className="flex flex-col items-center">
-                <div
-                  title={status === 'failed' && error ? error : undefined}
-                  className={[
-                    'flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold transition-colors',
-                    status === 'loading'
-                      ? 'border-gray-300 bg-white text-gray-400 animate-pulse'
-                      : '',
-                    status === 'done'
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : '',
-                    status === 'failed'
-                      ? 'border-red-500 bg-red-500 text-white'
-                      : '',
-                  ].join(' ')}
-                >
-                  {status === 'done' && (
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.08l6.79-6.79a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                  {status === 'failed' && (
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                  {status === 'loading' && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                  )}
-                </div>
-                <span
-                  className={[
-                    'mt-2 text-[11px] font-medium',
-                    status === 'done' ? 'text-gray-900' : '',
-                    status === 'failed' ? 'text-red-600' : '',
-                    status === 'loading' ? 'text-gray-500' : '',
-                  ].join(' ')}
-                >
-                  {PLATFORM_NAMES[platform] ?? platform}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+      <div className="space-y-2">
+        {platforms.map((platform) => (
+          <PlatformRow
+            key={platform}
+            platform={platform}
+            status={statuses[platform] ?? 'loading'}
+            error={errors[platform]}
+            count={counts?.[platform]}
+          />
+        ))}
       </div>
     </div>
+  );
+}
+
+function PlatformRow({
+  platform,
+  status,
+  error,
+  count,
+}: {
+  platform: string;
+  status: CheckpointStatus;
+  error?: string;
+  count?: number;
+}) {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [open, setOpen] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (status === 'loading') {
+      setStageIdx(0);
+      intervalRef.current = setInterval(() => {
+        setStageIdx((i) => Math.min(i + 1, STAGES.length - 1));
+      }, STAGE_INTERVAL_MS);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [status]);
+
+  const fillClass =
+    status === 'done'
+      ? 'bar-fill-done'
+      : status === 'failed'
+        ? 'bar-fill-failed'
+        : 'bar-fill-loading';
+
+  let label: string;
+  if (status === 'done') {
+    label = typeof count === 'number' ? `Done — ${count} result${count === 1 ? '' : 's'}` : 'Done';
+  } else if (status === 'failed') {
+    label = error ? `Failed — ${error}` : 'Failed';
+  } else {
+    label = STAGES[stageIdx];
+  }
+
+  const visibleStages = status === 'loading' ? STAGES.slice(0, stageIdx + 1) : STAGES;
+
+  return (
+    <div
+      className="rounded-xl p-3 transition-colors"
+      style={{
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex w-28 shrink-0 items-center gap-2">
+          <StatusDot status={status} />
+          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+            {PLATFORM_NAMES[platform] ?? platform}
+          </span>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="bar-track">
+            <div className={fillClass} />
+          </div>
+          <p
+            className="mt-1.5 truncate text-[11px]"
+            style={{
+              color: status === 'failed' ? 'var(--danger)' : 'var(--text-muted)',
+            }}
+            title={status === 'failed' && error ? error : undefined}
+          >
+            {label}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? 'Hide reasoning' : 'Show reasoning'}
+          className="ml-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-4 w-4 transition-transform"
+            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+          >
+            <path
+              fillRule="evenodd"
+              d="M7.05 4.05a1 1 0 0 1 1.4 0l5.3 5.3a1 1 0 0 1 0 1.4l-5.3 5.3a1 1 0 1 1-1.4-1.4l4.6-4.6-4.6-4.6a1 1 0 0 1 0-1.4z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {open && (
+        <ul
+          className="mt-3 space-y-1 border-t pt-3 pl-1 font-mono text-[10.5px]"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-dim)' }}
+        >
+          {visibleStages.map((s, i) => (
+            <li key={s} className="flex items-center gap-2">
+              <span
+                className="inline-block h-1 w-1 rounded-full"
+                style={{
+                  background:
+                    status === 'failed'
+                      ? 'var(--danger)'
+                      : i === visibleStages.length - 1 && status === 'loading'
+                        ? 'var(--accent)'
+                        : 'var(--text-dim)',
+                }}
+              />
+              <span>{s}</span>
+            </li>
+          ))}
+          {status === 'done' && (
+            <li className="flex items-center gap-2" style={{ color: 'var(--accent)' }}>
+              <span className="inline-block h-1 w-1 rounded-full" style={{ background: 'var(--accent)' }} />
+              <span>Complete</span>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function StatusDot({ status }: { status: CheckpointStatus }) {
+  if (status === 'done') {
+    return (
+      <span
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-white"
+        style={{ background: 'var(--accent)' }}
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
+          <path
+            fillRule="evenodd"
+            d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (status === 'failed') {
+    return (
+      <span
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-white"
+        style={{ background: 'var(--danger)' }}
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" className="h-2 w-2">
+          <path
+            fillRule="evenodd"
+            d="M4.3 4.3a1 1 0 0 1 1.4 0L10 8.6l4.3-4.3a1 1 0 1 1 1.4 1.4L11.4 10l4.3 4.3a1 1 0 1 1-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 1 1-1.4-1.4L8.6 10 4.3 5.7a1 1 0 0 1 0-1.4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </span>
+    );
+  }
+  return (
+    <span
+      className="dot-loading inline-block h-2 w-2 rounded-full"
+      style={{ background: 'var(--accent)' }}
+    />
   );
 }
