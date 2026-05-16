@@ -8,6 +8,7 @@ import {
   SearchResponse,
   SearchStreamEvent,
 } from '@/lib/types';
+import { platformStyle } from './platformColors';
 
 const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS);
 
@@ -169,15 +170,16 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
         </button>
         {ALL_PLATFORMS.map((platform) => {
           const active = selected.includes(platform);
+          const ps = platformStyle(platform);
           return (
             <label
               key={platform}
               className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-              style={{
-                background: active ? 'var(--accent-soft)' : 'var(--surface)',
-                border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                color: active ? 'var(--text)' : 'var(--text-muted)',
-              }}
+              style={
+                active
+                  ? { background: ps.background, color: ps.color, border: '1px solid transparent' }
+                  : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
+              }
             >
               <input
                 type="checkbox"
@@ -186,7 +188,7 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
                 onChange={() => togglePlatform(platform)}
               />
               {active && (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" style={{ color: 'var(--accent)' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
                   <path
                     fillRule="evenodd"
                     d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 0 1 1.4-1.4L8.5 12l6.8-6.8a1 1 0 0 1 1.4 0z"

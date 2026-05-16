@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Listing, PLATFORM_NAMES } from '@/lib/types';
-import { platformColor } from './platformColors';
+import { Listing } from '@/lib/types';
+import PlatformBadge from './PlatformBadge';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -68,12 +68,7 @@ export default function ListingCard({ listing, isLowest }: Props) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p
-          className="text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: platformColor(listing.platform) }}
-        >
-          {PLATFORM_NAMES[listing.platform] ?? listing.platform}
-        </p>
+        <PlatformBadge platform={listing.platform} />
 
         <p
           className="line-clamp-2 text-[13px] leading-snug"

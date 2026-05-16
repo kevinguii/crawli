@@ -1,17 +1,49 @@
-// Per-platform accent colors. Picked to be distinguishable on both dark and
-// light themes; brand-adjacent without being literal. Kept here (not in
-// lib/types) so lib/ stays presentation-free.
-export const PLATFORM_COLORS: Record<string, string> = {
-  grailed: '#ef4444',    // red
-  depop: '#ec4899',      // pink
-  stockx: '#22c55e',     // green
-  poshmark: '#e11d48',   // rose
-  ebay: '#eab308',       // yellow
-  mercari: '#f97316',    // orange
-  vinted: '#14b8a6',     // teal
-  vestiaire: '#a855f7',  // purple
+// Per-platform brand colors. Kept under app/components/ so lib/ stays
+// presentation-free.
+
+export const PLATFORM_BG: Record<string, string> = {
+  grailed:   '#3A3A3A',
+  depop:     '#FF2300',
+  stockx:    '#00B341',
+  poshmark:  '#9B4C5C',
+  ebay:      '#0064D2', // primary eBay blue — used for the shimmer bar only
+  mercari:   '#5E6DF2',
+  vinted:    '#007782',
+  vestiaire: '#C4A17A',
 };
 
+// White for everything; black on vestiaire (light beige bg).
+export const PLATFORM_TEXT: Record<string, string> = {
+  vestiaire: '#000000',
+};
+function platformText(platform: string): string {
+  return PLATFORM_TEXT[platform] ?? '#FFFFFF';
+}
+
+// eBay's 4-stripe gradient (top → bottom): red, blue, yellow, green.
+// Each stripe is exactly 25% of the height.
+const EBAY_GRADIENT =
+  'linear-gradient(to bottom, #E53238 0% 25%, #0064D2 25% 50%, #F5AF02 50% 75%, #86B817 75% 100%)';
+
+export interface PlatformStyle {
+  background: string;
+  color: string;
+  isGradient: boolean;
+}
+
+export function platformStyle(platform: string): PlatformStyle {
+  if (platform === 'ebay') {
+    return { background: EBAY_GRADIENT, color: '#FFFFFF', isGradient: true };
+  }
+  return {
+    background: PLATFORM_BG[platform] ?? '#555555',
+    color: platformText(platform),
+    isGradient: false,
+  };
+}
+
+// Bar/dot accent color — single solid color per platform for the shimmer bar.
+// eBay uses its blue rather than the stripe gradient (too busy at 6px height).
 export function platformColor(platform: string, fallback = 'var(--accent)'): string {
-  return PLATFORM_COLORS[platform] ?? fallback;
+  return PLATFORM_BG[platform] ?? fallback;
 }

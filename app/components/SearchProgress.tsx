@@ -1,8 +1,8 @@
 'use client';
 
 import { CSSProperties, useEffect, useRef, useState } from 'react';
-import { PLATFORM_NAMES } from '@/lib/types';
 import { platformColor } from './platformColors';
+import PlatformBadge from './PlatformBadge';
 
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
 
@@ -120,14 +120,9 @@ function PlatformRow({
   return (
     <div className="rounded-xl p-3 transition-colors" style={rowStyle}>
       <div className="flex items-center gap-3">
-        <div className="flex w-28 shrink-0 items-center gap-2">
+        <div className="flex w-32 shrink-0 items-center gap-2">
           <StatusDot status={status} color={color} />
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: status === 'loading' ? color : 'var(--text)' }}
-          >
-            {PLATFORM_NAMES[platform] ?? platform}
-          </span>
+          <PlatformBadge platform={platform} />
         </div>
 
         <div className="flex-1 min-w-0">
