@@ -27,13 +27,58 @@ export function filterListingUrls(
 
 // ── Parse scraped listing data into Listing objects ────────────────────────
 
+// Generic words that shouldn't count toward query/title overlap. Colors, sizes,
+// conditions, and ultra-common nouns appear in many unrelated listings, so
+// matching only on those would let off-topic results through.
+const RELEVANCE_STOPWORDS = new Set([
+  // articles / prepositions / conjunctions
+  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'into', 'over', 'your',
+  // colors
+  'black', 'white', 'gray', 'grey', 'red', 'orange', 'yellow', 'green', 'blue',
+  'purple', 'pink', 'brown', 'beige', 'gold', 'silver', 'cream', 'tan', 'navy',
+  'olive', 'khaki',
+  // sizes / size words
+  'size', 'sizes', 'xxs', 'small', 'medium', 'large', 'xlarge', 'xxl', 'xxxl',
+  // condition / generic descriptors
+  'new', 'used', 'mens', 'womens', 'men', 'women', 'kids', 'unisex',
+  'authentic', 'genuine', 'rare', 'vintage', 'used',
+]);
+
+function relevanceTokens(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]+/g, ' ')
+      .split(/\s+/)
+      .filter((t) => t.length >= 3 && !RELEVANCE_STOPWORDS.has(t))
+  );
+}
+
+// Returns true if the scraped title shares at least one substantive token with
+// the original query. If the query has no substantive tokens after stopwording
+// (e.g. just "black hoodie size m"), we pass everything through rather than
+// drop all results.
+function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
+  if (queryTokens.size === 0) return true;
+  if (!title) return false;
+  const titleTokens = relevanceTokens(title);
+  for (const t of queryTokens) {
+    if (titleTokens.has(t)) return true;
+  }
+  return false;
+}
+
 export function parseScrapedListings(
   scraped: ScrapedListing[],
-  platform: string
+  platform: string,
+  query?: string
 ): Listing[] {
+  const queryTokens = query ? relevanceTokens(query) : new Set<string>();
+
   return scraped
     .filter((s) => !s.isSold)
     .filter((s) => s.title !== null || s.price !== null)
+    .filter((s) => titleMatchesQuery(s.title, queryTokens))
     .map((s) => ({
       id: nanoid(),
       title: s.title ?? s.url,

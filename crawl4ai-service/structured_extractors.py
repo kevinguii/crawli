@@ -201,6 +201,25 @@ def extract_stockx(html: str) -> Optional[dict]:
     ask_el = soup.select_one("[data-testid='trade-box-buy-amount']")
     ask_text = ask_el.get_text(strip=True) if ask_el else None
 
+    # Conservative price gate: when a StockX listing has no live Ask for the
+    # default variant, the trade box shows the Last Sale number in the same
+    # amount element. The sibling label switches from "Buy Now" to "Last Sale".
+    # We look at a tight ancestor (parent + grandparent only) so we don't pick
+    # up "Last Sale" mentions from the sales-history chart further down the page.
+    # If the label says "Last Sale" without "Buy Now", treat as no Ask.
+    if ask_el is not None and ask_text:
+        local_text = ""
+        node = ask_el.parent
+        for _ in range(2):
+            if node is None:
+                break
+            local_text = node.get_text(" ", strip=True).lower()
+            node = node.parent
+        has_buy_now = "buy now" in local_text or "place bid" in local_text
+        has_last_sale = "last sale" in local_text or "no asks" in local_text
+        if has_last_sale and not has_buy_now:
+            ask_text = None
+
     title_el = (
         soup.select_one("[data-testid='product-detail-product-title']")
         or soup.select_one("h1")

@@ -56,7 +56,7 @@ async function searchAndScrape(platform: string, query: string): Promise<Listing
     .map((s) => s.value)
     .filter((s): s is ScrapedListing => s !== null);
 
-  return parseScrapedListings(scraped, platform);
+  return parseScrapedListings(scraped, platform, query);
 }
 
 export async function POST(request: Request) {

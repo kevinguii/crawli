@@ -1,9 +1,23 @@
 # Fashion Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (evening — platform order reordered)
+**Last updated:** 2026-05-16 (late evening — relevance filter + StockX last-sale gate)
 **Status:** Firecrawl scraping fully replaced by in-house crawl4ai sidecar. **Structured-data extraction covers 6 of 8 platforms** (Grailed, Depop, StockX, Poshmark, Mercari, Vinted). eBay still bot-blocked; Vestiaire still URL-discovery-blocked. StockX prices are real-time and can race (acceptable). **`/api/search` now streams NDJSON** so the UI can show a live per-platform progress bar instead of a frozen "Searching…" button.
 
-**Latest change (2026-05-16 — platform display order reordered):**
+**Latest change (2026-05-16 late evening — title-relevance filter + StockX Last-Sale guard):**
+- **Title-relevance filter** in [lib/parse.ts](lib/parse.ts) `parseScrapedListings()`. Drops scraped listings whose title shares zero substantive tokens with the user's query. Motivated by a Vinted Versace-Trigreca-sneaker listing being returned for a "fear of god essentials hoodie medium black" query — same `/items/\d+/` URL shape, so the URL filter passed; only post-scrape title comparison can catch this. Implementation: tokenize both sides (lowercase, strip punctuation, length ≥ 3), remove a small stopword set covering articles, colors, sizes, and condition/genre words (so "black" + "medium" can't carry a match), then require at least one shared token. If the query has no substantive tokens after stopwording (e.g. just "black hoodie"), pass everything through — better to show fuzzy results than zero. `parseScrapedListings(scraped, platform, query)` — `query` is new and threaded from `app/api/search/route.ts:searchAndScrape` which already had it. Generalizes across all platforms; no per-platform code.
+- **StockX Last-Sale gate** in [crawl4ai-service/structured_extractors.py](crawl4ai-service/structured_extractors.py) `extract_stockx()`. When the default-variant of a multi-size product has no live Asks, StockX reuses the `[data-testid='trade-box-buy-amount']` element to show the Last Sale figure — surfaced as wrong "Buy Now" numbers in production (e.g. FOG Essentials Chest Logo Hoodie page showing $50 when the actual Buy Now is $135 and $50 is the last sale). Fix: walk up 2 ancestors from the amount element and read the local text. If "Last Sale" or "No Asks" appears AND "Buy Now"/"Place Bid" does not, treat as no Ask and null the price. Tight 2-ancestor scope avoids matching "Last Sale" labels from the sales-history chart further down the page. Listings with `price=null` still pass the `title || price !== null` gate in `parseScrapedListings`, so they render with no price block and sink to the bottom of the sort — accepted tradeoff per user ("better than wrong prices"). Conservative-only — does not attempt to find the lowest Ask across sizes (option A in the diagnosis); revisit if needed.
+
+**Verified by Claude:** `npx tsc --noEmit` clean.
+
+**NOT verified by Claude (needs browser + live sidecar):**
+- That a real "fear of god essentials hoodie medium black" search no longer surfaces the Versace Trigreca Vinted listing.
+- That none of the previously-good results get over-filtered by the relevance check (especially queries that lean heavily on colors/sizes after stopwording).
+
+**Known remaining StockX issues (post-verification):**
+- StockX multi-variant listings still show inconsistent prices across size options (e.g. same product, different sizes have different Asks). The conservative Last-Sale gate prevents reporting Last Sale as Buy Now, but doesn't yet solve the "which size's Ask should we show?" problem. Option A (find lowest Ask across all size variants) remains blocked — requires scraping multiple variant endpoints or parsing a size selector. User preference: generalization > nitpicking, so defer this unless user reports it as a blocker.
+- Non-variant StockX listings should continue showing their Ask price normally — the Last-Sale gate only fires when that specific trade-box context has "Last Sale" + no "Buy Now".
+
+**Previous change (2026-05-16 — platform display order reordered):**
 - **Platform chip order** in `PLATFORM_DOMAINS` and `PLATFORM_NAMES` (lib/types.ts) changed from: Grailed, Depop, StockX, Poshmark, eBay, Mercari, Vinted, Vestiaire Collective
 - **To:** Grailed, Depop, Poshmark, Mercari, Vinted, eBay, Vestiaire Collective, StockX
 - **Default selected platforms** on page load changed from [Grailed, Depop, StockX] to [Grailed, Depop, Poshmark, StockX] (SearchForm.tsx:19).
