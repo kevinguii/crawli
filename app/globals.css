@@ -96,7 +96,7 @@ body {
 .bar-fill-loading {
   position: absolute;
   inset: 0;
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--row-color, var(--accent)) 18%, transparent);
 }
 .bar-fill-loading::after {
   content: "";
@@ -105,7 +105,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--accent) 50%,
+    var(--row-color, var(--accent)) 50%,
     transparent 100%
   );
   animation: loading-shimmer 1.4s linear infinite;
@@ -114,7 +114,7 @@ body {
 .bar-fill-done {
   position: absolute;
   inset: 0;
-  background: var(--accent);
+  background: var(--row-color, var(--accent));
 }
 
 .bar-fill-failed {
@@ -125,4 +125,13 @@ body {
 
 .dot-loading {
   animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+/* Hide scrollbars but keep scrolling functional (e.g. horizontal tab strip). */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

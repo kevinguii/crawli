@@ -57,7 +57,7 @@ export default function ResultsDisplay({ data }: Props) {
       />
 
       <div
-        className="flex gap-1 overflow-x-auto"
+        className="hide-scrollbar flex gap-1 overflow-x-auto"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         {tabs.map((tab) => {

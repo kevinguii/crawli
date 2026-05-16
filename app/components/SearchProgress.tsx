@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { PLATFORM_NAMES } from '@/lib/types';
+import { platformColor } from './platformColors';
 
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
 
@@ -108,19 +109,23 @@ function PlatformRow({
   }
 
   const visibleStages = status === 'loading' ? STAGES.slice(0, stageIdx + 1) : STAGES;
+  const color = platformColor(platform);
+  const rowStyle: CSSProperties = {
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border)',
+    // CSS var consumed by .bar-fill-loading for the shimmer color.
+    ['--row-color' as string]: color,
+  };
 
   return (
-    <div
-      className="rounded-xl p-3 transition-colors"
-      style={{
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border)',
-      }}
-    >
+    <div className="rounded-xl p-3 transition-colors" style={rowStyle}>
       <div className="flex items-center gap-3">
         <div className="flex w-28 shrink-0 items-center gap-2">
-          <StatusDot status={status} />
-          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+          <StatusDot status={status} color={color} />
+          <span
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: status === 'loading' ? color : 'var(--text)' }}
+          >
             {PLATFORM_NAMES[platform] ?? platform}
           </span>
         </div>
@@ -195,12 +200,12 @@ function PlatformRow({
   );
 }
 
-function StatusDot({ status }: { status: CheckpointStatus }) {
+function StatusDot({ status, color }: { status: CheckpointStatus; color: string }) {
   if (status === 'done') {
     return (
       <span
         className="inline-flex h-4 w-4 items-center justify-center rounded-full text-white"
-        style={{ background: 'var(--accent)' }}
+        style={{ background: color }}
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
           <path
@@ -231,7 +236,7 @@ function StatusDot({ status }: { status: CheckpointStatus }) {
   return (
     <span
       className="dot-loading inline-block h-2 w-2 rounded-full"
-      style={{ background: 'var(--accent)' }}
+      style={{ background: color }}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Listing, PLATFORM_NAMES } from '@/lib/types';
+import { platformColor } from './platformColors';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -69,7 +70,7 @@ export default function ListingCard({ listing, isLowest }: Props) {
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <p
           className="text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-dim)' }}
+          style={{ color: platformColor(listing.platform) }}
         >
           {PLATFORM_NAMES[listing.platform] ?? listing.platform}
         </p>
