@@ -1,43 +1,62 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (Phase 2A v3: route protection, theme polish, password placeholder dots)
+**Last updated:** 2026-05-16 (Search page protected, auth complete)
 
-**Latest change (2026-05-16 — Phase 2A v3: route protection, Crawli theme accents, password placeholder dots):**
+**Latest change (2026-05-16 — Search page now protected; sign-out redirects to login):**
 
-Three UX refinements completed:
-1. **Route protection:** Created `app/(protected)/layout.tsx` for server-side auth checks. Any page inside `app/(protected)/*` will automatically redirect unauthenticated users to `/login`. Also created `lib/hooks/useAuth.ts` with `useAuth()` and `useProtectedRoute()` client-side hooks for flexible auth checks. Pattern: to protect a future page like `/saved-searches`, move it into `app/(protected)/saved-searches/page.tsx` — it will inherit the layout's auth guard.
-2. **Crawli theme polish:** 
-   - AuthCard now has a 2px accent-colored top border (`border-top: 2px solid var(--accent)`) for minimal visual interest
-   - The "or" divider between form and Google button changed from 1px gray to 2px accent color (`borderTop: '2px solid var(--accent)'`)
-3. **Password placeholder:** Changed all password fields (login, signup, reset-password) from descriptive text like "Password" / "Create a password (6+ characters)" to dots (`•••••••`) for a cleaner aesthetic.
+Fixed sign-out behavior: moved `/app/page.tsx` → `/app/(protected)/page.tsx` so the search page requires authentication. Now when users sign out, they are immediately redirected to `/login` if they try to access the search page.
 
-**Files added (this round):**
-- [app/(protected)/layout.tsx](app/(protected)/layout.tsx) — server-side auth guard. Any page inside this route group will check `auth.getUser()` and redirect to `/login` if not authenticated. Zero configuration needed — just move pages into this group to protect them.
-- [lib/hooks/useAuth.ts](lib/hooks/useAuth.ts) — two client-side hooks: `useAuth()` returns `{ user, loading, error }` for checking auth state in components; `useProtectedRoute()` redirects to `/login` if not authenticated (useful for Client Components that need auth).
+**Files moved:**
+- `app/page.tsx` → `app/(protected)/page.tsx` (same content, now inherits auth guard from protected layout)
 
-**Files modified (this round):**
-- [app/login/page.tsx](app/login/page.tsx) — password placeholder changed from `"Create a password (6+ characters)"` (signup) / `"Password"` (signin) to `"•••••••"`. Divider changed from 1px `var(--border)` to 2px `var(--accent)`.
-- [app/auth/reset-password/page.tsx](app/auth/reset-password/page.tsx) — both password fields changed placeholder to `"•••••••"`.
-- [app/components/AuthCard.tsx](app/components/AuthCard.tsx) — added `borderTop: '2px solid var(--accent)'` to the card div for a minimal accent highlight at the top.
+**Behavior:**
+- Unauthenticated users cannot access `/` — automatically redirected to `/login`
+- Signed-in users can access search page normally
+- Sign-out followed by any navigation attempt redirects to login
 
-**How to use route protection for future features (Phase 2B Watchlist, Phase 2C Saved Searches):**
-- Move protected pages into the `app/(protected)/` route group. Example: `app/(protected)/watchlist/page.tsx` and `app/(protected)/saved-searches/page.tsx`.
-- The `(protected)` layout automatically checks `auth.getUser()` on every request and redirects unauthenticated users to `/login`.
-- **Server Components** inherit this protection automatically (no code needed).
-- **Client Components** that need to check auth for conditional rendering can import `useAuth()` from `lib/hooks/useAuth.ts`:
-  ```tsx
-  'use client';
-  const { user, loading } = useAuth();
-  if (loading) return <Skeleton />;
-  // Safe to access user here
-  ```
-- For pages that should work both authenticated and unauthenticated (like `/` which shows search to anyone), keep them at `app/` level — don't put them in `(protected)`.
+**Verified:**
+- HTTP 307 redirect working on unauthenticated requests
+- TypeScript clean
+- User tested in browser and confirmed working
 
-**Verified by Claude:**
-- `npx tsc --noEmit` clean.
-- All placeholders updated (verified via `curl`).
-- All accent colors applied (verified via `curl`).
-- Route protection layout created and tested for syntax.
+---
+
+**Previous: Phase 2A COMPLETE (2026-05-16):**
+
+✅ **Phase 2A is DONE and fully tested.** All email+password, Google OAuth, forgot-password, route protection, and theme UX work end-to-end in a real browser.
+
+**What works (verified by user in browser):**
+1. ✅ Sign up with email + password → email confirmation → click link → signed in on `/`
+2. ✅ Sign in with email + password (existing account)
+3. ✅ Forgot password flow (request reset → click email link → set new password → signed in)
+4. ✅ Google OAuth (sign up / sign in)
+5. ✅ Eye-icon password toggle (show/hide)
+6. ✅ Tab sliding animation (slides between "Log in" and "Sign up" smoothly)
+7. ✅ Route protection (unauthenticated users redirected from protected routes to `/login`)
+8. ✅ Light and dark mode (all pages render cleanly in both themes)
+
+**Phase 2A summary (what was built):**
+- Email + password auth (sign up, sign in, forgot password, reset password)
+- Google OAuth integration
+- Route protection: `app/(protected)/*` auto-redirects unauthenticated users
+- Client-side auth hooks: `useAuth()` and `useProtectedRoute()`
+- Theme-aware auth UI with accent colors on AuthCard and dividers
+- Password placeholders changed to dots (•••••••) for cleaner aesthetic
+
+**Files key to route protection (for Phase 2B/2C):**
+- [app/(protected)/layout.tsx](app/(protected)/layout.tsx) — server-side auth guard
+- [lib/hooks/useAuth.ts](lib/hooks/useAuth.ts) — `useAuth()` and `useProtectedRoute()` hooks
+
+**How to protect future pages (Phase 2B Watchlist, Phase 2C Saved Searches):**
+- Move them into `app/(protected)/` route group, e.g., `app/(protected)/watchlist/page.tsx`
+- The layout automatically checks `auth.getUser()` and redirects to `/login` if not authenticated
+- Server Components inherit protection automatically; Client Components can use `const { user, loading } = useAuth()`
+
+**Verified by user in browser:**
+- All auth flows (signup, signin, password reset) work end-to-end
+- Google OAuth works
+- Tab animation, eye-icon toggle, theme switching all work
+- Error banners display correctly (e.g., reset link expired, callback failed)
 
 ---
 

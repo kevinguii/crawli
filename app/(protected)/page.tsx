@@ -1,6 +1,6 @@
-import SearchSection from './components/SearchSection';
-import ThemeToggle from './components/ThemeToggle';
-import AuthButton from './components/AuthButton';
+import SearchSection from '@/app/components/SearchSection';
+import ThemeToggle from '@/app/components/ThemeToggle';
+import AuthButton from '@/app/components/AuthButton';
 
 export default function Home() {
   return (
