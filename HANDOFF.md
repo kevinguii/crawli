@@ -1,12 +1,105 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (night — Phase 2 auth groundwork: Supabase dashboard + DB schema configured, code not yet written)
+**Last updated:** 2026-05-16 (night — Phase 2A v2: email+password auth with tabs, magic link removed, forgot-password flow added)
 
-**Latest change (2026-05-16 night — Phase 2 auth groundwork, dashboard + DB only, no code yet):**
+**Latest change (2026-05-16 night — Phase 2A v2: switched magic-link → email+password, added tabs, Forgot password flow):**
 
-Goal: lay the foundation for user accounts so saved searches, watchlist, and price alerts can be tied to a real identity. **No code was changed this round** — only Supabase dashboard config and database schema. The Next.js side has **zero auth code** still (no packages installed, no `lib/supabase/`, no `middleware.ts`, no auth UI).
+After Phase 2A v1 shipped (Google OAuth confirmed working in browser by user; magic-link sign-in worked but felt slow), user requested a redesign:
+- Magic link removed entirely. Users now sign up/in with **email + password** (required).
+- Login page has Sign in / Sign up tabs at the top with a sliding indicator (transform-based, 200ms ease-out).
+- Forgot-password flow added (request reset link → click email → set new password).
+- Email confirmation is still required for new accounts (Supabase default).
+- Password storage: handled entirely by Supabase Auth in `auth.users`. **No new column on `public.profiles`.** The user briefly worried about needing one — clarified that Supabase hashes/stores passwords internally and we never touch them.
 
-What was configured (user-completed in external dashboards; Claude can't directly verify those):
+**Files added (this round):**
+- [app/components/AuthCard.tsx](app/components/AuthCard.tsx) — shared wrapper for all auth pages: gradient background, centered card with logo at top, theme-aware. Also exports `GoogleIcon`, `EyeIcon`, `EyeOffIcon` reusable SVGs.
+- [app/forgot-password/page.tsx](app/forgot-password/page.tsx) — single email field that calls `supabase.auth.resetPasswordForEmail()` with `redirectTo: /auth/callback?next=/auth/reset-password`. On success → `/check-email?mode=reset`.
+- [app/auth/reset-password/page.tsx](app/auth/reset-password/page.tsx) — new-password + confirm-password form. On mount, calls `auth.getUser()`; if no session (link expired/tampered), redirects to `/login?error=reset_expired`. On submit, calls `auth.updateUser({ password })` then routes to `/`.
+
+**Files rewritten (this round):**
+- [app/login/page.tsx](app/login/page.tsx) — full rewrite. Email + password inputs, password show/hide eye-icon toggle, Sign in / Sign up tabs with a sliding indicator, `?tab=signup` query param to deep-link to the Sign up tab, `Forgot password?` link (Sign in tab only), Google OAuth at the bottom under an "or" divider. Reads `?error=callback_failed` and `?error=reset_expired` query params to show appropriate banners. `autoComplete` hints (`current-password` for Sign in, `new-password` for Sign up) so password managers behave correctly.
+- [app/check-email/page.tsx](app/check-email/page.tsx) — parametric on `?mode=signup|reset`. Signup mode: "Confirm your email" + "click the link to verify your account and sign in." Reset mode: "Reset link sent" + "click the link to set a new password." Uses the shared `AuthCard`.
+
+**Files unchanged but verified still working:**
+- [lib/supabase/client.ts](lib/supabase/client.ts), [lib/supabase/server.ts](lib/supabase/server.ts), [proxy.ts](proxy.ts), [app/auth/callback/route.ts](app/auth/callback/route.ts), [app/components/AuthButton.tsx](app/components/AuthButton.tsx), [app/page.tsx](app/page.tsx), [app/globals.css](app/globals.css).
+- The callback route already accepts `?next=` and redirects there — used by the reset-password flow to land on `/auth/reset-password` instead of `/`.
+
+**Verified by Claude:**
+- `npx tsc --noEmit` clean.
+- `npm run dev` (Next 16.2.6, Turbopack) boots clean. No deprecation warnings (proxy.ts file convention).
+- All routes return correct status: `GET /` → 200, `GET /login` → 200, `GET /login?tab=signup` → 200, `GET /forgot-password` → 200, `GET /auth/reset-password` → 200, `GET /check-email?mode=signup` → 200, `GET /check-email?mode=reset` → 200, `GET /auth/callback` (no code) → 307 redirect to `/login?error=callback_failed`. `proxy.ts` runs cleanly on every request (Turbopack timings show ~2ms).
+
+**NOT verified by Claude (cannot, needs browser + real Supabase round-trip):**
+- That the sliding tab indicator animates smoothly between Sign in and Sign up.
+- That the eye-icon password toggle reveals/hides the password as expected.
+- That signup → email confirmation → click link actually lands the user signed-in on `/`.
+- That `signInWithPassword` rejects bad passwords with a readable error.
+- That `resetPasswordForEmail` → click email link → reset-password page → new password → signed-in actually works end-to-end.
+- That the `?error=callback_failed` and `?error=reset_expired` banners render correctly when triggered.
+- That the form submits when the user presses Enter in the password field (it should — `<button type="submit">` inside `<form onSubmit={...}>`).
+
+**Things to try in browser after this lands:**
+1. `npm run dev:all` → visit `http://localhost:3000` → click "Sign in" in nav.
+2. Click "Sign up" tab → enter email + new password → click "Create account" → should land on `/check-email?mode=signup` showing the email address. Confirm email arrives → click → return to `/` signed in.
+3. Sign out → click "Sign in" tab → enter same email + password → click "Sign in" → should land on `/` signed in.
+4. Sign out → "Sign in" tab → click "Forgot password?" → enter email → click "Send reset link" → land on `/check-email?mode=reset`. Click reset email → land on `/auth/reset-password` → enter new password twice → click "Update password" → land on `/`.
+5. Press Enter in either input field to verify form submission.
+6. Toggle dark/light theme on each auth page to verify both look clean.
+
+**Google OAuth consent-screen polish (user-asked but not done — instructions only):**
+The user noted that the Google consent screen says "Sign in to peyqxfijdrziqfjkxjsn.supabase.co" which looks unbranded.
+
+- **Free fix (recommended for now)**: In Google Cloud Console → APIs & Services → OAuth consent screen, set:
+  - **App name**: "Crawli"
+  - **User support email**: owner@example.com (already set)
+  - **App logo**: upload a Crawli logo (square PNG, 120x120+ recommended)
+  - **Developer contact**: owner@example.com
+  After saving, the Google prompt becomes "Sign in to Crawli to continue to peyqxfijdrziqfjkxjsn.supabase.co" — the Crawli branding is now front-and-center.
+- **Proper fix (paid)**: Supabase Pro plan ($25/mo) supports Custom Domains. You'd CNAME e.g. `auth.crawli.com` to the Supabase project, then the consent screen reads "Sign in to auth.crawli.com". Defer until ready to upgrade.
+
+**Cost posture (Supabase free tier):** Email confirmation emails + password reset emails are counted against Supabase's free-tier email quota (4 emails per hour per project on the inbuilt SMTP — VERY low). If signup/reset emails start failing, configure a custom SMTP in Supabase → Authentication → Email Templates → SMTP Settings (Resend, SendGrid, AWS SES, etc., all have generous free tiers). Not urgent until usage picks up.
+
+
+
+**Important Next.js 16 gotcha discovered this session:** Next 16 deprecated the `middleware.ts` file convention in favor of `proxy.ts`. The dev server prints a deprecation warning if you use `middleware.ts`, and Next 17 will remove support entirely. Same API — just rename the file to `proxy.ts` and rename `export async function middleware(...)` to `export async function proxy(...)`. The `config.matcher` export is unchanged.
+
+**Files added:**
+- [lib/supabase/client.ts](lib/supabase/client.ts) — browser client via `createBrowserClient`. Use in Client Components.
+- [lib/supabase/server.ts](lib/supabase/server.ts) — server client via `createServerClient` + async `cookies()`. Use in Server Components, Route Handlers, Server Actions. The try/catch around `cookieStore.set` is required because Server Components can't mutate cookies; the proxy handles refresh.
+- [proxy.ts](proxy.ts) — runs `supabase.auth.getUser()` on every matched request to refresh the cookie before route handlers see it. Matcher excludes `_next/static`, `_next/image`, `favicon.ico`, and image extensions.
+- [app/auth/callback/route.ts](app/auth/callback/route.ts) — GET handler that exchanges the OAuth/magic-link `code` query param for a session, then redirects to `next` (defaults `/`). On failure, redirects to `/login?error=callback_failed`.
+- [app/login/page.tsx](app/login/page.tsx) — Client Component. Two auth methods in one card: Google OAuth button (full-color SVG logo, `btn-secondary` chrome) + email magic-link form (`input-base` + `btn-primary`). Wraps in `<Suspense>` because `useSearchParams` requires it. Reads `?error=callback_failed` to show a banner if the callback failed.
+- [app/check-email/page.tsx](app/check-email/page.tsx) — Post-magic-link confirmation screen. Reads `?email=...` from query params to display the address. Mail-icon glyph in `var(--accent-soft)` circle.
+- [app/components/AuthButton.tsx](app/components/AuthButton.tsx) — Session-aware nav button. Renders a skeleton during initial `getUser()`, "Sign in" link (btn-primary) when signed out, or an avatar-initial + chevron dropdown when signed in. Subscribes to `auth.onAuthStateChange` so sign-in/sign-out reflects without a refresh. Click-outside + Escape close the dropdown.
+
+**Files modified:**
+- [app/page.tsx](app/page.tsx) — Nav right cluster now wraps `<ThemeToggle />` + `<AuthButton />` in a `flex items-center gap-3` div.
+- [app/globals.css](app/globals.css) — Added 4 reusable utility classes (`btn-primary`, `btn-secondary`, `input-base`, `menu-item`) so auth/form components stay theme-token-driven without inline `onMouseEnter`/`Leave` hacks. All use `transition-*` for the user's "smooth transitions" requirement.
+- `package.json` — Added `@supabase/supabase-js` and `@supabase/ssr` (78 transitive deps; 2 moderate npm-audit warnings are pre-existing).
+
+**Verified by Claude:**
+- `npx tsc --noEmit` clean.
+- `npm run dev` (Next 16.2.6, Turbopack) boots clean — **no warnings** after the `middleware.ts → proxy.ts` rename. Earlier "deprecated" warning is what tipped us off.
+- All routes return correct status: `GET /` → 200, `GET /login` → 200, `GET /check-email` → 200, `GET /auth/callback` (no `code`) → 307 redirect to `/login?error=callback_failed`. `proxy.ts` runs successfully on every request (visible in Turbopack timings: `proxy.ts: 3–656ms`).
+
+**NOT verified by Claude (cannot, needs browser + real Supabase round-trip):**
+- That `/login` renders correctly in both dark and light themes (especially the Google button against `--surface` and the magic-link input focus ring).
+- That clicking "Continue with Google" actually completes the OAuth flow — depends on the user's Google Cloud + Supabase config being correct (no way to verify from here).
+- That a magic-link email is actually delivered and clicking it lands on `/` signed in.
+- That a `profiles` row is auto-created on first sign-in (the trigger should fire, but we can't query the DB from here).
+- That the AuthButton dropdown animates smoothly and the click-outside / Escape close works as expected.
+
+**Test plan for the next session (what the user should run):**
+1. `npm run dev:all` boots.
+2. Visit `http://localhost:3000` — nav shows "Sign in" button on the right; search still works as before.
+3. Click "Sign in" → `/login` page renders the Crawli logo, Google button, email input, primary "Send magic link" button. Test both dark and light themes.
+4. Magic link: enter your email → click Send → lands on `/check-email` showing your address. Open the email → click the link → returns to `/` and the nav now shows a user avatar + dropdown.
+5. Google: click "Continue with Google" → Google consent screen → returns to `/` signed in. If you see `redirect_uri_mismatch`, the Google Cloud Console redirect URI doesn't exactly match Supabase's `https://peyqxfijdrziqfjkxjsn.supabase.co/auth/v1/callback`.
+6. Click avatar → "Sign out" → returns to signed-out state.
+7. After signing in, visit Supabase Dashboard → Table Editor → `public.profiles` → confirm a row exists for your user with the email populated (auto-created by `handle_new_user` trigger).
+8. Refresh the page while signed in — session should persist (cookie-based via `@supabase/ssr`).
+
+**Background — what was configured at the dashboard level (carried over from the previous block):**
 - **Supabase Auth providers** — Email enabled with magic links + email confirmations; Google OAuth enabled with Client ID + Secret from a Google Cloud Console OAuth 2.0 credential.
 - **Google Cloud Console** — Web-app OAuth 2.0 client created; authorized redirect URI is `https://peyqxfijdrziqfjkxjsn.supabase.co/auth/v1/callback` (Supabase's standard callback host).
 - **Supabase URL configuration** — Site URL set to `http://localhost:3000`; redirect URLs include `http://localhost:3000/**` for local dev.
@@ -18,29 +111,6 @@ What was configured (user-completed in external dashboards; Claude can't directl
   - Trigger `on_profile_updated` → `handle_updated_at()` on `profiles` update → bumps `updated_at`.
 
 **Cost posture (verified from Supabase public pricing):** Google OAuth itself is free with no per-user charge. Supabase free tier covers 50k MAU and magic-link emails are included. We're nowhere near scale-out concerns — proceed without cost worry.
-
-**What's NOT done yet (the actual implementation work, blocked on nothing):**
-1. `npm install @supabase/supabase-js @supabase/ssr` (use `@supabase/ssr`, NOT the deprecated `@supabase/auth-helpers-nextjs`)
-2. `lib/supabase/client.ts` (browser client) + `lib/supabase/server.ts` (server client, cookie-based for SSR)
-3. `middleware.ts` at project root — session-refresh on every request
-4. `app/auth/callback/route.ts` — OAuth + magic-link code exchange
-5. `app/(auth)/login/page.tsx`, `app/(auth)/signup/page.tsx`, `app/(auth)/check-email/page.tsx` — must match Crawli theme (dark `#111110` bg, accent `#E24B4A` red-to-yellow gradient, Geist font, `data-theme` aware, smooth `transition-all duration-200` on interactives)
-6. `app/components/AuthButton.tsx` + nav integration in `app/page.tsx` — session-aware sign-in / account dropdown
-7. Auth is **optional** for search — unauthenticated users still search freely; auth only gates Phase 2B+ persistence features. **Do not** add auth to `/api/search`.
-
-**Things Claude could not directly verify (user-asserted, trust-but-flag):**
-- That the Google OAuth credentials in Supabase actually match the ones in Google Cloud Console (a typo on either side → `redirect_uri_mismatch` at sign-in).
-- That the `profiles` table + triggers were actually applied (no DB introspection available from this session).
-- That magic-link emails actually deliver (Supabase free-tier email sometimes lands in spam; configure custom SMTP later if it becomes a problem).
-
-**Test plan when the auth code lands (for the next session):**
-1. `npm run dev:all` boots clean; `npx tsc --noEmit` clean.
-2. `/login` renders correctly in dark + light mode.
-3. Email magic link: enter email → email arrives → click → lands on `/` logged in → nav shows user state.
-4. Google OAuth: click Continue with Google → Google consent → redirect to `/auth/callback` → lands on `/` logged in.
-5. Verify a `profiles` row exists in Supabase for each newly signed-in user (the trigger should auto-create it).
-6. Sign out from nav → session clears → reload page → still logged out.
-7. Hard refresh while signed in → session persists (cookie-based).
 
 **Phase 2 sequence (decided 2026-05-16; supersedes the older "Phase 2 — saved searches, price history, watchlist, auth" bullet in §7 D):**
 - **Phase 2A — Auth** (current). Email magic link + Google OAuth. Foundation for everything that follows.

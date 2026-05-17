@@ -1,5 +1,6 @@
 import SearchSection from './components/SearchSection';
 import ThemeToggle from './components/ThemeToggle';
+import AuthButton from './components/AuthButton';
 
 export default function Home() {
   return (
@@ -30,7 +31,10 @@ export default function Home() {
               Crawli
             </span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <AuthButton />
+          </div>
         </div>
       </nav>
 

@@ -151,3 +151,57 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ---------- Auth + general button/input utilities ---------- */
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  transition: background-color 200ms ease, opacity 200ms ease;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  transition: background-color 200ms ease, border-color 200ms ease, opacity 200ms ease;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-base {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: border-color 200ms ease, box-shadow 200ms ease, opacity 200ms ease;
+}
+.input-base::placeholder {
+  color: var(--text-dim);
+}
+.input-base:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+.input-base:disabled {
+  opacity: 0.5;
+}
+
+.menu-item {
+  color: var(--text);
+  transition: background-color 200ms ease;
+}
+.menu-item:hover {
+  background: var(--surface-hover);
+}
