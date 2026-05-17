@@ -1,8 +1,47 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (night — Phase 2A v2: email+password auth with tabs, magic link removed, forgot-password flow added)
+**Last updated:** 2026-05-16 (Phase 2A v3: route protection, theme polish, password placeholder dots)
 
-**Latest change (2026-05-16 night — Phase 2A v2: switched magic-link → email+password, added tabs, Forgot password flow):**
+**Latest change (2026-05-16 — Phase 2A v3: route protection, Crawli theme accents, password placeholder dots):**
+
+Three UX refinements completed:
+1. **Route protection:** Created `app/(protected)/layout.tsx` for server-side auth checks. Any page inside `app/(protected)/*` will automatically redirect unauthenticated users to `/login`. Also created `lib/hooks/useAuth.ts` with `useAuth()` and `useProtectedRoute()` client-side hooks for flexible auth checks. Pattern: to protect a future page like `/saved-searches`, move it into `app/(protected)/saved-searches/page.tsx` — it will inherit the layout's auth guard.
+2. **Crawli theme polish:** 
+   - AuthCard now has a 2px accent-colored top border (`border-top: 2px solid var(--accent)`) for minimal visual interest
+   - The "or" divider between form and Google button changed from 1px gray to 2px accent color (`borderTop: '2px solid var(--accent)'`)
+3. **Password placeholder:** Changed all password fields (login, signup, reset-password) from descriptive text like "Password" / "Create a password (6+ characters)" to dots (`•••••••`) for a cleaner aesthetic.
+
+**Files added (this round):**
+- [app/(protected)/layout.tsx](app/(protected)/layout.tsx) — server-side auth guard. Any page inside this route group will check `auth.getUser()` and redirect to `/login` if not authenticated. Zero configuration needed — just move pages into this group to protect them.
+- [lib/hooks/useAuth.ts](lib/hooks/useAuth.ts) — two client-side hooks: `useAuth()` returns `{ user, loading, error }` for checking auth state in components; `useProtectedRoute()` redirects to `/login` if not authenticated (useful for Client Components that need auth).
+
+**Files modified (this round):**
+- [app/login/page.tsx](app/login/page.tsx) — password placeholder changed from `"Create a password (6+ characters)"` (signup) / `"Password"` (signin) to `"•••••••"`. Divider changed from 1px `var(--border)` to 2px `var(--accent)`.
+- [app/auth/reset-password/page.tsx](app/auth/reset-password/page.tsx) — both password fields changed placeholder to `"•••••••"`.
+- [app/components/AuthCard.tsx](app/components/AuthCard.tsx) — added `borderTop: '2px solid var(--accent)'` to the card div for a minimal accent highlight at the top.
+
+**How to use route protection for future features (Phase 2B Watchlist, Phase 2C Saved Searches):**
+- Move protected pages into the `app/(protected)/` route group. Example: `app/(protected)/watchlist/page.tsx` and `app/(protected)/saved-searches/page.tsx`.
+- The `(protected)` layout automatically checks `auth.getUser()` on every request and redirects unauthenticated users to `/login`.
+- **Server Components** inherit this protection automatically (no code needed).
+- **Client Components** that need to check auth for conditional rendering can import `useAuth()` from `lib/hooks/useAuth.ts`:
+  ```tsx
+  'use client';
+  const { user, loading } = useAuth();
+  if (loading) return <Skeleton />;
+  // Safe to access user here
+  ```
+- For pages that should work both authenticated and unauthenticated (like `/` which shows search to anyone), keep them at `app/` level — don't put them in `(protected)`.
+
+**Verified by Claude:**
+- `npx tsc --noEmit` clean.
+- All placeholders updated (verified via `curl`).
+- All accent colors applied (verified via `curl`).
+- Route protection layout created and tested for syntax.
+
+---
+
+**Previous change (2026-05-16 night — Phase 2A v2: switched magic-link → email+password, added tabs, Forgot password flow):**
 
 After Phase 2A v1 shipped (Google OAuth confirmed working in browser by user; magic-link sign-in worked but felt slow), user requested a redesign:
 - Magic link removed entirely. Users now sign up/in with **email + password** (required).

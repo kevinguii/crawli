@@ -168,7 +168,7 @@ function LoginContent() {
             type={showPassword ? 'text' : 'password'}
             required
             minLength={6}
-            placeholder={tab === 'signup' ? 'Create a password (6+ characters)' : 'Password'}
+            placeholder="•••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
@@ -211,14 +211,14 @@ function LoginContent() {
       </form>
 
       <div className="flex items-center my-6">
-        <div className="flex-1" style={{ borderTop: '1px solid var(--border)' }} />
+        <div className="flex-1" style={{ borderTop: '2px solid var(--accent)' }} />
         <span
           className="px-3 text-xs uppercase tracking-wider"
           style={{ color: 'var(--text-dim)' }}
         >
           or
         </span>
-        <div className="flex-1" style={{ borderTop: '1px solid var(--border)' }} />
+        <div className="flex-1" style={{ borderTop: '2px solid var(--accent)' }} />
       </div>
 
       <button

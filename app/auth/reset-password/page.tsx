@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
             type={showPassword ? 'text' : 'password'}
             required
             minLength={6}
-            placeholder="New password (6+ characters)"
+            placeholder="•••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
@@ -110,7 +110,7 @@ export default function ResetPasswordPage() {
           type={showPassword ? 'text' : 'password'}
           required
           minLength={6}
-          placeholder="Confirm new password"
+          placeholder="•••••••"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"

@@ -15,6 +15,7 @@ export default function AuthCard({ children }: { children: ReactNode }) {
         style={{
           background: 'var(--bg-elevated)',
           border: '1px solid var(--border)',
+          borderTop: '2px solid var(--accent)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
         }}
       >
