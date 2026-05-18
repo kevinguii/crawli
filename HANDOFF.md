@@ -1,8 +1,86 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Phase 2B Saves + Profile editing shipped)
+**Last updated:** 2026-05-18 (Phase 2C Watchlist with manual refresh shipped)
 
-**Latest change (2026-05-18 — Phase 2B Saves feature + Profile page + editable profile):**
+**Latest change (2026-05-18 — Phase 2C Watchlist with manual refresh):**
+
+✅ **Watchlist (eye icon) is live alongside Saves (heart icon).** Two independent features per the user's decision this session: a listing can be saved, watched, both, or neither. Manual "Refresh prices" button re-scrapes all rows via the existing sidecar; auto-refresh-on-login and email alerts (Phase 2D) deferred.
+
+**What was built:**
+
+1. **`watchlist` table in Supabase** (user ran the migration in SQL editor). Schema:
+   ```sql
+   create table public.watchlist (
+     id uuid primary key default gen_random_uuid(),
+     user_id uuid not null references auth.users(id) on delete cascade,
+     listing_url text not null,
+     platform text not null,
+     title text not null,
+     price_at_add numeric,
+     price_current numeric,
+     currency text not null default 'USD',
+     image_url text,
+     is_sold boolean not null default false,
+     last_checked_at timestamptz,
+     created_at timestamptz not null default now(),
+     unique (user_id, listing_url)
+   );
+   create index watchlist_user_recent_idx on public.watchlist (user_id, created_at desc);
+   ```
+   RLS: select/insert/update/delete WHERE `auth.uid() = user_id`. Plus the now-standard `grant select, insert, update, delete on public.watchlist to authenticated` (HANDOFF §11 #26 still applies — must grant or you get `42501`).
+
+2. **API routes (mirror saves pattern):**
+   - [app/api/watchlist/route.ts](app/api/watchlist/route.ts) — `POST` (add; on `23505` returns existing id w/ `already_watched: true`), `GET` (list w/ `?search=&platform=`), `DELETE` (`?url=` for toggle).
+   - [app/api/watchlist/[id]/route.ts](app/api/watchlist/[id]/route.ts) — `DELETE` by id (WatchlistTab remove).
+   - [app/api/watchlist/check/route.ts](app/api/watchlist/check/route.ts) — `POST {urls}` → `{watched_urls}` for hydration.
+   - [app/api/watchlist/refresh/route.ts](app/api/watchlist/refresh/route.ts) — `POST` (no body). Calls `scrapeViaSidecar(url, platform)` from `lib/scraper.ts` with **concurrency 4** (custom worker pool, NOT unbounded `Promise.all` — avoid hammering the sidecar/Firecrawl path). For each row: success → update `price_current`, `is_sold`, `last_checked_at`. Failure → bump `last_checked_at` only, leave price/sold flag alone (URL may be transiently bot-blocked; don't flip `is_sold` on null). Returns `{updated, failed, rows}` so UI can replace state in one round-trip.
+
+3. **Client provider:** [app/components/WatchlistProvider.tsx](app/components/WatchlistProvider.tsx) is a near-direct copy of SavesProvider. Exposes `{ watchedUrls, isWatched, toggleWatch, hydrateUrls, refresh }`. Toasts: green `toast.success('Added to Watchlist')` on add; red-X variant for remove (HANDOFF §11 #28 — don't use `toast.error` for non-error tones). Mounted **inside** SavesProvider in [app/(protected)/layout.tsx](app/(protected)/layout.tsx).
+
+4. **Eye icon on `ListingCard`** ([app/components/ListingCard.tsx](app/components/ListingCard.tsx)) — positioned at `right: 0.5rem, top: 3rem` (just below the heart). Same hover-only visibility rule (`opacity: watched || hovered ? 1 : 0`). Hidden when signed out. SVG fills with `var(--accent)` when watched.
+
+5. **Hydration in search results:** [app/components/ResultsDisplay.tsx](app/components/ResultsDisplay.tsx) now calls **both** `useSaves().hydrateUrls(urls)` AND `useWatchlist().hydrateUrls(urls)` in one effect, so heart + eye both render their correct filled state on initial paint without N round-trips.
+
+6. **WatchlistTab UI** ([app/components/profile/WatchlistTab.tsx](app/components/profile/WatchlistTab.tsx) — replaced the placeholder). Mirrors SavesTab (debounced search, optimistic remove, empty state) plus:
+   - Header row: search input + **"Refresh prices"** button (accent-colored, spinner on click, disabled while in-flight or when watchlist is empty).
+   - "Last refreshed: {relativeTime(newestChecked)}" line below the header.
+   - WatchCard renders price block with a **delta chip** when `price_current !== price_at_add`: `▼ -$X (-Y%)` in `var(--success)` for drops, `▲ +$X (+Y%)` in `var(--text-muted)` for rises. Hidden when flat.
+   - **"Sold" badge** overlays the image when `is_sold` is true (top-left, dark pill).
+   - Footer line: platform · "watching since {date}" · "checked {relativeTime(last_checked_at)}" when present.
+   - Remove button is an eye-with-slash icon variant.
+
+**Decisions confirmed this session:**
+- Two separate features (not a flag on Save).
+- Manual refresh first; defer auto-refresh-on-login and cron-driven alerts to Phase 2D.
+- Eye visible on hover only, mirrors heart.
+- Schema as proposed in HANDOFF §12 (with `currency` added).
+
+**Verified end-to-end in browser by user:**
+- `tsc --noEmit` clean.
+- Adding to watchlist works seamlessly (eye toggle on `ListingCard`, hydration on reload, toasts correct).
+- **NOT yet verified by user:** "Refresh prices" button flow + price delta chip + Sold badge rendering. Recommended next session.
+
+**Anti-bot regression observed during this session's testing (NEW, surface-level concern):**
+
+During a single "fear of god essentials hoodie" search this session, the sidecar logged multiple `Blocked by anti-bot protection: HTTP 403 with HTML content` failures on **Depop** and **Grailed** URLs — platforms that have been reliable for weeks. Specific failures (paths shortened):
+- `depop.com/products/therealduntdadun-…`, `bird1381-…`, `incogar-…` → all 403, response body 23949 bytes (consistent Depop block page).
+- `grailed.com/listings/73684073-…`, `75493584-…`, `77960479-…` → all 403, response body 4265 bytes (consistent Grailed block page).
+- Structured tier failed → LLM fallback also returned `[llm] no extracted content` for the same URLs (since the HTML it sees is the block page, not the listing).
+- Other URLs from the same query (other Depop / Grailed listings, all Poshmark URLs) scraped fine in the same run. So it's per-URL rate limiting / cookie-state, not a wholesale block.
+
+Hypotheses (un-investigated):
+1. **Concurrency or cadence regression** — we're hitting the same domain too fast for some subset of URLs. The successful URLs finished first; the later/duplicate-pattern URLs got 403'd. Possibly related to our search loop's per-platform concurrency.
+2. **Stealth / fingerprint drift** — Depop/Grailed tightened their bot checks; our `enable_stealth=True` + random UA isn't enough for ~30% of requests.
+3. **The same URL retried twice in one search** (LLM fallback re-fetches), doubling exposure. Logs show this clearly: `incogar-…` is fetched once and 403s, then re-fetched moments later via the LLM fallback tier and 403s again.
+
+**Recommended investigation when picking back up:**
+- Check whether Depop+Grailed 403s correlate with the rapid LLM-fallback re-fetch (structured-tier 403 → immediately re-tries via LLM with the same blocked URL).
+- Consider a short backoff (5–10s) before LLM fallback when structured tier failed with a 403 specifically, so the second attempt has a fresh fingerprint window.
+- Confirm the watchlist `/refresh` endpoint will hit the same wall under concurrency 4 — may need to lower further or stagger.
+
+Added to §7 as a new open problem (F).
+
+---
 
 ✅ **Saves (liked listings) feature is fully working** + a dedicated `/profile` page with editable display name, bio, and avatar upload. A separate `/settings` placeholder page also exists. Phase 2B from §12 is done; Watchlist (Phase 2C) is next.
 
@@ -609,11 +687,13 @@ POST /api/search ─────────────────────
                                                                ▼
 ```
 
-**Saves + Profile editing layer (Phase 2B, complete as of 2026-05-18):**
-- `(protected)/layout.tsx` mounts `<SavesProvider>` (React Context) and sonner `<Toaster>` once for the whole protected subtree
-- `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh }`. State is hydrated via `POST /api/saves/check` (batched), updated optimistically on toggle, and cleared on sign-out
-- Heart button on `ListingCard` calls `toggleSave(listing)` — POST `/api/saves` or DELETE `/api/saves?url=`. Hidden when signed out.
+**Saves + Watchlist + Profile editing layer (Phase 2B + 2C, complete as of 2026-05-18):**
+- `(protected)/layout.tsx` mounts `<SavesProvider>` wrapping `<WatchlistProvider>` (both React Contexts) and sonner `<Toaster>` once for the whole protected subtree
+- `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh }`. State hydrated via `POST /api/saves/check` (batched), optimistic on toggle, cleared on sign-out
+- `WatchlistProvider` exposes `{ watchedUrls, isWatched, toggleWatch, hydrateUrls, refresh }` — same shape; hits `/api/watchlist/check`
+- Heart + Eye buttons on `ListingCard` call `toggleSave` / `toggleWatch`. Both hidden when signed out; both follow the same hover-visibility rule. Independent features.
 - `/profile` server component fetches the `profiles` row, renders `ProfileHeader` + tabs (Saves | Watchlist)
+- `WatchlistTab` has a **"Refresh prices"** button → `POST /api/watchlist/refresh` → re-scrapes all rows via `scrapeViaSidecar` at concurrency 4, updates `price_current` / `is_sold` / `last_checked_at`. Auto-refresh-on-login is deferred to Phase 2D.
 - "Edit profile" → `EditProfileModal` (avatar upload via browser Supabase client → public bucket → PATCH `/api/profile` with new `avatar_url`)
 - `/settings` is a standalone page (not a tab)
 
@@ -644,10 +724,15 @@ fashion-crawler-crawl4ai/
 │   │   │   ├── route.ts              ← POST (save), GET (list w/ ?search=&platform=), DELETE (?url=)
 │   │   │   ├── [id]/route.ts         ← DELETE by save id (used by SavesTab card remove)
 │   │   │   └── check/route.ts        ← POST batch URL check { urls } → { saved_urls }
+│   │   ├── watchlist/
+│   │   │   ├── route.ts              ← POST (add), GET (list w/ ?search=&platform=), DELETE (?url=)
+│   │   │   ├── [id]/route.ts         ← DELETE by watch id (used by WatchlistTab remove)
+│   │   │   ├── check/route.ts        ← POST batch URL check { urls } → { watched_urls }
+│   │   │   └── refresh/route.ts      ← POST re-scrape all rows via sidecar (concurrency 4)
 │   │   ├── profile/route.ts          ← PATCH display_name / bio / avatar_url
 │   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
 │   ├── (protected)/                  ← auth-protected route group
-│   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> + <Toaster>
+│   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> → <WatchlistProvider> + <Toaster>
 │   │   ├── page.tsx                  ← search page (requires auth)
 │   │   ├── profile/page.tsx          ← profile page (server: fetches profiles row → renders header + tabs)
 │   │   └── settings/page.tsx        ← standalone settings page (placeholder)
@@ -660,22 +745,23 @@ fashion-crawler-crawl4ai/
 │   │   ├── AuthCard.tsx              ← shared auth UI wrapper (logo, gradient background, theme-aware)
 │   │   ├── AuthButton.tsx            ← session-aware nav button (dropdown: Profile / Settings / Sign out)
 │   │   ├── SavesProvider.tsx         ← Context: savedUrls Set, optimistic toggleSave, hydrate batch
+│   │   ├── WatchlistProvider.tsx     ← Context: watchedUrls Set, optimistic toggleWatch, hydrate batch
 │   │   ├── SearchForm.tsx            ← query + platform checkboxes
 │   │   ├── SearchSection.tsx         ← client state container
 │   │   ├── ResultsDisplay.tsx        ← tabbed results grid + calls hydrateUrls() per search
-│   │   ├── ListingCard.tsx           ← single listing card + heart button (hidden when signed out)
+│   │   ├── ListingCard.tsx           ← single listing card + heart + eye buttons (hidden when signed out)
 │   │   ├── PriceSummary.tsx          ← min/max/avg stats bar
 │   │   └── profile/
 │   │       ├── ProfileHeader.tsx     ← client: avatar + name + email + joined + bio + Edit button
 │   │       ├── EditProfileModal.tsx  ← modal: avatar upload → Supabase Storage; PATCH /api/profile
 │   │       ├── ProfileTabsClient.tsx ← Saves | Watchlist tabs (URL-driven via ?tab=)
 │   │       ├── SavesTab.tsx          ← debounced search, optimistic remove, empty state
-│   │       └── WatchlistTab.tsx      ← placeholder for Phase 2C
+│   │       └── WatchlistTab.tsx      ← grid + Refresh prices button + price delta chip + Sold badge
 │   ├── layout.tsx                    ← root layout (suppressHydrationWarning for Grammarly)
 │   └── globals.css                   ← Tailwind v4 + CSS vars + theme tokens
 │
 ├── lib/
-│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save, Profile
+│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save, Watchlist, Profile
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
 │   ├── parse.ts                      ← filterListingUrls(), parseScrapedListings()
@@ -985,13 +1071,31 @@ The structured extractor reads `[data-testid="trade-box-buy-amount"]` faithfully
 - If they're the same, the issue is purely market drift and there's nothing to fix — possibly add a "scraped at" timestamp to the UI so users know prices can be stale.
 - Check StockX's GraphQL endpoint (`/api/p/v2/products/<slug>/market`) — may be callable directly and would give us the live Ask without scraping.
 
+### F. Depop + Grailed anti-bot 403s reappearing (NEW — observed 2026-05-18 PM during Phase 2C testing)
+
+**Symptom:** during a single "fear of god essentials hoodie" search, the sidecar logged `Blocked by anti-bot protection: HTTP 403 with HTML content` on a subset of Depop and Grailed URLs that have been reliable for weeks. Same query, same session — some URLs scraped fine, others 403'd consistently.
+
+- **Depop** 403 body: 23949 bytes (Depop's challenge page).
+- **Grailed** 403 body: 4265 bytes (Grailed's challenge page).
+- Failing URLs observed: `depop.com/products/{therealduntdadun, bird1381, incogar}-…`, `grailed.com/listings/{73684073, 75493584, 77960479}-…`. Poshmark URLs in the same run were fine.
+
+**Compounding behavior:** structured-tier 403 → sidecar falls back to LLM tier → re-fetches the SAME URL within ~5s → 403s again (body is the block page, so LLM correctly returns "no extracted content"). We're effectively pinging the same blocked URL twice in a row, which is worse than one attempt.
+
+**Investigation plan (when picking back up):**
+1. Add a structured-tier-vs-LLM-tier backoff: if structured fails with HTTP 403 specifically, wait 5–10s (or skip LLM fallback entirely for that URL) so we don't double-burn fingerprint.
+2. Lower per-platform search concurrency for Depop + Grailed — possibly serialize their fetches while keeping Poshmark/Mercari/etc parallel.
+3. Check whether the `/api/watchlist/refresh` endpoint (concurrency 4 across mixed domains) trips the same wall. If so, stagger by domain.
+4. Audit whether `enable_stealth=True` is still active; consider rotating UA per-request instead of per-session.
+
+**Why this matters for Phase 2D:** auto-refresh-on-login and scheduled cron re-scrapes will dramatically increase request volume per platform. We need to solve the 403 regression before turning on automation, or every refresh will degrade.
+
 ### D. Carryover from Phase 1 (still open)
 
 - **Grailed ~83% sold rate** — Google indexes lots of sold Grailed listings; nothing to do without paying for more search results or finding a different discovery method.
 - **Depop GBP/EUR listings** — currency badge handles UI flagging; FX conversion would be a nice-to-have.
 - **No pagination** — 15 search results per platform, no "load more."
-- **Auth (Phase 2A) DONE** and **Saves + Profile editing (Phase 2B) DONE.**
-- **Still pending:** Watchlist with auto-refresh on login (Phase 2C), price history, seller info, additional platforms (RealReal, ThredUp).
+- **Auth (Phase 2A) DONE**, **Saves + Profile editing (Phase 2B) DONE**, **Watchlist manual refresh (Phase 2C) DONE.**
+- **Still pending:** Watchlist auto-refresh on login (deferred from 2C), price history, seller info, scheduled re-scrape + email price-drop alerts (Phase 2D), additional platforms (RealReal, ThredUp).
 
 ---
 
@@ -1128,7 +1232,8 @@ When picking this up in a future session, verify in this order before making cha
 
 ## 12. What's Next (proposed order)
 
-1. **Phase 2C — Watchlist with auto-refresh on login.** Eye-icon on listing cards alongside the heart. `watchlist` table (id, user_id, listing_url unique, platform, title, price_at_add, price_current, image_url, is_sold, last_checked_at, created_at). On login (or via a "Refresh prices" button on `/profile?tab=watchlist`), POST each URL to the sidecar and update price_current + is_sold. UI shows price delta + sold badge. Remember the table needs `GRANT ALL ON public.watchlist TO authenticated` alongside RLS policies (see Phase 2B gotcha in §11).
+1. **Investigate anti-bot 403 regression (§7 F).** Highest priority — blocks Phase 2D automation. Depop + Grailed are dropping a subset of requests with 403 challenge pages, and our LLM fallback compounds it by re-hitting the same URL. Solve this before scheduling any background re-scrape.
+2. **Phase 2C — Watchlist auto-refresh on login.** Manual refresh button shipped 2026-05-18. Next: trigger refresh automatically when `/profile?tab=watchlist` mounts if `last_checked_at` is older than ~1 hour. After that, Phase 2D: scheduled re-scrape (Supabase Edge Function + `pg_cron`, or external cron), price snapshot history, email on price drop.
 2. **Investigate StockX SSR-vs-CSR price drift** (§7 E). User has deferred this; revisit when picking up the project.
 3. **Decide on eBay** (§7 A) — either invest in proxy/API solution, or formally drop eBay from `PLATFORM_DOMAINS` so the UI stops surfacing the empty tab.
 4. **Implement Vestiaire URL discovery** via sidecar (§7 B option 1). Scoped, low-risk.

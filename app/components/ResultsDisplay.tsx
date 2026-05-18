@@ -5,6 +5,7 @@ import { SearchResponse, PLATFORM_NAMES, Listing } from '@/lib/types';
 import ListingCard from './ListingCard';
 import PriceSummary, { pickPriceSources } from './PriceSummary';
 import { useSaves } from './SavesProvider';
+import { useWatchlist } from './WatchlistProvider';
 
 interface Props {
   data: SearchResponse;
@@ -20,10 +21,14 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
 
   const [activeTab, setActiveTab] = useState('all');
   const { hydrateUrls } = useSaves();
+  const { hydrateUrls: hydrateWatchUrls } = useWatchlist();
 
   useEffect(() => {
     const urls = platformKeys.flatMap((p) => results[p].listings.map((l) => l.url));
-    if (urls.length > 0) hydrateUrls(urls);
+    if (urls.length > 0) {
+      hydrateUrls(urls);
+      hydrateWatchUrls(urls);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results]);
 

@@ -56,6 +56,21 @@ export interface Save {
   saved_at: string;
 }
 
+export interface Watchlist {
+  id: string;
+  user_id: string;
+  listing_url: string;
+  platform: string;
+  title: string;
+  price_at_add: number | null;
+  price_current: number | null;
+  currency: string;
+  image_url: string | null;
+  is_sold: boolean;
+  last_checked_at: string | null;
+  created_at: string;
+}
+
 export interface PlatformResults {
   listings: Listing[];
   count: number;

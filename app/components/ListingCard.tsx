@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Listing } from '@/lib/types';
 import PlatformBadge from './PlatformBadge';
 import { useSaves } from './SavesProvider';
+import { useWatchlist } from './WatchlistProvider';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -27,12 +28,20 @@ export default function ListingCard({ listing, isLowest }: Props) {
 
   const { user } = useAuth();
   const { isSaved, toggleSave } = useSaves();
+  const { isWatched, toggleWatch } = useWatchlist();
   const saved = isSaved(listing.url);
+  const watched = isWatched(listing.url);
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     toggleSave(listing);
+  };
+
+  const handleEyeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWatch(listing);
   };
 
   return (
@@ -101,6 +110,36 @@ export default function ListingCard({ listing, isLowest }: Props) {
               strokeLinejoin="round"
             >
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+        )}
+
+        {user && (
+          <button
+            type="button"
+            onClick={handleEyeClick}
+            aria-label={watched ? 'Remove from watchlist' : 'Add to watchlist'}
+            className="absolute flex h-9 w-9 items-center justify-center rounded-full transition-all"
+            style={{
+              right: '0.5rem',
+              top: '3rem',
+              background: 'rgba(0, 0, 0, 0.55)',
+              opacity: watched || hovered ? 1 : 0,
+              transform: watched ? 'scale(1)' : 'scale(0.95)',
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={watched ? 'var(--accent)' : '#ffffff'}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+              <circle cx="12" cy="12" r="3" fill={watched ? 'var(--accent)' : 'none'} />
             </svg>
           </button>
         )}
