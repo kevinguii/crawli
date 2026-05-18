@@ -25,11 +25,13 @@
    - Check the Network tab / browser console for errors
    - Do not declare done based on type-checks alone
 
-4. **Update HANDOFF.md after every session**
-   - Add a new "Latest change" block at the very top with today's date
+4. **Update HANDOFF.md after every session — full sync, not just append**
+   - Add a new "Latest change" block at the very top with today's date (this is required)
    - Include: what was done, what worked, what didn't work, why
+   - **CRITICAL:** After adding the latest change entry, also update the structured reference sections (§2 Tech Stack, §3 Architecture, §4 File Structure, §6 Status by Platform, §7 Open Problems) to reflect the new reality. Don't leave stale information below while the top is current.
+   - Check if any assumptions in the lower sections are now wrong (e.g., "no auth yet" if auth was just added)
    - Document any gotchas or tips that will help future sessions
-   - Example:
+   - Example "Latest change" entry:
 
 **Latest change (2026-05-16):** Implemented platform card background colors.
  eBay uses 4-color stripe bar (red #E53238, blue #0064D2, yellow #F5AF02, green #86B817).

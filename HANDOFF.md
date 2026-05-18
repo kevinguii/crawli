@@ -416,14 +416,17 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 **Frontend / API**
 - Next.js 16.2.6 (App Router) + React 19.2.4
 - TypeScript 5.x, Tailwind v4
-- Client-side state via React hooks; no auth yet
-- Zod for API request validation; nanoid for listing IDs
+- **Auth:** Supabase Auth (email/password + Google OAuth); protected routes via `app/(protected)/` layout with server-side `auth.getUser()` check
+- Client-side auth hooks: `useAuth()` and `useProtectedRoute()` for component-level access control
+- Client-side state via React hooks; Zod for API request validation; nanoid for listing IDs
 
 **Backend services**
 - Next.js API routes (`/api/search`) orchestrate the pipeline
+- **Auth layer:** `@supabase/ssr` for client + server clients; `proxy.ts` (Next 16 convention, not `middleware.ts`) refreshes session cookie on every request
+- `@supabase/supabase-js` v2.x for auth + database access
 - **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm
 - Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
-- Supabase — configured (env vars present), unused in Phase 1
+- Supabase Postgres — auth users + `public.profiles` table (user profile metadata); auto-trigger creates profile row on signup
 
 **LLM**
 - OpenAI `gpt-4o-mini` is the default extraction model (via litellm, configured in `.env`)
@@ -432,12 +435,26 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 
 ---
 
-## 3. Architecture (current — as of 2026-05-15)
+## 3. Architecture (current — as of 2026-05-17)
 
 ```
-User → SearchForm
+User (unauthenticated)
        │
-       ▼
+       ▼ visit /
+       ↓
+proxy.ts (refreshes auth cookie)
+       │
+       ├─ not signed in? → redirect to /login
+       │  /login: email/password signup, email/password signin, Google OAuth, forgot password flow
+       │  /check-email: email confirmation (after signup or password reset)
+       │  /auth/reset-password: set new password via email link
+       │
+       └─ signed in?
+          ▼ allow → /
+          ↓
+          SearchForm (protected route, requires auth.getUser())
+          │ POST /api/search
+          ▼
 POST /api/search ─────────────────────────────────────────────┐
        │                                                       │
        │  for each platform (parallel):                        │
@@ -460,6 +477,13 @@ POST /api/search ─────────────────────
                                                                ▼
 ```
 
+**Auth layer (new in Phase 2A, complete as of 2026-05-17):**
+- `proxy.ts` (Next 16 convention) runs on every request to refresh the Supabase session cookie before route handlers see it
+- Server-side auth check in `app/(protected)/layout.tsx`: calls `auth.getUser()` and redirects to `/login` if no session
+- Client-side hooks: `useAuth()` returns `{ user, loading }` for conditional rendering; `useProtectedRoute()` triggers a redirect if not authenticated
+- Sign-up flow: email → confirm email → auto-creates `public.profiles` row via Supabase trigger
+- Protected search page: moved from `/app/page.tsx` to `/app/(protected)/page.tsx`; users who sign out are immediately redirected to `/login` if they try to access it
+
 **Key change vs. the original Firecrawl-only design:** the **scrape** step used to cost 9–10 Firecrawl credits per page. It now goes through a local Playwright + LLM pipeline, costing ~$0.0005–$0.002 per page in OpenAI tokens. Firecrawl is retained only for the **search** step (2 credits per platform per query), where it's still the cheapest option.
 
 ---
@@ -468,27 +492,45 @@ POST /api/search ─────────────────────
 
 ```
 fashion-crawler-crawl4ai/
-├── .env                              ← LLM_PROVIDER, OPENAI_API_KEY, FIRECRAWL_API_KEY, Supabase
+├── .env                              ← LLM_PROVIDER, OPENAI_API_KEY, FIRECRAWL_API_KEY, SUPABASE_URL, SUPABASE_KEY, etc.
+├── proxy.ts                          ← Next 16 auth middleware (refreshes session cookie on every request)
 ├── HANDOFF.md                        ← this file
 ├── package.json                      ← scripts: dev, dev:sidecar, dev:all, build
 │
 ├── app/
-│   ├── api/search/route.ts           ← orchestrator (POST /api/search)
+│   ├── api/
+│   │   ├── search/route.ts           ← orchestrator (POST /api/search)
+│   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
+│   ├── (protected)/                  ← auth-protected route group
+│   │   ├── layout.tsx                ← server-side auth guard (redirects to /login if not authenticated)
+│   │   └── page.tsx                  ← search page (moved from /app/page.tsx; requires auth)
+│   ├── auth/
+│   │   ├── reset-password/page.tsx   ← password reset form (via email link)
+│   │   └── callback/route.ts         ← OAuth/password reset callback
+│   ├── login/page.tsx                ← auth page (sign in + sign up tabs, Google OAuth, forgot password)
+│   ├── check-email/page.tsx          ← confirmation screen (after signup or password-reset email sent)
 │   ├── components/
+│   │   ├── AuthCard.tsx              ← shared auth UI wrapper (logo, gradient background, theme-aware)
+│   │   ├── AuthButton.tsx            ← session-aware nav button (Sign in link or user avatar + dropdown)
 │   │   ├── SearchForm.tsx            ← query + platform checkboxes
 │   │   ├── SearchSection.tsx         ← client state container
 │   │   ├── ResultsDisplay.tsx        ← tabbed results grid (All + per-platform)
 │   │   ├── ListingCard.tsx           ← single listing card (image, price, badge)
 │   │   └── PriceSummary.tsx          ← min/max/avg stats bar
 │   ├── layout.tsx                    ← root layout (suppressHydrationWarning for Grammarly)
-│   ├── page.tsx                      ← homepage
-│   └── globals.css                   ← Tailwind v4 + CSS vars
+│   └── globals.css                   ← Tailwind v4 + CSS vars + theme tokens
 │
 ├── lib/
 │   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
-│   └── parse.ts                      ← filterListingUrls(), parseScrapedListings()
+│   ├── parse.ts                      ← filterListingUrls(), parseScrapedListings()
+│   ├── supabase/
+│   │   ├── client.ts                 ← createBrowserClient() for Client Components
+│   │   └── server.ts                 ← createServerClient() + async cookies() for Server Components / Route Handlers
+│   └── hooks/
+│       ├── useAuth.ts                ← useAuth() { user, loading } and useProtectedRoute() hooks
+│       └── ... (other hooks as needed)
 │
 ├── crawl4ai-service/                 ← Python sidecar (replaces Firecrawl scrape)
 │   ├── main.py                       ← FastAPI app, /scrape + /health endpoints; structured-first → LLM fallback
