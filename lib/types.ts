@@ -32,6 +32,30 @@ export interface Listing {
   platform: string;
 }
 
+export interface Profile {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Save {
+  id: string;
+  user_id: string;
+  listing_url: string;
+  platform: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  condition: string | null;
+  image_url: string | null;
+  seller: string | null;
+  saved_at: string;
+}
+
 export interface PlatformResults {
   listings: Listing[];
   count: number;

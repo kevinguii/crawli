@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
+import { Toaster } from 'sonner';
 import { createClient } from '@/lib/supabase/server';
+import { SavesProvider } from '@/app/components/SavesProvider';
 
 export default async function ProtectedLayout({
   children,
@@ -13,5 +15,10 @@ export default async function ProtectedLayout({
     redirect('/login');
   }
 
-  return <>{children}</>;
+  return (
+    <SavesProvider>
+      {children}
+      <Toaster position="bottom-right" theme="system" richColors closeButton />
+    </SavesProvider>
+  );
 }

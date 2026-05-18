@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Listing } from '@/lib/types';
 import PlatformBadge from './PlatformBadge';
+import { useSaves } from './SavesProvider';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -22,6 +24,16 @@ export default function ListingCard({ listing, isLowest }: Props) {
   const [hovered, setHovered] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const isNonUsd = listing.currency && listing.currency !== 'USD';
+
+  const { user } = useAuth();
+  const { isSaved, toggleSave } = useSaves();
+  const saved = isSaved(listing.url);
+
+  const handleHeartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSave(listing);
+  };
 
   return (
     <a
@@ -64,6 +76,33 @@ export default function ListingCard({ listing, isLowest }: Props) {
           >
             Lowest price
           </span>
+        )}
+
+        {user && (
+          <button
+            type="button"
+            onClick={handleHeartClick}
+            aria-label={saved ? 'Remove from saves' : 'Add to saves'}
+            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full transition-all"
+            style={{
+              background: 'rgba(0, 0, 0, 0.55)',
+              opacity: saved || hovered ? 1 : 0,
+              transform: saved ? 'scale(1)' : 'scale(0.95)',
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={saved ? '#E24B4A' : 'none'}
+              stroke={saved ? '#E24B4A' : '#ffffff'}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
         )}
       </div>
 

@@ -17,7 +17,7 @@
   - Both set: `$MIN–MAX` (e.g., `$50–200`)
   - Min only: `$MIN+` (e.g., `$50+`)
   - Max only: `up to $MAX` (e.g., `up to $200`)
-  - Neither: `$Any`
+  - Neither: `Any`
 
 **Previous: 2026-05-18 — Phase 2C: Price filter implemented:**
 

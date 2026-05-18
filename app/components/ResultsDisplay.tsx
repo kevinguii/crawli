@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SearchResponse, PLATFORM_NAMES, Listing } from '@/lib/types';
 import ListingCard from './ListingCard';
 import PriceSummary, { pickPriceSources } from './PriceSummary';
+import { useSaves } from './SavesProvider';
 
 interface Props {
   data: SearchResponse;
@@ -18,6 +19,13 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   const tabs = ['all', ...platformKeys];
 
   const [activeTab, setActiveTab] = useState('all');
+  const { hydrateUrls } = useSaves();
+
+  useEffect(() => {
+    const urls = platformKeys.flatMap((p) => results[p].listings.map((l) => l.url));
+    if (urls.length > 0) hydrateUrls(urls);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
 
   const totalCount = platformKeys.reduce((sum, p) => sum + results[p].count, 0);
 

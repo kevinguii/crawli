@@ -139,10 +139,25 @@ export default function AuthButton() {
             {user.email}
           </div>
         </div>
+        <Link
+          href="/profile"
+          onClick={() => setMenuOpen(false)}
+          className="menu-item block w-full text-left px-3 py-2.5 text-sm"
+        >
+          Profile
+        </Link>
+        <Link
+          href="/settings"
+          onClick={() => setMenuOpen(false)}
+          className="menu-item block w-full text-left px-3 py-2.5 text-sm"
+        >
+          Settings
+        </Link>
         <button
           type="button"
           onClick={handleSignOut}
           className="menu-item w-full text-left px-3 py-2.5 text-sm"
+          style={{ borderTop: '1px solid var(--border)' }}
         >
           Sign out
         </button>
