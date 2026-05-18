@@ -1,22 +1,23 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Price filter dropdown UI fixed)
+**Last updated:** 2026-05-18 (Price filter dropdown fully polished)
 
-**Latest change (2026-05-18 — Price filter dropdown UI fixed):**
+**Latest change (2026-05-18 — Price filter dropdown fully polished):**
 
-✅ **Price dropdown Min/Max inputs now display correctly.** Both inputs are side-by-side with `$` prefix labels inside each input group. Pill label logic fixed to handle all four states.
+✅ **Price filter Min/Max input dropdown is fully working.** Both inputs are visible, side-by-side, no spinners, digits-only, with min < max validation.
 
-**What was fixed in [FilterPanel.tsx](app/components/FilterPanel.tsx):**
-- Each input is now wrapped in a container div showing a `$` prefix (non-editable span) beside the number input
-- Input borders turn purple (`var(--accent)`) individually when that field has a value
-- Input text turns `var(--accent-text)` when filled
-- Dropdown `minWidth` bumped from 200px → 220px so both inputs don't clip
-- Pill label logic corrected:
+**What was fixed/added in [FilterPanel.tsx](app/components/FilterPanel.tsx):**
+- **Clipping fix:** replaced `grid 0fr→1fr` animation (which used `overflow-hidden` and constrained width) with `opacity + translateY` fade. Dropdown now has a fixed `width: 252px` that's always respected
+- **No spinners:** switched from `type="number"` to `inputMode="numeric"` — numeric keyboard on mobile, plain text field on desktop, no up/down arrows
+- **Digits only:** `onChange` strips all non-digit characters via `.replace(/\D/g, '')` before reaching state
+- **Min < Max validation:** on every keystroke, both values are compared; if `min >= max` when both are set, both input borders turn red and an error message appears. Invalid value is withheld from parent state so it can't affect search results
+- **Local raw-string state:** `minRaw`/`maxRaw` hold typed text inside the dropdown, decoupled from parent numeric state
+- **Clear button:** shows when either raw field has text (not just when parent state has a value)
+- **Pill label logic:**
   - Both set: `$MIN–MAX` (e.g., `$50–200`)
   - Min only: `$MIN+` (e.g., `$50+`)
   - Max only: `up to $MAX` (e.g., `up to $200`)
   - Neither: `$Any`
-- Pill border turns purple when either field has a value (existing behavior, unchanged)
 
 **Previous: 2026-05-18 — Phase 2C: Price filter implemented:**
 
