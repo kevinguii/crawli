@@ -88,10 +88,12 @@ export interface FilterState {
   category: string | null;
   condition: string | null;
   size: string | null;
+  minPrice: number | null;
+  maxPrice: number | null;
 }
 
 export function emptyFilterState(): FilterState {
-  return { color: null, category: null, condition: null, size: null };
+  return { color: null, category: null, condition: null, size: null, minPrice: null, maxPrice: null };
 }
 
 export function filtersToQuerySuffix(filters: FilterState): string {
@@ -237,7 +239,14 @@ export default function FilterPanel({
           }))}
           onChange={(v) => setField('color', v)}
         />
+        <PriceRangeDropdown
+          minPrice={filters.minPrice}
+          maxPrice={filters.maxPrice}
+          onMinChange={(v) => setField('minPrice', v)}
+          onMaxChange={(v) => setField('maxPrice', v)}
+        />
       </div>
+
     </div>
   );
 }
@@ -408,5 +417,209 @@ function DropdownItem({
         </svg>
       )}
     </button>
+  );
+}
+
+interface PriceRangeDropdownProps {
+  minPrice: number | null;
+  maxPrice: number | null;
+  onMinChange: (value: number | null) => void;
+  onMaxChange: (value: number | null) => void;
+}
+
+function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: PriceRangeDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const [minRaw, setMinRaw] = useState(minPrice !== null ? String(minPrice) : '');
+  const [maxRaw, setMaxRaw] = useState(maxPrice !== null ? String(maxPrice) : '');
+  const [error, setError] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  function parsePrice(raw: string): number | null {
+    const n = parseInt(raw, 10);
+    return raw.trim() !== '' && !isNaN(n) && n >= 0 ? n : null;
+  }
+
+  function handleMinChange(raw: string) {
+    const cleaned = raw.replace(/\D/g, '');
+    setMinRaw(cleaned);
+    const min = parsePrice(cleaned);
+    const max = parsePrice(maxRaw);
+    if (min !== null && max !== null && min >= max) {
+      setError('Min must be less than max');
+    } else {
+      setError(null);
+    }
+    onMinChange(min !== null && (max === null || min < max) ? min : null);
+  }
+
+  function handleMaxChange(raw: string) {
+    const cleaned = raw.replace(/\D/g, '');
+    setMaxRaw(cleaned);
+    const min = parsePrice(minRaw);
+    const max = parsePrice(cleaned);
+    if (min !== null && max !== null && min >= max) {
+      setError('Min must be less than max');
+    } else {
+      setError(null);
+    }
+    onMaxChange(max !== null && (min === null || max > min) ? max : null);
+  }
+
+  function handleClear() {
+    setMinRaw('');
+    setMaxRaw('');
+    setError(null);
+    onMinChange(null);
+    onMaxChange(null);
+  }
+
+  const hasValue = minPrice !== null || maxPrice !== null;
+  const displayLabel = (() => {
+    if (!hasValue) return 'Any';
+    if (minPrice !== null && maxPrice !== null) return `$${minPrice}–${maxPrice}`;
+    if (minPrice !== null) return `$${minPrice}+`;
+    return `up to $${maxPrice}`;
+  })();
+
+  const pillStyle: CSSProperties = hasValue
+    ? {
+        background: 'var(--surface)',
+        border: '1px solid var(--accent)',
+        color: 'var(--accent-text)',
+      }
+    : {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        color: 'var(--text)',
+      };
+
+  const isInvalid = error !== null;
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
+        style={pillStyle}
+      >
+        <span style={{ color: hasValue ? 'var(--accent-text)' : 'var(--text-muted)' }}>
+          Price:
+        </span>
+        <span>{displayLabel}</span>
+        <svg
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="h-3.5 w-3.5 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 0 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+
+      {/* Fixed width (not minWidth) so both inputs never get clipped. */}
+      <div
+        className="absolute left-0 z-20 mt-1 transition-all duration-200 ease-out"
+        style={{
+          width: '252px',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transform: open ? 'translateY(0)' : 'translateY(-4px)',
+          visibility: open ? 'visible' : 'hidden',
+        }}
+        aria-hidden={!open}
+      >
+        <div
+          className="rounded-xl p-3 shadow-lg space-y-2"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-strong)',
+          }}
+        >
+          <div className="flex gap-2 items-center">
+            <div
+              className="flex flex-1 items-center gap-1 rounded-lg px-2 py-1.5"
+              style={{
+                background: 'var(--surface)',
+                border: isInvalid
+                  ? '1px solid #e53935'
+                  : minPrice !== null
+                  ? '1px solid var(--accent)'
+                  : '1px solid var(--border)',
+              }}
+            >
+              <span className="text-[13px] shrink-0 opacity-60" style={{ color: 'var(--text)' }}>$</span>
+              <input
+                inputMode="numeric"
+                placeholder="Min"
+                value={minRaw}
+                onChange={(e) => handleMinChange(e.target.value)}
+                className="flex-1 bg-transparent text-[13px] outline-none w-0"
+                style={{ color: minPrice !== null ? 'var(--accent-text)' : 'var(--text)' }}
+              />
+            </div>
+            <span className="text-[13px] shrink-0 opacity-40" style={{ color: 'var(--text)' }}>{'–'}</span>
+            <div
+              className="flex flex-1 items-center gap-1 rounded-lg px-2 py-1.5"
+              style={{
+                background: 'var(--surface)',
+                border: isInvalid
+                  ? '1px solid #e53935'
+                  : maxPrice !== null
+                  ? '1px solid var(--accent)'
+                  : '1px solid var(--border)',
+              }}
+            >
+              <span className="text-[13px] shrink-0 opacity-60" style={{ color: 'var(--text)' }}>$</span>
+              <input
+                inputMode="numeric"
+                placeholder="Max"
+                value={maxRaw}
+                onChange={(e) => handleMaxChange(e.target.value)}
+                className="flex-1 bg-transparent text-[13px] outline-none w-0"
+                style={{ color: maxPrice !== null ? 'var(--accent-text)' : 'var(--text)' }}
+              />
+            </div>
+          </div>
+          {error && (
+            <p className="text-[11px]" style={{ color: '#e53935' }}>{error}</p>
+          )}
+          {(minRaw || maxRaw) && !error && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="w-full text-xs font-medium py-1 rounded transition-colors"
+              style={{
+                background: 'var(--accent-soft)',
+                color: 'var(--accent-text)',
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

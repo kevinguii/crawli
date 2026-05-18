@@ -5,6 +5,7 @@ import { SearchResponse, SearchStreamEvent } from '@/lib/types';
 import SearchForm from './SearchForm';
 import SearchProgress, { CheckpointStatus } from './SearchProgress';
 import ResultsDisplay from './ResultsDisplay';
+import { FilterState, emptyFilterState } from './FilterPanel';
 
 interface ProgressState {
   platforms: string[];
@@ -17,6 +18,7 @@ export default function SearchSection() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressState | null>(null);
+  const [filters, setFilters] = useState<FilterState>(emptyFilterState());
 
   function handleResults(data: SearchResponse) {
     setError(null);
@@ -72,6 +74,8 @@ export default function SearchSection() {
           onResults={handleResults}
           onError={handleError}
           onProgress={handleProgress}
+          filters={filters}
+          onFiltersChange={setFilters}
         />
       </div>
 
@@ -97,7 +101,7 @@ export default function SearchSection() {
         </div>
       )}
 
-      {results && <ResultsDisplay data={results} />}
+      {results && <ResultsDisplay data={results} minPrice={filters.minPrice} maxPrice={filters.maxPrice} />}
     </div>
   );
 }

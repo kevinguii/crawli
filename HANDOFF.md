@@ -1,10 +1,55 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-17 (Auth complete, roadmap set)
+**Last updated:** 2026-05-18 (Price filter dropdown UI fixed)
 
-**Latest change (2026-05-17 — Roadmap defined):**
+**Latest change (2026-05-18 — Price filter dropdown UI fixed):**
 
-✅ **Auth phase is fully complete.** All authentication flows are working end-to-end (email/password, Google OAuth, password reset, route protection, dark/light mode).
+✅ **Price dropdown Min/Max inputs now display correctly.** Both inputs are side-by-side with `$` prefix labels inside each input group. Pill label logic fixed to handle all four states.
+
+**What was fixed in [FilterPanel.tsx](app/components/FilterPanel.tsx):**
+- Each input is now wrapped in a container div showing a `$` prefix (non-editable span) beside the number input
+- Input borders turn purple (`var(--accent)`) individually when that field has a value
+- Input text turns `var(--accent-text)` when filled
+- Dropdown `minWidth` bumped from 200px → 220px so both inputs don't clip
+- Pill label logic corrected:
+  - Both set: `$MIN–MAX` (e.g., `$50–200`)
+  - Min only: `$MIN+` (e.g., `$50+`)
+  - Max only: `up to $MAX` (e.g., `up to $200`)
+  - Neither: `$Any`
+- Pill border turns purple when either field has a value (existing behavior, unchanged)
+
+**Previous: 2026-05-18 — Phase 2C: Price filter implemented:**
+
+✅ **Price filter is now fully functional.** Users can select from 5 preset price ranges: Under $50, $50–$100, $100–$200, $200–$500, Over $500.
+
+**Implementation details:**
+- Added `PRICE_RANGE_OPTIONS` constant with 5 preset ranges in [FilterPanel.tsx](app/components/FilterPanel.tsx)
+- Price filter is a dropdown pill on the same row as Category, Size, Condition, Color (matching UI pattern)
+- Stores single `priceRange` string key in `FilterState` (e.g., '50-100')
+- Lifted filter state from `SearchForm` → `SearchSection` so `ResultsDisplay` can access price filters
+- Client-side filtering: price filters are NOT sent to the API (they filter results post-search)
+- USD-priced listings only: non-USD listings pass through unfiltered when a price range is selected
+- `ResultsDisplay` maps the priceRange key to min/max values and filters accordingly
+
+**Price ranges:**
+- Under $50: $0 – $50
+- $50–$100: $50 – $100
+- $100–$200: $100 – $200
+- $200–$500: $200 – $500
+- Over $500: $500+
+
+**Files modified:**
+- [app/components/FilterPanel.tsx](app/components/FilterPanel.tsx) — added `PRICE_RANGE_OPTIONS`; updated `FilterState` to use single `priceRange` field; added price dropdown pill to filter row
+- [app/components/SearchForm.tsx](app/components/SearchForm.tsx) — now accepts `filters` and `onFiltersChange` as props (lifted from internal state)
+- [app/components/SearchSection.tsx](app/components/SearchSection.tsx) — now manages filter state and passes it to both `SearchForm` and `ResultsDisplay`
+- [app/components/ResultsDisplay.tsx](app/components/ResultsDisplay.tsx) — now accepts `priceRange` prop; maps it to min/max and filters listings before render
+
+**Testing:**
+- TypeScript: zero errors
+- Price dropdown integrates seamlessly with other filter pills
+- Filtering works on USD-priced listings
+- Non-USD listings are not filtered (pass through)
+- UI consistency maintained (dropdown styling matches Color, Condition, etc.)
 
 **Next priorities (in order):**
 
@@ -13,23 +58,20 @@
    - Both should be moved into `app/(protected)/` for auth protection
    - Use existing patterns from search page
 
-2. **Phase 2C: Price filter**
-   - Add to search results page
-   - Should filter both scrape results and Firecrawl results
-
-3. **Phase 2D: New platforms**
+2. **Phase 2D: New platforms**
    - Priority 1: **The RealReal** and **ThredUp** (high-demand platforms)
    - Priority 2: **2nd Street** (lower urgency)
    - Add to crawl4ai-service as new scrapers
    - Wire into search results UI
 
-4. **Future (lower priority):**
+3. **Future (lower priority):**
    - Help/contact forum
    - Additional features TBD
 
 **Current state:**
 - Auth: fully working (email/password, Google OAuth, forgot password, route protection)
 - Search: functional with Firecrawl + platform scrapers
+- Filters: category, size, condition, color (all query-injected), price (client-side post-search)
 - Platforms: eBay, Vestiaire Collective, Grailed (eBay has cosmetic issues)
 - Known issues: Vestiaire URL discovery blocked by Firecrawl; eBay scraping works but UI shows weirdly
 

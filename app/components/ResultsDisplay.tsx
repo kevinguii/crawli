@@ -7,10 +7,12 @@ import PriceSummary, { pickPriceSources } from './PriceSummary';
 
 interface Props {
   data: SearchResponse;
+  minPrice?: number | null;
+  maxPrice?: number | null;
 }
 
-export default function ResultsDisplay({ data }: Props) {
-  const { results, priceRange, averagePrice } = data;
+export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
+  const { results, priceRange: dataPriceRange, averagePrice } = data;
 
   const platformKeys = Object.keys(results);
   const tabs = ['all', ...platformKeys];
@@ -31,8 +33,8 @@ export default function ResultsDisplay({ data }: Props) {
   }, [results, platformKeys]);
 
   const { lowSource, highSource } = useMemo(
-    () => pickPriceSources(results, priceRange),
-    [results, priceRange]
+    () => pickPriceSources(results, dataPriceRange),
+    [results, dataPriceRange]
   );
 
   const visibleListings: Listing[] = useMemo(() => {
@@ -40,8 +42,15 @@ export default function ResultsDisplay({ data }: Props) {
       activeTab === 'all'
         ? platformKeys.flatMap((p) => results[p].listings)
         : (results[activeTab]?.listings ?? []);
+    // Filter by price range (USD only).
+    const filtered = raw.filter((listing) => {
+      if (listing.price === null || listing.currency !== 'USD') return true;
+      if (minPrice != null && listing.price < minPrice) return false;
+      if (maxPrice != null && listing.price > maxPrice) return false;
+      return true;
+    });
     // Sort: USD listings with prices first (ascending), then everything else.
-    return [...raw].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const aValid = a.price !== null && a.currency === 'USD';
       const bValid = b.price !== null && b.currency === 'USD';
       if (aValid && bValid) return (a.price as number) - (b.price as number);
@@ -49,7 +58,7 @@ export default function ResultsDisplay({ data }: Props) {
       if (bValid) return 1;
       return 0;
     });
-  }, [activeTab, platformKeys, results]);
+  }, [activeTab, platformKeys, results, minPrice, maxPrice]);
 
   const tabLabel = (tab: string) => {
     if (tab === 'all') return `All (${totalCount})`;
@@ -60,7 +69,7 @@ export default function ResultsDisplay({ data }: Props) {
   return (
     <div className="space-y-6">
       <PriceSummary
-        priceRange={priceRange}
+        priceRange={dataPriceRange}
         averagePrice={averagePrice}
         totalCount={totalCount}
         lowSource={lowSource ? (PLATFORM_NAMES[lowSource] ?? lowSource) : null}

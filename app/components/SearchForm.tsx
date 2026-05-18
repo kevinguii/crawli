@@ -20,12 +20,13 @@ interface Props {
   onResults: (data: SearchResponse) => void;
   onError: (msg: string) => void;
   onProgress: (event: SearchStreamEvent) => void;
+  filters: FilterState;
+  onFiltersChange: (next: FilterState) => void;
 }
 
-export default function SearchForm({ onResults, onError, onProgress }: Props) {
+export default function SearchForm({ onResults, onError, onProgress, filters, onFiltersChange }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>(DEFAULT_PLATFORMS);
-  const [filters, setFilters] = useState<FilterState>(emptyFilterState());
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -172,7 +173,7 @@ export default function SearchForm({ onResults, onError, onProgress }: Props) {
         platforms={selected}
         onPlatformsChange={setSelected}
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={onFiltersChange}
       />
     </form>
   );
