@@ -1,23 +1,43 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-16 (Search page protected, auth complete)
+**Last updated:** 2026-05-17 (Auth complete, roadmap set)
 
-**Latest change (2026-05-16 — Search page now protected; sign-out redirects to login):**
+**Latest change (2026-05-17 — Roadmap defined):**
+
+✅ **Auth phase is fully complete.** All authentication flows are working end-to-end (email/password, Google OAuth, password reset, route protection, dark/light mode).
+
+**Next priorities (in order):**
+
+1. **Phase 2B: Easy product additions** — Watchlist and Saved Searches
+   - These are the quickest wins to add core functionality
+   - Both should be moved into `app/(protected)/` for auth protection
+   - Use existing patterns from search page
+
+2. **Phase 2C: Price filter**
+   - Add to search results page
+   - Should filter both scrape results and Firecrawl results
+
+3. **Phase 2D: New platforms**
+   - Priority 1: **The RealReal** and **ThredUp** (high-demand platforms)
+   - Priority 2: **2nd Street** (lower urgency)
+   - Add to crawl4ai-service as new scrapers
+   - Wire into search results UI
+
+4. **Future (lower priority):**
+   - Help/contact forum
+   - Additional features TBD
+
+**Current state:**
+- Auth: fully working (email/password, Google OAuth, forgot password, route protection)
+- Search: functional with Firecrawl + platform scrapers
+- Platforms: eBay, Vestiaire Collective, Grailed (eBay has cosmetic issues)
+- Known issues: Vestiaire URL discovery blocked by Firecrawl; eBay scraping works but UI shows weirdly
+
+---
+
+**Previous: 2026-05-16 — Search page protected; sign-out redirects to login:**
 
 Fixed sign-out behavior: moved `/app/page.tsx` → `/app/(protected)/page.tsx` so the search page requires authentication. Now when users sign out, they are immediately redirected to `/login` if they try to access the search page.
-
-**Files moved:**
-- `app/page.tsx` → `app/(protected)/page.tsx` (same content, now inherits auth guard from protected layout)
-
-**Behavior:**
-- Unauthenticated users cannot access `/` — automatically redirected to `/login`
-- Signed-in users can access search page normally
-- Sign-out followed by any navigation attempt redirects to login
-
-**Verified:**
-- HTTP 307 redirect working on unauthenticated requests
-- TypeScript clean
-- User tested in browser and confirmed working
 
 ---
 
