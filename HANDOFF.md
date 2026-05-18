@@ -1,8 +1,94 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Price filter dropdown fully polished)
+**Last updated:** 2026-05-18 (Phase 2B Saves + Profile editing shipped)
 
-**Latest change (2026-05-18 — Price filter dropdown fully polished):**
+**Latest change (2026-05-18 — Phase 2B Saves feature + Profile page + editable profile):**
+
+✅ **Saves (liked listings) feature is fully working** + a dedicated `/profile` page with editable display name, bio, and avatar upload. A separate `/settings` placeholder page also exists. Phase 2B from §12 is done; Watchlist (Phase 2C) is next.
+
+**What was built:**
+
+1. **`saves` table in Supabase** — created with RLS policies and `authenticated`-role grants. Schema:
+   ```sql
+   create table public.saves (
+     id uuid primary key default gen_random_uuid(),
+     user_id uuid not null references auth.users(id) on delete cascade,
+     listing_url text not null,
+     platform text not null,
+     title text not null,
+     price numeric,
+     currency text not null default 'USD',
+     condition text,
+     image_url text,
+     seller text,
+     saved_at timestamptz not null default now(),
+     unique (user_id, listing_url)
+   );
+   create index saves_user_recent_idx on public.saves (user_id, saved_at desc);
+   create index saves_user_platform_idx on public.saves (user_id, platform);
+   ```
+   RLS policies: `select/insert/delete using auth.uid() = user_id` (no UPDATE policy — saves are immutable snapshots).
+
+2. **`profiles.bio TEXT` column added** to `public.profiles`. UPDATE granted to `authenticated`.
+
+3. **`avatars` Supabase Storage bucket** — public, 2 MB cap, allowed types `image/png,image/jpeg,image/webp`. 4 storage RLS policies: public SELECT; INSERT/UPDATE/DELETE scoped to `(storage.foldername(name))[1] = auth.uid()::text`. Files stored at `{user_id}/avatar-{timestamp}.{ext}`.
+
+4. **GRANT gotcha (KEY LEARNING):** creating a table + RLS policies isn't enough on Supabase — the `authenticated` role also needs explicit `GRANT SELECT/INSERT/DELETE ON public.<table> TO authenticated`. Without this, every request returns `code: '42501' permission denied for table <name>`. Same applied to `UPDATE` on `profiles` before profile editing worked. **Always run grants alongside the migration.**
+
+**API routes added:**
+- [app/api/saves/route.ts](app/api/saves/route.ts) — `POST` (save), `GET` (list with `?search=&platform=`), `DELETE` (`?url=` — used by toggle to skip the id lookup)
+- [app/api/saves/[id]/route.ts](app/api/saves/[id]/route.ts) — `DELETE` by id (used by SavesTab remove button)
+- [app/api/saves/check/route.ts](app/api/saves/check/route.ts) — `POST` (batch URL check; JSON body `{urls: string[]}` to avoid query-string length issues). Returns `{saved_urls: string[]}`.
+- [app/api/profile/route.ts](app/api/profile/route.ts) — `PATCH` for `display_name` / `bio` / `avatar_url`. Validates type, trims, enforces 60-char name + 300-char bio. Empty strings → null.
+
+**UI additions:**
+- [app/components/SavesProvider.tsx](app/components/SavesProvider.tsx) — React Context provider. State: `savedUrls: Set<string>`, dedup'd hydration via `checkedUrls` ref, optimistic updates with rollback on failure. Hooks into `auth.onAuthStateChange` so signing out clears local state.
+- [app/components/ListingCard.tsx](app/components/ListingCard.tsx) — heart button (SVG, not emoji) absolutely positioned top-right of the card image. Hidden when signed out. Visible on hover OR when saved. `e.preventDefault() + e.stopPropagation()` because card is an `<a target="_blank">`. Filled red (`#E24B4A`) when saved.
+- [app/components/ResultsDisplay.tsx](app/components/ResultsDisplay.tsx) — calls `hydrateUrls(allListingUrls)` once per search so hearts render correctly without N round-trips.
+- [app/(protected)/profile/page.tsx](app/(protected)/profile/page.tsx) — server component, fetches full `Profile` row, renders nav + `ProfileHeader` + `ProfileTabsClient`.
+- [app/components/profile/ProfileHeader.tsx](app/components/profile/ProfileHeader.tsx) — client component. Circle avatar (`avatar_url` or initial fallback on `var(--accent)`), display name (fallback: email prefix), email, "Joined Month YYYY", bio paragraph (hidden if null), "Edit profile" button on the right.
+- [app/components/profile/EditProfileModal.tsx](app/components/profile/EditProfileModal.tsx) — modal dialog. Avatar uploader (client-side validation, direct upload to Supabase Storage via browser client — no Next.js round-trip), display name + bio inputs with char counters, Cancel/Save. Esc and backdrop click close it; body scroll locked while open.
+- [app/components/profile/ProfileTabsClient.tsx](app/components/profile/ProfileTabsClient.tsx) — Saves / Watchlist tabs (Settings removed, lives at `/settings` instead). URL-driven via `?tab=watchlist`.
+- [app/components/profile/SavesTab.tsx](app/components/profile/SavesTab.tsx) — debounced (250ms) search, optimistic remove via DELETE-by-id, empty state "No saves yet. Heart listings to save them ❤️".
+- [app/components/profile/WatchlistTab.tsx](app/components/profile/WatchlistTab.tsx) — "Coming next" placeholder.
+- [app/(protected)/settings/page.tsx](app/(protected)/settings/page.tsx) — standalone settings page (also "Coming soon" placeholder).
+- [app/components/AuthButton.tsx](app/components/AuthButton.tsx) — dropdown now has Profile → Settings → Sign out (with divider above Sign out). Settings links to `/settings` (not `/profile?tab=settings`).
+- [app/(protected)/layout.tsx](app/(protected)/layout.tsx) — wraps children in `<SavesProvider>` and mounts sonner `<Toaster position="bottom-right" theme="system" richColors closeButton />`.
+
+**Dependencies:**
+- Added `sonner` (~3 KB) for toast notifications.
+
+**Toast design decisions:**
+- Save success: `toast.success('Saved to Favorites')` — green checkmark.
+- Save remove: plain `toast()` with a custom red **X** SVG icon and red text/border. Earlier version used `toast.error` (red ! icon), which read as an error. Replaced both call sites with the X variant.
+- `richColors` is enabled in `<Toaster>` so semantic toasts get colored backgrounds.
+
+**Other decisions worth noting:**
+- **Listing key:** `listing.url` (natural key). The `Listing.id` from search is nanoid-generated and not stable across sessions, so we never store it in `saves`.
+- **Cached snapshot, not live:** when a listing is saved, the title/price/image at save-time get stored. No background re-scrape (that's Phase 2C Watchlist).
+- **Heart hidden when signed out** — chosen over "show + prompt login" for cleanliness. Reconsider if we later want to drive signups from search results.
+- **Bio source:** `public.profiles.bio` (added 2026-05-18 by user). Display name pulled from `profiles.display_name`; avatar from `profiles.avatar_url`. Email always falls back to `auth.user.email` if the profile row is missing.
+- **Avatar files are timestamped, not upserted** (`avatar-{Date.now()}.{ext}`) — sidesteps browser cache-busting. Trade-off: old files accumulate. Acceptable since the bucket is per-user and capped at 2 MB per file. If storage usage becomes a concern later, add a `remove([oldPath])` call before each new upload.
+
+**Verified end-to-end in browser:**
+- Save / unsave hearts on search results (with toast feedback)
+- Saves grid on `/profile`, search filter, remove
+- Profile editing: upload avatar → save → header refreshes via `router.refresh()`
+- Display name + bio edit & persist
+- Light + dark mode
+
+**NOT verified by Claude (recommend manual checks):**
+- Avatar files older than the latest upload should still be in the bucket (no auto-cleanup). Verify in Supabase Storage UI if storage usage matters.
+- Cross-user RLS: save a listing, sign in as another user, confirm the row doesn't appear (RLS should block it).
+
+**Known follow-ups (not blockers):**
+- Watchlist tab is a placeholder. Phase 2C: eye-icon on listings, auto-refresh on login, price drops.
+- Settings page is a placeholder. Could host theme toggle, account deletion, email preferences.
+- No old-avatar cleanup. Add `remove([oldPath])` if storage usage gets noisy.
+
+---
+
+**Previous: 2026-05-18 — Price filter dropdown fully polished:**
 
 ✅ **Price filter Min/Max input dropdown is fully working.** Both inputs are visible, side-by-side, no spinners, digits-only, with min < max validation.
 
@@ -462,6 +548,7 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - **Auth:** Supabase Auth (email/password + Google OAuth); protected routes via `app/(protected)/` layout with server-side `auth.getUser()` check
 - Client-side auth hooks: `useAuth()` and `useProtectedRoute()` for component-level access control
 - Client-side state via React hooks; Zod for API request validation; nanoid for listing IDs
+- `sonner` for toast notifications (mounted in `(protected)/layout.tsx`)
 
 **Backend services**
 - Next.js API routes (`/api/search`) orchestrate the pipeline
@@ -469,7 +556,9 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - `@supabase/supabase-js` v2.x for auth + database access
 - **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm
 - Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
-- Supabase Postgres — auth users + `public.profiles` table (user profile metadata); auto-trigger creates profile row on signup
+- Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at)
+- Supabase Storage — `avatars` public bucket (2 MB cap; PNG/JPG/WebP). Files stored at `{user_id}/avatar-{timestamp}.{ext}`. RLS scopes write access to own folder.
+- **Permissions gotcha:** RLS policies alone are not sufficient. Each public table also needs `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated` — without it, every request returns Postgres `42501 permission denied`.
 
 **LLM**
 - OpenAI `gpt-4o-mini` is the default extraction model (via litellm, configured in `.env`)
@@ -478,7 +567,7 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 
 ---
 
-## 3. Architecture (current — as of 2026-05-17)
+## 3. Architecture (current — as of 2026-05-18)
 
 ```
 User (unauthenticated)
@@ -520,6 +609,14 @@ POST /api/search ─────────────────────
                                                                ▼
 ```
 
+**Saves + Profile editing layer (Phase 2B, complete as of 2026-05-18):**
+- `(protected)/layout.tsx` mounts `<SavesProvider>` (React Context) and sonner `<Toaster>` once for the whole protected subtree
+- `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh }`. State is hydrated via `POST /api/saves/check` (batched), updated optimistically on toggle, and cleared on sign-out
+- Heart button on `ListingCard` calls `toggleSave(listing)` — POST `/api/saves` or DELETE `/api/saves?url=`. Hidden when signed out.
+- `/profile` server component fetches the `profiles` row, renders `ProfileHeader` + tabs (Saves | Watchlist)
+- "Edit profile" → `EditProfileModal` (avatar upload via browser Supabase client → public bucket → PATCH `/api/profile` with new `avatar_url`)
+- `/settings` is a standalone page (not a tab)
+
 **Auth layer (new in Phase 2A, complete as of 2026-05-17):**
 - `proxy.ts` (Next 16 convention) runs on every request to refresh the Supabase session cookie before route handlers see it
 - Server-side auth check in `app/(protected)/layout.tsx`: calls `auth.getUser()` and redirects to `/login` if no session
@@ -543,10 +640,17 @@ fashion-crawler-crawl4ai/
 ├── app/
 │   ├── api/
 │   │   ├── search/route.ts           ← orchestrator (POST /api/search)
+│   │   ├── saves/
+│   │   │   ├── route.ts              ← POST (save), GET (list w/ ?search=&platform=), DELETE (?url=)
+│   │   │   ├── [id]/route.ts         ← DELETE by save id (used by SavesTab card remove)
+│   │   │   └── check/route.ts        ← POST batch URL check { urls } → { saved_urls }
+│   │   ├── profile/route.ts          ← PATCH display_name / bio / avatar_url
 │   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
 │   ├── (protected)/                  ← auth-protected route group
-│   │   ├── layout.tsx                ← server-side auth guard (redirects to /login if not authenticated)
-│   │   └── page.tsx                  ← search page (moved from /app/page.tsx; requires auth)
+│   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> + <Toaster>
+│   │   ├── page.tsx                  ← search page (requires auth)
+│   │   ├── profile/page.tsx          ← profile page (server: fetches profiles row → renders header + tabs)
+│   │   └── settings/page.tsx        ← standalone settings page (placeholder)
 │   ├── auth/
 │   │   ├── reset-password/page.tsx   ← password reset form (via email link)
 │   │   └── callback/route.ts         ← OAuth/password reset callback
@@ -554,17 +658,24 @@ fashion-crawler-crawl4ai/
 │   ├── check-email/page.tsx          ← confirmation screen (after signup or password-reset email sent)
 │   ├── components/
 │   │   ├── AuthCard.tsx              ← shared auth UI wrapper (logo, gradient background, theme-aware)
-│   │   ├── AuthButton.tsx            ← session-aware nav button (Sign in link or user avatar + dropdown)
+│   │   ├── AuthButton.tsx            ← session-aware nav button (dropdown: Profile / Settings / Sign out)
+│   │   ├── SavesProvider.tsx         ← Context: savedUrls Set, optimistic toggleSave, hydrate batch
 │   │   ├── SearchForm.tsx            ← query + platform checkboxes
 │   │   ├── SearchSection.tsx         ← client state container
-│   │   ├── ResultsDisplay.tsx        ← tabbed results grid (All + per-platform)
-│   │   ├── ListingCard.tsx           ← single listing card (image, price, badge)
-│   │   └── PriceSummary.tsx          ← min/max/avg stats bar
+│   │   ├── ResultsDisplay.tsx        ← tabbed results grid + calls hydrateUrls() per search
+│   │   ├── ListingCard.tsx           ← single listing card + heart button (hidden when signed out)
+│   │   ├── PriceSummary.tsx          ← min/max/avg stats bar
+│   │   └── profile/
+│   │       ├── ProfileHeader.tsx     ← client: avatar + name + email + joined + bio + Edit button
+│   │       ├── EditProfileModal.tsx  ← modal: avatar upload → Supabase Storage; PATCH /api/profile
+│   │       ├── ProfileTabsClient.tsx ← Saves | Watchlist tabs (URL-driven via ?tab=)
+│   │       ├── SavesTab.tsx          ← debounced search, optimistic remove, empty state
+│   │       └── WatchlistTab.tsx      ← placeholder for Phase 2C
 │   ├── layout.tsx                    ← root layout (suppressHydrationWarning for Grammarly)
 │   └── globals.css                   ← Tailwind v4 + CSS vars + theme tokens
 │
 ├── lib/
-│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse
+│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save, Profile
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
 │   ├── parse.ts                      ← filterListingUrls(), parseScrapedListings()
@@ -879,7 +990,8 @@ The structured extractor reads `[data-testid="trade-box-buy-amount"]` faithfully
 - **Grailed ~83% sold rate** — Google indexes lots of sold Grailed listings; nothing to do without paying for more search results or finding a different discovery method.
 - **Depop GBP/EUR listings** — currency badge handles UI flagging; FX conversion would be a nice-to-have.
 - **No pagination** — 15 search results per platform, no "load more."
-- **No seller info, no price history, no auth, no watchlist** — all Phase 2.
+- **Auth (Phase 2A) DONE** and **Saves + Profile editing (Phase 2B) DONE.**
+- **Still pending:** Watchlist with auto-refresh on login (Phase 2C), price history, seller info, additional platforms (RealReal, ThredUp).
 
 ---
 
@@ -1008,16 +1120,20 @@ When picking this up in a future session, verify in this order before making cha
 23. **`remove_overlay_elements=True` is HARMFUL.** It runs JS in the page to remove overlay nodes; on Poshmark this triggers a navigation (logged as `Failed to remove overlay elements: Execution context was destroyed`) or strips `<meta property="og:type">` and other critical SSR meta. The recurring "Page.content: Unable to retrieve content because the page is navigating" errors that look like anti-bot are actually caused by *our own JS*. Keep it set to `False` in `_build_run_cfg`.
 24. **CSS rule definitions are NOT element presence.** Poshmark defines `.listing__status-banner__title--sold { … }` in every page's `<style>` block whether or not the listing is sold. `'listing__status-banner__title--sold' in html` matches the CSS rule, not the rendered element. Always query via `BeautifulSoup(html).find(class_="…")` when checking for a rendered DOM element. (Same trap applies to any class detection on any platform.)
 25. **Schema.org availability can be reused in vocabulary references.** A page can mention `schema.org/OutOfStock` as a generic enum link without the listing actually being sold. Match the FULL `"availability":"…OutOfStock"` JSON key/value pair, not just the URL substring.
+26. **Supabase: RLS ≠ table permissions.** Creating a table and adding RLS policies is not enough. Each public table also needs `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated` (and to `service_role` if hit via REST). Without those grants, every request returns Postgres `42501 permission denied`. Discovered during Phase 2B `saves`-table rollout — RLS was correct, but `authenticated` couldn't even see the table. Same fix applied to `profiles.UPDATE` before profile editing worked.
+27. **Supabase Storage public bucket + RLS:** even with a public bucket, you still need explicit policies on `storage.objects` for INSERT/UPDATE/DELETE — scope writes to `(storage.foldername(name))[1] = auth.uid()::text` so users can only touch their own folder. SELECT can be public via `bucket_id = '<bucket>'`.
+28. **Sonner `richColors` + `toast.error` reads as "error".** The red `!` icon makes "Removed from Favorites" look like a failure. Use a plain `toast(msg, { style: { color: '#E24B4A' }, icon: <X/> })` instead when you want destructive-but-not-error tone.
 
 ---
 
 ## 12. What's Next (proposed order)
 
-1. **Investigate StockX SSR-vs-CSR price drift** (§7 E). User has deferred this; revisit when picking up the project. The structured extractor is reading the SSR snapshot, which sometimes contains a stale Ask. Investigation steps are in §7 E.
-2. **Decide on eBay** (§7 A) — either invest in proxy/API solution, or formally drop eBay from `PLATFORM_DOMAINS` so the UI stops surfacing the empty tab.
-3. **Implement Vestiaire URL discovery** via sidecar (§7 B option 1). Scoped, low-risk.
-4. **Add retry-once-on-null wrapper** in `lib/scraper.ts` for residual flaky-first-call cases (cheap, ~10 lines).
-5. **Phase 2 work** — saved searches, price history, watchlist, auth. Supabase env vars already in place.
+1. **Phase 2C — Watchlist with auto-refresh on login.** Eye-icon on listing cards alongside the heart. `watchlist` table (id, user_id, listing_url unique, platform, title, price_at_add, price_current, image_url, is_sold, last_checked_at, created_at). On login (or via a "Refresh prices" button on `/profile?tab=watchlist`), POST each URL to the sidecar and update price_current + is_sold. UI shows price delta + sold badge. Remember the table needs `GRANT ALL ON public.watchlist TO authenticated` alongside RLS policies (see Phase 2B gotcha in §11).
+2. **Investigate StockX SSR-vs-CSR price drift** (§7 E). User has deferred this; revisit when picking up the project.
+3. **Decide on eBay** (§7 A) — either invest in proxy/API solution, or formally drop eBay from `PLATFORM_DOMAINS` so the UI stops surfacing the empty tab.
+4. **Implement Vestiaire URL discovery** via sidecar (§7 B option 1). Scoped, low-risk.
+5. **Add retry-once-on-null wrapper** in `lib/scraper.ts` for residual flaky-first-call cases (cheap, ~10 lines).
+6. **New platforms** — The RealReal, ThredUp (and lower priority: 2nd Street). Add to `crawl4ai-service/structured_extractors.py` + `PLATFORM_DOMAINS`/`PLATFORM_NAMES`.
 
 ---
 
