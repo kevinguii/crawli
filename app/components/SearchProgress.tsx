@@ -73,8 +73,10 @@ function PlatformRow({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    let resetTimeout: number | null = null;
+
     if (status === 'loading') {
-      setStageIdx(0);
+      resetTimeout = window.setTimeout(() => setStageIdx(0), 0);
       intervalRef.current = setInterval(() => {
         setStageIdx((i) => Math.min(i + 1, STAGES.length - 1));
       }, STAGE_INTERVAL_MS);
@@ -84,7 +86,11 @@ function PlatformRow({
         intervalRef.current = null;
       }
     }
+
     return () => {
+      if (resetTimeout !== null) {
+        window.clearTimeout(resetTimeout);
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
