@@ -1,8 +1,62 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Collection folders — final UI polish)
+**Last updated:** 2026-05-18 (ThredUp platform added — search-page extraction)
 
-**Latest change (2026-05-18 — Collection folders final refinements):**
+**Latest change (2026-05-18 — ThredUp added via search-page extraction):**
+
+✅ **ThredUp is the 9th platform.** Search → results work end-to-end against live ThredUp pages. Verified manually via `curl POST /scrape-search` against the running sidecar with queries "nike air jordan 1" (5 listings: $41–$72) and "levis 501 jeans" (3 listings: ~$16–$18). All listings include URL, title, sale price (USD), image, condition ("Used"), sold flag.
+
+**Architectural divergence — read this before searching the codebase!**
+
+ThredUp uses a different pipeline than the existing 8 platforms because individual listing URLs aren't surfaced by Firecrawl's `site:thredup.com` search — only category/search-result pages come back (verified 2026-05-18 across two queries; zero `/product/...` URLs returned). The existing `searchPlatform → filter → for-each scrape` flow can't work.
+
+Solution: bypass Firecrawl for ThredUp, render ThredUp's onsite search page once, and pull a grid of listings from a single render.
+
+**What was built:**
+
+1. **[crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py)** — new file (mirrors `structured_extractors.py` pattern). Exports `SEARCH_PAGE_PLATFORMS = {"thredup"}`, `search_url_for(platform, query)` (builds `https://www.thredup.com/search/<hyphen-slug>`), and `extract_thredup_grid(html, limit)`. The extractor reads a single `<script type="application/ld+json">` containing an **array of 119 `@type=Product`** objects per page, then merges with a SKU→href map built from DOM `<a data-inp-label="link-item-card" href="/product/<slug>/<sku>?...">` anchors. JSON-LD has no `url` field, so the DOM merge is required.
+
+2. **[crawl4ai-service/main.py](crawl4ai-service/main.py)** — new `POST /scrape-search` endpoint. Body `{platform, query, limit}` → renders the platform's onsite search URL (built by `search_url_for`), dispatches to `extract_search_grid`, returns `{results: ScrapedListing[]}` (each item already includes `url`).
+
+3. **[lib/scraper.ts](lib/scraper.ts)** — added `SEARCH_PAGE_PLATFORMS = new Set(['thredup'])` and `scrapeSearchPageViaSidecar(platform, query, limit)` (POST to `/scrape-search`). 2 retries (vs `/scrape`'s 3) since this is a single high-value render.
+
+4. **[app/api/search/route.ts](app/api/search/route.ts)** — `searchAndScrape()` now branches at the top: if `SEARCH_PAGE_PLATFORMS.has(platform)`, it calls `scrapeSearchPageViaSidecar(platform, query, 12)` and pipes the result straight into `parseScrapedListings` (skipping Firecrawl entirely). Everything else (concurrency, sold-filter, title-overlap) reuses the existing path so the existing 8 platforms are untouched.
+
+5. **[lib/types.ts](lib/types.ts)** — `thredup: 'thredup.com'` in `PLATFORM_DOMAINS`, `thredup: 'ThredUp'` in `PLATFORM_NAMES`. ThredUp now appears in the FilterPanel platform checklist automatically (driven by `Object.keys(PLATFORM_DOMAINS)`).
+
+6. **[app/components/platformColors.ts](app/components/platformColors.ts)** — `thredup: '#0F3D2E'` (their primary brand green). Uses the same solid-background + white-text path as Grailed/Depop/etc.
+
+**Why JSON-LD as the source:** ThredUp's search page emits Schema.org `Product` array with all the fields we need (`name`, `sku`, `image[0]`, `offers.price` for sale price, `offers.priceCurrency`, `offers.itemCondition`, `offers.availability`). Title strings contain HTML entities (e.g. `Men&apos;s`), so the extractor calls `html.unescape()`. Sale price is `offers.price` — the original/list price (`offers.priceSpecification.price`) is intentionally ignored to match how the UI treats other platforms' "current sale price" semantics.
+
+**Sold filtering:** `offers.availability` can be `InStock` or `SoldOut`. Sold items get `isSold=true` and are dropped by the existing `parseScrapedListings` filter — same behavior as every other platform.
+
+**Critical gotchas / decisions:**
+- **DO NOT add ThredUp to `DEFAULT_PLATFORMS`** in [app/components/SearchForm.tsx:17](app/components/SearchForm.tsx#L17). That set is intentionally limited to known-reliable platforms; ThredUp is just-shipped and hasn't been beaten on long enough to earn a slot. Users can opt in via the platform checkboxes.
+- **Don't try to use `/scrape` for ThredUp** — `PLATFORM_EXTRACTORS` doesn't include `thredup`, so `/scrape` would fall through to LLM extraction on a single listing page, which has different DOM than the search page anyway.
+- **The search URL slug is just lowercase + spaces→hyphens.** No URL-encoding of accents/spaces beyond what `urllib.parse.quote(s, safe='-')` does. Verified against two query shapes.
+- **`SEARCH_PAGE_PLATFORMS` is duplicated** in TS ([lib/scraper.ts](lib/scraper.ts)) and Python ([crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py)). When adding another search-page platform (e.g. Vestiaire if we ever solve its discovery gap, or RealReal if it has the same issue), update both.
+
+**Verified end-to-end (live, 2026-05-18 PM, against running sidecar):**
+- `npx tsc --noEmit` — clean.
+- `curl POST /health` — `llm_mode: active`, `provider: openai/gpt-4o-mini`.
+- `curl POST /scrape-search {platform: thredup, query: "nike air jordan 1", limit: 5}` — 5 listings, all valid, all USD, all with absolute `/product/<slug>/<sku>` URLs, retina images, "Used" condition.
+- `curl POST /scrape-search {platform: thredup, query: "levis 501 jeans", limit: 3}` — 3 Levi's listings, prices $15.99–$18.49.
+
+**NOT yet verified (recommended for next session):**
+- Browser UI: search with `thredup` checked, confirm tab appears with results, click a listing → opens the right product page in a new tab, heart + eye buttons work, ThredUp green badge renders.
+- Save/Watchlist behavior with ThredUp listings (URL + cached snapshot should persist cleanly).
+- Mixed-platform searches (thredup + grailed + depop) — verify the per-platform concurrency cap (`Promise.all` over platforms, no inter-platform contention) still behaves.
+
+**Files touched (5):**
+- new: [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py)
+- new (helper, not committed): [scripts/discover-thredup.mjs](scripts/discover-thredup.mjs) — one-off Firecrawl probe; safe to delete
+- edited: [crawl4ai-service/main.py](crawl4ai-service/main.py), [lib/scraper.ts](lib/scraper.ts), [app/api/search/route.ts](app/api/search/route.ts), [lib/types.ts](lib/types.ts), [app/components/platformColors.ts](app/components/platformColors.ts)
+
+**What's next (per §12 roadmap):** The RealReal is the other roadmap-listed platform. Before starting, **probe Firecrawl's `site:therealreal.com` index** — RealReal may also have the URL-discovery problem (their site is heavily JS-rendered). If yes, reuse this `SEARCH_PAGE_PLATFORMS` infrastructure. If individual `/listings/<id>` URLs ARE indexed, use the existing single-listing pipeline.
+
+---
+
+**Previous change (2026-05-18 — Collection folders final refinements):**
 
 Two UI polish changes on the Collection (Saves) feature:
 1. **Toast action label:** When user saves a listing and clicks the toast's "Add to folder…" action button, the success toast now says "Added to <folder>" (instead of "Moved to"). The modal tracks `fromToastAction: boolean` to pick the right verb — saves from the toast action use "Added to", while moves via the 3-dot menu use "Moved to".
@@ -695,9 +749,9 @@ This document supersedes the older `HANDOFF.md` and `HANDOFF_FULL.md`. It folds 
 
 ## 1. Project Overview
 
-A personal-use web app that searches multiple fashion resale platforms simultaneously and aggregates live listings (price, image, condition, sold status, currency) across them. Single query → results from up to 8 platforms in one view, with min/max/avg price stats.
+A personal-use web app that searches multiple fashion resale platforms simultaneously and aggregates live listings (price, image, condition, sold status, currency) across them. Single query → results from up to 9 platforms in one view, with min/max/avg price stats.
 
-**Target platforms:** Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, Vestiaire Collective.
+**Target platforms:** Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, Vestiaire Collective, ThredUp.
 
 **Business value:** Price transparency across a fragmented resale market without manually checking each site.
 
@@ -865,10 +919,11 @@ fashion-crawler-crawl4ai/
 │       └── ... (other hooks as needed)
 │
 ├── crawl4ai-service/                 ← Python sidecar (replaces Firecrawl scrape)
-│   ├── main.py                       ← FastAPI app, /scrape + /health endpoints; structured-first → LLM fallback
+│   ├── main.py                       ← FastAPI app, /scrape + /scrape-search + /health endpoints; structured-first → LLM fallback
 │   ├── extractors.py                 ← LISTING_SCHEMA + PLATFORM_PROMPTS + per-platform options (LLM fallback tier)
-│   ├── structured_extractors.py     ← NEW (2026-05-15 PM): JSON-LD + testid extractors (primary tier)
-│   ├── debug_probe.py                ← NEW: dumps OG/JSON-LD/__NEXT_DATA__/visible-$ from a URL; for future debugging
+│   ├── structured_extractors.py     ← JSON-LD + testid extractors for single-listing pages (primary tier for 6 platforms)
+│   ├── search_page_extractors.py    ← NEW 2026-05-18: SEARCH_PAGE_PLATFORMS + grid extractors for platforms whose listing URLs aren't indexed (currently: ThredUp)
+│   ├── debug_probe.py                ← dumps OG/JSON-LD/__NEXT_DATA__/visible-$ from a URL; for future debugging
 │   ├── debug_dumps/                  ← saved raw HTML from probe runs (gitignored)
 │   ├── requirements.txt
 │   ├── venv/                         ← already provisioned; crawl4ai, playwright, fastapi, beautifulsoup4 installed
@@ -894,7 +949,8 @@ This is where the Firecrawl-replacement lives. Treat it as a separate process th
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/health` | Returns `{status, llm_mode: "active"\|"stub", provider}`. Use to verify the API key is loaded. |
-| `POST` | `/scrape` | Body: `{url, platform}`. Returns `{result: ScrapedListing \| null}`. Mirrors the original Firecrawl-shaped output exactly. |
+| `POST` | `/scrape` | Body: `{url, platform}`. Returns `{result: ScrapedListing \| null}`. Mirrors the original Firecrawl-shaped output exactly. Used by all platforms except those in `SEARCH_PAGE_PLATFORMS`. |
+| `POST` | `/scrape-search` | Body: `{platform, query, limit?}`. Returns `{results: ScrapedListing[]}`. Builds the platform's onsite search URL, renders once, returns a grid of listings. Used only for `SEARCH_PAGE_PLATFORMS` (currently `{thredup}`) — platforms whose listing URLs aren't indexed by Firecrawl. |
 
 ### How it works
 1. `main.py` boots a long-lived `AsyncWebCrawler` (Playwright Chromium) with `enable_stealth=True` and `user_agent_mode="random"`.
@@ -957,6 +1013,7 @@ Test was a single live run via `scripts/test-all-platforms.mjs` with query "Nike
 | **Vinted** | ✅ | Regex match in escaped Next.js RSC payload for `\"price\":{\"amount\":\"<num>\",\"currency_code\":\"<code>\"}` (note **underscored** `currency_code` — listing pricing; `currencyCode` is shipping). `og:image` for the real product photo. **Fixed 2026-05-15 evening**: previously returning CZK shipping-option prices instead of USD item prices, and a checkmark-icon image URL instead of the photo. |
 | **eBay** | ❌ deferred | Edge proxy returns 307 → `/splashui/challenge` even with stealth + random UA. See §7 (A). |
 | **Vestiaire Collective** | ❌ deferred | Scrape side works; URL discovery is the blocker. Firecrawl's `site:vestiairecollective.com` returns 0 results. See §7 (B). |
+| **ThredUp** | ✅ | **Search-page extraction** — bypasses Firecrawl entirely. Sidecar's `/scrape-search` renders `https://www.thredup.com/search/<hyphen-slug>` and parses the JSON-LD `Product` array (119 items per page) merged with a DOM SKU→`/product/<slug>/<sku>` href map. Returns ScrapedListing[] in one render. Verified 2026-05-18 against two queries. Not in `DEFAULT_PLATFORMS` — opt-in via FilterPanel. |
 
 ### 6.5 What we tried (2026-05-15 PM debug iteration) — what worked, what didn't
 

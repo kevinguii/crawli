@@ -33,6 +33,11 @@ from extractors import (
     get_prompt,
 )
 from structured_extractors import PLATFORM_EXTRACTORS, extract_structured
+from search_page_extractors import (
+    SEARCH_PAGE_PLATFORMS,
+    extract_search_grid,
+    search_url_for,
+)
 
 # Load .env from parent directory (project root)
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -121,6 +126,16 @@ class ScrapedListing(BaseModel):
 
 class ScrapeResponse(BaseModel):
     result: Optional[ScrapedListing] = None
+
+
+class ScrapeSearchRequest(BaseModel):
+    platform: str
+    query: str
+    limit: int = 12
+
+
+class ScrapeSearchResponse(BaseModel):
+    results: list[ScrapedListing] = []
 
 
 # ── Coercion ─────────────────────────────────────────────────────────────────
@@ -351,3 +366,37 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
     except Exception as exc:  # noqa: BLE001 — match firecrawl.ts swallow-and-null behaviour
         log.exception("scrape failed for %s: %s", req.url, exc)
         return ScrapeResponse(result=None)
+
+
+@app.post("/scrape-search", response_model=ScrapeSearchResponse)
+async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
+    """Render a platform's onsite search page and pull a grid of listings.
+
+    Used for platforms (e.g. ThredUp) whose individual listing URLs aren't
+    discoverable via Firecrawl's `site:` search — instead, every listing card
+    on the search page carries the data we need (price, image, title, URL).
+    """
+    assert crawler is not None, "crawler not initialised"
+
+    if req.platform not in SEARCH_PAGE_PLATFORMS:
+        log.warning("[scrape-search] unsupported platform: %s", req.platform)
+        return ScrapeSearchResponse(results=[])
+
+    target_url = search_url_for(req.platform, req.query)
+    if not target_url:
+        return ScrapeSearchResponse(results=[])
+
+    try:
+        result = await _arun_with_retry(target_url, req.platform)
+        if not result.success:
+            log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
+            return ScrapeSearchResponse(results=[])
+
+        raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
+        items = extract_search_grid(req.platform, raw_html, limit=req.limit)
+        listings = [coerce_listing(item["url"], item) for item in items if isinstance(item.get("url"), str)]
+        log.info("[scrape-search] %s '%s' → %d listings", req.platform, req.query, len(listings))
+        return ScrapeSearchResponse(results=listings)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("[scrape-search] failed for %s '%s': %s", req.platform, req.query, exc)
+        return ScrapeSearchResponse(results=[])

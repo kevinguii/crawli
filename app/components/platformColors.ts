@@ -10,6 +10,7 @@ export const PLATFORM_BG: Record<string, string> = {
   mercari:   '#5E6DF2',
   vinted:    '#007782',
   vestiaire: '#C4A17A',
+  thredup:   '#0F3D2E',
 };
 
 // White for everything; black on vestiaire (light beige bg).

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { searchPlatform, scrapeListing, ScrapedListing } from '@/lib/firecrawl';
+import { SEARCH_PAGE_PLATFORMS, scrapeSearchPageViaSidecar } from '@/lib/scraper';
 import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
 import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
 
@@ -37,6 +38,15 @@ async function allSettledWithConcurrency<T>(
 }
 
 async function searchAndScrape(platform: string, query: string): Promise<Listing[]> {
+  // ThredUp (and any other SEARCH_PAGE_PLATFORMS) skip Firecrawl entirely.
+  // Their individual listing URLs aren't surfaced by `site:` search, but the
+  // platform's own search page returns a grid with all the listing data we
+  // need in one render. Sidecar's /scrape-search handles the fetch + extract.
+  if (SEARCH_PAGE_PLATFORMS.has(platform)) {
+    const scraped = await scrapeSearchPageViaSidecar(platform, query, 12);
+    return parseScrapedListings(scraped, platform, query);
+  }
+
   const raw = await searchPlatform(platform, query);
 
   const filtered = filterListingUrls(raw, platform).filter(
