@@ -262,12 +262,20 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
         )}
 
         {row.is_sold && (
-          <span
-            className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-            style={{ background: '#1f1f1f', color: '#ffffff' }}
-          >
-            Sold
-          </span>
+          <>
+            <div
+              className="absolute inset-0"
+              style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className="rounded-full px-4 py-2 text-lg font-semibold uppercase tracking-wide"
+                style={{ background: '#1f1f1f', color: '#ffffff' }}
+              >
+                Sold
+              </span>
+            </div>
+          </>
         )}
 
         <button
@@ -328,7 +336,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
         {hasDelta && cur !== null && (
           <p
             className="text-[11px] font-medium"
-            style={{ color: dropped ? 'var(--success)' : 'var(--text-muted)' }}
+            style={{ color: dropped ? 'var(--success)' : '#E24B4A' }}
           >
             {dropped ? '▼' : '▲'} {dropped ? '-' : '+'}{symbol}{Math.abs(deltaAbs).toLocaleString('en-US', { maximumFractionDigits: 2 })} ({deltaPct >= 0 ? '+' : ''}{deltaPct}%) from {formatPrice(at, row.currency)}
           </p>
