@@ -1,8 +1,32 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-19 (The RealReal attempted, deferred — PerimeterX press-and-hold defeats UndetectedAdapter + managed profile)
+**Last updated:** 2026-05-19 (Filter retroactivity fixed, search cancel button added)
 
-**Latest change (2026-05-19 — The RealReal: scaffolding shipped, runtime deferred):**
+**Latest change (2026-05-19 — Filter isolation + search cancellation):**
+
+✅ **Two UX fixes shipped:**
+1. **Filters no longer retroactively apply to completed search results.** When a search finishes and results are displayed, changing price/condition/size filters only affects *new* searches. The filters used for the current results are frozen at search-completion time (`searchFilters` state in `SearchSection`). This prevents confusing behavior where users could change filters after a search and see the old results retroactively filtered.
+
+2. **Added search cancellation.** While a search is in progress, a red "Cancel" button appears in the `SearchProgress` component (top-right, next to the "X / Total platforms" counter). Clicking Cancel aborts the fetch via `AbortController`. The main "Searching…" button shows progress and remains disabled while the cancel runs in parallel.
+
+**Technical details:**
+- `SearchSection` now holds `abortControllerRef` and passes it to `SearchForm`
+- `SearchForm` stores the AbortController before fetching, passes signal to fetch
+- `SearchSection` also passes `handleCancel()` to `SearchProgress` for the button
+- `SearchProgress` accepts optional `onCancel` prop, shows button only while `isSearching && onCancel`
+- Both fixes tested in browser (no automated test suite)
+
+**Platform ordering:** ThredUp moved in the platform list from position 9 to position 6 (after Vinted, before eBay) for better visual grouping of "growing resale platforms".
+
+**Files touched (3):**
+- [app/components/SearchSection.tsx](app/components/SearchSection.tsx) — holds abort controller, captures filters at search-complete, passes handlers down
+- [app/components/SearchForm.tsx](app/components/SearchForm.tsx) — accepts abort controller ref, uses it for fetch signal
+- [app/components/SearchProgress.tsx](app/components/SearchProgress.tsx) — displays cancel button when searching
+- [lib/types.ts](lib/types.ts) — reordered PLATFORM_DOMAINS and PLATFORM_NAMES
+
+---
+
+**Previous change (2026-05-19 — The RealReal: scaffolding shipped, runtime deferred):**
 
 ❌ **The RealReal is not live.** PerimeterX (TRR's anti-bot service, distinct from Cloudflare) shows a press-and-hold challenge on every `/products?keywords=` nav even with crawl4ai's `UndetectedAdapter` + a managed-browser profile holding fresh login cookies. The user pre-decided in this session's plan: if the in-house path fails, defer & document (no FlareSolverr / Apify per cost rules). TRR now joins eBay + Vestiaire in §6 as deferred.
 

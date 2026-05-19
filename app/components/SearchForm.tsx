@@ -22,9 +22,10 @@ interface Props {
   onProgress: (event: SearchStreamEvent) => void;
   filters: FilterState;
   onFiltersChange: (next: FilterState) => void;
+  abortControllerRef: React.MutableRefObject<AbortController | null>;
 }
 
-export default function SearchForm({ onResults, onError, onProgress, filters, onFiltersChange }: Props) {
+export default function SearchForm({ onResults, onError, onProgress, filters, onFiltersChange, abortControllerRef }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>(DEFAULT_PLATFORMS);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +47,9 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
     setIsLoading(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const platformsForRun = [...selected];
     const results: Record<string, PlatformResults> = {};
 
@@ -54,6 +58,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, platforms: platformsForRun }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -125,9 +130,14 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         priceRange,
         averagePrice,
       });
-    } catch {
-      onError('Network error. Please check your connection.');
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        onError('Search cancelled.');
+      } else {
+        onError('Network error. Please check your connection.');
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
   }

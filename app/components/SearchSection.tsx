@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { SearchResponse, SearchStreamEvent } from '@/lib/types';
 import SearchForm from './SearchForm';
 import SearchProgress, { CheckpointStatus } from './SearchProgress';
@@ -19,10 +19,17 @@ export default function SearchSection() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [filters, setFilters] = useState<FilterState>(emptyFilterState());
+  const [searchFilters, setSearchFilters] = useState<FilterState | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  function handleCancel() {
+    abortControllerRef.current?.abort();
+  }
 
   function handleResults(data: SearchResponse) {
     setError(null);
     setResults(data);
+    setSearchFilters(filters);
   }
 
   function handleError(msg: string) {
@@ -35,6 +42,7 @@ export default function SearchSection() {
     if (event.type === 'start') {
       setResults(null);
       setError(null);
+      setSearchFilters(null);
       const statuses: Record<string, CheckpointStatus> = {};
       for (const p of event.platforms) statuses[p] = 'loading';
       setProgress({ platforms: event.platforms, statuses, errors: {}, counts: {} });
@@ -76,6 +84,7 @@ export default function SearchSection() {
           onProgress={handleProgress}
           filters={filters}
           onFiltersChange={setFilters}
+          abortControllerRef={abortControllerRef}
         />
       </div>
 
@@ -85,6 +94,7 @@ export default function SearchSection() {
           statuses={progress.statuses}
           errors={progress.errors}
           counts={progress.counts}
+          onCancel={handleCancel}
         />
       )}
 
@@ -101,7 +111,7 @@ export default function SearchSection() {
         </div>
       )}
 
-      {results && <ResultsDisplay data={results} minPrice={filters.minPrice} maxPrice={filters.maxPrice} />}
+      {results && <ResultsDisplay data={results} minPrice={searchFilters?.minPrice} maxPrice={searchFilters?.maxPrice} />}
     </div>
   );
 }

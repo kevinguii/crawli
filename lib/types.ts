@@ -4,10 +4,10 @@ export const PLATFORM_DOMAINS: Record<string, string> = {
   poshmark: 'poshmark.com',
   mercari: 'mercari.com',
   vinted: 'vinted.com',
+  thredup: 'thredup.com',
   ebay: 'ebay.com',
   vestiaire: 'vestiairecollective.com',
   stockx: 'stockx.com',
-  thredup: 'thredup.com',
   realreal: 'therealreal.com',
 };
 
@@ -17,10 +17,10 @@ export const PLATFORM_NAMES: Record<string, string> = {
   poshmark: 'Poshmark',
   mercari: 'Mercari',
   vinted: 'Vinted',
+  thredup: 'ThredUp',
   ebay: 'eBay',
   vestiaire: 'Vestiaire Collective',
   stockx: 'StockX',
-  thredup: 'ThredUp',
   realreal: 'The RealReal',
 };
 

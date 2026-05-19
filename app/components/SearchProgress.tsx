@@ -11,6 +11,7 @@ interface Props {
   statuses: Record<string, CheckpointStatus>;
   errors: Record<string, string>;
   counts?: Record<string, number>;
+  onCancel?: () => void;
 }
 
 const STAGES = [
@@ -22,11 +23,12 @@ const STAGES = [
 
 const STAGE_INTERVAL_MS = 2000;
 
-export default function SearchProgress({ platforms, statuses, errors, counts }: Props) {
+export default function SearchProgress({ platforms, statuses, errors, counts, onCancel }: Props) {
   const total = platforms.length;
   const settled = platforms.filter(
     (p) => statuses[p] === 'done' || statuses[p] === 'failed'
   ).length;
+  const isSearching = settled < total;
 
   return (
     <div
@@ -37,9 +39,21 @@ export default function SearchProgress({ platforms, statuses, errors, counts }: 
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {settled === total ? 'Search complete' : 'Searching platforms…'}
         </p>
-        <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          {settled} / {total}
-        </p>
+        <div className="flex items-center gap-3">
+          {isSearching && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-80"
+              style={{ background: 'var(--danger)' }}
+            >
+              Cancel
+            </button>
+          )}
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+            {settled} / {total}
+          </p>
+        </div>
       </div>
 
       <div className="space-y-2">
