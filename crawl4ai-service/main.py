@@ -448,6 +448,19 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
         strategy = LLMExtractionStrategy(**strategy_kwargs)
         result = await _arun_with_retry(req.url, req.platform, extraction_strategy=strategy, scope_to_target=True)
 
+        # Token usage logging, default-off (TOKEN_TRACKING=1 to enable).
+        try:
+            from token_tracker import log_extraction, is_enabled
+            if is_enabled():
+                log_extraction(
+                    platform=req.platform,
+                    url=req.url,
+                    strategy=strategy,
+                    model=provider,
+                )
+        except Exception as _exc:  # noqa: BLE001 — tracking must never break scraping
+            log.debug("token_tracker log_extraction failed: %s", _exc)
+
         if not result.success or not result.extracted_content:
             log.warning("[llm] no extracted content for %s", req.url)
             return ScrapeResponse(result=None)

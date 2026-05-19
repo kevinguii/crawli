@@ -1,0 +1,239 @@
+[
+  {
+    "limit": 5,
+    "wallclock_s": 224.08,
+    "listings_total": 30,
+    "listings_with_price": 25,
+    "duplicate_rate": 0.133,
+    "failed_platforms": 1,
+    "firecrawl_search_credits": 14,
+    "cost_firecrawl_hobby": 0.056,
+    "cost_firecrawl_std": 0.0139,
+    "cost_openai": 0.0457,
+    "cost_total_hobby": 0.1017,
+    "cost_total_std": 0.0596,
+    "per_platform": {
+      "grailed": {
+        "listings": 1,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 1
+      },
+      "depop": {
+        "listings": 4,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 4
+      },
+      "poshmark": {
+        "listings": 3,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 3
+      },
+      "mercari": {
+        "listings": 0,
+        "credits": 0,
+        "failed": true,
+        "url_count": 0,
+        "scrape_count": 0
+      },
+      "vinted": {
+        "listings": 5,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 5
+      },
+      "stockx": {
+        "listings": 5,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 5
+      },
+      "ebay": {
+        "listings": 2,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 2
+      },
+      "vestiaire": {
+        "listings": 5,
+        "credits": 2,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 5
+      },
+      "thredup": {
+        "listings": 5,
+        "credits": 0,
+        "failed": false,
+        "url_count": 5,
+        "scrape_count": 5
+      }
+    }
+  },
+  {
+    "limit": 10,
+    "wallclock_s": 446.93,
+    "listings_total": 55,
+    "listings_with_price": 45,
+    "duplicate_rate": 0.273,
+    "failed_platforms": 0,
+    "firecrawl_search_credits": 16,
+    "cost_firecrawl_hobby": 0.064,
+    "cost_firecrawl_std": 0.0158,
+    "cost_openai": 0.161,
+    "cost_total_hobby": 0.225,
+    "cost_total_std": 0.1768,
+    "per_platform": {
+      "grailed": {
+        "listings": 5,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 5
+      },
+      "depop": {
+        "listings": 8,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 8
+      },
+      "poshmark": {
+        "listings": 7,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 7
+      },
+      "mercari": {
+        "listings": 7,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 7
+      },
+      "vinted": {
+        "listings": 8,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 8
+      },
+      "stockx": {
+        "listings": 8,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 8
+      },
+      "ebay": {
+        "listings": 5,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 5
+      },
+      "vestiaire": {
+        "listings": 7,
+        "credits": 2,
+        "failed": false,
+        "url_count": 10,
+        "scrape_count": 7
+      },
+      "thredup": {
+        "listings": 0,
+        "credits": 0,
+        "failed": false,
+        "url_count": 0,
+        "scrape_count": 0
+      }
+    }
+  },
+  {
+    "limit": 15,
+    "wallclock_s": 750.23,
+    "listings_total": 0,
+    "listings_with_price": 0,
+    "duplicate_rate": 0.0,
+    "failed_platforms": 0,
+    "firecrawl_search_credits": 32,
+    "cost_firecrawl_hobby": 0.128,
+    "cost_firecrawl_std": 0.0317,
+    "cost_openai": 0.2586,
+    "cost_total_hobby": 0.3866,
+    "cost_total_std": 0.2902,
+    "per_platform": {
+      "grailed": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "depop": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 14,
+        "scrape_count": 0
+      },
+      "poshmark": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "mercari": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 14,
+        "scrape_count": 0
+      },
+      "vinted": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "stockx": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "ebay": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "vestiaire": {
+        "listings": 0,
+        "credits": 4,
+        "failed": false,
+        "url_count": 15,
+        "scrape_count": 0
+      },
+      "thredup": {
+        "listings": 0,
+        "credits": 0,
+        "failed": false,
+        "url_count": 0,
+        "scrape_count": 0
+      }
+    }
+  }
+]

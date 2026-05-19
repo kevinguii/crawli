@@ -1,8 +1,62 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-19 (Filter retroactivity fixed, search cancel button added)
+**Last updated:** 2026-05-19 (Engine bake-off RUN + findings + corrected cost docs)
 
-**Latest change (2026-05-19 — Filter isolation + search cancellation):**
+**Latest change (2026-05-19 — Engine bake-off run; recommendation: stay on crawl4ai, bump limit 5 → 10):**
+
+🎯 **Decision:** Stay on crawl4ai as primary scraper. Bump per-platform results from 5 → 10 in production. Don't switch any platform wholesale to Firecrawl. Optionally wire Firecrawl as a `/scrape` failover later (~$0.004/URL when triggered). Full analysis in [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md).
+
+### Bake-off results (72 URLs × 2 engines, 3 queries)
+
+| Engine | Listing-URL accuracy | p50 ms | p95 ms | Cost / 72 URLs |
+|---|---|---|---|---|
+| crawl4ai | 34/36 listings correct (94%) | 11,226 | **90,047** | $0 + $0.098 OpenAI |
+| firecrawl-basic | 30/36 listings correct (83%) | 3,205 | 6,134 | $0.288 Hobby / $0.071 Std |
+
+**Apples-to-apples (real listing URLs only, ignoring category pages Firecrawl search returned by mistake):** crawl4ai matches or beats Firecrawl basic on every platform except StockX (N=4, marginal). Vinted is the most decisive — crawl4ai got 5/5 prices (correctly reading EUR/GBP via structured extractor), Firecrawl basic's $-regex got 1/5.
+
+**Speed delta**: Firecrawl basic is 2–18× faster (2× on platforms with working structured extractors, 13–18× on grailed/poshmark/ebay where crawl4ai does LLM fallback + anti-bot retries). But faster ≠ better when accuracy degrades.
+
+**Cost delta**: crawl4ai $0/scrape vs Firecrawl $0.004/scrape (Hobby). For ~40 URLs per full search (limit 5), that's $0.16 Hobby of new cost to gain speed but lose accuracy.
+
+### Limit sweep results ("gucci bag")
+
+| Limit | Listings | Wallclock | Cost (Hobby) | Verdict |
+|---|---|---|---|---|
+| 5  | 30  | 224 s | $0.10 | current production |
+| **10** | **55** | 447 s | **$0.22** | **ship this** — 1.83× listings for 2.2× cost |
+| 15 | **0** | 750 s | $0.39 | **broken** — sidecar/Playwright degraded under load, every scrape returned null |
+
+**Limit 15 is a separate concurrency bug:** sidecar `/health` was green throughout but Playwright clearly couldn't keep up with ~15–20 concurrent renders. Filed as [§7 I](#i-sidecar-playwright-concurrency-degradation-at-load) below. Must be fixed before users can ever pick limit > 10.
+
+### What surprised us
+
+- **eBay isn't actually broken.** crawl4ai got 2/2 prices on real eBay `/itm/` URLs (and 5/9 overall, with the other 4 being category pages). [§7 A](#a-ebay--blocked-at-the-edge) says "every /scrape returns null" — that's stale. eBay's anti-bot is intermittent now, not constant. (p95 was 90s though, so it's still slow.)
+- **Vestiaire is rock-solid on crawl4ai** — 7/7 listing URLs, accurate prices. Speed is the only weakness (22s avg vs Firecrawl 3s).
+- **Firecrawl URL discovery returns ~37% non-listing junk** (category, brand hubs, news) on the queries we tested. Production's [filterListingUrls](lib/parse.ts) should be catching these — worth confirming the patterns cover eBay's `/b/` and StockX's `/brands/`. Audit recommended.
+
+### Files touched (10 + bake-off artifacts)
+
+- new: [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md), [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md), [scripts/engine_bakeoff.py](scripts/engine_bakeoff.py), [scripts/limit_sweep.py](scripts/limit_sweep.py), [scripts/bakeoff_fixture.json](scripts/bakeoff_fixture.json), [scripts/bakeoff_results.csv](scripts/bakeoff_results.csv), [scripts/limit_sweep_gucci_bag.json](scripts/limit_sweep_gucci_bag.json), [token_usage.jsonl](token_usage.jsonl)
+- edited: [TOKEN_COST_ANALYSIS.md](TOKEN_COST_ANALYSIS.md), [scripts/token_cost_analysis.py](scripts/token_cost_analysis.py), [scripts/README_TOKENS.md](scripts/README_TOKENS.md), [crawl4ai-service/token_tracker.py](crawl4ai-service/token_tracker.py), [crawl4ai-service/main.py](crawl4ai-service/main.py)
+- production code in `app/`, `lib/firecrawl.ts`, `lib/scraper.ts`, `app/api/search/route.ts`: **unchanged**.
+
+### Pre-bake-off doc cleanup (this same session)
+
+Before running the bake-off, fixed three places that had inflated Firecrawl cost math (`TOKEN_COST_ANALYSIS.md` claimed $0.44/search; reality is $0.13 Hobby / $0.04 Standard). The previous version attributed per-URL scrape credits to Firecrawl when Firecrawl is only doing `search()`. New canonical pricing reference at [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md); see §9 below.
+
+Also wired up real OpenAI token tracking, gated behind `TOKEN_TRACKING=1` so production is unaffected by default. [crawl4ai-service/token_tracker.py](crawl4ai-service/token_tracker.py) reads `LLMExtractionStrategy.total_usage` (which crawl4ai populates per LLM call) — no litellm patching needed.
+
+### What's next (top-priority follow-ups, see §7 I and §12)
+
+1. **Ship limit = 10** in production — one-line change at [app/api/search/route.ts:57](app/api/search/route.ts#L57). Biggest single user-visible upgrade in the bake-off data.
+2. **Investigate sidecar/Playwright concurrency** so limit 15 doesn't catastrophically break. Likely fix is a larger Playwright pool or per-platform queues.
+3. **Audit `filterListingUrls`** — bake-off fixture had 37% non-listing junk, suggests the filter may have gaps.
+4. **Optional: Firecrawl as failover.** Only fires when crawl4ai's `/scrape` returns null after retries; ~$0.004/URL when triggered. Separate plan.
+
+---
+
+**Previous change (2026-05-19 — Filter isolation + search cancellation):**
 
 ✅ **Two UX fixes shipped:**
 1. **Filters no longer retroactively apply to completed search results.** When a search finishes and results are displayed, changing price/condition/size filters only affects *new* searches. The filters used for the current results are frozen at search-completion time (`searchFilters` state in `SearchSection`). This prevents confusing behavior where users could change filters after a search and see the old results retroactively filtered.
@@ -1351,6 +1405,30 @@ The structured extractor reads `[data-testid="trade-box-buy-amount"]` faithfully
 3. **Crawl4ai upgrade.** If a future crawl4ai version (post-0.8.6) ships a stronger PX bypass, retry with `REALREAL_ENABLED=1` — no code changes needed.
 4. **Paid unlocker.** ScrapingBee / ZenRows / Bright Data Web Unlocker ($30-100/mo) reliably defeat PX. User has ruled this out for now.
 
+### H. Engine bake-off + limit sweep — DONE (2026-05-19)
+
+Both ran. Decision: **stay on crawl4ai, ship limit = 10**. Full numbers in [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md); summary in the "Latest change" block at the top of this doc.
+
+Net new follow-up items spawned by this work: §7 I below (sidecar concurrency at limit 15), and an audit of [filterListingUrls](lib/parse.ts) to confirm category-page filtering catches eBay `/b/` and StockX `/brands/` patterns (~37% of bake-off fixture URLs were non-listings — production filter should be eating these).
+
+### I. Sidecar / Playwright concurrency degradation at load (NEW — 2026-05-19)
+
+**Symptom:** limit_sweep at per-platform limit = 15 produced **0 listings across every platform** (vs 30 at limit 5, 55 at limit 10). The sidecar `/health` endpoint stayed green throughout and serves single requests fine immediately after. Firecrawl search succeeded and returned 14–15 URLs per platform (credit cost reflected this). Every sidecar `/scrape` call "completed" without error but extracted no content — pages returned to the LLM appeared to be empty or partial.
+
+**Hypothesis:** The sidecar uses one global `AsyncWebCrawler` instance with one Playwright browser. At limit 15 × 8 platforms × 2 concurrent per platform = up to 16 concurrent renders queued against one browser. The browser likely degrades — renders return partial DOM, anti-bot pages, or empty content that both structured and LLM extractors reject as "no extracted content."
+
+**Why this matters:** any future "more results per platform" or "search 2 queries simultaneously" feature will hit the same wall. The current production limit (5) and proposed new limit (10) stay safely under the cliff, but we don't know exactly where it is.
+
+**Investigation plan (when picking back up):**
+1. Reproduce: `python scripts/limit_sweep.py --query "<anything>" --limits 12 13 14 15` and check the failure point.
+2. Inspect sidecar logs during the failing run — is Playwright throwing "Target page, context or browser has been closed", or is it silent timeouts?
+3. Try one of:
+   - **A larger Playwright pool.** crawl4ai may support running N browser instances; check [crawl4ai-service/main.py](crawl4ai-service/main.py)'s `_ensure_realreal_crawler` for the per-platform-crawler pattern — extend it to N general-purpose crawlers.
+   - **Per-platform queues.** A semaphore *inside* the sidecar that caps concurrent renders to N (say 8), regardless of how many requests are queued. Smoother degradation.
+   - **Lower per-platform concurrency to 1 when total in-flight > threshold.** Soft circuit-breaker.
+
+**Until this is fixed: don't expose a results-per-platform > 10 in the UI.**
+
 ### D. Carryover from Phase 1 (still open)
 
 - **Grailed ~83% sold rate** — Google indexes lots of sold Grailed listings; nothing to do without paying for more search results or finding a different discovery method.
@@ -1419,15 +1497,29 @@ If `llm_mode` is `stub`, the API key isn't being read — check `.env` and that 
 
 ## 9. Cost Model
 
+**Sources of truth:** [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md) for Firecrawl, [TOKEN_COST_ANALYSIS.md](TOKEN_COST_ANALYSIS.md) for the full per-search breakdown. This section is a summary — update those files first when prices change.
+
 | Operation | Cost |
 |---|---|
-| Firecrawl search (per platform per query) | 2 credits |
-| Firecrawl scrape (deprecated, no longer used) | ~9–10 credits |
-| Sidecar scrape | ~$0.0005–$0.002 in OpenAI tokens |
-| Full search across 6 working platforms | ~12 Firecrawl credits + ~$0.02 OpenAI |
+| Firecrawl search (per platform per query, limit=20) | 4 credits |
+| Firecrawl scrape (not used in prod today; basic) | 1 credit/URL |
+| Firecrawl scrape + JSON format or stealth proxy | 5 credits/URL |
+| Sidecar scrape via crawl4ai | $0 (Playwright local) + OpenAI tokens **only** if LLM fallback runs |
+| OpenAI tokens (gpt-4o-mini) | $0.15 / 1M input · $0.60 / 1M output |
+| Full search across 8 working Firecrawl platforms + ThredUp | 32 Firecrawl credits + ~$0.02 OpenAI (eBay + Vestiaire only) |
 
-**Before the migration:** a full search burned ~400–450 Firecrawl credits and ate the $16/mo Hobby plan's 3,000 credits in ~7 sessions.
-**After the migration:** ~12–16 Firecrawl credits per search. The same plan now affords hundreds of sessions per month.
+### Per-search dollar cost (corrected 2026-05-19)
+
+| Plan | $/credit | Firecrawl per search | OpenAI per search | **Total per search** |
+|---|---|---|---|---|
+| Hobby ($20/mo, 5,000 cr) | $0.00400 | $0.128 | ~$0.019 | **~$0.147** |
+| Standard ($99/mo, 100,000 cr) | $0.00099 | $0.032 | ~$0.019 | **~$0.051** |
+
+OpenAI cost is concentrated on eBay (chunked LLM extraction, ~$0.014/search) and Vestiaire (~$0.005/search). The other 6 working Firecrawl platforms have deterministic structured extractors and use $0 in LLM tokens.
+
+### What changed since the last revision
+
+The previous version of this section claimed "12–16 Firecrawl credits per search" — that was correct only when limit was set to 10. Today the search limit is hard-coded to 20 in [lib/firecrawl.ts:46](lib/firecrawl.ts#L46), making per-platform-search cost 4 credits, not 2. With 8 working Firecrawl platforms, that's 32 credits per full search. The pipeline then slices to top 5 results per platform ([app/api/search/route.ts:57](app/api/search/route.ts#L57)) — so 75% of search credits are paid for URLs we never look at. **Largest controllable cost lever in the codebase right now.** See `scripts/limit_sweep.py` for an A/B harness comparing limits 5/10/15.
 
 ### Be conservative with diagnostic scripts
 
@@ -1501,6 +1593,7 @@ When picking this up in a future session, verify in this order before making cha
 4. **Implement Vestiaire URL discovery** via sidecar (§7 B option 1). Scoped, low-risk.
 5. **Add retry-once-on-null wrapper** in `lib/scraper.ts` for residual flaky-first-call cases (cheap, ~10 lines).
 6. **New platforms** — ThredUp is DONE (2026-05-18, search-page extraction). The RealReal scaffolded but DEFERRED (2026-05-19, §7 G — PerimeterX press-and-hold). Lower priority: 2nd Street. Pattern: `structured_extractors.py` for single-listing scrapes, or `search_page_extractors.py` for sites where listing URLs aren't Firecrawl-indexable. Always add to `PLATFORM_DOMAINS`/`PLATFORM_NAMES`.
+7. **Cost reduction: caching + structured extractors (eBay, Vestiaire)** — Full implementation plan is in `.claude/plans/sleepy-wishing-snowflake.md`. Summary: (a) add `cachetools` TTLCache to sidecar `/scrape` (30-min, keyed by URL) and `/scrape-search` (10-min, keyed by platform::query) — eliminates re-running Playwright+LLM for repeated queries and watchlist refreshes; (b) add `extract_ebay` and `extract_vestiaire` to `structured_extractors.py` using the existing `_extract_from_jsonld()` helper — both platforms emit Schema.org JSON-LD. See plan file for exact code, verification steps, and expected impact. 3 files total, no architecture changes.
 
 ---
 

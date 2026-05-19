@@ -1,0 +1,150 @@
+{
+  "queries": [
+    "gucci bag",
+    "nike air jordan 1",
+    "levis 501 jeans"
+  ],
+  "platforms": [
+    "grailed",
+    "depop",
+    "poshmark",
+    "mercari",
+    "vinted",
+    "stockx",
+    "ebay",
+    "vestiaire"
+  ],
+  "urls_per_bucket": 3,
+  "search_limit": 10,
+  "data": {
+    "gucci bag": {
+      "grailed": [
+        "https://www.grailed.com/browse/gucci-handbag",
+        "https://www.grailed.com/designers/gucci/bags-luggage",
+        "https://www.grailed.com/designers/gucci/womenswear/bags-luggage"
+      ],
+      "depop": [
+        "https://www.depop.com/theme/gucci-bags/",
+        "https://www.depop.com/products/nitryl-gucci-bag-authentic-gucci-8d72/",
+        "https://www.depop.com/products/sweetpotatotreasure-pink-gucci-bag-with-charm/"
+      ],
+      "poshmark": [
+        "https://poshmark.com/brand/Gucci-Women-Bags?srsltid=AfmBOooIV-mafGmZJDtAVL8y8d27kwsjtsFOK3BPwbpXaStNYd-CenwA",
+        "https://poshmark.com/brand/Gucci-Women-Bags--color-Black?srsltid=AfmBOoq_3NBO-Ed0DX-IhCDliZi3DyYGE20sYVVze29jP0MQLEI8OfZk",
+        "https://poshmark.com/listing/Gucci-Bag-5f0a00ac2ca9abab232de9e7?srsltid=AfmBOoqE_1YKZI6kNsXLH2_5hN2e3oxRbFDxBCni2Aaw5H5uKcaug9O-"
+      ],
+      "mercari": [
+        "https://www.mercari.com/us/brand/gucci-2766/women-s-handbags-21/",
+        "https://www.mercari.com/us/shop/gucci-designer-shoulder-bags/",
+        "https://www.mercari.com/us/brand/gucci-2766/bags-2025/"
+      ],
+      "vinted": [
+        "https://www.vinted.com/catalog/156-handbags/brand/567-gucci?srsltid=AfmBOorjwUJStJ2XhpDBP1slSwRBp-U9w2hD7mzYm3_Sb0-FM40SZsGb",
+        "https://www.vinted.com/items/3009902379-vintage-gucci-bag?srsltid=AfmBOorqqpySX8jA1LrwY4uqipdIsQAHr5nGOsMCkZ_w0nTyvJ6DRH2m",
+        "https://www.vinted.com/catalog/2945-borse-hobo/brand/567-gucci?srsltid=AfmBOor_2RCuVnaPCw3zAdI0Jdxa7Di_d0mzMXrNxvheESQx0Xqr0nDi"
+      ],
+      "stockx": [
+        "https://stockx.com/brands/gucci?category=bags",
+        "https://stockx.com/gucci-x-disney-mickey-mouse-crossbody-bag-brown",
+        "https://stockx.com/news/the-top-gucci-bags-to-buy-right-now-sale-promo-black-friday/"
+      ],
+      "ebay": [
+        "https://www.ebay.com/b/Gucci-Women-s-Handbags/169291/bn_722483",
+        "https://www.ebay.com/itm/205180934733",
+        "https://community.ebay.com/t5/Ask-a-Mentor/authenticating-a-Gucci-bag-before-selling/td-p/35074792"
+      ],
+      "vestiaire": [
+        "https://us.vestiairecollective.com/women-bags/gucci/?srsltid=AfmBOooZY-9njhq_-I29gmf91Q5dhYV3twgzCKMbDuksygJxF211c09u",
+        "https://us.vestiairecollective.com/vintage/women-bags/gucci/?srsltid=AfmBOortn9KMattAVkfj7DjckNw_DDN8Pc2mo1juoebcJocRh_1FWSX9",
+        "https://us.vestiairecollective.com/men-bags/gucci/?srsltid=AfmBOoreJAb4dvFsnJzWLBFO_mULRNS6L8K6yvz1vHomLrusMTkLZa6V"
+      ]
+    },
+    "nike air jordan 1": {
+      "grailed": [
+        "https://www.grailed.com/browse/jordan-1",
+        "https://www.grailed.com/drycleanonly/jordan-1-history",
+        "https://www.grailed.com/listings/78606491-jordan-brand-x-nike-nike-air-jordan-1-retro-high-og-green-glow-mens-us-size-13"
+      ],
+      "depop": [
+        "https://www.depop.com/products/haseebhatti-nike-air-jordan-1-retro/",
+        "https://www.depop.com/products/sourcedbytreasure-nike-air-jordan-1-low-f253/",
+        "https://www.depop.com/theme/nike-air-jordan-1-low/"
+      ],
+      "poshmark": [
+        "https://poshmark.com/listing/Nike-Air-Jordan-1-Elevate-Low-SE-Lucky-Green-Womens-DQ8394301-NEW-Size-12-65920c5a308f07494a6b39fa?srsltid=AfmBOoqhD5AltTxxKPIjcVAXc_FUHTEL6DyxNRsAWahzmMIA6VDvJEV3",
+        "https://poshmark.com/listing/Nike-Air-Jordan-1-Mid-Womens-Pom-62310f24ce5f1c420500ae38?srsltid=AfmBOoonGyY8UFlZbOn3Ly2t6QBy3O6gI_WiegjWymZPK8t5LTD2V2rE",
+        "https://poshmark.com/listing/Nike-Air-Jordan-1-Mid-Shoes-Aquatone-Celestial-Blue-DQ8426400-Mens-Size-12-6600a892ffb5d03942640fe1?srsltid=AfmBOoqJERSB7o1-hjA0Bs_HcCn90pN7Q2n47GSvIGyBInJFOBoy_pLI"
+      ],
+      "mercari": [
+        "https://www.mercari.com/us/brand/air-jordan-115/",
+        "https://www.mercari.com/us/item/m89848664185/",
+        "https://www.mercari.com/us/shop/nike-air-jordan-1-athletic-shoes-for-women/"
+      ],
+      "vinted": [
+        "https://www.vinted.com/brand/2703-jordan?srsltid=AfmBOorv8S2TB66oE8-gtu3f0VU7vwbcjLzSVxvjcyrrJjHczvF7RWKK",
+        "https://www.vinted.com/items/8094882976-nike-air-jordan-1-retro-high-og-rookie-of-the-year?srsltid=AfmBOopD8aeOFk2cniyMMUeFx9pRj0no-4PvNBfEsPhraVrtUrjPem3b",
+        "https://www.vinted.com/items/3136843306-nike-air-jordan-1-retro-high-og?srsltid=AfmBOooSfAP9FiZGpGSRxFrJIzVzIP2tJ9rioD89pyhmq8glPoBAsfcR"
+      ],
+      "stockx": [
+        "https://stockx.com/brands/jordan?category=sneakers&model=1",
+        "https://stockx.com/brands/jordan",
+        "https://stockx.com/air-jordan-1-retro-high-og-chicago-reimagined-lost-and-found"
+      ],
+      "ebay": [
+        "https://www.ebay.com/b/Air-Jordan-1-Low/95672/bn_7119019886",
+        "https://www.ebay.com/b/Jordan-Sneakers-for-Men/15709/bn_96541848",
+        "https://www.ebay.com/b/Jordan-1-Retro-High-Red-Suede/15709/bn_7117647430"
+      ],
+      "vestiaire": [
+        "https://us.vestiairecollective.com/men-shoes/trainers/nike-x-off-white/blue-leather-air-jordan-1-nike-x-off-white-trainers-43533301.shtml?srsltid=AfmBOorJKYG_ZKIgt6L7BNjzqY7Fwk__wh47zf5lmhj45A_BPozbesC1",
+        "https://us.vestiairecollective.com/women-shoes/lace-ups/nike/multicolour-suede-nike-lace-ups-54418482.shtml?srsltid=AfmBOoo03uQFjLGulSq1iOl9rRHpeZp0EzhT9DkP5YAG7Vcr8MBjsLna",
+        "https://us.vestiairecollective.com/men-shoes/trainers/nike/blue-other-nike-trainers-55419087.shtml?srsltid=AfmBOoqiCu3AHcDgMzzv-Kzjfp8paFY-U8ztwuq48CGuI4oiyPvVyVdG"
+      ]
+    },
+    "levis 501 jeans": {
+      "grailed": [
+        "https://www.grailed.com/browse/levis-jeans-501-limited-edition",
+        "https://www.grailed.com/listings/85436830-levi-s-90s-vintage-blue-wash-levis-501-jeans-jm2937",
+        "https://www.grailed.com/listings/89528588-levi-s-vintage-levi-s-501-jeans-38x34-blue-denim-button-fly-90s-red-tab-dark-wash-mens-regular-5-pocket-style-straight"
+      ],
+      "depop": [
+        "https://www.depop.com/theme/levis-501-jeans/",
+        "https://www.depop.com/products/johnlarson8356-vintage-levis-501-jeans-mens-2b89/?moduleOrigin=explore_nfl-us_bubbles",
+        "https://www.depop.com/products/delilahrivas-brown-levis-501-jeans-jeans/?pla_feed=US"
+      ],
+      "poshmark": [
+        "https://poshmark.com/listing/Levis-501-DT-Denim-Tears-Jeans-668a58e115ad541070d09995?srsltid=AfmBOoqOq3BT2GOOpriWedqogyCey76QCzmN5xm6d4eguSVUf_PD23R_",
+        "https://poshmark.com/brand/Levi's%20501?srsltid=AfmBOoqTcY_J8Lk8yAJMOfon-LcEt3DhI6lwDJGVVvTFZ7qUFQ2-TOZQ",
+        "https://poshmark.com/listing/Levis-501-Jeans-Mens-38x34-Purple-Dark-Wash-Straight-Button-Fly-Classic-Denim-69cdf0a8e34c301ab58ddf78?srsltid=AfmBOooWgK57IxSwdCIDZtnLB_2iqaKQyBPH09isiCCYuPWHPTuX2Yls"
+      ],
+      "mercari": [
+        "https://www.mercari.com/us/shop/levis-501-baggy-loose-jeans-for-men/",
+        "https://www.mercari.com/us/item/m51863569337/",
+        "https://www.mercari.com/us/item/m51998103505/"
+      ],
+      "vinted": [
+        "https://www.vinted.com/brand/10-is?srsltid=AfmBOorkEz1fHKhpSVlOlA3voWwl7o0jX13OuomGECIikOcAOZ4tKD4z",
+        "https://www.vinted.com/items/7837648979-levis-501-jeans-32x32-mens-grey-acid-wash-straight-leg-mid-rise-denim-nwot?srsltid=AfmBOop-HCpUydqnmszW92H2Re0wvqzMiTm9VWpeDeEO4szWXEsF-TCl",
+        "https://www.vinted.com/items/7787144918-levis-501-jeans-mens-35x36-blue-straight-leg-button-fly-denim-pants-size-35-tall?srsltid=AfmBOopiXbW3xU2oygdNS_AceiCjMsul8Dlu6p9mVEO0gXEJYGNzN10B"
+      ],
+      "stockx": [
+        "https://stockx.com/brands/levis?category=jeans",
+        "https://stockx.com/kenzo-x-levis-501-1933-distressed-jeans-stone-bi-dirty-blue-denim",
+        "https://stockx.com/denim-tears-x-levis-501-cotton-rhinestone-wreath-jeans-black"
+      ],
+      "ebay": [
+        "https://www.ebay.com/itm/205503080999",
+        "https://www.ebay.com/b/Levis-501-Green-Jeans-for-Men/11483/bn_120471875",
+        "https://www.ebay.com/b/Levis-Levis-501-Beige-Jeans-for-Men/11483/bn_120472309"
+      ],
+      "vestiaire": [
+        "https://us.vestiairecollective.com/women-clothing/jeans/levis/black-cotton-501-levis-jeans-34964859.shtml?srsltid=AfmBOopOr0G5FdW1TzIhVArY0qkV1BzsmtZoRkeLVxeUWrvmCNEai5S3",
+        "https://us.vestiairecollective.com/women-clothing/jeans/levis/blue-denim-jeans-501-levis-jeans-65858155.shtml?srsltid=AfmBOorsVVZ4yAbB8ZSHzKwfqiMA3C6DfHniyyaTDN2DHByRj4qAep64",
+        "https://us.vestiairecollective.com/men-clothing/jeans/levis/blue-cotton-501-levis-jeans-43573077.shtml?srsltid=AfmBOoohdHP1WZXXlRPQOFwf0p4QOex9ugUiSy6IBSuWLKFlByVV51b5"
+      ]
+    }
+  },
+  "total_search_credits": 48,
+  "estimated_cost_hobby": 0.192,
+  "estimated_cost_standard": 0.04752
+}
