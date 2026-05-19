@@ -1,28 +1,84 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
-import type { Save } from '@/lib/types';
+import type { Save, CollectionFolder } from '@/lib/types';
 import { PLATFORM_NAMES } from '@/lib/types';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import { useSaves } from '@/app/components/SavesProvider';
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
-};
+type ViewMode = 'pills' | 'cards';
+const VIEW_MODE_KEY = 'collectionViewMode';
 
-function formatPrice(price: number | null, currency: string): string {
-  if (price === null) return 'Price unavailable';
-  const symbol = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
-  return `${symbol}${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+// External store for the view-mode preference. useSyncExternalStore is the React 19
+// idiomatic way to bind a component to a non-React data source (here, localStorage)
+// without tripping `react-hooks/set-state-in-effect`.
+const viewModeSubscribers = new Set<() => void>();
+function viewModeSubscribe(cb: () => void) {
+  viewModeSubscribers.add(cb);
+  return () => { viewModeSubscribers.delete(cb); };
+}
+function viewModeGetSnapshot(): ViewMode {
+  const stored = window.localStorage.getItem(VIEW_MODE_KEY);
+  return stored === 'cards' || stored === 'pills' ? stored : 'pills';
+}
+function viewModeGetServerSnapshot(): ViewMode {
+  return 'pills';
+}
+function setViewModeStored(v: ViewMode) {
+  try { window.localStorage.setItem(VIEW_MODE_KEY, v); } catch {}
+  viewModeSubscribers.forEach((cb) => cb());
 }
 
+type FolderEditMode =
+  | { kind: 'create' }
+  | { kind: 'edit'; folder: CollectionFolder };
+
 export default function SavesTab() {
+  const [folders, setFolders] = useState<CollectionFolder[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [saves, setSaves] = useState<Save[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const { hydrateUrls } = useSaves();
+  const viewMode = useSyncExternalStore(
+    viewModeSubscribe,
+    viewModeGetSnapshot,
+    viewModeGetServerSnapshot,
+  );
+  const [editMode, setEditMode] = useState<FolderEditMode | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CollectionFolder | null>(null);
+  const { hydrateUrls, openMoveModal } = useSaves();
+
+  const toggleViewMode = () => {
+    setViewModeStored(viewMode === 'pills' ? 'cards' : 'pills');
+  };
+
+  const reloadFolders = useCallback(async (selectDefaultIfNone = false) => {
+    try {
+      const res = await fetch('/api/collection-folders');
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      const next: CollectionFolder[] = data.folders ?? [];
+      setFolders(next);
+      if (selectDefaultIfNone) {
+        setActiveFolderId((curr) => {
+          if (curr && next.some((f) => f.id === curr)) return curr;
+          return next.find((f) => f.is_default)?.id ?? next[0]?.id ?? null;
+        });
+      }
+      return next;
+    } catch {
+      toast.error('Could not load folders');
+      return [];
+    }
+  }, []);
+
+  // reloadFolders is a useCallback that fetches over the network and only calls
+  // setState after `await`, so the setState is not synchronous in the effect body.
+  // The lint rule can't see through the useCallback indirection.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { reloadFolders(true); }, [reloadFolders]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
@@ -36,6 +92,7 @@ export default function SavesTab() {
       try {
         const params = new URLSearchParams();
         if (debouncedSearch) params.set('search', debouncedSearch);
+        if (activeFolderId) params.set('folder_id', activeFolderId);
         const res = await fetch(`/api/saves${params.toString() ? `?${params}` : ''}`);
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
@@ -51,7 +108,17 @@ export default function SavesTab() {
     };
     load();
     return () => { cancelled = true; };
-  }, [debouncedSearch, hydrateUrls]);
+  }, [debouncedSearch, activeFolderId, hydrateUrls]);
+
+  const activeFolder = useMemo(
+    () => folders.find((f) => f.id === activeFolderId) ?? null,
+    [folders, activeFolderId]
+  );
+  const isDefaultActive = activeFolder?.is_default ?? false;
+  const totalItems = useMemo(
+    () => folders.find((f) => f.is_default)?.item_count ?? 0,
+    [folders]
+  );
 
   const handleRemove = async (save: Save) => {
     const prev = saves;
@@ -68,55 +135,427 @@ export default function SavesTab() {
           </svg>
         ),
       });
+      reloadFolders();
     } catch {
       setSaves(prev);
       toast.error('Could not remove. Try again.');
     }
   };
 
-  const empty = useMemo(() => !loading && saves.length === 0, [loading, saves]);
+  const handleMove = (save: Save) => {
+    openMoveModal({
+      saveId: save.id,
+      currentFolderId: save.folder_id,
+      onMoved: (folderId) => {
+        if (activeFolder && !activeFolder.is_default && folderId !== activeFolderId) {
+          // In a custom folder view, moving out should hide it from the current list.
+          setSaves((s) => s.filter((x) => x.id !== save.id));
+        } else {
+          // In My Collection (or moving within the active folder), keep the item visible
+          // but reflect its new folder_id so subsequent moves know the current folder.
+          setSaves((s) => s.map((x) => x.id === save.id ? { ...x, folder_id: folderId } : x));
+        }
+        reloadFolders();
+      },
+    });
+  };
+
+  const submitFolder = async (mode: FolderEditMode, payload: { name: string; description: string }) => {
+    const body: { name?: string; description: string } = { description: payload.description };
+    if (mode.kind === 'create') {
+      try {
+        const res = await fetch('/api/collection-folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: payload.name, description: payload.description }),
+        });
+        if (!res.ok) throw new Error('failed');
+        const data = await res.json();
+        toast.success(`Created "${data.folder.name}"`);
+        const next = await reloadFolders();
+        const created = next.find((f) => f.id === data.folder.id);
+        if (created) setActiveFolderId(created.id);
+      } catch {
+        toast.error('Could not create folder');
+      }
+    } else {
+      try {
+        if (!mode.folder.is_default) body.name = payload.name;
+        const res = await fetch(`/api/collection-folders/${mode.folder.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error('failed');
+        toast.success('Folder updated');
+        reloadFolders();
+      } catch {
+        toast.error("Couldn't update folder");
+      }
+    }
+  };
+
+  const submitDelete = async (folder: CollectionFolder, cascade: boolean) => {
+    try {
+      const url = `/api/collection-folders/${folder.id}${cascade ? '?cascade=true' : ''}`;
+      const res = await fetch(url, { method: 'DELETE' });
+      if (!res.ok) throw new Error('failed');
+      toast(cascade ? `Deleted "${folder.name}" and its items` : `Deleted "${folder.name}"`, {
+        style: { color: '#E24B4A', borderColor: '#E24B4A' },
+      });
+      const next = await reloadFolders();
+      if (activeFolderId === folder.id) {
+        setActiveFolderId(next.find((f) => f.is_default)?.id ?? null);
+      }
+    } catch {
+      toast.error('Could not delete folder');
+    }
+  };
+
+  const empty = !loading && saves.length === 0;
 
   return (
     <div className="space-y-5">
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search saved listings..."
-        className="input-base w-full rounded-lg px-4 py-2.5 text-sm"
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search saved listings..."
+          className="input-base flex-1 rounded-lg px-4 py-2.5 text-sm"
+        />
+        <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+      </div>
+
+      {viewMode === 'pills' ? (
+        <FolderPillRow
+          folders={folders}
+          activeId={activeFolderId}
+          onSelect={setActiveFolderId}
+          onCreate={() => setEditMode({ kind: 'create' })}
+          onEdit={(f) => setEditMode({ kind: 'edit', folder: f })}
+          onDelete={(f) => setDeleteTarget(f)}
+        />
+      ) : (
+        <FolderCardGrid
+          folders={folders}
+          activeId={activeFolderId}
+          onSelect={setActiveFolderId}
+          onCreate={() => setEditMode({ kind: 'create' })}
+        />
+      )}
+
+      {activeFolder && (
+        <FolderDescription folder={activeFolder} onEdit={() => setEditMode({ kind: 'edit', folder: activeFolder })} />
+      )}
 
       {loading && saves.length === 0 ? (
         <div className="py-10 text-center text-sm" style={{ color: 'var(--text-dim)' }}>
-          Loading saves…
+          Loading collection…
         </div>
       ) : empty ? (
-        <div
-          className="rounded-2xl py-16 text-center text-sm"
-          style={{ border: '1px dashed var(--border)', color: 'var(--text-dim)' }}
-        >
-          {debouncedSearch
-            ? `No saves matching "${debouncedSearch}".`
-            : 'No saves yet. Heart listings to save them ❤️'}
-        </div>
+        <EmptyState
+          search={debouncedSearch}
+          isDefaultActive={isDefaultActive}
+          activeFolderName={activeFolder?.name ?? null}
+          totalItems={totalItems}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {saves.map((s) => (
-            <SaveCard key={s.id} save={s} onRemove={() => handleRemove(s)} />
+            <SaveCard
+              key={s.id}
+              save={s}
+              onRemove={() => handleRemove(s)}
+              onMove={() => handleMove(s)}
+            />
           ))}
+        </div>
+      )}
+
+      {editMode && (
+        <FolderEditModal
+          mode={editMode}
+          onClose={() => setEditMode(null)}
+          onSubmit={(payload) => submitFolder(editMode, payload).then(() => setEditMode(null))}
+        />
+      )}
+
+      {deleteTarget && (
+        <FolderDeleteModal
+          folder={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={(cascade) => submitDelete(deleteTarget, cascade).then(() => setDeleteTarget(null))}
+        />
+      )}
+    </div>
+  );
+}
+
+function ViewModeToggle({ viewMode, onToggle }: { viewMode: ViewMode; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="inline-flex items-center gap-1.5 self-start rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:self-auto"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        color: 'var(--text)',
+      }}
+      aria-label={`Switch to ${viewMode === 'pills' ? 'cards' : 'pills'} view`}
+    >
+      {viewMode === 'pills' ? '⊟ Pills' : '▦ Cards'}
+    </button>
+  );
+}
+
+function FolderPillRow({
+  folders, activeId, onSelect, onCreate, onEdit, onDelete,
+}: {
+  folders: CollectionFolder[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onCreate: () => void;
+  onEdit: (f: CollectionFolder) => void;
+  onDelete: (f: CollectionFolder) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {folders.map((f) => (
+        <FolderPill
+          key={f.id}
+          folder={f}
+          active={f.id === activeId}
+          onSelect={() => onSelect(f.id)}
+          onEdit={() => onEdit(f)}
+          onDelete={() => onDelete(f)}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onCreate}
+        className="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
+        style={{
+          background: 'var(--surface)',
+          border: '1px dashed var(--border)',
+          color: 'var(--text-dim)',
+        }}
+        aria-label="Create new folder"
+      >
+        + New folder
+      </button>
+    </div>
+  );
+}
+
+function FolderPill({
+  folder, active, onSelect, onEdit, onDelete,
+}: {
+  folder: CollectionFolder;
+  active: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [menuOpen]);
+
+  return (
+    <div className="relative inline-flex" ref={menuRef}>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex items-center gap-1.5 rounded-full pl-3 pr-2 py-1.5 text-sm font-medium transition-colors"
+        style={{
+          background: active ? 'var(--accent-soft)' : 'var(--surface)',
+          border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+          color: active ? 'var(--accent-text)' : 'var(--text)',
+        }}
+      >
+        <span>{folder.name}</span>
+        {folder.item_count != null && (
+          <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
+            {folder.item_count}
+          </span>
+        )}
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label="Folder menu"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenuOpen((o) => !o); } }}
+          className="ml-1 flex h-5 w-5 items-center justify-center rounded-full text-xs"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ⋯
+        </span>
+      </button>
+      {menuOpen && (
+        <div
+          className="absolute right-0 top-full z-30 mt-1 w-40 rounded-lg py-1 text-sm shadow-xl"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+        >
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); onEdit(); }}
+            className="block w-full px-3 py-2 text-left hover:opacity-80"
+            style={{ color: 'var(--text)' }}
+          >
+            {folder.is_default ? 'Edit description' : 'Edit folder'}
+          </button>
+          {!folder.is_default && (
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onDelete(); }}
+              className="block w-full px-3 py-2 text-left hover:opacity-80"
+              style={{ color: '#E24B4A' }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function SaveCard({ save, onRemove }: { save: Save; onRemove: () => void }) {
+function FolderCardGrid({
+  folders, activeId, onSelect, onCreate,
+}: {
+  folders: CollectionFolder[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {folders.map((f) => (
+        <button
+          key={f.id}
+          type="button"
+          onClick={() => onSelect(f.id)}
+          className="flex aspect-square flex-col items-start justify-end rounded-2xl p-4 text-left transition-transform hover:scale-[1.02]"
+          style={{
+            background: f.id === activeId ? 'var(--accent-soft)' : 'var(--surface)',
+            border: `1px solid ${f.id === activeId ? 'var(--accent)' : 'var(--border)'}`,
+          }}
+        >
+          <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            {f.name}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
+            {f.item_count ?? 0} items
+          </div>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={onCreate}
+        className="flex aspect-square items-center justify-center rounded-2xl text-sm"
+        style={{
+          background: 'var(--surface)',
+          border: '1px dashed var(--border)',
+          color: 'var(--text-dim)',
+        }}
+      >
+        + New folder
+      </button>
+    </div>
+  );
+}
+
+function FolderDescription({ folder, onEdit }: { folder: CollectionFolder; onEdit: () => void }) {
+  if (!folder.description) {
+    if (folder.is_default) return null;
+    return (
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs underline-offset-2 hover:underline"
+        style={{ color: 'var(--text-dim)' }}
+      >
+        + Add a description
+      </button>
+    );
+  }
+  return (
+    <p
+      className="text-xs leading-relaxed"
+      style={{ color: 'var(--text-muted)' }}
+    >
+      {folder.description}
+    </p>
+  );
+}
+
+function EmptyState({
+  search, isDefaultActive, activeFolderName, totalItems,
+}: {
+  search: string;
+  isDefaultActive: boolean;
+  activeFolderName: string | null;
+  totalItems: number;
+}) {
+  let message: string;
+  if (search) {
+    message = `No items matching "${search}".`;
+  } else if (totalItems === 0) {
+    message = 'Nothing in your collection yet. Heart listings to add them here.';
+  } else if (isDefaultActive) {
+    message = 'My Collection is empty. Items you save go here by default.';
+  } else {
+    message = `No items in ${activeFolderName ?? 'this folder'} yet. Use the menu on any saved item to move it here.`;
+  }
+  return (
+    <div
+      className="rounded-2xl py-16 text-center text-sm"
+      style={{ border: '1px dashed var(--border)', color: 'var(--text-dim)' }}
+    >
+      {message}
+    </div>
+  );
+}
+
+function SaveCard({
+  save, onRemove, onMove,
+}: {
+  save: Save;
+  onRemove: () => void;
+  onMove: () => void;
+}) {
   const [imgFailed, setImgFailed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [menuOpen]);
 
   const handleHeart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onRemove();
+  };
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuOpen((o) => !o);
   };
 
   return (
@@ -167,6 +606,45 @@ function SaveCard({ save, onRemove }: { save: Save; onRemove: () => void }) {
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>
+        <div ref={menuRef} className="absolute left-2 top-2">
+          <button
+            type="button"
+            onClick={handleMenuToggle}
+            aria-label="More options"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-transform hover:scale-110"
+            style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="19" cy="12" r="2" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg py-1 text-sm shadow-xl"
+              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+            >
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onMove(); }}
+                className="block w-full px-3 py-2 text-left hover:opacity-80"
+                style={{ color: 'var(--text)' }}
+              >
+                Move to folder…
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onRemove(); }}
+                className="block w-full px-3 py-2 text-left hover:opacity-80"
+                style={{ color: '#E24B4A' }}
+              >
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
@@ -178,28 +656,289 @@ function SaveCard({ save, onRemove }: { save: Save; onRemove: () => void }) {
         >
           {save.title}
         </p>
-        <div className="mt-auto flex items-baseline gap-2 pt-1">
-          <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
-            {formatPrice(save.price, save.currency)}
-          </span>
-          {save.currency && save.currency !== 'USD' && (
-            <span
-              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-              style={{ background: 'var(--surface-hover)', color: 'var(--text-muted)' }}
-            >
-              {save.currency}
-            </span>
-          )}
-        </div>
         {save.condition && (
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {save.condition}
           </p>
         )}
-        <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
+        <p className="mt-auto pt-1 text-[10px]" style={{ color: 'var(--text-dim)' }}>
           {PLATFORM_NAMES[save.platform] ?? save.platform} · saved {new Date(save.saved_at).toLocaleDateString()}
         </p>
       </div>
     </a>
+  );
+}
+
+function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl p-5 shadow-xl"
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FolderEditModal({
+  mode, onClose, onSubmit,
+}: {
+  mode: FolderEditMode;
+  onClose: () => void;
+  onSubmit: (payload: { name: string; description: string }) => void;
+}) {
+  const isEdit = mode.kind === 'edit';
+  const folder = mode.kind === 'edit' ? mode.folder : null;
+  const isDefault = folder?.is_default ?? false;
+
+  const [name, setName] = useState(folder?.name ?? '');
+  const [description, setDescription] = useState(folder?.description ?? '');
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit = isDefault ? true : name.trim().length > 0;
+  const title = isEdit ? (isDefault ? 'Edit My Collection' : 'Edit folder') : 'New folder';
+
+  const handleSubmit = () => {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    onSubmit({ name: name.trim(), description: description.trim() });
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          {title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Folder name"
+            maxLength={60}
+            disabled={isDefault}
+            autoFocus={!isDefault}
+            className="input-base w-full rounded-lg px-3 py-2 text-sm"
+            style={isDefault ? { opacity: 0.6 } : undefined}
+          />
+          {isDefault && (
+          <p className="mt-1 text-[11px]" style={{ color: 'var(--text-dim)' }}>
+            My Collection&apos;s name can&apos;t be changed.
+          </p>
+          )}
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Description <span style={{ color: 'var(--text-dim)' }}>(optional)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What kind of items belong here?"
+            maxLength={280}
+            rows={3}
+            autoFocus={isDefault}
+            className="input-base w-full rounded-lg px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-right text-[11px]" style={{ color: 'var(--text-dim)' }}>
+            {description.length}/280
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg px-3 py-2 text-sm"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!canSubmit || submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+        >
+          {isEdit ? 'Save' : 'Create folder'}
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function FolderDeleteModal({
+  folder, onClose, onConfirm,
+}: {
+  folder: CollectionFolder;
+  onClose: () => void;
+  onConfirm: (cascade: boolean) => void;
+}) {
+  const itemCount = folder.item_count ?? 0;
+  const [choice, setChoice] = useState<'keep' | 'cascade' | null>(
+    itemCount === 0 ? 'keep' : null
+  );
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirm = () => {
+    if (choice === null || submitting) return;
+    setSubmitting(true);
+    onConfirm(choice === 'cascade');
+  };
+
+  const isCascade = choice === 'cascade';
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Delete &quot;{folder.name}&quot;
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+        {itemCount > 0
+          ? `This folder has ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. What should happen to them?`
+          : 'This folder is empty — nothing else will change.'}
+      </p>
+
+      <div className="flex flex-col gap-2">
+        <DeleteChoice
+          selected={choice === 'keep'}
+          accent="accent"
+          title="Delete folder, keep items"
+          subtitle="Items stay in My Collection."
+          onSelect={() => setChoice('keep')}
+          disabled={submitting}
+        />
+        <DeleteChoice
+          selected={choice === 'cascade'}
+          accent="destructive"
+          title="Delete folder and items permanently"
+          subtitle={
+            itemCount > 0
+              ? `Removes ${itemCount} ${itemCount === 1 ? 'item' : 'items'} from your collection.`
+              : 'Nothing to remove — folder is empty.'
+          }
+          onSelect={() => setChoice('cascade')}
+          disabled={submitting || itemCount === 0}
+        />
+      </div>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm disabled:opacity-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={choice === null || submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={
+            isCascade
+              ? { background: '#E24B4A', color: '#fff' }
+              : { background: 'var(--accent)', color: '#fff' }
+          }
+        >
+          {submitting
+            ? 'Deleting…'
+            : isCascade
+              ? 'Delete permanently'
+              : 'Confirm delete'}
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function DeleteChoice({
+  selected, accent, title, subtitle, onSelect, disabled,
+}: {
+  selected: boolean;
+  accent: 'accent' | 'destructive';
+  title: string;
+  subtitle: string;
+  onSelect: () => void;
+  disabled?: boolean;
+}) {
+  const ringColor = accent === 'destructive' ? '#E24B4A' : 'var(--accent)';
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors disabled:opacity-50"
+      style={{
+        background: selected ? 'var(--accent-soft)' : 'var(--surface)',
+        border: `1px solid ${selected ? ringColor : 'var(--border)'}`,
+        color: 'var(--text)',
+      }}
+    >
+      <span
+        aria-hidden
+        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+        style={{ border: `2px solid ${selected ? ringColor : 'var(--border-strong)'}` }}
+      >
+        {selected && (
+          <span className="h-2 w-2 rounded-full" style={{ background: ringColor }} />
+        )}
+      </span>
+      <span>
+        <span className="block font-medium">{title}</span>
+        <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          {subtitle}
+        </span>
+      </span>
+    </button>
   );
 }

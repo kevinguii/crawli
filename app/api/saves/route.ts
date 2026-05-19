@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ensureDefaultFolder } from '@/lib/collectionFolders';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -16,10 +17,25 @@ export async function POST(req: NextRequest) {
     condition,
     image_url,
     seller,
+    folder_id,
   } = body ?? {};
 
   if (!listing_url || !platform || !title) {
     return NextResponse.json({ error: 'missing required fields' }, { status: 400 });
+  }
+
+  let targetFolderId: string | null = null;
+  if (folder_id) {
+    const { data: folder } = await supabase
+      .from('collection_folders')
+      .select('id')
+      .eq('id', folder_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!folder) return NextResponse.json({ error: 'invalid folder_id' }, { status: 400 });
+    targetFolderId = folder.id;
+  } else {
+    targetFolderId = await ensureDefaultFolder(supabase, user.id);
   }
 
   const row = {
@@ -32,12 +48,13 @@ export async function POST(req: NextRequest) {
     condition: condition ?? null,
     image_url: image_url ?? null,
     seller: seller ?? null,
+    folder_id: targetFolderId,
   };
 
   const { data, error } = await supabase
     .from('saves')
     .insert(row)
-    .select('id')
+    .select('id, folder_id')
     .single();
 
   if (error) {
@@ -46,16 +63,20 @@ export async function POST(req: NextRequest) {
     if (error.code === '23505') {
       const { data: existing } = await supabase
         .from('saves')
-        .select('id')
+        .select('id, folder_id')
         .eq('user_id', user.id)
         .eq('listing_url', listing_url)
         .single();
-      return NextResponse.json({ save_id: existing?.id ?? null, already_saved: true });
+      return NextResponse.json({
+        save_id: existing?.id ?? null,
+        folder_id: existing?.folder_id ?? targetFolderId,
+        already_saved: true,
+      });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ save_id: data.id });
+  return NextResponse.json({ save_id: data.id, folder_id: data.folder_id });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -85,6 +106,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search')?.trim();
   const platform = searchParams.get('platform')?.trim();
+  const folderIdParam = searchParams.get('folder_id')?.trim();
 
   let query = supabase
     .from('saves')
@@ -94,6 +116,21 @@ export async function GET(req: NextRequest) {
 
   if (search) query = query.ilike('title', `%${search}%`);
   if (platform) query = query.eq('platform', platform);
+
+  if (folderIdParam) {
+    const { data: defaultFolder } = await supabase
+      .from('collection_folders')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_default', true)
+      .maybeSingle();
+
+    // My Collection is the "all items" view — every save shows here regardless of folder_id.
+    // Custom folders filter strictly by folder_id.
+    if (!(defaultFolder && folderIdParam === defaultFolder.id)) {
+      query = query.eq('folder_id', folderIdParam);
+    }
+  }
 
   const { data, error, count } = await query;
   if (error) {

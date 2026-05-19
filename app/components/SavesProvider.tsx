@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import type { Listing } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
+import MoveToFolderModal, { type MoveModalRequest } from '@/app/components/MoveToFolderModal';
 
 interface SavesContextValue {
   savedUrls: Set<string>;
@@ -19,6 +20,7 @@ interface SavesContextValue {
   toggleSave: (listing: Listing) => Promise<void>;
   hydrateUrls: (urls: string[]) => void;
   refresh: () => Promise<void>;
+  openMoveModal: (req: MoveModalRequest) => void;
 }
 
 const SavesContext = createContext<SavesContextValue | null>(null);
@@ -26,7 +28,12 @@ const SavesContext = createContext<SavesContextValue | null>(null);
 export function SavesProvider({ children }: { children: React.ReactNode }) {
   const [savedUrls, setSavedUrls] = useState<Set<string>>(new Set());
   const [signedIn, setSignedIn] = useState(false);
+  const [moveRequest, setMoveRequest] = useState<MoveModalRequest | null>(null);
   const checkedUrls = useRef<Set<string>>(new Set());
+
+  const openMoveModal = useCallback((req: MoveModalRequest) => {
+    setMoveRequest(req);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -136,7 +143,17 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
             }),
           });
           if (!res.ok) throw new Error('save failed');
-          toast.success('Saved to My Collection');
+          const data = await res.json().catch(() => ({}));
+          const saveId: string | undefined = data?.save_id;
+          const currentFolderId: string | null = data?.folder_id ?? null;
+          toast.success('Saved to My Collection', {
+            action: saveId
+              ? {
+                  label: 'Move to folder…',
+                  onClick: () => setMoveRequest({ saveId, currentFolderId }),
+                }
+              : undefined,
+          });
         }
       } catch {
         // Roll back optimistic change.
@@ -159,11 +176,17 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
       toggleSave,
       hydrateUrls,
       refresh,
+      openMoveModal,
     }),
-    [savedUrls, toggleSave, hydrateUrls, refresh]
+    [savedUrls, toggleSave, hydrateUrls, refresh, openMoveModal]
   );
 
-  return <SavesContext.Provider value={value}>{children}</SavesContext.Provider>;
+  return (
+    <SavesContext.Provider value={value}>
+      {children}
+      <MoveToFolderModal request={moveRequest} onClose={() => setMoveRequest(null)} />
+    </SavesContext.Provider>
+  );
 }
 
 export function useSaves(): SavesContextValue {
@@ -176,6 +199,7 @@ export function useSaves(): SavesContextValue {
       toggleSave: async () => {},
       hydrateUrls: () => {},
       refresh: async () => {},
+      openMoveModal: () => {},
     };
   }
   return ctx;

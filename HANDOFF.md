@@ -1,8 +1,83 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Phase 2C Watchlist with manual refresh shipped)
+**Last updated:** 2026-05-18 (Collection folders shipped)
 
-**Latest change (2026-05-18 — Phase 2C Watchlist with manual refresh):**
+**Latest change (2026-05-18 — Collection folders, round 2):**
+
+Iteration on the folders feature based on user testing:
+1. **My Collection is now an "All items" view** — every save shows here regardless of `folder_id`. Previously, moving an item into a custom folder removed it from My Collection (because the GET filter was strict). New behavior: when `?folder_id=<defaultFolderId>`, the GET endpoint applies no folder filter at all. Custom folders still filter strictly by `folder_id`.
+2. **Folder descriptions.** `collection_folders.description text` column added (user ran the migration). `ensureDefaultFolder` now seeds the description "Your main collection. Everything saved goes here by default." for new users. UI displays the active folder's description below the pill row.
+3. **Modal-based folder UX.** Inline rename/new inputs replaced by `FolderEditModal` (name + description, autosized textarea, 280-char cap on description) and `FolderDeleteModal` (two-option: "Delete folder, keep items" primary / "Delete folder and items permanently" destructive secondary). My Collection's name is locked in the edit modal; description is editable.
+4. **Cascade delete.** `DELETE /api/collection-folders/[id]?cascade=true` deletes the folder AND every save inside it. Default behavior (no query param) keeps items — they orphan to `folder_id = null` and continue to render under My Collection (since My Collection now shows everything regardless of folder_id anyway).
+5. **POST `/api/saves` returns `folder_id`** so the toast's "Move to folder…" picker can pre-disable the current folder with an "Already here" indicator.
+6. **Modal/popover surfaces** switched from `var(--surface)` (which is `rgba(255,255,255,0.04)` in dark — basically transparent) to `var(--bg-elevated)` so they're opaque against image cards.
+7. **Empty-state copy** rewritten without emojis: "Nothing in your collection yet. Heart listings to add them."
+
+**⚠ Still TODO (user must run in Supabase):** if `/api/saves/[id]` PATCH 500s on move-to-folder, the `saves` table is missing UPDATE permissions. Fix:
+```sql
+grant update on public.saves to authenticated;
+create policy "saves_update" on public.saves for update using (auth.uid() = user_id);
+```
+
+---
+
+**Previous change (2026-05-18 — Collection folders, initial ship):**
+
+✅ **Saves feature is now "Collection" in the UI, with folders.** The user-facing word everywhere is "Collection"; **the code/table/route stay `saves` / `SavesProvider` / `/api/saves` deliberately** to avoid churn. Each saved item belongs to exactly one folder. A default "My Collection" folder is seeded lazily on first save (no auth-flow change). Heart button still defaults to My Collection — frictionless — but the success toast now offers a "Move to folder…" action.
+
+> **Naming caveat (read this before searching!):** the table is `saves`, the provider is `SavesProvider`, the API is `/api/saves`, the type is `Save`. In the UI, all of this is rendered as "Collection". Only UI strings were renamed.
+
+**What was built:**
+
+1. **`collection_folders` table in Supabase** (user already ran the migration). Schema:
+   ```sql
+   create table public.collection_folders (
+     id uuid primary key default gen_random_uuid(),
+     user_id uuid not null references auth.users(id) on delete cascade,
+     name text not null,
+     is_default boolean not null default false,
+     created_at timestamptz not null default now()
+   );
+   create unique index collection_folders_one_default_per_user
+     on public.collection_folders (user_id) where is_default = true;
+   alter table public.saves add column folder_id uuid
+     references public.collection_folders(id) on delete set null;
+   ```
+   RLS + `grant select, insert, update, delete on public.collection_folders to authenticated`. `folder_id` is nullable; **null is treated as "belongs to My Collection"** (covers legacy rows and items orphaned by folder delete). `on delete set null` handles folder deletion — no explicit reassignment.
+
+2. **API surface:**
+   - [app/api/collection-folders/route.ts](app/api/collection-folders/route.ts) — `GET` (lists folders with `item_count`, calls `ensureDefaultFolder` so default exists for any logged-in user), `POST {name}` (create custom folder, rejects `is_default` from client).
+   - [app/api/collection-folders/[id]/route.ts](app/api/collection-folders/[id]/route.ts) — `PATCH {name}` (rename; 403 if `is_default`), `DELETE` (403 if `is_default`).
+   - [app/api/saves/route.ts](app/api/saves/route.ts) — `POST` now seeds default folder via `ensureDefaultFolder` and accepts optional `folder_id`. `GET` accepts `?folder_id=` and uses a PostgREST `or=folder_id.eq.<id>,folder_id.is.null` filter when the requested folder is the user's default, so legacy null rows render under My Collection.
+   - [app/api/saves/[id]/route.ts](app/api/saves/[id]/route.ts) — new `PATCH {folder_id}` for move-to-folder (validates target folder belongs to user).
+   - [lib/collectionFolders.ts](lib/collectionFolders.ts) — shared `ensureDefaultFolder(supabase, userId)` helper. Idempotent (handles `23505` race).
+
+3. **Client provider** ([app/components/SavesProvider.tsx](app/components/SavesProvider.tsx)) — exposes new `openMoveModal({ saveId, currentFolderId, onMoved? })`. Renders [app/components/MoveToFolderModal.tsx](app/components/MoveToFolderModal.tsx) globally. After a save, the success toast offers an "Action: Move to folder…" button that opens the same modal pre-targeted at the just-created `save_id` (captured from POST response).
+
+4. **Collection UI** ([app/components/profile/SavesTab.tsx](app/components/profile/SavesTab.tsx)) — full rewrite:
+   - Price block stripped from cards entirely (we still store it; we just don't surface it). Cards now show: image, platform badge, title, condition, "saved {date}".
+   - **Folder pill row** above the grid: My Collection first (is_default desc, created_at asc), then custom folders, then a `+ New folder` pill. Active pill filters the grid via `?folder_id=`. Each custom pill has a `⋯` menu → Rename / Delete (My Collection's `⋯` is hidden — server also enforces).
+   - **3-dot menu on each card** (top-left, mirrors the heart's positioning): "Move to folder…" opens the global modal; "Remove" runs the existing optimistic-remove path.
+   - **View-mode toggle** persists in `localStorage.collectionViewMode` (`'pills'` default, `'cards'` for the alt layout — currently a minimal folder-card grid as the plan called for; styling/preview thumbnails are follow-up).
+   - **Empty-state copy** branches by scope: zero total saves → existing copy; default folder empty but others have items → "My Collection is empty…"; custom folder empty → "No items in {folderName} yet…".
+
+**Verification (manual):**
+- `npx tsc --noEmit` clean.
+- *Browser verification still TODO — recommend testing per the plan checklist before declaring fully done.* The dev server was not started in this session.
+
+**Gotchas / decisions worth remembering:**
+- Heart-click never opens a folder picker; users move via the 3-dot menu or the toast action. Deliberately frictionless.
+- `is_default` boolean (not name-matching) protects "My Collection" from rename/delete. Server enforces; UI hides the menu.
+- Folder delete uses `ON DELETE SET NULL` on `saves.folder_id` — no explicit `UPDATE saves SET folder_id = <default>` needed because nulls already render under My Collection.
+
+**What's next (deferred):**
+- Cards view styling + preview thumbnails (current implementation is a skeleton).
+- Drag-and-drop card → pill (out of scope, considered).
+- Folder reordering (drag-sort pills).
+
+---
+
+**Previous change (2026-05-18 — Phase 2C Watchlist with manual refresh):**
 
 ✅ **Watchlist (eye icon) is live alongside Saves (heart icon).** Two independent features per the user's decision this session: a listing can be saved, watched, both, or neither. Manual "Refresh prices" button re-scrapes all rows via the existing sidecar; auto-refresh-on-login and email alerts (Phase 2D) deferred.
 
@@ -634,7 +709,9 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - `@supabase/supabase-js` v2.x for auth + database access
 - **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm
 - Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
-- Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at)
+- Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
+- **Naming reminder:** the `saves` table and `/api/saves` routes are surfaced in the UI as "Collection". Both names refer to the same thing; only UI strings were renamed.
+- **"My Collection" is the default folder AND the all-items view.** New saves get `folder_id = <default folder id>` from `ensureDefaultFolder()`. Custom folders filter strictly by `folder_id`. My Collection's GET filter applies no folder restriction — every save renders there regardless. Items orphaned by folder delete (FK `on delete set null`) also show under My Collection automatically.
 - Supabase Storage — `avatars` public bucket (2 MB cap; PNG/JPG/WebP). Files stored at `{user_id}/avatar-{timestamp}.{ext}`. RLS scopes write access to own folder.
 - **Permissions gotcha:** RLS policies alone are not sufficient. Each public table also needs `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated` — without it, every request returns Postgres `42501 permission denied`.
 
@@ -689,7 +766,7 @@ POST /api/search ─────────────────────
 
 **Saves + Watchlist + Profile editing layer (Phase 2B + 2C, complete as of 2026-05-18):**
 - `(protected)/layout.tsx` mounts `<SavesProvider>` wrapping `<WatchlistProvider>` (both React Contexts) and sonner `<Toaster>` once for the whole protected subtree
-- `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh }`. State hydrated via `POST /api/saves/check` (batched), optimistic on toggle, cleared on sign-out
+- `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh, openMoveModal }`. State hydrated via `POST /api/saves/check` (batched), optimistic on toggle, cleared on sign-out. Renders `<MoveToFolderModal>` globally; toggleSave's success toast offers a "Move to folder…" action that opens the modal pre-targeted at the new save_id.
 - `WatchlistProvider` exposes `{ watchedUrls, isWatched, toggleWatch, hydrateUrls, refresh }` — same shape; hits `/api/watchlist/check`
 - Heart + Eye buttons on `ListingCard` call `toggleSave` / `toggleWatch`. Both hidden when signed out; both follow the same hover-visibility rule. Independent features.
 - `/profile` server component fetches the `profiles` row, renders `ProfileHeader` + tabs (Saves | Watchlist)
@@ -721,9 +798,12 @@ fashion-crawler-crawl4ai/
 │   ├── api/
 │   │   ├── search/route.ts           ← orchestrator (POST /api/search)
 │   │   ├── saves/
-│   │   │   ├── route.ts              ← POST (save), GET (list w/ ?search=&platform=), DELETE (?url=)
-│   │   │   ├── [id]/route.ts         ← DELETE by save id (used by SavesTab card remove)
+│   │   │   ├── route.ts              ← POST (save; seeds default folder, accepts folder_id), GET (list w/ ?search=&platform=&folder_id=), DELETE (?url=)
+│   │   │   ├── [id]/route.ts         ← DELETE by save id, PATCH {folder_id} for move-to-folder
 │   │   │   └── check/route.ts        ← POST batch URL check { urls } → { saved_urls }
+│   │   ├── collection-folders/
+│   │   │   ├── route.ts              ← GET (list w/ item_count + description; default's item_count = total saves), POST {name, description?} (create)
+│   │   │   └── [id]/route.ts         ← PATCH {name?, description?} (rename non-default; description allowed for any), DELETE (?cascade=true permanently deletes items; otherwise items orphan to null and render under My Collection)
 │   │   ├── watchlist/
 │   │   │   ├── route.ts              ← POST (add), GET (list w/ ?search=&platform=), DELETE (?url=)
 │   │   │   ├── [id]/route.ts         ← DELETE by watch id (used by WatchlistTab remove)
@@ -744,7 +824,8 @@ fashion-crawler-crawl4ai/
 │   ├── components/
 │   │   ├── AuthCard.tsx              ← shared auth UI wrapper (logo, gradient background, theme-aware)
 │   │   ├── AuthButton.tsx            ← session-aware nav button (dropdown: Profile / Settings / Sign out)
-│   │   ├── SavesProvider.tsx         ← Context: savedUrls Set, optimistic toggleSave, hydrate batch
+│   │   ├── SavesProvider.tsx         ← Context: savedUrls Set, optimistic toggleSave, hydrate batch, openMoveModal; renders <MoveToFolderModal> globally
+│   │   ├── MoveToFolderModal.tsx     ← shared folder-picker modal (used by toast action + card 3-dot menu)
 │   │   ├── WatchlistProvider.tsx     ← Context: watchedUrls Set, optimistic toggleWatch, hydrate batch
 │   │   ├── SearchForm.tsx            ← query + platform checkboxes
 │   │   ├── SearchSection.tsx         ← client state container
@@ -755,13 +836,14 @@ fashion-crawler-crawl4ai/
 │   │       ├── ProfileHeader.tsx     ← client: avatar + name + email + joined + bio + Edit button
 │   │       ├── EditProfileModal.tsx  ← modal: avatar upload → Supabase Storage; PATCH /api/profile
 │   │       ├── ProfileTabsClient.tsx ← Saves | Watchlist tabs (URL-driven via ?tab=)
-│   │       ├── SavesTab.tsx          ← debounced search, optimistic remove, empty state
+│   │       ├── SavesTab.tsx          ← "Collection" tab: folder pill row + cards-view skeleton + view-mode toggle (localStorage.collectionViewMode), 3-dot card menu (Move/Remove), branched empty states; price stripped from cards
 │   │       └── WatchlistTab.tsx      ← grid + Refresh prices button + price delta chip + Sold badge
 │   ├── layout.tsx                    ← root layout (suppressHydrationWarning for Grammarly)
 │   └── globals.css                   ← Tailwind v4 + CSS vars + theme tokens
 │
 ├── lib/
-│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save, Watchlist, Profile
+│   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save (now w/ folder_id), CollectionFolder, Watchlist, Profile
+│   ├── collectionFolders.ts          ← ensureDefaultFolder(supabase, userId) — idempotent lazy seed of "My Collection"
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
 │   ├── parse.ts                      ← filterListingUrls(), parseScrapedListings()

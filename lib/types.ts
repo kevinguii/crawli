@@ -54,6 +54,17 @@ export interface Save {
   image_url: string | null;
   seller: string | null;
   saved_at: string;
+  folder_id: string | null;
+}
+
+export interface CollectionFolder {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_default: boolean;
+  created_at: string;
+  item_count?: number;
 }
 
 export interface Watchlist {
