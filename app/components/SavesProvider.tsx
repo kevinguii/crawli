@@ -111,7 +111,7 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
             method: 'DELETE',
           });
           if (!res.ok) throw new Error('delete failed');
-          toast('Removed from Favorites', {
+          toast('Removed from My Collection', {
             style: { color: '#E24B4A', borderColor: '#E24B4A' },
             icon: (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -136,7 +136,7 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
             }),
           });
           if (!res.ok) throw new Error('save failed');
-          toast.success('Saved to Favorites');
+          toast.success('Saved to My Collection');
         }
       } catch {
         // Roll back optimistic change.

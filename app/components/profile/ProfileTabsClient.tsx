@@ -7,7 +7,7 @@ import WatchlistTab from './WatchlistTab';
 
 type Tab = 'saves' | 'watchlist';
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'saves', label: 'Saves' },
+  { key: 'saves', label: 'Collection' },
   { key: 'watchlist', label: 'Watchlist' },
 ];
 
