@@ -49,6 +49,17 @@ log = logging.getLogger("crawl4ai-sidecar")
 # `crawl4ai-setup` has been run, making the error message friendlier.
 crawler = None  # type: ignore[assignment]
 
+# Per-platform crawler instances that need a different BrowserConfig than the
+# default (e.g. The RealReal needs a managed-browser profile + UndetectedAdapter
+# to slip past PerimeterX). Lazily started on first use, closed in lifespan().
+_platform_crawlers: dict[str, "object"] = {}
+# Platforms whose first request needs a non-guarded warmup URL to set
+# anti-bot cookies before navigating to the actual search URL.
+_platform_warmed: set[str] = set()
+
+THEREALREAL_PROFILE_DIR = os.path.expanduser("~/.crawl4ai/profiles/therealreal")
+THEREALREAL_WARMUP_URL = "https://www.therealreal.com/"
+
 
 # ── Provider / key resolution ────────────────────────────────────────────────
 
@@ -101,7 +112,86 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await crawler.close()
+        for plat, c in list(_platform_crawlers.items()):
+            try:
+                await c.close()
+                log.info("crawl4ai crawler stopped (platform=%s)", plat)
+            except Exception:  # noqa: BLE001
+                log.exception("error closing platform crawler %s", plat)
+        _platform_crawlers.clear()
+        _platform_warmed.clear()
         log.info("crawl4ai crawler stopped")
+
+
+async def _ensure_realreal_crawler():
+    """Lazily start a TRR-dedicated crawler with managed profile + UndetectedAdapter.
+
+    TRR is gated by PerimeterX. The default stealth adapter is detected; the
+    UndetectedAdapter bundled with crawl4ai 0.8.x is the supported workaround.
+    The managed-browser profile (created via `crwl profiles create therealreal`)
+    persists session cookies + the resolved _px* tokens, so once the user has
+    solved the press-and-hold challenge once, subsequent restarts reuse them.
+    """
+    if "realreal" in _platform_crawlers:
+        return _platform_crawlers["realreal"]
+    if not os.path.isdir(THEREALREAL_PROFILE_DIR):
+        log.warning(
+            "[realreal] profile dir missing (%s). Run `crwl profiles create therealreal` "
+            "and log in interactively before searching The RealReal.",
+            THEREALREAL_PROFILE_DIR,
+        )
+        return None
+
+    from crawl4ai import AsyncWebCrawler, BrowserConfig, UndetectedAdapter
+    from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+
+    cfg = BrowserConfig(
+        headless=False,  # UndetectedAdapter + PX are far less reliable headless
+        use_managed_browser=True,
+        user_data_dir=THEREALREAL_PROFILE_DIR,
+        enable_stealth=False,  # UndetectedAdapter supersedes stealth; don't double up
+        verbose=False,
+    )
+    strategy = AsyncPlaywrightCrawlerStrategy(
+        browser_config=cfg,
+        browser_adapter=UndetectedAdapter(),
+    )
+    c = AsyncWebCrawler(crawler_strategy=strategy)
+    await c.start()
+    _platform_crawlers["realreal"] = c
+    log.info("[realreal] dedicated crawler started (managed profile + UndetectedAdapter)")
+    return c
+
+
+async def _warmup_realreal(c) -> None:
+    """One-time warmup nav so PerimeterX cookies are minted before /products?keywords=.
+
+    /products is PX-guarded but the homepage isn't. The first nav of a fresh
+    browser may still surface a press-and-hold challenge that the user needs to
+    solve manually; the resolved cookies persist in the managed profile so
+    later sessions skip it.
+    """
+    if "realreal" in _platform_warmed:
+        return
+    from crawl4ai import CacheMode, CrawlerRunConfig
+    cfg = CrawlerRunConfig(
+        cache_mode=CacheMode.BYPASS,
+        page_timeout=90_000,
+        wait_until="domcontentloaded",
+        # Long warmup so the user has time to interact with any press-and-hold
+        # PX challenge that appears in the visible Chromium window.
+        delay_before_return_html=20.0,
+        remove_overlay_elements=False,
+        remove_consent_popups=True,
+    )
+    log.info("[realreal] warmup nav → %s (20s — solve any press-and-hold in the Chromium window)", THEREALREAL_WARMUP_URL)
+    try:
+        await c.arun(url=THEREALREAL_WARMUP_URL, config=cfg)
+    except Exception:  # noqa: BLE001
+        log.exception("[realreal] warmup failed (will retry on next request)")
+        return
+    _platform_warmed.add("realreal")
+    log.info("[realreal] warmup complete; PX cookies should be set")
 
 
 app = FastAPI(lifespan=lifespan, title="fashion-crawler crawl4ai sidecar")
@@ -228,6 +318,13 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if platform == "poshmark":
         cfg_kwargs["page_timeout"] = 50_000
         cfg_kwargs["delay_before_return_html"] = 6.0
+    # The RealReal sits behind PerimeterX. A press-and-hold challenge can
+    # appear on first nav after profile re-use; the user needs time to
+    # interact with the visible Chromium window. 20s is generous enough for
+    # manual hold + auto-resolve afterwards.
+    if platform == "realreal":
+        cfg_kwargs["page_timeout"] = 90_000
+        cfg_kwargs["delay_before_return_html"] = 20.0
     # On retry, be more patient regardless of platform.
     if attempt > 1:
         cfg_kwargs["page_timeout"] = 60_000
@@ -240,16 +337,21 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     return CrawlerRunConfig(**cfg_kwargs)
 
 
-async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False):
-    """Run a crawl; on Poshmark-style navigation errors, retry once."""
-    assert crawler is not None
+async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False, crawler_override=None):
+    """Run a crawl; on Poshmark-style navigation errors, retry once.
+
+    crawler_override: optional per-platform crawler (e.g. realreal's managed-profile
+    instance). When None, the global default crawler is used.
+    """
+    c = crawler_override if crawler_override is not None else crawler
+    assert c is not None
     cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target)
-    result = await crawler.arun(url=url, config=cfg)
+    result = await c.arun(url=url, config=cfg)
     err = (result.error_message or "") if result is not None else ""
     if (not result.success or _POSHMARK_NAV_ERROR in err) and platform == "poshmark":
         log.info("[retry] poshmark crawl hit navigation error, retrying with networkidle wait")
         cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target)
-        result = await crawler.arun(url=url, config=cfg)
+        result = await c.arun(url=url, config=cfg)
     return result
 
 
@@ -372,9 +474,9 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
 async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
     """Render a platform's onsite search page and pull a grid of listings.
 
-    Used for platforms (e.g. ThredUp) whose individual listing URLs aren't
-    discoverable via Firecrawl's `site:` search — instead, every listing card
-    on the search page carries the data we need (price, image, title, URL).
+    Used for platforms (e.g. ThredUp, The RealReal) whose individual listing URLs
+    aren't discoverable via Firecrawl's `site:` search — instead, every listing
+    card on the search page carries the data we need (price, image, title, URL).
     """
     assert crawler is not None, "crawler not initialised"
 
@@ -386,15 +488,58 @@ async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
     if not target_url:
         return ScrapeSearchResponse(results=[])
 
+    # Route TRR through its managed-profile crawler with warmup.
+    crawler_override = None
+    if req.platform == "realreal":
+        # TRR is DEFERRED — PerimeterX press-and-hold defeats UndetectedAdapter
+        # + managed profile in our toolkit. See HANDOFF §7 (G). Set
+        # REALREAL_ENABLED=1 in .env to re-attempt (e.g. after upgrading crawl4ai
+        # or adding a CAPTCHA-solving provider).
+        if not os.environ.get("REALREAL_ENABLED"):
+            log.info("[realreal] search skipped — deferred (set REALREAL_ENABLED=1 to retry)")
+            return ScrapeSearchResponse(results=[])
+        crawler_override = await _ensure_realreal_crawler()
+        if crawler_override is None:
+            return ScrapeSearchResponse(results=[])
+        await _warmup_realreal(crawler_override)
+
     try:
-        result = await _arun_with_retry(target_url, req.platform)
-        if not result.success:
+        result = await _arun_with_retry(target_url, req.platform, crawler_override=crawler_override)
+
+        # For TRR, crawl4ai's anti-bot detector flags the real 2MB /products
+        # response as a false-positive 403 (it triggers on a sub-resource header).
+        # We trust the HTML body if __NEXT_DATA__ extraction yields edges; the
+        # extractor's own log will warn if the page is actually a PX captcha
+        # (no __NEXT_DATA__).
+        if not result.success and req.platform != "realreal":
             log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
             return ScrapeSearchResponse(results=[])
 
         raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
         items = extract_search_grid(req.platform, raw_html, limit=req.limit)
         listings = [coerce_listing(item["url"], item) for item in items if isinstance(item.get("url"), str)]
+
+        if req.platform == "realreal" and not listings:
+            # First request after press-and-hold timeout may still be the PX
+            # captcha page. Force a re-warmup so the next request resolves.
+            _platform_warmed.discard("realreal")
+            # Dump the captured HTML so we can inspect what we got (captcha vs
+            # real page with missing keys). Truncated at 200KB to keep disk
+            # usage bounded.
+            try:
+                dump_dir = os.path.join(os.path.dirname(__file__), "debug_dumps")
+                os.makedirs(dump_dir, exist_ok=True)
+                with open(os.path.join(dump_dir, "realreal-last-empty.html"), "w", encoding="utf-8") as fh:
+                    fh.write(raw_html[:200_000])
+                log.warning(
+                    "[realreal] zero listings — dumped HTML to debug_dumps/realreal-last-empty.html "
+                    "(size=%d bytes, success=%s)",
+                    len(raw_html),
+                    result.success,
+                )
+            except Exception:  # noqa: BLE001
+                log.exception("[realreal] failed to dump empty HTML")
+
         log.info("[scrape-search] %s '%s' → %d listings", req.platform, req.query, len(listings))
         return ScrapeSearchResponse(results=listings)
     except Exception as exc:  # noqa: BLE001

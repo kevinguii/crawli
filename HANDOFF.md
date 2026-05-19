@@ -1,8 +1,80 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (ThredUp platform added — search-page extraction)
+**Last updated:** 2026-05-19 (The RealReal attempted, deferred — PerimeterX press-and-hold defeats UndetectedAdapter + managed profile)
 
-**Latest change (2026-05-18 — ThredUp added via search-page extraction):**
+**Latest change (2026-05-19 — The RealReal: scaffolding shipped, runtime deferred):**
+
+❌ **The RealReal is not live.** PerimeterX (TRR's anti-bot service, distinct from Cloudflare) shows a press-and-hold challenge on every `/products?keywords=` nav even with crawl4ai's `UndetectedAdapter` + a managed-browser profile holding fresh login cookies. The user pre-decided in this session's plan: if the in-house path fails, defer & document (no FlareSolverr / Apify per cost rules). TRR now joins eBay + Vestiaire in §6 as deferred.
+
+**Scaffolding shipped (gated, ready for future re-enable):**
+
+1. **Extractor proven offline.** A one-off probe (`probe_therealreal.py`, deleted at end of session) using `UndetectedAdapter` + `~/.crawl4ai/profiles/therealreal/` got 2 MB of real `/products?keywords=gucci%20bag` HTML on the *first* probe run with `headless=False`. From that capture, `extract_therealreal_grid()` in [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py) parses `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` (a Relay GraphQL response embedded in SSR) and produces clean `ScrapedListing` dicts with: `url`, `name`, `price.final.usdCents/100`, `images[0].url`, `availability` → `isSold`. Verified end-to-end against the saved HTML: 5 of 5 Gucci bags parsed, prices $316–$2696, correct image URLs. **The extractor works — the access wall is the blocker, not the data shape.**
+
+2. **Sidecar dispatch wired but gated.** [crawl4ai-service/main.py](crawl4ai-service/main.py) gains:
+   - `_platform_crawlers: dict[str, AsyncWebCrawler]` registry for platform-specific crawler instances.
+   - `_ensure_realreal_crawler()` — lazily builds a second AsyncWebCrawler with `use_managed_browser=True`, `user_data_dir=~/.crawl4ai/profiles/therealreal`, `enable_stealth=False`, and `UndetectedAdapter()` (the correct PX-grade upgrade — `playwright-stealth` lost active maintenance in 2025 and PX detects most of its evasions).
+   - `_warmup_realreal()` — pre-nav to `therealreal.com/` to mint `_px*` cookies before the PX-guarded `/products?keywords=` URL. Tracked in `_platform_warmed: set[str]` so warmup runs once per crawler lifetime.
+   - `_build_run_cfg`: TRR-specific overrides `page_timeout=90_000`, `delay_before_return_html=20.0` (long enough for the user to interact with a visible press-and-hold window).
+   - `lifespan()` cleanup loop closes every per-platform crawler on shutdown.
+   - `/scrape-search` for `realreal` is **gated on `os.environ.get("REALREAL_ENABLED")`**. Without the env var, the endpoint returns `{"results":[]}` in 11 ms and logs `[realreal] search skipped — deferred (set REALREAL_ENABLED=1 to retry)`. No Chromium boot, no wasted Firecrawl credits. With `REALREAL_ENABLED=1` set, the full flow runs (and currently fails on PX challenge — see "What didn't work").
+   - Empty-result debug-dump path: when TRR is enabled and returns 0 listings, the response HTML is saved to `debug_dumps/realreal-last-empty.html` for inspection. Stays in code for the next attempt.
+
+3. **Next.js wiring (no gating).** TRR appears in the UI as `The RealReal` (black `#000000` brand color, white text). Users can opt in via the FilterPanel checkbox. With the gate off, searching TRR returns 0 listings cleanly (same as eBay/Vestiaire behave today).
+   - [lib/types.ts](lib/types.ts): `realreal: 'therealreal.com'` in `PLATFORM_DOMAINS`, `realreal: 'The RealReal'` in `PLATFORM_NAMES`.
+   - [lib/scraper.ts](lib/scraper.ts): `'realreal'` added to `SEARCH_PAGE_PLATFORMS` so the orchestrator routes to `/scrape-search` (NOT through Firecrawl) — avoids wasting search credits on a site Firecrawl probably can't index anyway.
+   - [app/components/platformColors.ts](app/components/platformColors.ts): `realreal: '#000000'` in `PLATFORM_BG`.
+   - **Not** in `DEFAULT_PLATFORMS` ([app/components/SearchForm.tsx:17](app/components/SearchForm.tsx#L17)) — opt-in only, same precedent as ThredUp.
+
+**What didn't work (kept here so future sessions don't re-walk it):**
+
+| Approach | Result |
+|---|---|
+| crawl4ai default `enable_stealth=True` + random UA, no profile | PX block immediate (`/products` → 9 KB `px-captcha` page) |
+| crawl4ai `UndetectedAdapter` + managed profile `~/.crawl4ai/profiles/therealreal/` (cookies from manual login) | Probe's *first* run got real content (2 MB, 120 Gucci links). Every subsequent run, including via the sidecar, returns the 9 KB PX captcha page regardless of warmup, profile, or 20s delay |
+| Pre-nav warmup to `therealreal.com/` (homepage) to mint PX cookies before `/products?keywords=` | Warmup itself returns PX captcha. PX is not just URL-gated on the search endpoint — it gates the homepage too on the second-or-later session |
+| `delay_before_return_html=20.0` to give the user time to manually press-and-hold | User confirmed: the press-and-hold challenge appears on every nav even with the visible Chromium window. PX is not auto-resolving via mouse-movement heuristics here |
+| Headless vs visible Chromium | No observable difference — `headless=False` was used throughout |
+
+**URL discoveries (preserved for future re-enable):**
+
+- `https://www.therealreal.com/shop/all?keywords=<query>` — works (~2 MB JSON-LD-free real content) **but silently ignores `?keywords=`**. `variables.where.buckets.taxonsPermalink: ['all']` — server uses internal taxon IDs, not query strings. **Not** the search URL.
+- `https://www.therealreal.com/search?keywords=<query>` — 404.
+- `https://www.therealreal.com/products?keywords=<query>` — **correct search URL** (user-confirmed). Returns `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` with 120 listings/page, fully filtered by keyword. Blocked by PerimeterX on every automated nav we've tried so far.
+
+**Re-enable checklist (when toolkit improves or you choose to pay for an unblocker):**
+
+1. Set `REALREAL_ENABLED=1` in `.env`.
+2. Run `crwl profiles create therealreal` to refresh the managed profile, log in interactively, press `q`.
+3. Restart sidecar — first TRR `/scrape-search` will boot the dedicated Chromium and may pop a press-and-hold; solve once if it appears.
+4. Curl: `curl -X POST http://localhost:8000/scrape-search -d '{"platform":"realreal","query":"gucci bag","limit":5}'`. On success, expect 5 listings parsed from `__NEXT_DATA__`. On failure, inspect `debug_dumps/realreal-last-empty.html`.
+5. The extractor + URL builder + types/colors are already in place — no code changes needed beyond the env var.
+
+**Verified this session:**
+- Sidecar with `REALREAL_ENABLED` unset: `realreal` query returns `{"results":[]}` in 11 ms, no Chromium boot, log says `[realreal] search skipped — deferred`.
+- ThredUp still works: `nike air jordan 1` query → 3 valid listings in 8.4 s (regression check passed).
+- `npx tsc --noEmit` clean across all `lib/`/`app/` changes.
+
+**NOT verified this session:**
+- Browser UI rendering of the empty TRR tab with the new black badge (no `npm run dev:all` run during the verification phase). Recommend visually confirming on next session: opt-in TRR via FilterPanel, search any query, confirm the TRR tab shows an empty state without errors and the badge is black.
+
+**Files touched (5 edits + 1 new):**
+- new: [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py) — added `therealreal_search_url`, `extract_therealreal_grid`, `realreal` in `SEARCH_PAGE_PLATFORMS`/`search_url_for`/`extract_search_grid`
+- edited: [crawl4ai-service/main.py](crawl4ai-service/main.py), [lib/types.ts](lib/types.ts), [lib/scraper.ts](lib/scraper.ts), [app/components/platformColors.ts](app/components/platformColors.ts)
+- temp file deleted at session end: `crawl4ai-service/probe_therealreal.py` (one-off probe)
+- new managed profile (gitignored, on disk): `~/.crawl4ai/profiles/therealreal/` (kept for the re-enable path)
+
+**What's next:**
+
+Roadmap item TRR is **deferred indefinitely**. Realistic re-enable paths in cost order:
+1. Cookie-injection from a real-Chrome session (free, brittle, weekly maintenance — user declined this session).
+2. GraphQL direct call to TRR's internal endpoint (PX likely also guards the API, ~30 min spike).
+3. Third-party anti-bot unlocker (ScrapingBee, ZenRows, Bright Data Web Unlocker — $30–100/mo; user has ruled out paid options for now).
+4. Apify `therealreal-com-scraper` actor ($5/mo free tier — user has ruled out this session).
+5. Wait for crawl4ai to ship a stronger PerimeterX bypass in a future version.
+
+---
+
+**Previous change (2026-05-18 — ThredUp added via search-page extraction):**
 
 ✅ **ThredUp is the 9th platform.** Search → results work end-to-end against live ThredUp pages. Verified manually via `curl POST /scrape-search` against the running sidecar with queries "nike air jordan 1" (5 listings: $41–$72) and "levis 501 jeans" (3 listings: ~$16–$18). All listings include URL, title, sale price (USD), image, condition ("Used"), sold flag.
 
@@ -1014,6 +1086,7 @@ Test was a single live run via `scripts/test-all-platforms.mjs` with query "Nike
 | **eBay** | ❌ deferred | Edge proxy returns 307 → `/splashui/challenge` even with stealth + random UA. See §7 (A). |
 | **Vestiaire Collective** | ❌ deferred | Scrape side works; URL discovery is the blocker. Firecrawl's `site:vestiairecollective.com` returns 0 results. See §7 (B). |
 | **ThredUp** | ✅ | **Search-page extraction** — bypasses Firecrawl entirely. Sidecar's `/scrape-search` renders `https://www.thredup.com/search/<hyphen-slug>` and parses the JSON-LD `Product` array (119 items per page) merged with a DOM SKU→`/product/<slug>/<sku>` href map. Returns ScrapedListing[] in one render. Verified 2026-05-18 against two queries. Not in `DEFAULT_PLATFORMS` — opt-in via FilterPanel. |
+| **The RealReal** | ❌ deferred | PerimeterX press-and-hold defeats `UndetectedAdapter` + managed profile. **Extractor + sidecar dispatch are wired** but gated on `REALREAL_ENABLED` env var; without it the platform returns `{"results":[]}` instantly. URL pattern is `/products?keywords=<query>`; data source is `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` (verified offline). See §7 (G) for the deferral details and re-enable steps. |
 
 ### 6.5 What we tried (2026-05-15 PM debug iteration) — what worked, what didn't
 
@@ -1238,13 +1311,29 @@ The structured extractor reads `[data-testid="trade-box-buy-amount"]` faithfully
 
 **Why this matters for Phase 2D:** auto-refresh-on-login and scheduled cron re-scrapes will dramatically increase request volume per platform. We need to solve the 403 regression before turning on automation, or every refresh will degrade.
 
+### G. The RealReal — PerimeterX press-and-hold (NEW — 2026-05-19)
+
+**Symptom:** Every nav to `therealreal.com/products?keywords=<query>` (and the homepage on warm sessions) returns a 9 KB `px-captcha` HTML page with `<title>Access to this page has been denied</title>`. Inside is `<script src="/ev56mY37/captcha/captcha.js?...">` — PerimeterX's press-and-hold widget. The actual `/products` response would be ~2 MB of rendered HTML with `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` containing 120 filtered listings.
+
+**Root cause:** PerimeterX (now HUMAN Security) — distinct from Cloudflare; uses fingerprint + behavioral heuristics. crawl4ai's default `enable_stealth=True` is detected. crawl4ai 0.8.6's `UndetectedAdapter` (the documented replacement for `playwright-stealth`) is *also* detected here, even when combined with a managed-browser profile holding fresh login cookies from an interactive `crwl profiles create therealreal` session.
+
+**One puzzling data point** (worth investigating if anyone re-attempts): the *first* run of `probe_therealreal.py` (one-off, deleted at session end) successfully fetched 2 MB of real /products content. Every subsequent run, including via the sidecar, was PX-blocked. Hypothesis: PX issues a short-lived "first contact" cookie that's burned after one request, and our profile preserves something else that signals "this is the second time we've seen this browser fingerprint" → challenge. Could not confirm in the time available.
+
+**Why we didn't ship despite the extractor working:** user pre-decided in the session plan that if managed-profile + UndetectedAdapter failed, we'd defer rather than add Docker (FlareSolverr) or third-party services (Apify, ScrapingBee). See "Latest change (2026-05-19)" at the top for the full scaffolding list and re-enable steps.
+
+**Options when picking back up (cost order):**
+1. **Cookie injection from real Chrome.** Log in to TRR in your everyday Chrome, export cookies via Cookie-Editor or DevTools, inject via `BrowserConfig(cookies=[...])` into a clean Playwright session (skip the managed profile entirely). PX sometimes honors human-minted cookies for hours. Brittle.
+2. **GraphQL direct call.** TRR's Next.js page fetches via an internal GraphQL endpoint (URL embedded in the SSR HTML if you can capture one). Call `httpx.post` with stored cookies + headers. PX likely guards the API too, but worth ~30 min to confirm.
+3. **Crawl4ai upgrade.** If a future crawl4ai version (post-0.8.6) ships a stronger PX bypass, retry with `REALREAL_ENABLED=1` — no code changes needed.
+4. **Paid unlocker.** ScrapingBee / ZenRows / Bright Data Web Unlocker ($30-100/mo) reliably defeat PX. User has ruled this out for now.
+
 ### D. Carryover from Phase 1 (still open)
 
 - **Grailed ~83% sold rate** — Google indexes lots of sold Grailed listings; nothing to do without paying for more search results or finding a different discovery method.
 - **Depop GBP/EUR listings** — currency badge handles UI flagging; FX conversion would be a nice-to-have.
 - **No pagination** — 15 search results per platform, no "load more."
-- **Auth (Phase 2A) DONE**, **Saves + Profile editing (Phase 2B) DONE**, **Watchlist manual refresh (Phase 2C) DONE.**
-- **Still pending:** Watchlist auto-refresh on login (deferred from 2C), price history, seller info, scheduled re-scrape + email price-drop alerts (Phase 2D), additional platforms (RealReal, ThredUp).
+- **Auth (Phase 2A) DONE**, **Saves + Profile editing (Phase 2B) DONE**, **Watchlist manual refresh (Phase 2C) DONE**, **ThredUp DONE**, **The RealReal scaffolded but DEFERRED** (see §7 G).
+- **Still pending:** Watchlist auto-refresh on login (deferred from 2C), price history, seller info, scheduled re-scrape + email price-drop alerts (Phase 2D).
 
 ---
 
@@ -1387,7 +1476,7 @@ When picking this up in a future session, verify in this order before making cha
 3. **Decide on eBay** (§7 A) — either invest in proxy/API solution, or formally drop eBay from `PLATFORM_DOMAINS` so the UI stops surfacing the empty tab.
 4. **Implement Vestiaire URL discovery** via sidecar (§7 B option 1). Scoped, low-risk.
 5. **Add retry-once-on-null wrapper** in `lib/scraper.ts` for residual flaky-first-call cases (cheap, ~10 lines).
-6. **New platforms** — The RealReal, ThredUp (and lower priority: 2nd Street). Add to `crawl4ai-service/structured_extractors.py` + `PLATFORM_DOMAINS`/`PLATFORM_NAMES`.
+6. **New platforms** — ThredUp is DONE (2026-05-18, search-page extraction). The RealReal scaffolded but DEFERRED (2026-05-19, §7 G — PerimeterX press-and-hold). Lower priority: 2nd Street. Pattern: `structured_extractors.py` for single-listing scrapes, or `search_page_extractors.py` for sites where listing URLs aren't Firecrawl-indexable. Always add to `PLATFORM_DOMAINS`/`PLATFORM_NAMES`.
 
 ---
 

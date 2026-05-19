@@ -8,6 +8,7 @@ export const PLATFORM_DOMAINS: Record<string, string> = {
   vestiaire: 'vestiairecollective.com',
   stockx: 'stockx.com',
   thredup: 'thredup.com',
+  realreal: 'therealreal.com',
 };
 
 export const PLATFORM_NAMES: Record<string, string> = {
@@ -20,6 +21,7 @@ export const PLATFORM_NAMES: Record<string, string> = {
   vestiaire: 'Vestiaire Collective',
   stockx: 'StockX',
   thredup: 'ThredUp',
+  realreal: 'The RealReal',
 };
 
 export interface Listing {
