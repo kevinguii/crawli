@@ -149,8 +149,8 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
           toast.success('Saved to My Collection', {
             action: saveId
               ? {
-                  label: 'Move to folder…',
-                  onClick: () => setMoveRequest({ saveId, currentFolderId }),
+                  label: 'Add to folder…',
+                  onClick: () => setMoveRequest({ saveId, currentFolderId, fromToastAction: true }),
                 }
               : undefined,
           });

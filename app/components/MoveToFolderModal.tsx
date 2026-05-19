@@ -8,6 +8,7 @@ export interface MoveModalRequest {
   saveId: string;
   currentFolderId: string | null;
   onMoved?: (folderId: string, folderName: string) => void;
+  fromToastAction?: boolean;
 }
 
 export default function MoveToFolderModal({
@@ -66,7 +67,8 @@ export default function MoveToFolderModal({
         body: JSON.stringify({ folder_id: folder.id }),
       });
       if (!res.ok) throw new Error('move failed');
-      toast.success(`Moved to ${folder.name}`);
+      const verb = request.fromToastAction ? 'Added to' : 'Moved to';
+      toast.success(`${verb} ${folder.name}`);
       request.onMoved?.(folder.id, folder.name);
       onClose();
     } catch {
@@ -89,7 +91,7 @@ export default function MoveToFolderModal({
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-            Move to folder
+            Add to folder
           </h2>
           <button
             type="button"

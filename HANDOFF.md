@@ -1,8 +1,18 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-18 (Collection folders shipped)
+**Last updated:** 2026-05-18 (Collection folders — final UI polish)
 
-**Latest change (2026-05-18 — Collection folders, round 2):**
+**Latest change (2026-05-18 — Collection folders final refinements):**
+
+Two UI polish changes on the Collection (Saves) feature:
+1. **Toast action label:** When user saves a listing and clicks the toast's "Add to folder…" action button, the success toast now says "Added to <folder>" (instead of "Moved to"). The modal tracks `fromToastAction: boolean` to pick the right verb — saves from the toast action use "Added to", while moves via the 3-dot menu use "Moved to".
+2. **Tab title:** Renamed the profile tab from "Collection" → "Collections" (plural) to better reflect the folder-based organization.
+
+No backend changes; UI-only refinements to tone and labeling.
+
+---
+
+**Previous change (2026-05-18 — Collection folders, round 2):**
 
 Iteration on the folders feature based on user testing:
 1. **My Collection is now an "All items" view** — every save shows here regardless of `folder_id`. Previously, moving an item into a custom folder removed it from My Collection (because the GET filter was strict). New behavior: when `?folder_id=<defaultFolderId>`, the GET endpoint applies no folder filter at all. Custom folders still filter strictly by `folder_id`.

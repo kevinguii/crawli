@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import type { Watchlist } from '@/lib/types';
+import type { Watchlist, Listing } from '@/lib/types';
 import { PLATFORM_NAMES } from '@/lib/types';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import { useWatchlist } from '@/app/components/WatchlistProvider';
+import { useSaves } from '@/app/components/SavesProvider';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -39,6 +40,7 @@ export default function WatchlistTab() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const { hydrateUrls } = useWatchlist();
+  const { hydrateUrls: hydrateSaveUrls } = useSaves();
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
@@ -58,7 +60,9 @@ export default function WatchlistTab() {
         if (cancelled) return;
         const next: Watchlist[] = data.watchlist ?? [];
         setRows(next);
-        hydrateUrls(next.map((w) => w.listing_url));
+        const urls = next.map((w) => w.listing_url);
+        hydrateUrls(urls);
+        hydrateSaveUrls(urls);
       } catch {
         if (!cancelled) toast.error('Could not load watchlist');
       } finally {
@@ -67,7 +71,7 @@ export default function WatchlistTab() {
     };
     load();
     return () => { cancelled = true; };
-  }, [debouncedSearch, hydrateUrls]);
+  }, [debouncedSearch, hydrateUrls, hydrateSaveUrls]);
 
   const handleRemove = async (row: Watchlist) => {
     const prev = rows;
@@ -217,11 +221,30 @@ export default function WatchlistTab() {
 
 function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const { isSaved, toggleSave } = useSaves();
+  const saved = isSaved(row.listing_url);
 
   const handleEye = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onRemove();
+  };
+
+  const handleHeart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const asListing: Listing = {
+      id: row.id,
+      title: row.title,
+      price: row.price_current ?? row.price_at_add,
+      currency: row.currency,
+      condition: null,
+      seller: null,
+      url: row.listing_url,
+      image: row.image_url,
+      platform: row.platform,
+    };
+    toggleSave(asListing);
   };
 
   const at = row.price_at_add;
@@ -280,10 +303,32 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
 
         <button
           type="button"
-          onClick={handleEye}
-          aria-label="Remove from watchlist"
+          onClick={handleHeart}
+          aria-label={saved ? 'Remove from collection' : 'Save to collection'}
+          aria-pressed={saved}
           className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
           style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill={saved ? '#E24B4A' : 'none'}
+            stroke={saved ? '#E24B4A' : '#ffffff'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleEye}
+          aria-label="Remove from watchlist"
+          className="absolute flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
+          style={{ right: '0.5rem', top: '3rem', background: 'rgba(0, 0, 0, 0.55)' }}
         >
           <svg
             width="20"

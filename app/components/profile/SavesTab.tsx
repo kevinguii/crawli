@@ -341,6 +341,16 @@ function FolderPillRow({
           border: '1px dashed var(--border)',
           color: 'var(--text-dim)',
         }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--accent-soft)';
+          e.currentTarget.style.borderColor = 'var(--accent)';
+          e.currentTarget.style.color = 'var(--accent-text)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'var(--surface)';
+          e.currentTarget.style.borderColor = 'var(--border)';
+          e.currentTarget.style.color = 'var(--text-dim)';
+        }}
         aria-label="Create new folder"
       >
         + New folder
@@ -461,11 +471,21 @@ function FolderCardGrid({
       <button
         type="button"
         onClick={onCreate}
-        className="flex aspect-square items-center justify-center rounded-2xl text-sm"
+        className="flex aspect-square items-center justify-center rounded-2xl text-sm transition-colors"
         style={{
           background: 'var(--surface)',
           border: '1px dashed var(--border)',
           color: 'var(--text-dim)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--accent-soft)';
+          e.currentTarget.style.borderColor = 'var(--accent)';
+          e.currentTarget.style.color = 'var(--accent-text)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'var(--surface)';
+          e.currentTarget.style.borderColor = 'var(--border)';
+          e.currentTarget.style.color = 'var(--text-dim)';
         }}
       >
         + New folder
@@ -632,7 +652,7 @@ function SaveCard({
                 className="block w-full px-3 py-2 text-left hover:opacity-80"
                 style={{ color: 'var(--text)' }}
               >
-                Move to folder…
+                Add to folder
               </button>
               <button
                 type="button"
