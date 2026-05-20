@@ -54,7 +54,7 @@ async function searchAndScrape(platform: string, query: string): Promise<Listing
   );
   if (filtered.length === 0) return [];
 
-  const toScrape = filtered.slice(0, 5);
+  const toScrape = filtered.slice(0, 10);
 
   const scrapeSettled = await allSettledWithConcurrency(
     toScrape.map((r) => () => scrapeListing(r.url, platform)),
