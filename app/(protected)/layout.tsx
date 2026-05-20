@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { createClient } from '@/lib/supabase/server';
 import { SavesProvider } from '@/app/components/SavesProvider';
 import { WatchlistProvider } from '@/app/components/WatchlistProvider';
+import { SearchHistoryProvider } from '@/app/components/SearchHistoryProvider';
 
 export default async function ProtectedLayout({
   children,
@@ -19,8 +20,10 @@ export default async function ProtectedLayout({
   return (
     <SavesProvider>
       <WatchlistProvider>
-        {children}
-        <Toaster position="bottom-right" theme="system" richColors closeButton />
+        <SearchHistoryProvider>
+          {children}
+          <Toaster position="bottom-right" theme="system" richColors closeButton />
+        </SearchHistoryProvider>
       </WatchlistProvider>
     </SavesProvider>
   );

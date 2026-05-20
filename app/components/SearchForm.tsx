@@ -1,16 +1,20 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   PlatformResults,
   SearchResponse,
   SearchStreamEvent,
+  SearchHistoryItem,
 } from '@/lib/types';
 import FilterPanel, {
   emptyFilterState,
   filtersToQuerySuffix,
   FilterState,
 } from './FilterPanel';
+import { useSearchHistory } from './SearchHistoryProvider';
+
+const PENDING_SEARCH_KEY = 'crawli_pending_search';
 
 // Start with a small reliable set rather than every platform. Keeps the first
 // search fast and avoids the two known-broken platforms (eBay, Vestiaire).
@@ -29,6 +33,27 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>(DEFAULT_PLATFORMS);
   const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { addSearch } = useSearchHistory();
+
+  // Re-run a search that was queued from /search-history.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = sessionStorage.getItem(PENDING_SEARCH_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(PENDING_SEARCH_KEY);
+    try {
+      const item = JSON.parse(raw) as SearchHistoryItem;
+      setQuery(item.query);
+      setSelected(item.platforms);
+      onFiltersChange({ ...emptyFilterState(), ...item.filters });
+      // Defer submit so child state effects flush first.
+      setTimeout(() => formRef.current?.requestSubmit(), 0);
+    } catch {
+      // ignore malformed payload
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -118,6 +143,9 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         return;
       }
 
+      // Add to history only on successful search completion.
+      void addSearch(baseQ, [...selected].sort(), filters);
+
       // Ensure every requested platform has an entry, even if no event arrived.
       for (const p of platformsForRun) {
         if (!results[p]) results[p] = { listings: [], count: 0 };
@@ -143,7 +171,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="text"

@@ -86,6 +86,21 @@ export interface Watchlist {
   created_at: string;
 }
 
+export interface SearchHistoryItem {
+  id: string;
+  query: string;
+  platforms: string[];
+  filters: {
+    color: string | null;
+    category: string | null;
+    condition: string | null;
+    size: string | null;
+    minPrice: number | null;
+    maxPrice: number | null;
+  };
+  searched_at: string;
+}
+
 export interface PlatformResults {
   listings: Listing[];
   count: number;
