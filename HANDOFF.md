@@ -1,8 +1,25 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-19 (Repo cleanup: removed redundant cost MDs + gitignored cruft)
+**Last updated:** 2026-05-19 (Collections UI redesign: icon toggle, preview grids, two-level nav)
 
-**Latest change (2026-05-19 — Repo cleanup pass; no behavioral changes):**
+**Latest change (2026-05-19 — Collections page UI redesign):**
+
+Redesigned the My Collection (saves) tab with improved UX:
+- **View mode toggle:** Replaced text button ("Pills"/"Cards") with icon-based sliding toggle. Left icon (three horizontal lines) = list view; right icon (grid boxes) = grid view. Active view highlighted with accent color.
+- **Collection preview images:** Grid view now shows first 4 saved listing images as background previews (Spotify-style), semi-transparent, more visible on hover.
+- **Two-level navigation in grid view:** Clicking a collection enters a full-page view of its items with back button. Collections themselves only show in the top-level grid.
+- **Better discoverability:** "+ New collection" button moved to its own row below search/view toggle, always accessible without scrolling.
+- **Improved legibility:** Description text enlarged from `text-xs` to `text-sm`. Collection title and description now visible when browsing items in grid view.
+- **Terminology:** Changed all "folder" references to "collection" throughout (`SavesTab.tsx`).
+
+**Files touched (1):**
+- [app/components/profile/SavesTab.tsx](app/components/profile/SavesTab.tsx) — `ViewModeToggle`, `FolderCardGrid`, `FolderDescription`, navigation state (`cardViewFolderId`)
+
+**What works:** All three tier-1 patterns (list pills, grid with previews, drill-down navigation) tested in browser. Folder creation modal still works from the new button position.
+
+---
+
+**Previous change (2026-05-19 — Repo cleanup pass; no behavioral changes):**
 
 Cleaned up project cruft for clarity. No app/sidecar code touched.
 - **Deleted redundant root-level cost docs:** `COST_ANALYSIS_SUMMARY.md` and `TOKEN_COST_ANALYSIS.md`. Their content was duplicated in `docs/engine_bakeoff_findings.md` (measured costs, per-platform verdicts) and `docs/FIRECRAWL_PRICING.md` (canonical credit prices). Cost story now lives in two files instead of four.
