@@ -14,7 +14,7 @@ export const SEARCH_PAGE_PLATFORMS = new Set<string>(['thredup', 'realreal']);
 export async function scrapeSearchPageViaSidecar(
   platform: string,
   query: string,
-  limit = 12,
+  limit = 10,
   maxAttempts = 2
 ): Promise<ScrapedListing[]> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {

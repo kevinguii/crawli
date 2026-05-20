@@ -43,7 +43,7 @@ async function searchAndScrape(platform: string, query: string): Promise<Listing
   // platform's own search page returns a grid with all the listing data we
   // need in one render. Sidecar's /scrape-search handles the fetch + extract.
   if (SEARCH_PAGE_PLATFORMS.has(platform)) {
-    const scraped = await scrapeSearchPageViaSidecar(platform, query, 12);
+    const scraped = await scrapeSearchPageViaSidecar(platform, query, 10);
     return parseScrapedListings(scraped, platform, query);
   }
 
