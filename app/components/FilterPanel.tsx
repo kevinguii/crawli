@@ -264,12 +264,13 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
       >
         <div className="overflow-hidden">
           <div
-            className="rounded-xl py-1 shadow-lg"
+            className="hide-scrollbar rounded-xl py-1 shadow-lg"
             style={{
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
-              maxHeight: '260px',
+              maxHeight: '165px',
               overflowY: 'auto',
+              scrollbarWidth: 'none',
             }}
           >
             <DropdownItem
