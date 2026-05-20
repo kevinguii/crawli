@@ -1149,9 +1149,9 @@ Shared helpers:
 
 ---
 
-## 6. Status by Platform (verified 2026-05-15)
+## 6. Status by Platform (verified 2026-05-15, updated 2026-05-19 with engine bake-off data)
 
-Test was a single live run via `scripts/test-all-platforms.mjs` with query "Nike Air Jordan 1" against the live sidecar (`llm_mode: active`, provider `openai/gpt-4o-mini`).
+Primary test: single live run via `scripts/test-all-platforms.mjs` with query "Nike Air Jordan 1" against the live sidecar (`llm_mode: active`, provider `openai/gpt-4o-mini`). **Updated 2026-05-19** with results from the engine bake-off (72 URLs × 2 engines; see [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md) for full data).
 
 | Platform | Scrape works? | Notes |
 |---|:-:|---|
@@ -1516,6 +1516,34 @@ If `llm_mode` is `stub`, the API key isn't being read — check `.env` and that 
 | Standard ($99/mo, 100,000 cr) | $0.00099 | $0.032 | ~$0.019 | **~$0.051** |
 
 OpenAI cost is concentrated on eBay (chunked LLM extraction, ~$0.014/search) and Vestiaire (~$0.005/search). The other 6 working Firecrawl platforms have deterministic structured extractors and use $0 in LLM tokens.
+
+### Cost Summary for Decision-Making (2026-05-19 bake-off data)
+
+**TL;DR:** Ship limit=10. Cost per search increases from $0.10 → $0.22 (Hobby), but listings nearly double (30 → 55) for ~same cost-per-listing (~$0.004–0.005).
+
+| Scenario | Per-search cost (Hobby) | Per-search cost (Standard) | Results | Cost-per-listing |
+|---|---|---|---|---|
+| **Current production (limit=5)** | **$0.10** | $0.06 | 30 listings, ~25 with price | **$0.004** |
+| **Recommended (limit=10)** | **$0.22** | $0.18 | 55 listings, ~45 with price | **$0.005** |
+| Limit 15 (broken) | $0.39 | $0.29 | 0 listings (sidecar degradation) | N/A |
+| Firecrawl scrape basic (limit=5, hypothetical) | $0.40–0.45 | $0.09–0.10 | Same 30 listings, **lower accuracy** | $0.013–0.015 |
+| Firecrawl scrape basic (limit=10, hypothetical) | $0.65–0.72 | $0.16–0.18 | Same 55 listings, **lower accuracy** | $0.012–0.013 |
+
+**Key observations:**
+- **Firecrawl scraping is 2–3× more expensive AND less accurate** than crawl4ai. Vinted example: crawl4ai gets 5/5 prices correctly (EUR/GBP), Firecrawl basic gets 1/5 (naive regex).
+- **Cost increase from 5 → 10 is proportional to user value increase** — you're not overpaying; per-listing cost stays flat or slightly decreases due to fixed Firecrawl search cost amortizing over more listings.
+- **Limit 15 is not a cost issue — it's a sidecar degradation bug.** Search still costs 32 credits, but every scrape returns null. Don't expose limits > 10 in the UI until the concurrency problem is fixed (see §7 I).
+
+**Anti-bot platform cost impacts:**
+
+| Platform | Status | Cost impact if using failover |
+|---|---|---|
+| **StockX** | Works fine on crawl4ai (3/4 bake-off) | None — no failover needed. Keep primary. |
+| **eBay** | Intermittent anti-bot (2/2 in bake-off, but documented failures) | **Optional Firecrawl failover:** ~$0.0002–0.0005/search if triggered (~5% of eBay URLs fail, $0.004/URL × 5–7 URLs). Adds negligible cost for resilience. |
+| **Vestiaire** | Works on crawl4ai; Firecrawl discovery broken | Can't help — Firecrawl search returns 0 URLs. No failover viable. Keep primary. |
+| **RealReal** | PerimeterX press-and-hold (no automated bypass) | Deferred indefinitely. Currently gated, costs $0. If re-enabled later, cost is unknown (depends on unlocker choice). |
+
+**Recommendation:** Ship limit=10 immediately (one-line change at `app/api/search/route.ts:57`). Optional: implement eBay Firecrawl failover later (~1–2 hours) if production experiences enough eBay failures to warrant resilience.
 
 ### What changed since the last revision
 
