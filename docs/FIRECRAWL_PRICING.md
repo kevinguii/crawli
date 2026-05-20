@@ -2,7 +2,7 @@
 
 **Last verified:** 2026-05-19 against Firecrawl docs.
 
-This is the source of truth for Firecrawl credit costs in this project. If a number in `TOKEN_COST_ANALYSIS.md` or any `scripts/*.py` cost-estimator conflicts with this file, **this file wins** — update the others.
+This is the source of truth for Firecrawl credit costs in this project. If a number in any `scripts/*.py` cost-estimator conflicts with this file, **this file wins** — update the others.
 
 ---
 
@@ -118,7 +118,7 @@ crawl4ai (our current scrape engine) has no provider-imposed concurrency cap —
 
 Per-URL scrape cost: **$0.00** (crawl4ai, not Firecrawl).
 
-OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 Firecrawl-search platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. See [TOKEN_COST_ANALYSIS.md](../TOKEN_COST_ANALYSIS.md) for token math.
+OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 Firecrawl-search platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. See [engine_bakeoff_findings.md](engine_bakeoff_findings.md) §3 for measured token costs.
 
 ---
 

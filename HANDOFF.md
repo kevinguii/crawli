@@ -1,6 +1,14 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-19 (Engine bake-off RUN + findings + corrected cost docs)
+**Last updated:** 2026-05-19 (Repo cleanup: removed redundant cost MDs + gitignored cruft)
+
+**Latest change (2026-05-19 — Repo cleanup pass; no behavioral changes):**
+
+Cleaned up project cruft for clarity. No app/sidecar code touched.
+- **Deleted redundant root-level cost docs:** `COST_ANALYSIS_SUMMARY.md` and `TOKEN_COST_ANALYSIS.md`. Their content was duplicated in `docs/engine_bakeoff_findings.md` (measured costs, per-platform verdicts) and `docs/FIRECRAWL_PRICING.md` (canonical credit prices). Cost story now lives in two files instead of four.
+- **Removed gitignored disk weight:** `.claude/worktrees/` (1.2 MB of stale worktree copies), `crawl4ai-service/debug_dumps/` (15 MB of raw HTML), Python `__pycache__/` dirs, and `tsconfig.tsbuildinfo`. Freed ~16.5 MB.
+- **Fixed dangling references** to the deleted MDs in `HANDOFF.md` §9, `docs/FIRECRAWL_PRICING.md`, `docs/engine_bakeoff_findings.md`, `scripts/README_TOKENS.md`, and `scripts/limit_sweep.py`.
+- **Still flagged for review (not yet deleted, pending user confirm):** `python/` (old test.ipynb/test_scrape.py), several one-shot `scripts/diagnose-*.mjs`/`test-*.mjs` files, `crawl4ai-service/debug_ebay.py`/`debug_probe.py`, root `proxy.ts`, `token_usage.jsonl` at repo root.
 
 **Latest change (2026-05-19 — Engine bake-off run; recommendation: stay on crawl4ai, bump limit 5 → 10):**
 
@@ -1497,7 +1505,7 @@ If `llm_mode` is `stub`, the API key isn't being read — check `.env` and that 
 
 ## 9. Cost Model
 
-**Sources of truth:** [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md) for Firecrawl, [TOKEN_COST_ANALYSIS.md](TOKEN_COST_ANALYSIS.md) for the full per-search breakdown. This section is a summary — update those files first when prices change.
+**Sources of truth:** [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md) for Firecrawl credit pricing, [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md) for measured per-search cost and per-platform verdicts. This section is a summary — update those files first when prices change.
 
 | Operation | Cost |
 |---|---|

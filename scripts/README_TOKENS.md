@@ -174,7 +174,7 @@ A $4.99/mo Pro tier covers the reseller at Standard plan with margin. At Hobby p
 | `engine_bakeoff.py` | crawl4ai vs Firecrawl scrape comparison |
 | `limit_sweep.py` | 5 / 10 / 15 results-per-platform comparison |
 | `../docs/FIRECRAWL_PRICING.md` | Canonical pricing |
-| `../TOKEN_COST_ANALYSIS.md` | Full analysis + recommendations |
+| `../docs/engine_bakeoff_findings.md` | Bake-off results + per-platform verdicts |
 | `../crawl4ai-service/token_tracker.py` | Real-token instrumentation |
 
 ---
@@ -191,4 +191,4 @@ Drop the search `limit` from 20 to 10 (single line change, cuts cost in half), s
 Claude Haiku 4.5 is comparable in price; Claude Sonnet 4.6 is ~10× more expensive on input. At our token volumes (few thousand input tokens per LLM call), even Sonnet would only be ~$0.30/search, not catastrophic. GPT-4o-mini default is fine.
 
 **Q: How often should I update pricing?**
-Update [docs/FIRECRAWL_PRICING.md](../docs/FIRECRAWL_PRICING.md) when Firecrawl changes their pricing page (check quarterly). OpenAI: same. This README + `TOKEN_COST_ANALYSIS.md` should track that file.
+Update [docs/FIRECRAWL_PRICING.md](../docs/FIRECRAWL_PRICING.md) when Firecrawl changes their pricing page (check quarterly). OpenAI: same. This README should track that file.

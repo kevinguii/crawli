@@ -80,7 +80,7 @@ Speedup correlates with how often crawl4ai falls back to LLM extraction *and* ho
 During the bake-off the token tracker captured **22 LLM extraction calls** totaling **479,979 input + 42,542 output tokens = $0.0975** across 72 URLs.
 
 - That's ~$0.0044 per LLM-extracted listing.
-- The pre-bake-off estimate in [TOKEN_COST_ANALYSIS.md](../TOKEN_COST_ANALYSIS.md) was ~$0.014 per eBay URL + ~$0.005 per Vestiaire URL ≈ $0.019 for 1 of each per search. The real numbers from this run are in that ballpark (the 22 LLM calls are skewed toward eBay where chunked extraction makes multiple calls per URL).
+- The pre-bake-off estimate was ~$0.014 per eBay URL + ~$0.005 per Vestiaire URL ≈ $0.019 for 1 of each per search. The real numbers from this run are in that ballpark (the 22 LLM calls are skewed toward eBay where chunked extraction makes multiple calls per URL).
 - Estimator is **within 30%** of reality. Good enough — don't retune the platform-typical HTML-size table.
 
 ---

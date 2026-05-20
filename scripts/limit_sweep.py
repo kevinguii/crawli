@@ -46,7 +46,7 @@ SIDECAR_URL = os.environ.get("CRAWL4AI_URL", "http://localhost:8000")
 PRICE_HOBBY = 20 / 5000
 PRICE_STANDARD = 99 / 100_000
 
-# OpenAI gpt-4o-mini pricing — keep in sync with TOKEN_COST_ANALYSIS.md.
+# OpenAI gpt-4o-mini pricing — keep in sync with docs/FIRECRAWL_PRICING.md.
 GPT4O_MINI_IN = 0.15 / 1_000_000
 GPT4O_MINI_OUT = 0.60 / 1_000_000
 
