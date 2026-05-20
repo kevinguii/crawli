@@ -1,8 +1,34 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (ThredUp size post-filter + structured filters wired through to API route)
+**Last updated:** 2026-05-20 (Off-White brand vs "white" color collision post-filter)
 
-**Latest change (2026-05-20 — ThredUp size accuracy fix via post-filter):**
+**Latest change (2026-05-20 — Off-White brand vs "white" color disambiguation):**
+
+User-reported issue: ticking the White color swatch caused Off-White brand listings (the streetwear label) to flood the results. Platforms' fuzzy text search treats "white" the same whether it's a color or part of a brand name.
+
+**Fix:** post-filter listings by title when `filters.color === 'white'`, dropping anything matching `/off[-\s]?white/i`. Includes a query-mention guard — if the user's typed query itself contains "off-white", the post-filter is skipped (they clearly want the brand).
+
+Four cases handled:
+| White filter | "off-white" in query | Behavior |
+|---|---|---|
+| ✅ ON | ❌ no | Drop Off-White listings |
+| ❌ OFF | ✅ yes | Inert — filter only runs when color=white |
+| ✅ ON | ✅ yes | Skipped by query-mention guard, keep all |
+| ❌ OFF | ❌ no | No-op |
+
+**Files touched (2):**
+- new: [lib/colorFilter.ts](lib/colorFilter.ts) — `matchListingColor(title, colorKey, query)` and `queryMentionsOffWhite(query)`. No-op for any color other than `'white'`.
+- [app/api/search/route.ts](app/api/search/route.ts) — applies the filter in both branches of `searchAndScrape` (SEARCH_PAGE_PLATFORMS branch after the size filter, Firecrawl branch after `parseScrapedListings`).
+
+**Verified:** 9/9 unit cases passed via tsx probe (clean white titles kept; Off-White / "off white" / "OffWhite" variants dropped; query-mention guard restores them; other colors no-op). Route compiles cleanly under `npm run dev:all`.
+
+**Gotchas:**
+- The regex `/off[-\s]?white/i` intentionally matches all three variants ("off-white", "off white", "offwhite"). Tested.
+- This is a one-off for a single known collision — don't pre-build a generic brand-color collision table. If a second collision appears (e.g. brand "Red Wing" vs color red), generalize then.
+
+---
+
+**Previous change (2026-05-20 — ThredUp size accuracy fix via post-filter):**
 
 User-reported issue: searching ThredUp for `"large"` (or selecting Size L in FilterPanel) returned XL / 2XL / "large print" items because ThredUp's onsite search is a fuzzy text match — there's no URL-level size filtering.
 

@@ -6,6 +6,7 @@ import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
 import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
+import { matchListingColor } from '@/lib/colorFilter';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,10 +72,13 @@ async function searchAndScrape(
     // Prefer the explicit FilterState.size; otherwise scan the query text for
     // a typed-in size word (handles "nike shoes large" with no panel filter).
     const sizeKey = filters?.size ?? detectSizeFromQuery(query);
-    const filtered = sizeKey
+    const sizeFiltered = sizeKey
       ? listings.filter((l) => matchListingSize(l.title, sizeKey))
       : listings;
-    return filtered.slice(0, 10);
+    const colorFiltered = sizeFiltered.filter((l) =>
+      matchListingColor(l.title, filters?.color, query),
+    );
+    return colorFiltered.slice(0, 10);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -96,7 +100,8 @@ async function searchAndScrape(
     .map((s) => s.value)
     .filter((s): s is ScrapedListing => s !== null);
 
-  return parseScrapedListings(scraped, platform, query);
+  const parsed = parseScrapedListings(scraped, platform, query);
+  return parsed.filter((l) => matchListingColor(l.title, filters?.color, query));
 }
 
 export async function POST(request: Request) {
