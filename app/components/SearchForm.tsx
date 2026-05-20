@@ -57,7 +57,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, platforms: platformsForRun }),
+        body: JSON.stringify({ query: q, platforms: platformsForRun, filters }),
         signal: controller.signal,
       });
 

@@ -4,14 +4,29 @@ import { searchPlatform, scrapeListing, ScrapedListing } from '@/lib/firecrawl';
 import { SEARCH_PAGE_PLATFORMS, scrapeSearchPageViaSidecar } from '@/lib/scraper';
 import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
 import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
+import type { FilterState } from '@/lib/filterOptions';
+import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
 
+const filtersSchema = z
+  .object({
+    color: z.string().nullable().optional(),
+    category: z.string().nullable().optional(),
+    condition: z.string().nullable().optional(),
+    size: z.string().nullable().optional(),
+    minPrice: z.number().nullable().optional(),
+    maxPrice: z.number().nullable().optional(),
+  })
+  .partial()
+  .optional();
+
 const requestSchema = z.object({
   query: z.string().min(1).max(200),
   platforms: z.array(z.enum(VALID_PLATFORMS)).min(1),
+  filters: filtersSchema,
 });
 
 // Run at most `limit` promises concurrently, returns results in input order.
@@ -37,14 +52,29 @@ async function allSettledWithConcurrency<T>(
   return results;
 }
 
-async function searchAndScrape(platform: string, query: string): Promise<Listing[]> {
+async function searchAndScrape(
+  platform: string,
+  query: string,
+  filters: FilterState | undefined,
+): Promise<Listing[]> {
   // ThredUp (and any other SEARCH_PAGE_PLATFORMS) skip Firecrawl entirely.
   // Their individual listing URLs aren't surfaced by `site:` search, but the
   // platform's own search page returns a grid with all the listing data we
   // need in one render. Sidecar's /scrape-search handles the fetch + extract.
   if (SEARCH_PAGE_PLATFORMS.has(platform)) {
-    const scraped = await scrapeSearchPageViaSidecar(platform, query, 10);
-    return parseScrapedListings(scraped, platform, query);
+    // ThredUp returns ~119 products per page in a single JSON-LD blob; the
+    // limit just caps in-memory iteration of that array, not network cost.
+    // Pull 100 so the post-filter has plenty to find ~10 size-matching items
+    // for selective filters (uncommon sizes still get a full page of results).
+    const scraped = await scrapeSearchPageViaSidecar(platform, query, 100);
+    const listings = parseScrapedListings(scraped, platform, query);
+    // Prefer the explicit FilterState.size; otherwise scan the query text for
+    // a typed-in size word (handles "nike shoes large" with no panel filter).
+    const sizeKey = filters?.size ?? detectSizeFromQuery(query);
+    const filtered = sizeKey
+      ? listings.filter((l) => matchListingSize(l.title, sizeKey))
+      : listings;
+    return filtered.slice(0, 10);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -85,7 +115,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { query, platforms } = parsed.data;
+  const { query, platforms, filters } = parsed.data;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -101,7 +131,7 @@ export async function POST(request: Request) {
       await Promise.all(
         platforms.map(async (platform) => {
           try {
-            const listings = await searchAndScrape(platform, query);
+            const listings = await searchAndScrape(platform, query, filters as FilterState | undefined);
             allListings.push(...listings);
             write({
               type: 'platform_done',

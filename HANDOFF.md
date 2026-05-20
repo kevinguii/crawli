@@ -1,8 +1,48 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-19 (Collections UI redesign: icon toggle, preview grids, two-level nav)
+**Last updated:** 2026-05-20 (ThredUp size post-filter + structured filters wired through to API route)
 
-**Latest change (2026-05-19 — Collections page UI redesign):**
+**Latest change (2026-05-20 — ThredUp size accuracy fix via post-filter):**
+
+User-reported issue: searching ThredUp for `"large"` (or selecting Size L in FilterPanel) returned XL / 2XL / "large print" items because ThredUp's onsite search is a fuzzy text match — there's no URL-level size filtering.
+
+**Investigation (don't re-walk):**
+- Firecrawl `site:thredup.com <query>` still returns **zero** individual `/product/<sku>` URLs (all category / search-grid hits). Same finding as 2026-05-18; the Firecrawl branch remains a dead end for ThredUp.
+- Probed ThredUp's `/search/<slug>` URL with `?size=L`, `?size_tags=large`, etc. — every variant returned the **exact same 5 results** as the baseline. ThredUp ignores size params on the `/search/` endpoint. `?department_tags=women/men` is the only param that has any effect.
+- ThredUp listing titles consistently embed the size (`... Size 7`, `... Size XL`), so regex on the title is reliable. No LLM needed.
+
+**Fix:** post-filter ThredUp results by structured size key after extraction.
+- **Frontend** ([SearchForm.tsx](app/components/SearchForm.tsx)) now sends the structured `filters` object in the POST body alongside the merged-query string (other platforms still get the text suffix appended — behavior unchanged).
+- **Route** ([app/api/search/route.ts](app/api/search/route.ts)) accepts `filters` in the zod schema, passes it into `searchAndScrape`. For `SEARCH_PAGE_PLATFORMS` (ThredUp / RealReal), the route pulls **100** listings from the single ThredUp page (single HTTP request — the page already contains ~119 products in one JSON-LD blob, the limit just controls in-memory iteration; raising it is essentially free) and post-filters to a max of 10 by matching the embedded size against `filters.size`.
+- **Typed-size fallback:** when `filters.size` is null but the raw query text contains a size word (e.g. user types `"nike shoes large"`), [lib/sizeFilter.ts](lib/sizeFilter.ts) → `detectSizeFromQuery()` extracts the size key. Same post-filter applies.
+- **Regex anchored on "Size" prefix** so the L pattern does NOT match the L inside XL.
+
+**Verified end-to-end:**
+| Test | Before | After |
+|---|---|---|
+| `t-shirt` + Size L checkbox | mixed sizes | 5 results, all Size L |
+| `t-shirt large` (typed) | XL/2XL noise | 5 results, all Size L |
+| `large` (handoff repro from prior session) | mostly X-Large items | 1 result, Size L (correct — that's all of size L in the noisy "large" relevance ranking) |
+| `nike` + shoe size m9 | n/a | 10/10 results, every one Size 9 |
+| `t-shirt` (no filter) | mixed sizes | 10 mixed sizes (no regression) |
+
+**Files touched (6):**
+- new: [lib/filterOptions.ts](lib/filterOptions.ts) — extracted FilterState shape + COLOR/CATEGORY/CONDITION/SIZE option tables out of FilterPanel.tsx so server-side code can import without pulling React in. FilterPanel.tsx now re-exports for backward compat.
+- new: [lib/sizeFilter.ts](lib/sizeFilter.ts) — `matchListingSize(title, sizeKey)` and `detectSizeFromQuery(query)`.
+- [app/api/search/route.ts](app/api/search/route.ts) — `filters` in zod schema; `searchAndScrape` now takes filters; SEARCH_PAGE_PLATFORMS branch pulls 100 + post-filters to ≤10.
+- [app/components/SearchForm.tsx](app/components/SearchForm.tsx) — adds `filters` to POST body.
+- [app/components/FilterPanel.tsx](app/components/FilterPanel.tsx) — re-exports from `lib/filterOptions.ts`.
+- (revert) [crawl4ai-service/main.py](crawl4ai-service/main.py) — removed temporary `url_override` field on `ScrapeSearchRequest` (used only during this session's URL-param probing).
+
+**Gotchas to remember:**
+- ThredUp's `/search/<slug>` URL ignores `size=`, `size_tags=`, `sizing_id=` — confirmed by probe, do not waste time wiring them up. Only `department_tags=women/men` works.
+- The `limit` param on `/scrape-search` is an in-memory cap on JSON-LD iteration, **not** a network/HTTP cost. ThredUp returns ~119 products per fetch regardless. Raising the cap is essentially free.
+- Word-boundary `\bL\b` alone is NOT safe for clothing-size L — it matches the L inside XL. Use `\bSize\s+L\b` to disambiguate.
+- `detectSizeFromQuery` is intentionally ordering-sensitive: it checks `xxl` / `xx-large` / `2xl` before `xl`, and `extra large` before `large`, etc. Don't reorder the regex list.
+
+---
+
+**Previous change (2026-05-19 — Collections page UI redesign):**
 
 Redesigned the My Collection (saves) tab with improved UX:
 - **View mode toggle:** Replaced text button ("Pills"/"Cards") with icon-based sliding toggle. Left icon (three horizontal lines) = list view; right icon (grid boxes) = grid view. Active view highlighted with accent color.
@@ -1082,6 +1122,8 @@ fashion-crawler-crawl4ai/
 │
 ├── lib/
 │   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save (now w/ folder_id), CollectionFolder, Watchlist, Profile
+│   ├── filterOptions.ts              ← NEW 2026-05-20: FilterState + COLOR/CATEGORY/CONDITION/SIZE option tables (shared client/server); FilterPanel.tsx re-exports for backward compat
+│   ├── sizeFilter.ts                 ← NEW 2026-05-20: matchListingSize(title, sizeKey) + detectSizeFromQuery(query) — used by api/search route to post-filter ThredUp by size
 │   ├── collectionFolders.ts          ← ensureDefaultFolder(supabase, userId) — idempotent lazy seed of "My Collection"
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
@@ -1188,7 +1230,7 @@ Primary test: single live run via `scripts/test-all-platforms.mjs` with query "N
 | **Vinted** | ✅ | Regex match in escaped Next.js RSC payload for `\"price\":{\"amount\":\"<num>\",\"currency_code\":\"<code>\"}` (note **underscored** `currency_code` — listing pricing; `currencyCode` is shipping). `og:image` for the real product photo. **Fixed 2026-05-15 evening**: previously returning CZK shipping-option prices instead of USD item prices, and a checkmark-icon image URL instead of the photo. |
 | **eBay** | ⚠️ intermittent | Intermittent anti-bot (May 2026 bake-off: 2/2 prices on real `/itm/` URLs, but slow p95 90s). crawl4ai is primary; consider Firecrawl basic as failover (~$0.004/URL) if crawl4ai returns null after retries. See §7 (A). |
 | **Vestiaire Collective** | ❌ deferred | Scrape side works; URL discovery is the blocker. Firecrawl's `site:vestiairecollective.com` returns 0 results. See §7 (B). |
-| **ThredUp** | ✅ | **Search-page extraction** — bypasses Firecrawl entirely. Sidecar's `/scrape-search` renders `https://www.thredup.com/search/<hyphen-slug>` and parses the JSON-LD `Product` array (119 items per page) merged with a DOM SKU→`/product/<slug>/<sku>` href map. Returns ScrapedListing[] in one render. Verified 2026-05-18 against two queries. Not in `DEFAULT_PLATFORMS` — opt-in via FilterPanel. |
+| **ThredUp** | ✅ | **Search-page extraction** — bypasses Firecrawl entirely. Sidecar's `/scrape-search` renders `https://www.thredup.com/search/<hyphen-slug>` and parses the JSON-LD `Product` array (119 items per page) merged with a DOM SKU→`/product/<slug>/<sku>` href map. Returns ScrapedListing[] in one render. Verified 2026-05-18 against two queries. **Size accuracy (2026-05-20):** route pulls 100 from the single page and post-filters by size against the title (`lib/sizeFilter.ts`), since ThredUp's onsite search is fuzzy on size words and the `/search/` URL ignores `size=` / `size_tags=` params. Not in `DEFAULT_PLATFORMS` — opt-in via FilterPanel. |
 | **The RealReal** | ❌ deferred | PerimeterX press-and-hold defeats `UndetectedAdapter` + managed profile. **Extractor + sidecar dispatch are wired** but gated on `REALREAL_ENABLED` env var; without it the platform returns `{"results":[]}` instantly. URL pattern is `/products?keywords=<query>`; data source is `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` (verified offline). See §7 (G) for the deferral details and re-enable steps. |
 
 ### 6.5 What we tried (2026-05-15 PM debug iteration) — what worked, what didn't
