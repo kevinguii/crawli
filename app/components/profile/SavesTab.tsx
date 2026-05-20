@@ -49,6 +49,7 @@ export default function SavesTab() {
   );
   const [editMode, setEditMode] = useState<FolderEditMode | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CollectionFolder | null>(null);
+  const [deleteSaveTarget, setDeleteSaveTarget] = useState<Save | null>(null);
   const [cardViewFolderId, setCardViewFolderId] = useState<string | null>(null);
   const { hydrateUrls, openMoveModal } = useSaves();
 
@@ -122,7 +123,7 @@ export default function SavesTab() {
     [folders]
   );
 
-  const handleRemove = async (save: Save) => {
+  const submitRemoveSave = async (save: Save) => {
     const prev = saves;
     setSaves((s) => s.filter((x) => x.id !== save.id));
     try {
@@ -273,7 +274,7 @@ export default function SavesTab() {
                 <SaveCard
                   key={s.id}
                   save={s}
-                  onRemove={() => handleRemove(s)}
+                  onRemove={() => setDeleteSaveTarget(s)}
                   onMove={() => handleMove(s)}
                 />
               ))}
@@ -331,7 +332,7 @@ export default function SavesTab() {
                 <SaveCard
                   key={s.id}
                   save={s}
-                  onRemove={() => handleRemove(s)}
+                  onRemove={() => setDeleteSaveTarget(s)}
                   onMove={() => handleMove(s)}
                 />
               ))}
@@ -361,6 +362,14 @@ export default function SavesTab() {
           folder={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onConfirm={(cascade) => submitDelete(deleteTarget, cascade).then(() => setDeleteTarget(null))}
+        />
+      )}
+
+      {deleteSaveTarget && (
+        <SaveDeleteModal
+          save={deleteSaveTarget}
+          onClose={() => setDeleteSaveTarget(null)}
+          onConfirm={() => submitRemoveSave(deleteSaveTarget).then(() => setDeleteSaveTarget(null))}
         />
       )}
     </div>
@@ -1103,5 +1112,65 @@ function DeleteChoice({
         </span>
       </span>
     </button>
+  );
+}
+
+function SaveDeleteModal({
+  save, onClose, onConfirm,
+}: {
+  save: Save;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirm = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    onConfirm();
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Remove &quot;{save.title}&quot;?
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+        This item will be removed from your collection.
+      </p>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm disabled:opacity-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={{ background: '#E24B4A', color: '#fff' }}
+        >
+          {submitting ? 'Removing…' : 'Remove'}
+        </button>
+      </div>
+    </ModalShell>
   );
 }

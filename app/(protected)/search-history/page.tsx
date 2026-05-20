@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -16,13 +16,8 @@ const PENDING_SEARCH_KEY = 'crawli_pending_search';
 export default function SearchHistoryPage() {
   const { items, loading, deleteSearch, clearAll } = useSearchHistory();
   const router = useRouter();
-  const [filter, setFilter] = useState('');
-
-  const filtered = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((i) => i.query.toLowerCase().includes(q));
-  }, [items, filter]);
+  const [deleteTarget, setDeleteTarget] = useState<SearchHistoryItem | null>(null);
+  const [showClearAll, setShowClearAll] = useState(false);
 
   function rerun(item: SearchHistoryItem) {
     sessionStorage.setItem(PENDING_SEARCH_KEY, JSON.stringify(item));
@@ -76,9 +71,7 @@ export default function SearchHistoryPage() {
           {items.length > 0 && (
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm('Clear all search history?')) clearAll();
-              }}
+              onClick={() => setShowClearAll(true)}
               className="rounded-lg px-3 py-2 text-sm font-medium"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: '#E24B4A' }}
             >
@@ -87,28 +80,17 @@ export default function SearchHistoryPage() {
           )}
         </div>
 
-        <input
-          type="text"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter history…"
-          className="mb-4 w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-        />
-
         {loading ? (
           <p className="py-8 text-center text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>
             Loading…
           </p>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <p className="py-12 text-center text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>
-            {items.length === 0
-              ? 'No searches yet. Your searches will appear here.'
-              : 'No matches.'}
+            No searches yet. Your searches will appear here.
           </p>
         ) : (
           <ul className="space-y-3">
-            {filtered.map((item) => (
+            {items.map((item) => (
               <li
                 key={item.id}
                 className="group rounded-xl p-4 transition-colors"
@@ -145,21 +127,7 @@ export default function SearchHistoryPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm(`Delete "${item.query}" from your search history?`)) {
-                          const prev = filtered;
-                          deleteSearch(item.id);
-                          toast('Removed from Search History', {
-                            style: { color: '#E24B4A', borderColor: '#E24B4A' },
-                            icon: (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            ),
-                          });
-                        }
-                      }}
+                      onClick={() => setDeleteTarget(item)}
                       aria-label="Delete"
                       className="rounded-lg p-2 hover:opacity-70"
                       style={{ color: 'var(--text)', opacity: 0.6 }}
@@ -178,6 +146,182 @@ export default function SearchHistoryPage() {
           </ul>
         )}
       </div>
+
+      {deleteTarget && (
+        <SearchDeleteModal
+          item={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            deleteSearch(deleteTarget.id);
+            toast('Removed from Search History', {
+              style: { color: '#E24B4A', borderColor: '#E24B4A' },
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ),
+            });
+            setDeleteTarget(null);
+          }}
+        />
+      )}
+
+      {showClearAll && (
+        <ClearAllModal
+          onClose={() => setShowClearAll(false)}
+          onConfirm={() => {
+            clearAll();
+            setShowClearAll(false);
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl p-5 shadow-xl"
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SearchDeleteModal({
+  item, onClose, onConfirm,
+}: {
+  item: SearchHistoryItem;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirm = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    onConfirm();
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Delete &quot;{item.query}&quot;?
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+        This search will be removed from your history.
+      </p>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm disabled:opacity-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={{ background: '#E24B4A', color: '#fff' }}
+        >
+          {submitting ? 'Removing…' : 'Remove'}
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function ClearAllModal({
+  onClose, onConfirm,
+}: {
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirm = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    onConfirm();
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Clear all history?
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+        All search history will be permanently deleted.
+      </p>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm disabled:opacity-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={{ background: '#E24B4A', color: '#fff' }}
+        >
+          {submitting ? 'Clearing…' : 'Clear all'}
+        </button>
+      </div>
+    </ModalShell>
   );
 }

@@ -39,6 +39,7 @@ export default function WatchlistTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Watchlist | null>(null);
   const { hydrateUrls } = useWatchlist();
   const { hydrateUrls: hydrateSaveUrls } = useSaves();
 
@@ -73,7 +74,7 @@ export default function WatchlistTab() {
     return () => { cancelled = true; };
   }, [debouncedSearch, hydrateUrls, hydrateSaveUrls]);
 
-  const handleRemove = async (row: Watchlist) => {
+  const submitRemoveWatch = async (row: Watchlist) => {
     const prev = rows;
     setRows((r) => r.filter((x) => x.id !== row.id));
     try {
@@ -211,10 +212,45 @@ export default function WatchlistTab() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((w) => (
-            <WatchCard key={w.id} row={w} onRemove={() => handleRemove(w)} />
+            <WatchCard key={w.id} row={w} onRemove={() => setDeleteTarget(w)} />
           ))}
         </div>
       )}
+
+      {deleteTarget && (
+        <WatchDeleteModal
+          row={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => submitRemoveWatch(deleteTarget).then(() => setDeleteTarget(null))}
+        />
+      )}
+    </div>
+  );
+}
+
+function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl p-5 shadow-xl"
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -397,5 +433,65 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
         </p>
       </div>
     </a>
+  );
+}
+
+function WatchDeleteModal({
+  row, onClose, onConfirm,
+}: {
+  row: Watchlist;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirm = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    onConfirm();
+  };
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Stop watching &quot;{row.title}&quot;?
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="text-lg leading-none"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+        This item will be removed from your watchlist and price history will be cleared.
+      </p>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm disabled:opacity-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+          style={{ background: '#E24B4A', color: '#fff' }}
+        >
+          {submitting ? 'Removing…' : 'Remove'}
+        </button>
+      </div>
+    </ModalShell>
   );
 }
