@@ -21,6 +21,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 from typing import Optional
+from urllib.parse import urlparse, urlunparse
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -388,6 +389,14 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
     from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
     assert crawler is not None, "crawler not initialised"
+
+    # ThredUp URLs from the search-page extractor carry ?query_id=&result_id=
+    # tracking params that trigger a server-side redirect. Playwright races
+    # Page.content() against that redirect and throws "page is navigating".
+    # Strip all query params for ThredUp — the product ID in the path is enough.
+    if req.platform == "thredup":
+        parsed = urlparse(req.url)
+        req = req.model_copy(update={"url": urlunparse(parsed._replace(query="", fragment=""))})
 
     llm = resolve_llm()
 

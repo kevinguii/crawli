@@ -428,7 +428,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
           </p>
         )}
         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
-          {PLATFORM_NAMES[row.platform] ?? row.platform} · watching since {new Date(row.created_at).toLocaleDateString()}
+          watching since {new Date(row.created_at).toLocaleDateString()}
           {row.last_checked_at && ` · checked ${relativeTime(row.last_checked_at)}`}
         </p>
       </div>

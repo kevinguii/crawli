@@ -15,7 +15,7 @@ import json
 import logging
 import re
 from typing import Optional
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, urlparse, urlunparse
 
 from bs4 import BeautifulSoup
 
@@ -94,7 +94,10 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
         sku = m.group(1)
         if sku in sku_to_url:
             continue  # the DOM has two anchors per card; keep the first
-        sku_to_url[sku] = urljoin(THREDUP_BASE, href)
+        # Strip tracking params — they cause a server-side redirect on load
+        # which races with Playwright's Page.content() call.
+        clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
+        sku_to_url[sku] = urljoin(THREDUP_BASE, clean_href)
 
     # Find the product-array JSON-LD block.
     products: list[dict] = []

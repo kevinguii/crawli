@@ -69,7 +69,7 @@ export default function FilterPanel({
     onFiltersChange(next);
   }
 
-  const allOn = platforms.length === ALL_PLATFORMS.length;
+  const hasSelected = platforms.length > 0;
   const sizeOptions =
     filters.category === 'footwear' ? SHOE_SIZE_OPTIONS : CLOTHING_SIZE_OPTIONS;
   const sizeLabel = filters.category === 'footwear' ? 'Shoe size' : 'Size';
@@ -80,11 +80,11 @@ export default function FilterPanel({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={allOn ? clearPlatforms : setAllPlatforms}
+          onClick={hasSelected ? clearPlatforms : setAllPlatforms}
           className="text-xs font-medium underline underline-offset-2 transition-colors"
           style={{ color: 'var(--text-dim)' }}
         >
-          {allOn ? 'Clear all' : 'Select all'}
+          {hasSelected ? 'Clear all' : 'Select all'}
         </button>
         {ALL_PLATFORMS.map((p) => {
           const active = platforms.includes(p);
