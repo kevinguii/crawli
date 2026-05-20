@@ -428,6 +428,17 @@ def extract_vinted(html: str) -> Optional[dict]:
     }
 
 
+def extract_thredup(html: str) -> Optional[dict]:
+    """ThredUp product pages emit Schema.org Product JSON-LD with offers.price
+    and offers.availability. Same shape as Depop/Grailed — the generic
+    JSON-LD helper handles it. Verified against product/.../220045833.
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+    return _extract_from_jsonld(soup)
+
+
 PLATFORM_EXTRACTORS = {
     "depop": extract_depop,
     "grailed": extract_grailed,
@@ -435,6 +446,7 @@ PLATFORM_EXTRACTORS = {
     "stockx": extract_stockx,
     "mercari": extract_mercari,
     "vinted": extract_vinted,
+    "thredup": extract_thredup,
 }
 
 

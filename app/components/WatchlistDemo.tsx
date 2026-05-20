@@ -179,8 +179,8 @@ function DemoWatchCard({ row }: { row: Watchlist }) {
         )}
         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
           {row.platform} · watching since {new Date(row.created_at).toLocaleDateString()}
-          {row.last_checked_at && ` · checked ${relativeTime(row.last_checked_at)}`}
-          {!row.last_checked_at && ' · never checked'}
+          {row.last_checked_at && ` · last refreshed ${relativeTime(row.last_checked_at)}`}
+          {!row.last_checked_at && ' · never refreshed'}
         </p>
       </div>
     </div>

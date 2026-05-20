@@ -37,6 +37,8 @@ export default function WatchlistTab() {
   const [rows, setRows] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [refreshDone, setRefreshDone] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Watchlist | null>(null);
@@ -98,14 +100,50 @@ export default function WatchlistTab() {
   const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
+    setRefreshDone(false);
+    setRefreshProgress({ completed: 0, total: rows.length });
     try {
       const res = await fetch('/api/watchlist/refresh', { method: 'POST' });
-      if (!res.ok) throw new Error('refresh failed');
-      const data = await res.json();
-      const fresh: Watchlist[] = data.rows ?? [];
-      setRows(fresh);
-      const updated = data.updated ?? 0;
-      const failed = data.failed ?? 0;
+      if (!res.ok || !res.body) throw new Error('refresh failed');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let updated = 0;
+      let failed = 0;
+      let finalRows: Watchlist[] | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let event: { type: string; total?: number; completed?: number; updated?: number; failed?: number; rows?: Watchlist[] };
+          try {
+            event = JSON.parse(trimmed);
+          } catch {
+            continue;
+          }
+          if (event.type === 'start' && typeof event.total === 'number') {
+            setRefreshProgress({ completed: 0, total: event.total });
+          } else if (event.type === 'progress' && typeof event.completed === 'number') {
+            setRefreshProgress((prev) =>
+              prev ? { ...prev, completed: event.completed as number } : prev
+            );
+          } else if (event.type === 'done') {
+            updated = event.updated ?? 0;
+            failed = event.failed ?? 0;
+            finalRows = event.rows ?? [];
+          }
+        }
+      }
+
+      if (finalRows) setRows(finalRows);
+      setRefreshDone(true);
       if (failed > 0) {
         toast.success(`Refreshed ${updated} listing${updated === 1 ? '' : 's'}`, {
           description: `${failed} couldn't be checked`,
@@ -113,8 +151,14 @@ export default function WatchlistTab() {
       } else {
         toast.success(`Refreshed ${updated} listing${updated === 1 ? '' : 's'}`);
       }
+      setTimeout(() => {
+        setRefreshProgress(null);
+        setRefreshDone(false);
+      }, 2000);
     } catch {
       toast.error('Refresh failed. Try again.');
+      setRefreshProgress(null);
+      setRefreshDone(false);
     } finally {
       setRefreshing(false);
     }
@@ -190,7 +234,39 @@ export default function WatchlistTab() {
         </button>
       </div>
 
-      {rows.length > 0 && (
+      {refreshProgress && (
+        <div
+          className="rounded-xl p-3"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div className="bar-track">
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width:
+                  refreshProgress.total > 0
+                    ? `${(refreshProgress.completed / refreshProgress.total) * 100}%`
+                    : '0%',
+                background: refreshDone ? 'var(--success)' : 'var(--accent)',
+                transition: 'width 250ms ease, background 250ms ease',
+              }}
+            />
+          </div>
+          <p
+            className="mt-2 text-[11px] font-medium"
+            style={{
+              color: refreshDone ? 'var(--success)' : 'var(--text-muted)',
+            }}
+          >
+            {refreshDone
+              ? 'All refreshed!'
+              : `${refreshProgress.completed}/${refreshProgress.total} refreshed`}
+          </p>
+        </div>
+      )}
+
+      {rows.length > 0 && !refreshProgress && (
         <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
           Last refreshed: {newestChecked ? relativeTime(newestChecked) : 'never'}
         </p>
@@ -376,8 +452,8 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-            <line x1="1" y1="1" x2="23" y2="23" />
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+            <circle cx="12" cy="12" r="3" fill="var(--accent)" />
           </svg>
         </button>
       </div>
@@ -429,7 +505,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
         )}
         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
           watching since {new Date(row.created_at).toLocaleDateString()}
-          {row.last_checked_at && ` · checked ${relativeTime(row.last_checked_at)}`}
+          {row.last_checked_at && ` · last refreshed ${relativeTime(row.last_checked_at)}`}
         </p>
       </div>
     </a>

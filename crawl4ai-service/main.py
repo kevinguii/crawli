@@ -229,6 +229,18 @@ class ScrapeSearchResponse(BaseModel):
     results: list[ScrapedListing] = []
 
 
+class RefreshPriceRequest(BaseModel):
+    url: str
+    platform: str
+
+
+class RefreshPriceResponse(BaseModel):
+    price: Optional[float] = None
+    isSold: bool = False
+    fetched: bool = False
+    tier: Optional[str] = None  # 'http' | 'playwright' | 'llm' | None
+
+
 # ── Coercion ─────────────────────────────────────────────────────────────────
 
 _NUM_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
@@ -567,3 +579,149 @@ async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
     except Exception as exc:  # noqa: BLE001
         log.exception("[scrape-search] failed for %s '%s': %s", req.platform, req.query, exc)
         return ScrapeSearchResponse(results=[])
+
+
+# ── /refresh-price ───────────────────────────────────────────────────────────
+
+_REFRESH_HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+}
+
+
+def _refresh_result_from_extracted(extracted: dict, tier: str) -> RefreshPriceResponse:
+    """Coerce a structured/LLM extractor dict into the narrow refresh response."""
+    price = _parse_price(extracted.get("price"))
+    is_sold = extracted.get("isSold") is True
+    avail = extracted.get("availability")
+    if isinstance(avail, str):
+        lower = avail.lower()
+        if any(token in lower for token in ("oos", "out of stock", "sold", "discontinued")):
+            is_sold = True
+    # fetched=true when we actually got a definitive signal (price OR confirmed sold)
+    fetched = price is not None or is_sold
+    return RefreshPriceResponse(price=price, isSold=is_sold, fetched=fetched, tier=tier if fetched else None)
+
+
+@app.post("/refresh-price", response_model=RefreshPriceResponse)
+async def refresh_price(req: RefreshPriceRequest) -> RefreshPriceResponse:
+    """Watchlist-refresh-only path: fetch a single listing URL and return
+    just price + isSold. Tiered for accuracy:
+      1. httpx GET → structured extract  (fast, works for SSR'd platforms)
+      2. Playwright → structured extract (handles Cloudflare / JS-rendered)
+      3. LLM extract on best HTML        (final safety net, matches /scrape)
+    Returns price=None, isSold=False, fetched=False if all tiers miss.
+    The caller still bumps last_checked_at so the UI shows the attempt.
+    """
+    assert crawler is not None, "crawler not initialised"
+
+    # Defensive: strip tracking params for ThredUp (server-side redirects on these).
+    url = req.url
+    if req.platform == "thredup":
+        parsed = urlparse(url)
+        url = urlunparse(parsed._replace(query="", fragment=""))
+
+    best_html: str = ""  # keep around for Tier 3 LLM fallback
+
+    # ── Tier 1: plain HTTP ─────────────────────────────────────────────────
+    try:
+        import httpx
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=10.0,
+            headers=_REFRESH_HTTP_HEADERS,
+        ) as client:
+            http_resp = await client.get(url)
+        if http_resp.status_code == 200 and http_resp.text:
+            best_html = http_resp.text
+            extracted = _try_structured_extract(req.platform, best_html)
+            if extracted is not None and (extracted.get("price") is not None or extracted.get("isSold")):
+                log.info("[refresh-price] http hit %s %s", req.platform, url)
+                return _refresh_result_from_extracted(extracted, "http")
+            log.info("[refresh-price] http miss (no price) %s %s", req.platform, url)
+        else:
+            log.info("[refresh-price] http miss (status=%s) %s %s", http_resp.status_code, req.platform, url)
+    except Exception as exc:  # noqa: BLE001
+        log.info("[refresh-price] http error %s %s: %s", req.platform, url, exc)
+
+    # ── Tier 2: Playwright + structured ────────────────────────────────────
+    pw_html: str = ""
+    try:
+        result = await _arun_with_retry(url, req.platform)
+        if result is not None and result.success:
+            pw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
+            if pw_html:
+                best_html = pw_html  # prefer rendered HTML for LLM tier
+            extracted = _try_structured_extract(req.platform, pw_html)
+            if extracted is not None and (extracted.get("price") is not None or extracted.get("isSold")):
+                log.info("[refresh-price] playwright hit %s %s", req.platform, url)
+                return _refresh_result_from_extracted(extracted, "playwright")
+            log.info("[refresh-price] playwright miss (no price) %s %s", req.platform, url)
+        else:
+            err = (result.error_message if result is not None else "no result") or ""
+            log.info("[refresh-price] playwright crawl failed %s %s: %s", req.platform, url, err[:200])
+    except Exception as exc:  # noqa: BLE001
+        log.info("[refresh-price] playwright error %s %s: %s", req.platform, url, exc)
+
+    # ── Tier 3: LLM extract (matches /scrape's safety net) ─────────────────
+    llm = resolve_llm()
+    if llm is None:
+        log.info("[refresh-price] llm skipped (stub mode) %s %s", req.platform, url)
+        return RefreshPriceResponse(price=None, isSold=False, fetched=False, tier=None)
+
+    try:
+        from crawl4ai.extraction_strategy import LLMExtractionStrategy
+
+        provider, api_token = llm
+        try:
+            from crawl4ai import LLMConfig as _LLMConfig
+            llm_config = _LLMConfig(provider=provider, api_token=api_token)
+        except ImportError:
+            llm_config = None
+
+        strategy_kwargs = dict(
+            schema=LISTING_SCHEMA,
+            extraction_type="schema",
+            instruction=get_prompt(req.platform),
+            apply_chunking=False,
+        )
+        strategy_kwargs.update(get_extraction_options(req.platform))
+        if llm_config is not None:
+            strategy_kwargs["llm_config"] = llm_config
+        else:
+            strategy_kwargs["provider"] = provider
+            strategy_kwargs["api_token"] = api_token
+
+        strategy = LLMExtractionStrategy(**strategy_kwargs)
+        llm_result = await _arun_with_retry(
+            url, req.platform, extraction_strategy=strategy, scope_to_target=True
+        )
+        if not llm_result.success or not llm_result.extracted_content:
+            log.info("[refresh-price] llm miss (no content) %s %s", req.platform, url)
+            return RefreshPriceResponse(price=None, isSold=False, fetched=False, tier=None)
+
+        raw = llm_result.extracted_content
+        parsed = json.loads(raw) if isinstance(raw, str) else raw
+        if isinstance(parsed, list):
+            parsed = parsed[0] if parsed else {}
+        if not isinstance(parsed, dict):
+            log.info("[refresh-price] llm miss (bad shape) %s %s", req.platform, url)
+            return RefreshPriceResponse(price=None, isSold=False, fetched=False, tier=None)
+
+        resp = _refresh_result_from_extracted(parsed, "llm")
+        if resp.fetched:
+            log.info("[refresh-price] llm hit %s %s", req.platform, url)
+        else:
+            log.info("[refresh-price] llm miss (no price) %s %s", req.platform, url)
+        return resp
+    except Exception as exc:  # noqa: BLE001
+        log.exception("[refresh-price] llm error %s %s: %s", req.platform, url, exc)
+        return RefreshPriceResponse(price=None, isSold=False, fetched=False, tier=None)
