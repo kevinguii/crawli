@@ -1,8 +1,27 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (Off-White brand vs "white" color collision post-filter)
+**Last updated:** 2026-05-20 (Watchlist refresh progress bar + minor UI fixes)
 
-**Latest change (2026-05-20 — Off-White brand vs "white" color disambiguation):**
+**Latest change (2026-05-20 — Watchlist refresh progress bar + minor UI polish):**
+
+Small batch of watchlist UX improvements:
+- **Eye icon fix:** Watchlist tab cards were showing a crossed-out eye (eye-off SVG) on watched items. Replaced with a normal eye + filled pupil in red `var(--accent)` so the icon reads as "watched" instead of "hidden". ([WatchlistTab.tsx:379-380](app/components/profile/WatchlistTab.tsx#L379-L380))
+- **Copy fix:** "checked just now" → "last refreshed just now" on each watch card. Also updated the `never checked` fallback in [WatchlistDemo.tsx](app/components/WatchlistDemo.tsx).
+- **Refresh progress bar:** "Refresh prices" now streams progress. The endpoint [app/api/watchlist/refresh/route.ts](app/api/watchlist/refresh/route.ts) was converted from a single JSON response to **NDJSON streaming** — emits `{type:'start',total}`, `{type:'progress',completed}` per item, and `{type:'done',updated,failed,rows}`. UI shows a thin bar (`var(--accent)`) with `N/M refreshed` text that flips to **"All refreshed!"** in `var(--success)` on completion, auto-dismissing after 2s.
+
+**Files touched (3):**
+- [app/api/watchlist/refresh/route.ts](app/api/watchlist/refresh/route.ts) — NDJSON `ReadableStream`; concurrency=4 preserved; per-item Supabase update happens inside the worker so progress reflects DB-committed state.
+- [app/components/profile/WatchlistTab.tsx](app/components/profile/WatchlistTab.tsx) — eye SVG swap; `last refreshed` copy; `handleRefresh` consumes NDJSON via `ReadableStreamDefaultReader`; new progress bar block above the cards.
+- [app/components/WatchlistDemo.tsx](app/components/WatchlistDemo.tsx) — copy parity only.
+
+**Gotchas:**
+- Refresh endpoint is now a stream — any future caller must read `res.body` line-by-line, not `res.json()`. The toast logic still relies on the `done` event for final counts.
+- The progress bar is gated on `refreshProgress` state; the "Last refreshed: …" timestamp line is hidden while the bar is visible to avoid double-info.
+- User did not request manual browser verification — code-level only. Test before shipping.
+
+---
+
+**Previous change (2026-05-20 — Off-White brand vs "white" color disambiguation):**
 
 User-reported issue: ticking the White color swatch caused Off-White brand listings (the streetwear label) to flood the results. Platforms' fuzzy text search treats "white" the same whether it's a color or part of a brand name.
 
