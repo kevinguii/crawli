@@ -53,6 +53,13 @@ async function allSettledWithConcurrency<T>(
   return results;
 }
 
+function matchListingPrice(listing: Listing, filters: FilterState | undefined): boolean {
+  if (listing.price === null) return true;
+  if (filters?.minPrice != null && listing.price < filters.minPrice) return false;
+  if (filters?.maxPrice != null && listing.price > filters.maxPrice) return false;
+  return true;
+}
+
 async function searchAndScrape(
   platform: string,
   query: string,
@@ -78,7 +85,7 @@ async function searchAndScrape(
     const colorFiltered = sizeFiltered.filter((l) =>
       matchListingColor(l.title, filters?.color, query),
     );
-    return colorFiltered.slice(0, 10);
+    return colorFiltered.filter((l) => matchListingPrice(l, filters)).slice(0, 10);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -101,7 +108,8 @@ async function searchAndScrape(
     .filter((s): s is ScrapedListing => s !== null);
 
   const parsed = parseScrapedListings(scraped, platform, query);
-  return parsed.filter((l) => matchListingColor(l.title, filters?.color, query));
+  const colorFiltered = parsed.filter((l) => matchListingColor(l.title, filters?.color, query));
+  return colorFiltered.filter((l) => matchListingPrice(l, filters));
 }
 
 export async function POST(request: Request) {

@@ -204,8 +204,8 @@ function PlatformRow({
             </li>
           ))}
           {status === 'done' && (
-            <li className="flex items-center gap-2" style={{ color: 'var(--accent)' }}>
-              <span className="inline-block h-1 w-1 rounded-full" style={{ background: 'var(--accent)' }} />
+            <li className="flex items-center gap-2" style={{ color: 'var(--success)' }}>
+              <span className="inline-block h-1 w-1 rounded-full" style={{ background: 'var(--success)' }} />
               <span>Complete</span>
             </li>
           )}

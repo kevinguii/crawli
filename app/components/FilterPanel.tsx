@@ -268,7 +268,7 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
             style={{
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
-              maxHeight: '165px',
+              maxHeight: '170px',
               overflowY: 'auto',
               scrollbarWidth: 'none',
             }}
