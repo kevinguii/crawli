@@ -8,7 +8,13 @@ interface WatchlistRow {
   platform: string;
 }
 
-const CONCURRENCY = 4;
+// Env-driven so this can be tuned per host without code changes. Same shape
+// as SEARCH_PLATFORM_CONCURRENCY — see SCALING.md tier matrix for recommended
+// values. Default 4 preserves pre-existing behavior.
+const CONCURRENCY = Math.max(
+  1,
+  parseInt(process.env.WATCHLIST_REFRESH_CONCURRENCY || '4', 10) || 4,
+);
 
 export async function POST(_req: NextRequest) {
   const supabase = await createClient();

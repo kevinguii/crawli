@@ -1,8 +1,74 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (size filter parity for Grailed/Firecrawl platforms + filter audit)
+**Last updated:** 2026-05-20 (watchlist refresh now shares /scrape load-management gates + background-search design notes)
 
-**Latest change (2026-05-20 — size filter now applied to Grailed/Depop/Poshmark/etc., not just ThredUp):**
+**Latest change (2026-05-20 — watchlist refresh parity with /scrape; closes HANDOFF §624 / §1666):**
+
+User asked: does the PR 1/PR 2 concurrency-and-pool infrastructure also protect `/api/watchlist/refresh`, or could a user refreshing a 200-item watchlist crash the box? Diagnosis: **Tier 2 (Playwright) and Tier 3 (LLM) were already protected** — both go through `_arun_with_retry → _scheduled_render`, which means they inherit the global render semaphore, the crawler pool, per-domain pacing, the in-flight log, and per-pool-member driver-death recovery. The gaps were:
+- **Tier 1 (httpx fast path)** in `/refresh-price` bypassed the B2 per-domain pacer and had no global cap — a large Depop-heavy watchlist could fire unthrottled GETs at the same host and trip anti-bot, and a 1000-item refresh could open 1000 sockets at once.
+- **`/api/watchlist/refresh` Next-route worker pool** was hardcoded to `CONCURRENCY = 4`. No env knob, no coordination with `SEARCH_PLATFORM_CONCURRENCY` — production hosts couldn't be tuned without editing code.
+
+These were the exact open questions in §624 and §1666; both now closed.
+
+**What changed:**
+1. **Tier 1 httpx now goes through per-domain pacing + a global httpx semaphore.** `_refresh-price` Tier 1 awaits `_wait_for_domain_slot(url)` (the same B2 helper renders use) before the `httpx.get`, then acquires `_http_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_HTTP)` (default 12, env-driven). Renders and httpx have separate caps because Tier 1 is cheap (no Chromium) and shouldn't compete with renders for the same semaphore slot.
+2. **`WATCHLIST_REFRESH_CONCURRENCY` env var** on the Next route, default 4 (preserves pre-existing behavior). Mirrors `SEARCH_PLATFORM_CONCURRENCY` shape. Tunable per host without code edits.
+3. **`/health` now reports `max_concurrent_http`** alongside `max_concurrent_renders` / `pool_size` / `in_flight`.
+4. **No changes to Tier 2 / Tier 3 / `/scrape` / cache** — they were already correct. No cache added to `/refresh-price` (line 1034 comment is explicit — caching would defeat "re-check now").
+
+**Files touched (4):**
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) — `SIDECAR_MAX_CONCURRENT_HTTP` env var + `_http_semaphore` init in lifespan, Tier 1 wrapped in `_wait_for_domain_slot` + semaphore, `/health` adds `max_concurrent_http`.
+- [app/api/watchlist/refresh/route.ts](app/api/watchlist/refresh/route.ts) — `CONCURRENCY` is now `parseInt(WATCHLIST_REFRESH_CONCURRENCY) || 4`.
+- [.env.example](.env.example) — new section documenting `SIDECAR_MAX_CONCURRENT_HTTP` and `WATCHLIST_REFRESH_CONCURRENCY` with per-tier recommendations.
+- [SCALING.md](SCALING.md) — tier matrix in §2 gains `WATCHLIST_CONC` and `HTTP` columns; new "Watchlist load model" paragraph explaining how watchlist and search share the same semaphore so concurrent activity queues rather than crashing.
+
+**New env vars:**
+| Var | Default | Where | Purpose |
+|---|---|---|---|
+| `SIDECAR_MAX_CONCURRENT_HTTP` | `12` | Python sidecar | Cap on simultaneous Tier-1 httpx GETs in `/refresh-price` |
+| `WATCHLIST_REFRESH_CONCURRENCY` | `4` | Next route | Worker pool size for `/api/watchlist/refresh` |
+
+**Verified:**
+- ✅ `python3 -c "import ast; ast.parse(...)"` clean.
+- ✅ `npx tsc --noEmit` clean.
+- ⏳ Real-browser verification pending: trigger a large watchlist refresh while a search is in flight; expect both to complete without `_driver_dead` flipping and with `[scrape] in_flight=...` log lines showing the semaphore queueing fairly.
+
+**Gotchas worth remembering:**
+- Tier 1 httpx still runs even when `_driver_dead = True` — that's intentional. SSR'd platforms (ThredUp, sometimes Mercari/Poshmark) don't need Chromium, so the watchlist can keep updating prices while the Chromium pool restarts. Only Tier 2/3 short-circuit on driver death.
+- `WATCHLIST_REFRESH_CONCURRENCY` is per-user-refresh, NOT global. N users hitting the button at once = `N × WATCHLIST_REFRESH_CONCURRENCY` workers entering the sidecar. The sidecar's render semaphore + http semaphore are what actually bound total load.
+- `§624` and `§1666` in this doc are now resolved by this PR — if you see references to "watchlist may trip the same wall," they're stale.
+
+---
+
+### Concise considerations: background searches + "search done" notification
+
+User wants the ability to start a search, leave the tab/page, and be notified when results are ready (while preventing a second search from starting while one is in flight). Capturing the design space here so a future session can pick it up cleanly — **not implemented yet, not in scope for this PR.**
+
+**Current model (today):**
+- `app/api/search/route.ts` is a streaming NDJSON endpoint. The browser tab MUST stay on the search page to keep the stream alive — closing/navigating away aborts the fetch, kills the connection, and the user loses results. There's no server-side persistence of an in-flight search; it lives entirely in the browser's `ReadableStream`.
+
+**What it would take to make searches backgroundable:**
+
+1. **Server-side job state.** A new `search_jobs` table in Supabase: `id, user_id, query, filters jsonb, platforms text[], status ('pending'|'running'|'done'|'failed'), started_at, finished_at, result_rows jsonb` (or rows in a child table). The search endpoint becomes "create job + return job_id immediately" + a background worker that actually runs the platform fan-out and writes incremental progress back to the row.
+2. **Worker execution model.** Two options:
+   - **In-process background task** via Next.js `runtime: 'nodejs'` + `waitUntil`-style fire-and-forget. Simplest; works on a single-instance deploy. Breaks under horizontal scaling.
+   - **External worker** (small Python process or Node script polling `search_jobs WHERE status='pending'`) — the cleaner path if/when multi-instance (C2 in SCALING.md) lands. The sidecar already has all the load-management primitives; this is just a job queue in front of it.
+3. **"Only one in-flight search per user" guard.** Index on `(user_id) WHERE status IN ('pending','running')` + insert-with-conflict, or a simple `select count(*)` check before insert. UI surfaces this as "You already have a search running — wait for it to finish or cancel it" rather than silently letting them start a second one.
+4. **Notification delivery — three layers, pick by user effort:**
+   - **In-app realtime (cheapest, no infra):** Supabase Realtime subscription on `search_jobs` for the user_id. When status flips to `done`, show a toast + tab-favicon badge + (optional) browser `Notification.requestPermission()` desktop notif. Works only if the tab is still open somewhere.
+   - **Web Push (works when tab is closed but browser is open):** Service Worker + push subscription stored per user. Push notification fires from the worker when the job completes. ~1 day of setup; no third-party cost.
+   - **Email (works always, slowest, simplest):** SendGrid/Resend on job completion. Already needed for Phase 2D price alerts (HANDOFF §12) — same delivery infra.
+5. **Resumable UI.** `/search/[job_id]` page that the user can land on at any time (from notification click, from a "Recent searches" list, etc.) and see either "running, X/Y platforms done" or final results. The current streaming UI becomes a thin variant of this — same page, but if `status='running'` it subscribes to Realtime instead of doing the fetch.
+6. **Cancellation.** Necessary if we're enforcing "one search at a time" — user needs a way to abandon a stuck job. `status='cancelled'` + worker checks the flag between platforms. Cheap.
+7. **Cleanup.** TTL on completed jobs (e.g. 7 days), or move to a `search_history` table. Otherwise the table grows unbounded and the unique-in-flight check gets slow.
+
+**Smallest viable first cut (if user wants to ship something quickly):** in-process background task + Supabase Realtime subscription + in-app toast + favicon badge. No service worker, no email, no separate worker process. Gets "you can navigate away and a toast pops up when it's done" working with maybe 1.5 days of work; the more durable pieces (Web Push, external worker, email) layer in later without refactoring.
+
+**Interaction with this PR's load-management work:** background searches **must** still be guarded by `SEARCH_PLATFORM_CONCURRENCY` and the sidecar semaphore. Allowing background jobs doesn't mean unbounded parallelism — it means the server can fan out N users' searches in parallel up to the configured ceilings, queueing the rest. The "one-in-flight-per-user" guard is a separate concern (UX/fairness), not a load-management one.
+
+---
+
+**Previous change (2026-05-20 — size filter now applied to Grailed/Depop/Poshmark/etc., not just ThredUp):**
 
 User-reported bug: searching Grailed with Size L returned a Medium hoodie. Root cause was two-fold: (1) the size post-filter was only applied in the SEARCH_PAGE_PLATFORMS branch (ThredUp/RealReal) — the Firecrawl path skipped it entirely; (2) even if added, `matchListingSize` only checked title text (works for ThredUp's "… Size L" titles) but Grailed titles don't embed size.
 
@@ -621,7 +687,7 @@ Hypotheses (un-investigated):
 **Recommended investigation when picking back up:**
 - Check whether Depop+Grailed 403s correlate with the rapid LLM-fallback re-fetch (structured-tier 403 → immediately re-tries via LLM with the same blocked URL).
 - Consider a short backoff (5–10s) before LLM fallback when structured tier failed with a 403 specifically, so the second attempt has a fresh fingerprint window.
-- Confirm the watchlist `/refresh` endpoint will hit the same wall under concurrency 4 — may need to lower further or stagger.
+- ~~Confirm the watchlist `/refresh` endpoint will hit the same wall under concurrency 4 — may need to lower further or stagger.~~ **RESOLVED 2026-05-20** — see top "Latest change" entry. Tier 2/3 already gated; Tier 1 now goes through B2 per-domain pacing + a global httpx semaphore; Next-route concurrency is now env-driven (`WATCHLIST_REFRESH_CONCURRENCY`).
 
 Added to §7 as a new open problem (F).
 
@@ -1663,7 +1729,7 @@ The structured extractor reads `[data-testid="trade-box-buy-amount"]` faithfully
 **Investigation plan (when picking back up):**
 1. Add a structured-tier-vs-LLM-tier backoff: if structured fails with HTTP 403 specifically, wait 5–10s (or skip LLM fallback entirely for that URL) so we don't double-burn fingerprint.
 2. Lower per-platform search concurrency for Depop + Grailed — possibly serialize their fetches while keeping Poshmark/Mercari/etc parallel.
-3. Check whether the `/api/watchlist/refresh` endpoint (concurrency 4 across mixed domains) trips the same wall. If so, stagger by domain.
+3. ~~Check whether the `/api/watchlist/refresh` endpoint (concurrency 4 across mixed domains) trips the same wall. If so, stagger by domain.~~ **RESOLVED 2026-05-20** — Tier 1 httpx now uses B2 per-domain pacing; Tier 2/3 inherit the full PR 1/PR 2 stack; concurrency is env-driven via `WATCHLIST_REFRESH_CONCURRENCY`.
 4. Audit whether `enable_stealth=True` is still active; consider rotating UA per-request instead of per-session.
 
 **Why this matters for Phase 2D:** auto-refresh-on-login and scheduled cron re-scrapes will dramatically increase request volume per platform. We need to solve the 403 regression before turning on automation, or every refresh will degrade.

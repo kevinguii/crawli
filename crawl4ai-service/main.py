@@ -73,9 +73,15 @@ THEREALREAL_WARMUP_URL = "https://www.therealreal.com/"
 # 8 GB laptop. See .env.example for per-host recommendations.
 SIDECAR_MAX_CONCURRENT_RENDERS = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_RENDERS", "6")))
 
+# Tier-1 (plain httpx) fast path used by /refresh-price. Doesn't share the
+# render semaphore (httpx is cheap — no Chromium), but still capped so a
+# 1000-item watchlist refresh can't open 1000 sockets at once.
+SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_HTTP", "12")))
+
 # Semaphore + restart lock are initialised in lifespan() (asyncio primitives
 # must bind to the running loop).
 _render_semaphore: Optional[asyncio.Semaphore] = None
+_http_semaphore: Optional[asyncio.Semaphore] = None
 _restart_lock: Optional[asyncio.Lock] = None
 
 # A2: when the Playwright driver subprocess dies, every subsequent
@@ -317,12 +323,13 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global crawler, _render_semaphore, _restart_lock, _pool_cycle, _pool_pick_lock
+    global crawler, _render_semaphore, _http_semaphore, _restart_lock, _pool_cycle, _pool_pick_lock
     import itertools
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
     # Bind asyncio primitives to the running event loop.
     _render_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_RENDERS)
+    _http_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_HTTP)
     _restart_lock = asyncio.Lock()
     _pool_pick_lock = asyncio.Lock()
     _pool_cycle = itertools.cycle(range(SIDECAR_BROWSER_POOL_SIZE))
@@ -743,6 +750,7 @@ async def health():
         # tells the real story.
         "crawler_alive": not _driver_dead,
         "max_concurrent_renders": SIDECAR_MAX_CONCURRENT_RENDERS,
+        "max_concurrent_http": SIDECAR_MAX_CONCURRENT_HTTP,
         # B1: pool visibility. pool_size == pool_alive in normal operation;
         # pool_alive drops below pool_size while a member is restarting.
         "pool_size": total,
@@ -1049,14 +1057,20 @@ async def refresh_price(req: RefreshPriceRequest):
     best_html: str = ""  # keep around for Tier 3 LLM fallback
 
     # ── Tier 1: plain HTTP ─────────────────────────────────────────────────
+    # Wrapped in B2 per-domain pacing + a small global httpx semaphore so a
+    # large watchlist refresh respects the same anti-bot intervals as renders
+    # and can't open hundreds of sockets at once. See HANDOFF §624/§1666.
     try:
         import httpx
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=10.0,
-            headers=_REFRESH_HTTP_HEADERS,
-        ) as client:
-            http_resp = await client.get(url)
+        await _wait_for_domain_slot(url)
+        assert _http_semaphore is not None
+        async with _http_semaphore:
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=10.0,
+                headers=_REFRESH_HTTP_HEADERS,
+            ) as client:
+                http_resp = await client.get(url)
         if http_resp.status_code == 200 and http_resp.text:
             best_html = http_resp.text
             extracted = _try_structured_extract(req.platform, best_html)

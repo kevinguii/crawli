@@ -58,12 +58,12 @@ search every 30-60s, and a search takes ~10-20s. So 1 concurrent search ≈
 ## §2 — Env var settings per tier
 
 ```
-Tier            POOL  RENDERS  PLATFORM_CONC  Firecrawl  Notes
-Solo (default)  1     6        3              free       Pre-B1 behavior; pool=1
-Small VPS       1     8        4              free       More RAM headroom for renders
-Medium VPS      2     12       5              paid       Pool>1 needs ≥8GB; bump Firecrawl
-Large           3-4   16-20    6              paid       Multi-instance via C2 below
-Enterprise      —     —        —              paid       See C2/C4
+Tier            POOL  RENDERS  PLATFORM_CONC  WATCHLIST_CONC  HTTP  Firecrawl  Notes
+Solo (default)  1     6        3              4               12    free       Pre-B1 behavior; pool=1
+Small VPS       1     8        4              2               8     free       Throttle watchlist on RAM-constrained box
+Medium VPS      2     12       5              4               16    paid       Pool>1 needs ≥8GB; bump Firecrawl
+Large           3-4   16-20    6              6               24    paid       Multi-instance via C2 below
+Enterprise      —     —        —              —               —     paid       See C2/C4
 ```
 
 Set these in `.env`:
@@ -72,7 +72,16 @@ Set these in `.env`:
 SIDECAR_BROWSER_POOL_SIZE=2          # B1
 SIDECAR_MAX_CONCURRENT_RENDERS=12    # A1
 SEARCH_PLATFORM_CONCURRENCY=5        # A5
+WATCHLIST_REFRESH_CONCURRENCY=4      # watchlist refresh worker pool
+SIDECAR_MAX_CONCURRENT_HTTP=16       # cap on Tier-1 httpx in /refresh-price
 ```
+
+**Watchlist load model:** `/api/watchlist/refresh` runs `WATCHLIST_REFRESH_CONCURRENCY`
+workers, each hitting the sidecar's `/refresh-price` (Tier 1 httpx → Tier 2 Playwright
+→ Tier 3 LLM). Tier 2/3 share `SIDECAR_MAX_CONCURRENT_RENDERS` with `/scrape`, so a
+search-and-refresh-at-the-same-time scenario won't overload — the semaphore queues
+the overflow. Tier 1 has its own `SIDECAR_MAX_CONCURRENT_HTTP` cap. Both tiers go
+through B2 per-domain pacing, so a 200-item Depop watchlist won't trigger anti-bot.
 
 **Why per-pool-member renders aren't separately configurable:** the global
 semaphore is intentionally shared across the pool. Pool=2 with renders=12 means
