@@ -1,6 +1,7 @@
 'use client';
 
 import { Listing } from '@/lib/types';
+import { convertToUSD } from '@/lib/currency';
 
 const fmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -81,9 +82,11 @@ export function pickPriceSources(
   let highSource: string | null = null;
   for (const [platform, { listings }] of Object.entries(results)) {
     for (const l of listings) {
-      if (l.price === null || l.currency !== 'USD') continue;
-      if (l.price === priceRange.min && !lowSource) lowSource = platform;
-      if (l.price === priceRange.max && !highSource) highSource = platform;
+      if (l.price === null) continue;
+      const effective = l.currency === 'USD' ? l.price : (convertToUSD(l.price, l.currency) ?? null);
+      if (effective === null) continue;
+      if (effective === priceRange.min && !lowSource) lowSource = platform;
+      if (effective === priceRange.max && !highSource) highSource = platform;
     }
   }
   return { lowSource, highSource };

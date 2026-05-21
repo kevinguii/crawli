@@ -6,6 +6,7 @@ import ListingCard from './ListingCard';
 import PriceSummary, { pickPriceSources } from './PriceSummary';
 import { useSaves } from './SavesProvider';
 import { useWatchlist } from './WatchlistProvider';
+import { convertToUSD } from '@/lib/currency';
 
 interface Props {
   data: SearchResponse;
@@ -38,8 +39,10 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
     let min: { id: string; price: number } | null = null;
     for (const p of platformKeys) {
       for (const l of results[p].listings) {
-        if (l.price === null || l.currency !== 'USD') continue;
-        if (!min || l.price < min.price) min = { id: l.id, price: l.price };
+        if (l.price === null) continue;
+        const effective = l.currency === 'USD' ? l.price : (convertToUSD(l.price, l.currency) ?? null);
+        if (effective === null) continue;
+        if (!min || effective < min.price) min = { id: l.id, price: effective };
       }
     }
     return min?.id ?? null;
@@ -62,13 +65,17 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
       if (maxPrice != null && listing.price > maxPrice) return false;
       return true;
     });
-    // Sort: USD listings with prices first (ascending), then everything else.
+    // Sort by effective USD price ascending; listings with no convertible price go last.
+    const effectiveUSD = (l: Listing): number | null => {
+      if (l.price === null) return null;
+      return l.currency === 'USD' ? l.price : (convertToUSD(l.price, l.currency) ?? null);
+    };
     return [...filtered].sort((a, b) => {
-      const aValid = a.price !== null && a.currency === 'USD';
-      const bValid = b.price !== null && b.currency === 'USD';
-      if (aValid && bValid) return (a.price as number) - (b.price as number);
-      if (aValid) return -1;
-      if (bValid) return 1;
+      const aUSD = effectiveUSD(a);
+      const bUSD = effectiveUSD(b);
+      if (aUSD !== null && bUSD !== null) return aUSD - bUSD;
+      if (aUSD !== null) return -1;
+      if (bUSD !== null) return 1;
       return 0;
     });
   }, [activeTab, platformKeys, results, minPrice, maxPrice]);

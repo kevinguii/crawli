@@ -7,6 +7,7 @@ import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
 import { matchListingColor } from '@/lib/colorFilter';
+import { convertToUSD } from '@/lib/currency';
 
 export const dynamic = 'force-dynamic';
 
@@ -188,8 +189,9 @@ export async function POST(request: Request) {
       );
 
       const usdPrices = allListings
-        .filter((l) => l.price !== null && l.currency === 'USD')
-        .map((l) => l.price as number);
+        .filter((l) => l.price !== null)
+        .map((l) => l.currency === 'USD' ? l.price as number : convertToUSD(l.price as number, l.currency))
+        .filter((p): p is number => p !== null);
 
       const priceRange =
         usdPrices.length > 0

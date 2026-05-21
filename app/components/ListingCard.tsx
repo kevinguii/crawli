@@ -6,6 +6,7 @@ import PlatformBadge from './PlatformBadge';
 import { useSaves } from './SavesProvider';
 import { useWatchlist } from './WatchlistProvider';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { convertToUSD } from '@/lib/currency';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -158,15 +159,30 @@ export default function ListingCard({ listing, isLowest }: Props) {
         <div className="mt-auto flex items-baseline gap-2 pt-1">
           {listing.price !== null ? (
             <>
-              <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
-                {formatPrice(listing.price, listing.currency)}
-              </span>
-              {isNonUsd && (
-                <span
-                  className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-                  style={{ background: 'var(--surface-hover)', color: 'var(--text-muted)' }}
-                >
-                  {listing.currency}
+              {isNonUsd ? (
+                <>
+                  {(() => {
+                    const usd = convertToUSD(listing.price, listing.currency);
+                    return usd !== null ? (
+                      <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+                        ~${usd.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </span>
+                    ) : (
+                      <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+                        {formatPrice(listing.price, listing.currency)}
+                      </span>
+                    );
+                  })()}
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                    style={{ background: 'var(--surface-hover)', color: 'var(--text-muted)' }}
+                  >
+                    {formatPrice(listing.price, listing.currency)} {listing.currency}
+                  </span>
+                </>
+              ) : (
+                <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+                  {formatPrice(listing.price, listing.currency)}
                 </span>
               )}
             </>
