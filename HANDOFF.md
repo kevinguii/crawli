@@ -1,8 +1,80 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (Sidecar concurrency hardening + response caching — PR 1 of plan `1-3-4-sound-like-a-prancy-waterfall`)
+**Last updated:** 2026-05-20 (PR 2 — crawler pool + per-domain pacing + in-flight log line; plan `1-3-4-sound-like-a-prancy-waterfall`)
 
-**Latest change (2026-05-20 — Sidecar concurrency hardening + response caching):**
+> **Scaling questions belong in [SCALING.md](SCALING.md).** Future chats: if the user asks about hosting, throughput, infrastructure, or any tier-related question, read SCALING.md and quote the matrix. Do not improvise scaling recommendations from training data.
+
+**Latest change (2026-05-20 — PR 2: crawler pool + per-domain pacing + in-flight observability):**
+
+Ships PR 2 of the load-management plan. Adds the **infrastructure to scale beyond a single Chromium** (configurable browser pool, per-domain pacing to defend against anti-bot 403s on Depop/Grailed/eBay/Vestiaire, and a structured per-render log line for ad-hoc load monitoring). Default `SIDECAR_BROWSER_POOL_SIZE=1` keeps local behavior **identical to PR 1** — the new code paths are gated on env config; nothing changes for an 8 GB MacBook until you flip the var.
+
+The new doc [SCALING.md](SCALING.md) captures the tier matrix (Solo / Small / Medium / Large / Enterprise) with env-var settings, infrastructure recommendations, cost projections, observability progression, and the deferred Phase C roadmap (C1 extractors, C2 multi-instance, C3 Firecrawl paid, C4 paid unlocker). Future chats should treat SCALING.md as the source of truth for scaling decisions.
+
+**What changed:**
+
+1. **Crawler pool (B1).** Replaced the single global `crawler` with `_crawler_pool: list[AsyncWebCrawler]` of size `SIDECAR_BROWSER_POOL_SIZE` (env, default `1`). Round-robin picker via `itertools.cycle()` + `_pool_pick_lock`; skips dead members. Each pool member has its own Chromium subprocess, but **they all share `_render_semaphore`** — total renders are still capped at `SIDECAR_MAX_CONCURRENT_RENDERS` regardless of pool size. Pool=1 is functionally identical to pre-B1. Pool=2+ adds throughput on a box with spare CPU/RAM. See [crawl4ai-service/main.py](crawl4ai-service/main.py) (`_crawler_pool`, `_pick_crawler`, lifespan changes).
+2. **Per-crawler driver-death recovery (B1 + A3 update).** `_driver_dead` was a single bool; it's now derived from `_dead_pool_indices: set[int]`. `_mark_driver_dead(idx, err)` marks only the offending pool member; `_restart_crawler_once(idx)` rebuilds that index in isolation. Other pool members keep serving during the ~2-3s restart. `_driver_dead` (= "every member dead, no point queueing") flips only when the whole pool is dead. The endpoint-level 503 fast-fail behaves the same — just rarer.
+3. **Per-domain pacing (B2).** Module-level `_domain_locks: dict[str, asyncio.Lock]` + `_domain_last_request: dict[str, float]` enforce a min-interval between consecutive renders to the same host. `DOMAIN_MIN_INTERVAL_MS` ships with `depop.com=400`, `grailed.com=400`, `ebay.com=300`, `vestiairecollective.com=300` (defaults from HANDOFF §7 F's 403-sensitive list); others default to 150 ms. Pacing happens OUTSIDE the render semaphore so we don't burn a Chromium slot while waiting. Subdomain suffix-match handles `us.vestiairecollective.com` → `vestiairecollective.com` bucket.
+4. **`_scheduled_render` context manager.** One gate that wraps every `crawler.arun()` call: (1) per-domain pace → (2) acquire render semaphore → (3) emit in-flight log line → run → release. Replaces the three `async with _render_semaphore:` callsites from PR 1.
+5. **In-flight log line (B3).** Every render now logs `[scrape] platform=X url=… in_flight=N pool=K/M cache=miss` at start; cache hits log `[scrape] platform=X url=… cache=hit`. `_in_flight` counter + `threading.Lock` for the increment/decrement; deliberately parseable so a future structured-log layer can ingest it without code changes. /scrape-search uses the same prefix (`[scrape-search] platform=X query=Y cache=hit results=N`).
+6. **/health surfaces pool state.** Added `pool_size`, `pool_alive`, `in_flight` fields. `crawler_alive` now means "at least one pool member alive" rather than "the singleton is alive."
+7. **SCALING.md (new doc).** Tier matrix, env-var-per-tier table, observability progression (console → structured logs → Prometheus), migration playbooks (Solo→Small→Medium→Large), cost model, Phase C specs (C1-C4), fallback principle. Every future scaling-related question should consult this file.
+8. **.env.example** now documents `SIDECAR_BROWSER_POOL_SIZE` with per-host recommendations and a pointer to SCALING.md.
+
+**Files touched (4 + 1 new):**
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) — pool state, picker, `_scheduled_render`, per-domain pacing helpers, in-flight counter, per-index restart/death-marking, /health update, cache-hit log line updates.
+- [.env.example](.env.example) — new `SIDECAR_BROWSER_POOL_SIZE` block + cross-reference to SCALING.md.
+- new: [SCALING.md](SCALING.md) — full scaling reference doc.
+- [HANDOFF.md](HANDOFF.md) — this entry + §2/§3 sync.
+
+**New env var:**
+| Var | Default | Where | Purpose |
+|---|---|---|---|
+| `SIDECAR_BROWSER_POOL_SIZE` | `1` | Python sidecar | How many independent Chromiums to run in parallel |
+
+**Per-tier recommendations live in [SCALING.md §2](SCALING.md#§2--env-var-settings-per-tier).** Quick reference:
+
+```
+Solo / dev      POOL=1  RENDERS=6   PLATFORM_CONC=3   (default, identical to pre-PR2)
+Small VPS       POOL=1  RENDERS=8   PLATFORM_CONC=4
+Medium VPS      POOL=2  RENDERS=12  PLATFORM_CONC=5
+Large           POOL=3+ RENDERS=16+ PLATFORM_CONC=6+
+```
+
+**Operator/deployment model (clarified 2026-05-20):** Crawli is a **single-operator hosted service** — the operator's `.env` holds OpenAI / Firecrawl / Supabase keys that the service uses on behalf of every end-user. End-users hit the website; they do not supply API keys. There is no per-user key flow. `.env.example` is therefore a self-note (for future-you on the VPS), not a user-facing template.
+
+**`.env` hygiene rule:** all scaling env vars (`SIDECAR_BROWSER_POOL_SIZE`, `SIDECAR_MAX_CONCURRENT_RENDERS`, `SEARCH_PLATFORM_CONCURRENCY`) have safe defaults baked into the code. **Do not add them to `.env` with their default values** — keep `.env` minimal (only secrets + non-default overrides for *this specific machine*). Defaults trigger only when the var is *absent* (not when set to empty or commented). When provisioning a VPS, copy from `.env.example` and set only the values that differ from defaults for that tier.
+
+**Verified end-to-end:**
+
+- ✅ `python3 -c "import ast; ast.parse(open('crawl4ai-service/main.py').read())"` parses clean.
+- ✅ Sidecar boots with `SIDECAR_BROWSER_POOL_SIZE=1` (default): one `[pool] crawler[0] started` log line, behavior identical to PR 1.
+- ✅ Sidecar boots with `SIDECAR_BROWSER_POOL_SIZE=2`: two `[pool] crawler[N] started` lines, `ps aux | grep playwright` shows two driver subprocesses.
+- ✅ `GET /health` returns `pool_size`, `pool_alive`, `in_flight` correctly. `crawler_alive` mirrors `pool_alive > 0`.
+- ✅ `/scrape` logs `[scrape] platform=X url=Y in_flight=N pool=K/M cache=miss` on first hit; subsequent identical call logs `cache=hit` and skips the render entirely.
+- ✅ Back-to-back same-domain renders show pacing in the timestamps (e.g. depop.com → ~400 ms gap between log lines).
+
+**Open work in the load-management plan (deferred):**
+
+- **PR 3 — C1: eBay + Vestiaire JSON-LD structured extractors** (parses Schema.org Product blocks → skips LLM call entirely; ~1-2s + ~$0.001-0.005 savings per scrape; specs in [SCALING.md §4 C1](SCALING.md#c1--ebay--vestiaire-structured-extractors-best-roi-in-c)). Best-ROI next step.
+- **C2 — multi-instance sidecar** (Redis queue + N worker sidecars; only when one box is saturated).
+- **C3 — Firecrawl paid plan** (only when `SEARCH_PLATFORM_CONCURRENCY` regularly bunches at 2-concurrent free ceiling).
+- **C4 — paid anti-bot unlocker** (last resort, only for sites that remain unreliable after C1).
+
+**Foundational principle codified in this PR:** every platform-specific extraction path **must have a graceful fallback** — structured → LLM → stub. Documented in [SCALING.md §5](SCALING.md#§5--foundational-principle-every-platform-needs-a-fallback). New platform-specific code (e.g. PR 3 extractors) must return `None` on any unexpected shape and never break the LLM fallback path.
+
+**Gotchas worth remembering:**
+
+- Pool=1 default = identical to PR 1. If a user asks "how do I scale?" the answer is in SCALING.md — not "edit the code."
+- Pool size > 1 only helps when the box has spare CPU/RAM (>=8GB recommended for pool=2). On a 4 GB VPS, pool=2 just thrashes RAM. The matrix in SCALING.md §1 is the authority on this.
+- The B3 in-flight log line is **console-only** in dev. Production needs structured logging / metrics. SCALING.md §3 has the progression.
+- Pacing is per-canonical-domain — `us.vestiairecollective.com` and `www.vestiairecollective.com` share a bucket. Subdomains NOT listed in `DOMAIN_MIN_INTERVAL_MS` get their own per-host bucket at the default 150 ms.
+- realreal's crawler is NOT in the pool (separate managed-profile instance for PerimeterX). Renders go through the same pacing + semaphore, but driver death there is logged without flipping a pool index.
+- The `crawler` global is preserved as `_crawler_pool[0]` for back-compat with `assert crawler is not None` lines. Don't remove those asserts without verifying nothing else reads the global directly.
+
+---
+
+**Previous change (2026-05-20 — Sidecar concurrency hardening + response caching, PR 1):**
 
 Ships PR 1 of the load-management plan. Fixes the **all-platforms-at-once driver-death failure mode** (16 concurrent renders on one Chromium → Playwright Node driver subprocess dies → every subsequent scrape fails forever with `BrowserContext.new_page: ... the handler is closed`) and folds in the response cache from `.claude/plans/sleepy-wishing-snowflake.md` while we were there. PR 2 (crawler pool + per-domain pacing) and PR 3 (eBay/Vestiaire structured extractors) follow once this proves stable in real use.
 
@@ -1085,7 +1157,7 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - Next.js API routes (`/api/search`) orchestrate the pipeline
 - **Auth layer:** `@supabase/ssr` for client + server clients; `proxy.ts` (Next 16 convention, not `middleware.ts`) refreshes session cookie on every request
 - `@supabase/supabase-js` v2.x for auth + database access
-- **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm + `cachetools` (response cache) + `asyncio.Semaphore` (concurrency gate)
+- **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm + `cachetools` (response cache) + `asyncio.Semaphore` (global render gate) + **configurable browser pool** (`SIDECAR_BROWSER_POOL_SIZE`, default 1; round-robin picker, per-member driver-death recovery) + **per-domain pacer** (min-interval lock per host; defends anti-bot 403s on Depop/Grailed/eBay/Vestiaire)
 - Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
 - Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
 - **Naming reminder:** the `saves` table and `/api/saves` routes are surfaced in the UI as "Collection". Both names refer to the same thing; only UI strings were renamed.
@@ -1139,21 +1211,29 @@ POST /api/search ─────────────────────
        │       ↓                                               │
        │       POST http://localhost:8000/scrape ──────────────┼─→ Python sidecar
        │                                                       │   ↓
-       │  5. parseScrapedListings() — drop sold, map fields    │   ├─ TTLCache hit? → return immediately
-       │  6. aggregate prices, return SearchResponse           │   ├─ _driver_dead? → 503 fast-fail
-       ▼                                                       │   ├─ async with _render_semaphore (cap N):
-   UI: tabbed results + min/max/avg price summary              │   │     crawler.arun(...) → structured / LLM
+       │  5. parseScrapedListings() — drop sold, map fields    │   ├─ TTLCache hit? → log cache=hit, return
+       │  6. aggregate prices, return SearchResponse           │   ├─ _driver_dead (entire pool)? → 503 fast-fail
+       ▼                                                       │   ├─ _scheduled_render(platform, url):
+   UI: tabbed results + min/max/avg price summary              │   │     • B2: per-domain pace (lock + min-interval)
+                                                               │   │     • A1: acquire _render_semaphore (cap N)
+                                                               │   │     • B3: log [scrape] in_flight=… pool=K/M
+                                                               │   │     • B1: pick alive pool member via round-robin
+                                                               │   │       → crawler.arun(...) → structured / LLM
                                                                │   └─ on success: store in TTLCache, return
                                                                │
-                                                               │  N = SIDECAR_MAX_CONCURRENT_RENDERS (default 6)
+                                                               │  N    = SIDECAR_MAX_CONCURRENT_RENDERS (default 6)
+                                                               │  K/M  = pool_alive / pool_size (SIDECAR_BROWSER_POOL_SIZE, default 1)
                                                                ▼
 ```
 
-**Load-management invariants (PR 1 of `1-3-4-sound-like-a-prancy-waterfall`):**
+**Load-management invariants (PR 1 + PR 2 of `1-3-4-sound-like-a-prancy-waterfall`):**
 - Across-platform cap (`SEARCH_PLATFORM_CONCURRENCY`) × per-platform scrape cap (2) ≤ sidecar semaphore (`SIDECAR_MAX_CONCURRENT_RENDERS`). Keep the math working when tuning.
+- Browser pool (`SIDECAR_BROWSER_POOL_SIZE`, default 1) shares the global render semaphore — pool size only changes *where* renders run, not *how many*. Pool=1 behaves identically to pre-B1.
+- Per-domain pacing: `DOMAIN_MIN_INTERVAL_MS` in [main.py](crawl4ai-service/main.py) sets a min gap between consecutive renders to the same host (Depop/Grailed=400ms, eBay/Vestiaire=300ms, others=150ms). Waits OUTSIDE the semaphore.
 - `/scrape` cached per-URL for 30 min, `/scrape-search` per `platform::query` for 10 min. Only successful, non-empty results land in cache; failures retry next time.
-- Driver-death detection auto-restarts the global `AsyncWebCrawler` in ~2-3s. During that window, requests get HTTP 503 (`{"error":"sidecar restarting"}`).
-- `GET /health` includes `crawler_alive: bool` and `max_concurrent_renders: int` for monitoring.
+- Driver-death detection auto-restarts the affected pool member in ~2-3s. Other pool members keep serving during the restart. Service-wide 503 only when the **entire pool** is dead.
+- `GET /health` includes `crawler_alive`, `pool_size`, `pool_alive`, `in_flight`, and `max_concurrent_renders` for monitoring.
+- **All scaling guidance — env-var tuning, hosting tier choices, when to enable pool>1 — lives in [SCALING.md](SCALING.md).**
 
 **Saves + Watchlist + Profile editing layer (Phase 2B + 2C, complete as of 2026-05-18):**
 - `(protected)/layout.tsx` mounts `<SavesProvider>` wrapping `<WatchlistProvider>` (both React Contexts) and sonner `<Toaster>` once for the whole protected subtree

@@ -77,7 +77,6 @@ SIDECAR_MAX_CONCURRENT_RENDERS = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRE
 # must bind to the running loop).
 _render_semaphore: Optional[asyncio.Semaphore] = None
 _restart_lock: Optional[asyncio.Lock] = None
-_restart_task: Optional[asyncio.Task] = None
 
 # A2: when the Playwright driver subprocess dies, every subsequent
 # BrowserContext.new_page() returns one of these error strings instantly.
@@ -91,31 +90,141 @@ _DRIVER_DEAD_PATTERNS = (
 _driver_dead: bool = False
 
 
+# ── Crawler pool (B1) ────────────────────────────────────────────────────────
+# B1: how many independent Chromium browsers to run in parallel. Default 1
+# behaves identically to pre-B1. Flip to 2+ on a server with enough CPU/RAM
+# to power multiple browsers (see SCALING.md for per-tier recommendations).
+# All pool members share the global SIDECAR_MAX_CONCURRENT_RENDERS semaphore,
+# so total Chromium load on the box is bounded regardless of pool size — the
+# pool only splits *where* renders run, not *how many*. A driver crash in one
+# member takes down only that member; the rest keep serving while restart runs.
+SIDECAR_BROWSER_POOL_SIZE = max(1, int(os.environ.get("SIDECAR_BROWSER_POOL_SIZE", "1")))
+
+_crawler_pool: list = []                       # AsyncWebCrawler instances (populated in lifespan)
+_dead_pool_indices: set[int] = set()           # indices whose driver subprocess is dead
+_pool_cycle = None                              # itertools.cycle iterator over indices
+_pool_pick_lock: Optional[asyncio.Lock] = None  # serializes round-robin picks
+_restart_tasks: dict[int, asyncio.Task] = {}    # per-index restart task tracking
+
+
+def _pool_status() -> tuple[int, int]:
+    """Return (alive_count, total_count) for the in-flight log + /health."""
+    total = len(_crawler_pool) or SIDECAR_BROWSER_POOL_SIZE
+    alive = total - len(_dead_pool_indices)
+    return alive, total
+
+
+# ── In-flight tracking (B3) ──────────────────────────────────────────────────
+# Simple counter so every scrape can log how many renders are active. Useful
+# in dev (visible in console) and a stepping-stone for any metrics endpoint
+# we add later (SCALING.md §3 — observability progression).
+_in_flight: int = 0
+_in_flight_lock = threading.Lock()
+
+
+def _truncate_url(url: str, max_len: int = 100) -> str:
+    return url if len(url) <= max_len else url[:max_len] + "…"
+
+
+# ── Per-domain pacing (B2) ───────────────────────────────────────────────────
+# Min-interval between consecutive renders against the same host. Defends
+# anti-bot triggers on platforms HANDOFF.md §7 F flags as 403-sensitive
+# (Depop, Grailed) without slowing typical multi-platform searches.
+# Tune by editing this dict; new entries auto-pick up next render.
+DOMAIN_MIN_INTERVAL_MS: dict[str, int] = {
+    "depop.com": 400,
+    "grailed.com": 400,
+    "ebay.com": 300,
+    "vestiairecollective.com": 300,
+}
+_DEFAULT_DOMAIN_INTERVAL_MS = 150
+
+_domain_locks: dict[str, asyncio.Lock] = {}
+_domain_locks_guard = threading.Lock()
+_domain_last_request: dict[str, float] = {}
+
+
+def _domain_for_url(url: str) -> str:
+    """Strip 'www.' from a URL's host. Subdomains otherwise stay distinct
+    (us.vestiairecollective.com ≠ www.vestiairecollective.com) — matched
+    against DOMAIN_MIN_INTERVAL_MS keys via suffix match in `_canonical_domain`.
+    """
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:  # noqa: BLE001
+        return ""
+    if host.startswith("www."):
+        host = host[4:]
+    return host
+
+
+def _canonical_domain(host: str) -> str:
+    """Map a host to its bucket key. Suffix-match against DOMAIN_MIN_INTERVAL_MS
+    so 'us.vestiairecollective.com' paces with 'vestiairecollective.com'."""
+    for key in DOMAIN_MIN_INTERVAL_MS:
+        if host == key or host.endswith("." + key):
+            return key
+    return host
+
+
+def _get_domain_lock(domain: str) -> asyncio.Lock:
+    with _domain_locks_guard:
+        lock = _domain_locks.get(domain)
+        if lock is None:
+            lock = asyncio.Lock()
+            _domain_locks[domain] = lock
+        return lock
+
+
+async def _wait_for_domain_slot(url: str) -> None:
+    """Sleep until enough time has elapsed since the last hit to this domain.
+
+    Runs OUTSIDE the global render semaphore so we don't burn a Chromium slot
+    while waiting. The per-domain lock serializes consecutive requests to the
+    same host; different hosts are not blocked.
+    """
+    raw = _domain_for_url(url)
+    if not raw:
+        return
+    domain = _canonical_domain(raw)
+    interval_ms = DOMAIN_MIN_INTERVAL_MS.get(domain, _DEFAULT_DOMAIN_INTERVAL_MS)
+    lock = _get_domain_lock(domain)
+    async with lock:
+        loop = asyncio.get_running_loop()
+        now = loop.time()
+        last = _domain_last_request.get(domain, 0.0)
+        wait_s = (last + interval_ms / 1000.0) - now
+        if wait_s > 0:
+            await asyncio.sleep(wait_s)
+        _domain_last_request[domain] = loop.time()
+
+
 def _looks_like_driver_death(error_message: Optional[str]) -> bool:
     if not error_message:
         return False
     return any(pat in error_message for pat in _DRIVER_DEAD_PATTERNS)
 
 
-async def _restart_crawler_once() -> None:
-    """A3: rebuild the global crawler after a driver-subprocess death.
+async def _restart_crawler_once(idx: int) -> None:
+    """A3+B1: rebuild a specific pool member after its driver subprocess died.
 
     Guarded by `_restart_lock` so concurrent observers all wait on the same
     recovery rather than each spawning their own. If `start()` fails the
-    flag stays True so the next request retries — we never crash the
-    FastAPI process trying to recover.
+    index stays in `_dead_pool_indices` so the next request retries — we
+    never crash the FastAPI process trying to recover.
     """
     global crawler, _driver_dead
     assert _restart_lock is not None
     async with _restart_lock:
-        if not _driver_dead:
+        if idx not in _dead_pool_indices or idx >= len(_crawler_pool):
             return
-        log.warning("[crawler] driver dead — restarting Chromium")
+        log.warning("[crawler] pool[%d] driver dead — restarting Chromium", idx)
         try:
-            if crawler is not None:
-                await crawler.close()
+            old = _crawler_pool[idx]
+            if old is not None:
+                await old.close()
         except Exception:  # noqa: BLE001 — close may itself error on a dead pipe
-            log.exception("[crawler] close errored during restart (continuing)")
+            log.exception("[crawler] pool[%d] close errored during restart (continuing)", idx)
         try:
             from crawl4ai import AsyncWebCrawler, BrowserConfig
             browser_cfg = BrowserConfig(
@@ -124,35 +233,47 @@ async def _restart_crawler_once() -> None:
                 enable_stealth=True,
                 user_agent_mode="random",
             )
-            crawler = AsyncWebCrawler(config=browser_cfg)
-            await crawler.start()
-            _driver_dead = False
-            log.info("[crawler] restart complete")
+            new_c = AsyncWebCrawler(config=browser_cfg)
+            await new_c.start()
+            _crawler_pool[idx] = new_c
+            _dead_pool_indices.discard(idx)
+            # Back-compat: `crawler` global mirrors pool[0].
+            if idx == 0:
+                crawler = new_c
+            _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool)
+            log.info("[crawler] pool[%d] restart complete", idx)
         except Exception:  # noqa: BLE001
-            log.exception("[crawler] restart failed — will retry on next request")
+            log.exception("[crawler] pool[%d] restart failed — will retry on next request", idx)
 
 
-def _trigger_restart_in_background() -> None:
-    """Fire-and-forget the recovery coroutine. Idempotent — extra calls
-    bounce off the lock without spawning duplicate tasks."""
-    global _restart_task
-    if _restart_task is None or _restart_task.done():
+def _trigger_restart_in_background(idx: Optional[int] = None) -> None:
+    """Fire-and-forget the recovery coroutine for a specific pool member.
+    Idempotent — duplicate calls for the same index bounce off the existing
+    task. When idx is None, queues a restart for every currently-dead member
+    (used by the endpoint-level short-circuit which doesn't know specifics).
+    """
+    if idx is None:
+        for dead_idx in list(_dead_pool_indices):
+            _trigger_restart_in_background(dead_idx)
+        return
+    existing = _restart_tasks.get(idx)
+    if existing is None or existing.done():
         try:
-            _restart_task = asyncio.create_task(_restart_crawler_once())
+            _restart_tasks[idx] = asyncio.create_task(_restart_crawler_once(idx))
         except RuntimeError:
-            # No running loop (e.g. called outside async context) — let the
-            # next request trigger it.
+            # No running loop — next request will trigger it.
             pass
 
 
-def _mark_driver_dead(error_message: str) -> None:
-    """Set the dead flag and kick off restart. Called once we see the
-    'handler is closed' family of errors on a crawler.arun() result."""
+def _mark_driver_dead(idx: int, error_message: str) -> None:
+    """Mark a pool member's driver as dead and kick off its restart."""
     global _driver_dead
-    if not _driver_dead:
-        log.error("[crawler] detected driver death: %s", error_message[:200])
-    _driver_dead = True
-    _trigger_restart_in_background()
+    was_alive = idx not in _dead_pool_indices
+    _dead_pool_indices.add(idx)
+    if was_alive:
+        log.error("[crawler] pool[%d] detected driver death: %s", idx, error_message[:200])
+    _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool) and len(_crawler_pool) > 0
+    _trigger_restart_in_background(idx)
 
 
 # A6: response caches for /scrape (per URL) and /scrape-search (per
@@ -196,12 +317,15 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global crawler, _render_semaphore, _restart_lock
+    global crawler, _render_semaphore, _restart_lock, _pool_cycle, _pool_pick_lock
+    import itertools
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
     # Bind asyncio primitives to the running event loop.
     _render_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_RENDERS)
     _restart_lock = asyncio.Lock()
+    _pool_pick_lock = asyncio.Lock()
+    _pool_cycle = itertools.cycle(range(SIDECAR_BROWSER_POOL_SIZE))
 
     browser_cfg = BrowserConfig(
         headless=True,
@@ -212,13 +336,32 @@ async def lifespan(app: FastAPI):
     # NOTE: light_mode, text_mode, memory_saving_mode all break extraction on
     # React/Vue SPA sites (Grailed, Depop, StockX) by disrupting JS rendering
     # or producing empty chunk sections for the LLM strategy. Keep plain.
-    crawler = AsyncWebCrawler(config=browser_cfg)
-    await crawler.start()
-    log.info("crawl4ai crawler started (max_concurrent_renders=%d)", SIDECAR_MAX_CONCURRENT_RENDERS)
+    #
+    # B1: build the pool. Each member is its own AsyncWebCrawler with its own
+    # Chromium subprocess; they share `_render_semaphore` so total concurrent
+    # renders are still capped. pool_size=1 (default) keeps behavior identical
+    # to pre-B1.
+    for i in range(SIDECAR_BROWSER_POOL_SIZE):
+        c = AsyncWebCrawler(config=browser_cfg)
+        await c.start()
+        _crawler_pool.append(c)
+        log.info("[pool] crawler[%d] started", i)
+    # Back-compat: `crawler` mirrors pool[0] for any code path still referencing it.
+    crawler = _crawler_pool[0]
+    log.info(
+        "crawl4ai sidecar ready (pool_size=%d, max_concurrent_renders=%d)",
+        SIDECAR_BROWSER_POOL_SIZE, SIDECAR_MAX_CONCURRENT_RENDERS,
+    )
     try:
         yield
     finally:
-        await crawler.close()
+        for i, c in enumerate(_crawler_pool):
+            try:
+                await c.close()
+                log.info("crawl4ai crawler stopped (pool[%d])", i)
+            except Exception:  # noqa: BLE001
+                log.exception("error closing pool[%d]", i)
+        _crawler_pool.clear()
         for plat, c in list(_platform_crawlers.items()):
             try:
                 await c.close()
@@ -227,7 +370,56 @@ async def lifespan(app: FastAPI):
                 log.exception("error closing platform crawler %s", plat)
         _platform_crawlers.clear()
         _platform_warmed.clear()
-        log.info("crawl4ai crawler stopped")
+        log.info("crawl4ai sidecar shutdown complete")
+
+
+async def _pick_crawler() -> tuple[int, Optional[object]]:
+    """B1: round-robin pick from the pool, skipping dead members.
+
+    Returns (idx, crawler) or (-1, None) if every member is dead. Endpoint
+    short-circuits at `_driver_dead_response` should prevent that second case
+    in normal flow; a None here means the pool died between the endpoint
+    check and the pick (race) — caller should raise/return failure.
+    """
+    if not _crawler_pool:
+        return -1, None
+    assert _pool_pick_lock is not None and _pool_cycle is not None
+    async with _pool_pick_lock:
+        for _ in range(len(_crawler_pool)):
+            idx = next(_pool_cycle)
+            if 0 <= idx < len(_crawler_pool) and idx not in _dead_pool_indices:
+                return idx, _crawler_pool[idx]
+    return -1, None
+
+
+@asynccontextmanager
+async def _scheduled_render(platform: str, url: str):
+    """Single gate for every crawler.arun() call: pace → semaphore → log.
+
+    Order matters:
+      1. B2 — per-domain pacing OUTSIDE the semaphore (don't burn a slot
+         while waiting on the domain lock).
+      2. A1 — global render semaphore (caps total Chromium concurrency).
+      3. B3 — emit the in-flight log line so load level is visible in the
+         log stream. Also bumps the counter that /health surfaces.
+    """
+    global _in_flight
+    await _wait_for_domain_slot(url)
+    assert _render_semaphore is not None
+    async with _render_semaphore:
+        with _in_flight_lock:
+            _in_flight += 1
+            current = _in_flight
+        alive, total = _pool_status()
+        log.info(
+            "[scrape] platform=%s url=%s in_flight=%d pool=%d/%d cache=miss",
+            platform, _truncate_url(url), current, alive, total,
+        )
+        try:
+            yield
+        finally:
+            with _in_flight_lock:
+                _in_flight = max(0, _in_flight - 1)
 
 
 async def _ensure_realreal_crawler():
@@ -293,11 +485,16 @@ async def _warmup_realreal(c) -> None:
     )
     log.info("[realreal] warmup nav → %s (20s — solve any press-and-hold in the Chromium window)", THEREALREAL_WARMUP_URL)
     try:
-        assert _render_semaphore is not None
-        async with _render_semaphore:
+        # realreal's crawler is NOT in the pool — pacing + semaphore still
+        # apply, but a driver death here can't mark a pool index (-1 means
+        # platform-specific, log-only handling).
+        async with _scheduled_render("realreal", THEREALREAL_WARMUP_URL):
             warmup_result = await c.arun(url=THEREALREAL_WARMUP_URL, config=cfg)
         if warmup_result is not None and _looks_like_driver_death(getattr(warmup_result, "error_message", None)):
-            _mark_driver_dead(warmup_result.error_message or "")
+            log.error(
+                "[realreal] warmup hit driver death (not pool-tracked): %s",
+                (warmup_result.error_message or "")[:200],
+            )
             return
     except Exception:  # noqa: BLE001
         log.exception("[realreal] warmup failed (will retry on next request)")
@@ -464,32 +661,50 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
 async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False, crawler_override=None):
     """Run a crawl; on Poshmark-style navigation errors, retry once.
 
-    crawler_override: optional per-platform crawler (e.g. realreal's managed-profile
-    instance). When None, the global default crawler is used.
+    crawler_override: optional per-platform crawler (e.g. realreal's
+    managed-profile instance). When None, picks the next alive pool member
+    via round-robin (B1). Each render goes through `_scheduled_render` which
+    adds per-domain pacing (B2), the global semaphore (A1), and the
+    in-flight log line (B3).
 
-    A1+A2: every arun() call goes through `_render_semaphore`, and the result's
-    error_message is scanned for "handler is closed" / "Connection closed while
-    reading from the driver" so a dead driver subprocess flips `_driver_dead`
-    and triggers background recovery instead of being retried into the corpse.
+    A2: result.error_message is scanned for driver-death markers so a dead
+    pool member flips its `_dead_pool_indices` entry and triggers background
+    recovery instead of being retried into the corpse.
     """
-    c = crawler_override if crawler_override is not None else crawler
-    assert c is not None
-    assert _render_semaphore is not None
+    if crawler_override is not None:
+        c = crawler_override
+        idx = -1  # platform-specific crawlers aren't tracked in the pool
+    else:
+        idx, c = await _pick_crawler()
+        if c is None:
+            # Race: pool died between endpoint-level check and now.
+            raise RuntimeError("crawler pool unavailable — all members dead")
+
     cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target)
-    async with _render_semaphore:
+    async with _scheduled_render(platform, url):
         result = await c.arun(url=url, config=cfg)
     err = (result.error_message or "") if result is not None else ""
     if _looks_like_driver_death(err):
-        _mark_driver_dead(err)
+        if idx >= 0:
+            _mark_driver_dead(idx, err)
+        else:
+            log.error("[crawler] platform-specific crawler driver death (not pool-tracked): %s", err[:200])
         return result
     if (not result.success or _POSHMARK_NAV_ERROR in err) and platform == "poshmark":
         log.info("[retry] poshmark crawl hit navigation error, retrying with networkidle wait")
         cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target)
-        async with _render_semaphore:
+        # Pick a fresh pool member on retry (could be a different one) if not overridden.
+        if crawler_override is None:
+            idx2, c2 = await _pick_crawler()
+            if c2 is None:
+                return result
+            idx, c = idx2, c2
+        async with _scheduled_render(platform, url):
             result = await c.arun(url=url, config=cfg)
         err = (result.error_message or "") if result is not None else ""
         if _looks_like_driver_death(err):
-            _mark_driver_dead(err)
+            if idx >= 0:
+                _mark_driver_dead(idx, err)
     return result
 
 
@@ -514,15 +729,24 @@ def _try_structured_extract(platform: str, html: str) -> Optional[dict]:
 @app.get("/health")
 async def health():
     llm = resolve_llm()
+    alive, total = _pool_status()
     return {
         "status": "ok",
         "llm_mode": "active" if llm else "stub",
         "provider": llm[0] if llm else None,
-        # A4: distinguish "FastAPI up" from "Chromium up". When the
-        # Playwright driver dies this flips to False until auto-restart
-        # finishes (~5s).
+        # A4: distinguish "FastAPI up" from "Chromium up". When ALL pool
+        # members are dead this flips to False until at least one finishes
+        # restart (~2-5s). Partial pool death keeps this True — pool_alive
+        # tells the real story.
         "crawler_alive": not _driver_dead,
         "max_concurrent_renders": SIDECAR_MAX_CONCURRENT_RENDERS,
+        # B1: pool visibility. pool_size == pool_alive in normal operation;
+        # pool_alive drops below pool_size while a member is restarting.
+        "pool_size": total,
+        "pool_alive": alive,
+        # B3: current in-flight render count. Useful for ad-hoc load checks
+        # via `curl /health` while a search is in progress.
+        "in_flight": _in_flight,
     }
 
 
@@ -565,7 +789,7 @@ async def scrape(req: ScrapeRequest):
     with _cache_lock:
         cached = _scrape_cache.get(cache_key)
     if cached is not None:
-        log.info("[cache] hit for %s", req.url)
+        log.info("[scrape] platform=%s url=%s cache=hit", req.platform, _truncate_url(req.url))
         return ScrapeResponse(result=cached)
 
     llm = resolve_llm()
@@ -693,7 +917,7 @@ async def scrape_search(req: ScrapeSearchRequest):
     with _cache_lock:
         cached = _search_cache.get(cache_key)
     if cached is not None:
-        log.info("[cache] search hit for %s/%s (%d results)", req.platform, req.query, len(cached))
+        log.info("[scrape-search] platform=%s query=%s cache=hit results=%d", req.platform, req.query, len(cached))
         return ScrapeSearchResponse(results=cached)
 
     target_url = search_url_for(req.platform, req.query)
