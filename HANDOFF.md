@@ -22,11 +22,9 @@ User-reported bug: searching Grailed with Size L returned a Medium hoodie. Root 
 
 ---
 
-**Previous change (2026-05-20 — PR 2: crawler pool + per-domain pacing + in-flight observability):**
-
 > **Scaling questions belong in [SCALING.md](SCALING.md).** Future chats: if the user asks about hosting, throughput, infrastructure, or any tier-related question, read SCALING.md and quote the matrix. Do not improvise scaling recommendations from training data.
 
-**Latest change (2026-05-20 — PR 2: crawler pool + per-domain pacing + in-flight observability):**
+**Previous change (2026-05-20 — PR 2: crawler pool + per-domain pacing + in-flight observability):**
 
 Ships PR 2 of the load-management plan. Adds the **infrastructure to scale beyond a single Chromium** (configurable browser pool, per-domain pacing to defend against anti-bot 403s on Depop/Grailed/eBay/Vestiaire, and a structured per-render log line for ad-hoc load monitoring). Default `SIDECAR_BROWSER_POOL_SIZE=1` keeps local behavior **identical to PR 1** — the new code paths are gated on env config; nothing changes for an 8 GB MacBook until you flip the var.
 
@@ -1337,7 +1335,7 @@ fashion-crawler-crawl4ai/
 ├── lib/
 │   ├── types.ts                      ← PLATFORM_DOMAINS, PLATFORM_NAMES, Listing, SearchResponse, Save (now w/ folder_id), CollectionFolder, Watchlist, Profile
 │   ├── filterOptions.ts              ← NEW 2026-05-20: FilterState + COLOR/CATEGORY/CONDITION/SIZE option tables (shared client/server); FilterPanel.tsx re-exports for backward compat
-│   ├── sizeFilter.ts                 ← NEW 2026-05-20: matchListingSize(title, sizeKey) + detectSizeFromQuery(query) — used by api/search route to post-filter ThredUp by size
+│   ├── sizeFilter.ts                 ← matchListingSize(title, sizeKey, rawSize?) + matchRawSize() + detectSizeFromQuery(query); checks structured `Listing.size` first, falls back to title regex. Applied to ALL platforms (not just ThredUp) as of 2026-05-20.
 │   ├── collectionFolders.ts          ← ensureDefaultFolder(supabase, userId) — idempotent lazy seed of "My Collection"
 │   ├── firecrawl.ts                  ← searchPlatform() (Firecrawl); scrapeListing() delegates to sidecar
 │   ├── scraper.ts                    ← HTTP client for the Python sidecar
@@ -1704,6 +1702,22 @@ Net new follow-up items spawned by this work: §7 I below (sidecar concurrency a
 **Verified:** all-platforms repro of the failure now completes in ~3:28 with 62 listings, no driver death, `crawler_alive: true` at end. Induced kill recovers in 2.3s.
 
 **Still recommended for PR 2 (separately scoped):** crawler pool (`SIDECAR_BROWSER_POOL_SIZE`) so a bigger box translates into more throughput, per-domain pacing for Depop/Grailed 403 mitigation (§7 F).
+
+### J. Filter strictness audit — color/category/condition deliberately permissive (2026-05-20)
+
+Audit triggered by size-filter bug fix. Findings:
+
+| Filter | Strict post-filter? | Notes |
+|---|---|---|
+| size | ✓ yes (2026-05-20) | checks structured `Listing.size` for Grailed/Depop/Poshmark/ThredUp; title regex for ThredUp-style |
+| price (min/max) | ✓ yes | numeric, in `matchListingPrice` |
+| color | ✗ no | only the Off-White/white brand-collision post-filter; otherwise relies on query-suffix + platform fuzzy search |
+| category | ✗ no | query-suffix only |
+| condition | ✗ no | query-suffix only (even though `ScrapedListing.condition` IS extracted) |
+
+**User decision:** keep color/category/condition permissive. Reasoning: these three are inherently fuzzy ("Like New" vs "New", "navy" vs "blue", "hoodie" = tops or outerwear?), so a strict post-filter would drop too many listings the user actually wants. Pattern going forward: add **narrowly-targeted** post-filters only when a specific semantic collision shows up (like the Off-White case) — don't add broad strict filters.
+
+Do NOT re-propose strict filters here without a specific bad-case bug to motivate them.
 
 ### D. Carryover from Phase 1 (still open)
 
