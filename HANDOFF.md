@@ -1,8 +1,62 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (Watchlist refresh progress bar + minor UI fixes)
+**Last updated:** 2026-05-20 (Sidecar concurrency hardening + response caching — PR 1 of plan `1-3-4-sound-like-a-prancy-waterfall`)
 
-**Latest change (2026-05-20 — Watchlist refresh progress bar + minor UI polish):**
+**Latest change (2026-05-20 — Sidecar concurrency hardening + response caching):**
+
+Ships PR 1 of the load-management plan. Fixes the **all-platforms-at-once driver-death failure mode** (16 concurrent renders on one Chromium → Playwright Node driver subprocess dies → every subsequent scrape fails forever with `BrowserContext.new_page: ... the handler is closed`) and folds in the response cache from `.claude/plans/sleepy-wishing-snowflake.md` while we were there. PR 2 (crawler pool + per-domain pacing) and PR 3 (eBay/Vestiaire structured extractors) follow once this proves stable in real use.
+
+**What changed:**
+
+1. **Global asyncio semaphore in the sidecar.** Every `crawler.arun(...)` call now goes through `_render_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_RENDERS)`. Default 6; env-driven so production can scale by host capacity without code changes. Three callsites gated: `/scrape`/`/scrape-search`/`/refresh-price` (all via `_arun_with_retry`) plus `_warmup_realreal`. See [crawl4ai-service/main.py](crawl4ai-service/main.py).
+2. **Driver-death detection.** `_arun_with_retry` and the warmup helper now inspect `result.error_message` for `"the handler is closed"`, `"Connection closed while reading from the driver"`, and `"WriteUnixTransport closed"`. Match → `_driver_dead = True` + `_trigger_restart_in_background()`. Future requests short-circuit via `_driver_dead_response()` (HTTP 503) at the top of each endpoint instead of piling onto a dead crawler.
+3. **Auto-restart on driver death.** `_restart_crawler_once` (guarded by `_restart_lock`) `close()`s and `start()`s a fresh `AsyncWebCrawler`. Best-effort: if `close()` errors on the dead pipe we log + continue; if `start()` fails the flag stays True so the next request retries. **Verified locally: 2.3s recovery from `pkill -9 -f playwright.*driver`.**
+4. **Healthcheck reflects driver state.** `GET /health` now returns `crawler_alive: bool` and `max_concurrent_renders: int`. Useful for frontend "sidecar restarting…" toasts and production monitoring.
+5. **Across-platform cap in the Next route.** `app/api/search/route.ts` wraps the `Promise.all(platforms.map(...))` fan-out with the existing `allSettledWithConcurrency` helper, capped at `SEARCH_PLATFORM_CONCURRENCY` (default 3). Reused the helper at [app/api/search/route.ts:34-54](app/api/search/route.ts#L34-L54) — same worker-pool pattern as `/api/watchlist/refresh`. Overflow platforms queue and drain as the first batch finishes; same accuracy, no stampede.
+6. **Response cache (`cachetools.TTLCache`).** `/scrape` cached per-URL for 30 min; `/scrape-search` cached per `platform::query` for 10 min. Stored only on success (None/empty NOT cached so transient failures retry). Hits log `[cache] hit for <url>` / `[cache] search hit for <platform>/<query>`. **Verified locally: 9.1s → 9 ms (1000×) on a repeat scrape.**
+
+**Files touched (5):**
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) — module-level state (`_render_semaphore`, `_restart_lock`, `_driver_dead`, `_scrape_cache`, `_search_cache`), helpers (`_looks_like_driver_death`, `_mark_driver_dead`, `_trigger_restart_in_background`, `_restart_crawler_once`, `_driver_dead_response`), updates to `lifespan`, `_warmup_realreal`, `_arun_with_retry`, `/health`, `/scrape`, `/scrape-search`, `/refresh-price`.
+- [crawl4ai-service/requirements.txt](crawl4ai-service/requirements.txt) — add `cachetools>=5.3`.
+- [app/api/search/route.ts](app/api/search/route.ts) — wrap platform fan-out in `allSettledWithConcurrency` at concurrency `SEARCH_PLATFORM_CONCURRENCY`.
+- new: [.env.example](.env.example) — documents new env vars + per-host recommended values.
+- [HANDOFF.md](HANDOFF.md) — this entry + §7 I marked RESOLVED + §2/§3 updated.
+
+**New env vars:**
+| Var | Default | Where | Purpose |
+|---|---|---|---|
+| `SIDECAR_MAX_CONCURRENT_RENDERS` | `6` | Python sidecar | Hard cap on simultaneous `arun()`s against the single Chromium |
+| `SEARCH_PLATFORM_CONCURRENCY` | `3` | Next route | Cap on platforms entering scrape phase at once |
+
+Recommended per host (see [.env.example](.env.example)): local 8 GB MacBook = 6 renders / 3 platforms; small VPS = 4 / 2; medium VPS = 8 / 3; large box = 12+ / 4.
+
+**Verified end-to-end:**
+
+- ✅ `npx tsc --noEmit` clean.
+- ✅ Python module imports + `main.py` parses + sidecar boots with `max_concurrent_renders=6` logged at startup.
+- ✅ `GET /health` returns `crawler_alive: true`, `max_concurrent_renders: 6`.
+- ✅ **Original failure repro:** `light grey hoodie` search with `color=grey, size=M, $10-$200` across all 8 platforms (excluded realreal). Completed in 3m28s, all 8 platforms returned `status: ok`, **62 listings total**, no driver death, `crawler_alive: true` post-search. (Compare to the pre-fix repro that crashed within 30s and returned ~0.)
+- ✅ **Induced driver kill:** `pkill -9 -f playwright.*driver` mid-flight → next scrape detected death → background restart finished in **2.3s** → following scrapes succeeded.
+- ✅ **Cache verification:** identical `/scrape` call twice — 9.1s → 9 ms; log shows `[cache] hit for <url>` on the second call.
+- ✅ A single transient "Future exception was never retrieved: Connection closed while reading from the driver" appeared mid-search at 17:22 — the semaphore-throttled system absorbed it (subsequent eBay/Mercari scrapes immediately succeeded). This is the asyncio garbage-collection warning for an orphaned connection, NOT a fatal driver death (no `_driver_dead` flag flip, no log-storm).
+
+**Open work in the load-management plan (deferred to PR 2 / PR 3 / further):**
+
+- PR 2: crawler pool (`SIDECAR_BROWSER_POOL_SIZE`), per-domain pacing dict for Depop/Grailed/eBay, structured `[scrape] in_flight=N` log line.
+- PR 3: eBay + Vestiaire JSON-LD structured extractors (the deferred half of `sleepy-wishing-snowflake.md`, cost win not load win).
+- Far future: horizontal scaling (C2), Firecrawl plan upgrade (C3), paid unlocker for hardest sites (C4 — only if absolutely necessary).
+
+**Gotchas worth remembering:**
+
+- `crawler.close()` during auto-restart will itself raise on a dead pipe. The `except` in `_restart_crawler_once` is intentional — don't tighten it.
+- The first request *after* a driver death is the one that detects + flips the flag, so it sees the dead pipe and returns its own normal failure (null result). Only subsequent requests get the 503 fast-fail.
+- Driver-death recovery is ~2-3s, faster than expected — most users would never see a 503 unless they hit the sidecar mid-restart window.
+- The cache survives induced driver death (in-memory dict, not tied to crawler lifecycle). Cached endpoints serve correctly even while the crawler is restarting.
+- `response_model=ScrapeResponse` on the FastAPI decorator + sometimes returning a `JSONResponse(status_code=503, ...)` works because FastAPI prefers an explicit Response over the model serializer. Don't add `response_model_exclude_none` or similar; it would conflict.
+
+---
+
+**Previous change (2026-05-20 — Watchlist refresh progress bar + minor UI polish):**
 
 Small batch of watchlist UX improvements:
 - **Eye icon fix:** Watchlist tab cards were showing a crossed-out eye (eye-off SVG) on watched items. Replaced with a normal eye + filled pupil in red `var(--accent)` so the icon reads as "watched" instead of "hidden". ([WatchlistTab.tsx:379-380](app/components/profile/WatchlistTab.tsx#L379-L380))
@@ -1031,7 +1085,7 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - Next.js API routes (`/api/search`) orchestrate the pipeline
 - **Auth layer:** `@supabase/ssr` for client + server clients; `proxy.ts` (Next 16 convention, not `middleware.ts`) refreshes session cookie on every request
 - `@supabase/supabase-js` v2.x for auth + database access
-- **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm
+- **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm + `cachetools` (response cache) + `asyncio.Semaphore` (concurrency gate)
 - Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
 - Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
 - **Naming reminder:** the `saves` table and `/api/saves` routes are surfaced in the UI as "Collection". Both names refer to the same thing; only UI strings were renamed.
@@ -1068,7 +1122,11 @@ proxy.ts (refreshes auth cookie)
           ▼
 POST /api/search ─────────────────────────────────────────────┐
        │                                                       │
-       │  for each platform (parallel):                        │
+       │  allSettledWithConcurrency(platforms, K)              │
+       │    K = SEARCH_PLATFORM_CONCURRENCY (default 3)        │
+       │    overflow platforms queue and drain                 │
+       │                                                       │
+       │  for each platform (cap K parallel):                  │
        │    1. Firecrawl search:  site:<domain> <query>        │  Firecrawl
        │       → returns 15 candidate URLs                     │  (2 credits/
        │    2. filterListingUrls() — regex per platform        │   platform)
@@ -1080,13 +1138,22 @@ POST /api/search ─────────────────────
        │       scrapeViaSidecar() in lib/scraper.ts            │
        │       ↓                                               │
        │       POST http://localhost:8000/scrape ──────────────┼─→ Python sidecar
-       │                                                       │   (crawl4ai +
-       │  5. parseScrapedListings() — drop sold, map fields    │    OpenAI)
-       │  6. aggregate prices, return SearchResponse           │
-       ▼                                                       │
-   UI: tabbed results + min/max/avg price summary              │
+       │                                                       │   ↓
+       │  5. parseScrapedListings() — drop sold, map fields    │   ├─ TTLCache hit? → return immediately
+       │  6. aggregate prices, return SearchResponse           │   ├─ _driver_dead? → 503 fast-fail
+       ▼                                                       │   ├─ async with _render_semaphore (cap N):
+   UI: tabbed results + min/max/avg price summary              │   │     crawler.arun(...) → structured / LLM
+                                                               │   └─ on success: store in TTLCache, return
+                                                               │
+                                                               │  N = SIDECAR_MAX_CONCURRENT_RENDERS (default 6)
                                                                ▼
 ```
+
+**Load-management invariants (PR 1 of `1-3-4-sound-like-a-prancy-waterfall`):**
+- Across-platform cap (`SEARCH_PLATFORM_CONCURRENCY`) × per-platform scrape cap (2) ≤ sidecar semaphore (`SIDECAR_MAX_CONCURRENT_RENDERS`). Keep the math working when tuning.
+- `/scrape` cached per-URL for 30 min, `/scrape-search` per `platform::query` for 10 min. Only successful, non-empty results land in cache; failures retry next time.
+- Driver-death detection auto-restarts the global `AsyncWebCrawler` in ~2-3s. During that window, requests get HTTP 503 (`{"error":"sidecar restarting"}`).
+- `GET /health` includes `crawler_alive: bool` and `max_concurrent_renders: int` for monitoring.
 
 **Saves + Watchlist + Profile editing layer (Phase 2B + 2C, complete as of 2026-05-18):**
 - `(protected)/layout.tsx` mounts `<SavesProvider>` wrapping `<WatchlistProvider>` (both React Contexts) and sonner `<Toaster>` once for the whole protected subtree
@@ -1523,23 +1590,18 @@ Both ran. Decision: **stay on crawl4ai, ship limit = 10**. Full numbers in [docs
 
 Net new follow-up items spawned by this work: §7 I below (sidecar concurrency at limit 15), and an audit of [filterListingUrls](lib/parse.ts) to confirm category-page filtering catches eBay `/b/` and StockX `/brands/` patterns (~37% of bake-off fixture URLs were non-listings — production filter should be eating these).
 
-### I. Sidecar / Playwright concurrency degradation at load (NEW — 2026-05-19)
+### I. Sidecar / Playwright concurrency degradation at load — **RESOLVED 2026-05-20 (PR 1 of `1-3-4-sound-like-a-prancy-waterfall`)**
 
-**Symptom:** limit_sweep at per-platform limit = 15 produced **0 listings across every platform** (vs 30 at limit 5, 55 at limit 10). The sidecar `/health` endpoint stayed green throughout and serves single requests fine immediately after. Firecrawl search succeeded and returned 14–15 URLs per platform (credit cost reflected this). Every sidecar `/scrape` call "completed" without error but extracted no content — pages returned to the LLM appeared to be empty or partial.
+**Original symptom:** at sufficiently high concurrent in-flight count (~16 renders against one Chromium), the Playwright Node driver subprocess dies (one `WriteUnixTransport` pipe goes `closed=True` for everyone). Every subsequent `BrowserContext.new_page()` returns `"the handler is closed"` instantly; the existing retry logic only checked for a Poshmark-specific navigation-error string, so retries amplified rather than aborted. Originally surfaced by limit_sweep=15 returning 0 listings across every platform; same failure mode triggered locally on 2026-05-20 by selecting all 8 platforms at limit 10 with filters.
 
-**Hypothesis:** The sidecar uses one global `AsyncWebCrawler` instance with one Playwright browser. At limit 15 × 8 platforms × 2 concurrent per platform = up to 16 concurrent renders queued against one browser. The browser likely degrades — renders return partial DOM, anti-bot pages, or empty content that both structured and LLM extractors reject as "no extracted content."
+**Resolution:** see Latest change at top of file. Three layers:
+1. **Sidecar semaphore** (`SIDECAR_MAX_CONCURRENT_RENDERS`, default 6) gates every `crawler.arun(...)` — protects the single Chromium from overload regardless of how many requests the frontend fires.
+2. **Driver-death detection + auto-restart** — `_arun_with_retry` and `_warmup_realreal` inspect `result.error_message` for the closed-pipe error family; on match, `_driver_dead = True` and a background `_restart_crawler_once` rebuilds the crawler (2-3s). Subsequent requests get HTTP 503 until restart completes.
+3. **Across-platform cap in the Next route** (`SEARCH_PLATFORM_CONCURRENCY`, default 3) — overflow platforms queue via the existing `allSettledWithConcurrency` worker pool, no parallel stampede.
 
-**Why this matters:** any future "more results per platform" or "search 2 queries simultaneously" feature will hit the same wall. The current production limit (5) and proposed new limit (10) stay safely under the cliff, but we don't know exactly where it is.
+**Verified:** all-platforms repro of the failure now completes in ~3:28 with 62 listings, no driver death, `crawler_alive: true` at end. Induced kill recovers in 2.3s.
 
-**Investigation plan (when picking back up):**
-1. Reproduce: `python scripts/limit_sweep.py --query "<anything>" --limits 12 13 14 15` and check the failure point.
-2. Inspect sidecar logs during the failing run — is Playwright throwing "Target page, context or browser has been closed", or is it silent timeouts?
-3. Try one of:
-   - **A larger Playwright pool.** crawl4ai may support running N browser instances; check [crawl4ai-service/main.py](crawl4ai-service/main.py)'s `_ensure_realreal_crawler` for the per-platform-crawler pattern — extend it to N general-purpose crawlers.
-   - **Per-platform queues.** A semaphore *inside* the sidecar that caps concurrent renders to N (say 8), regardless of how many requests are queued. Smoother degradation.
-   - **Lower per-platform concurrency to 1 when total in-flight > threshold.** Soft circuit-breaker.
-
-**Until this is fixed: don't expose a results-per-platform > 10 in the UI.**
+**Still recommended for PR 2 (separately scoped):** crawler pool (`SIDECAR_BROWSER_POOL_SIZE`) so a bigger box translates into more throughput, per-domain pacing for Depop/Grailed 403 mitigation (§7 F).
 
 ### D. Carryover from Phase 1 (still open)
 

@@ -133,8 +133,23 @@ export async function POST(request: Request) {
 
       const allListings: Listing[] = [];
 
-      await Promise.all(
-        platforms.map(async (platform) => {
+      // A5: cap how many platforms enter the scrape phase at once. The
+      // sidecar has its own semaphore (SIDECAR_MAX_CONCURRENT_RENDERS) so
+      // this is the across-platform layer — it stops 8 selected platforms
+      // × 2 per-platform scrapes = 16 concurrent Chromium renders, which
+      // killed the Playwright driver on small machines. Overflow platforms
+      // queue here and start as the first batch drains.
+      //
+      // Firecrawl plan tier is informational only — free=2, paid=5
+      // concurrent search calls. Raising this above your plan won't error;
+      // Firecrawl will just queue search calls on its end.
+      const platformConcurrency = Math.max(
+        1,
+        parseInt(process.env.SEARCH_PLATFORM_CONCURRENCY ?? '3', 10) || 3,
+      );
+
+      await allSettledWithConcurrency(
+        platforms.map((platform) => async () => {
           try {
             const listings = await searchAndScrape(platform, query, filters as FilterState | undefined);
             allListings.push(...listings);
@@ -156,7 +171,8 @@ export async function POST(request: Request) {
               error: err instanceof Error ? err.message : String(err),
             });
           }
-        })
+        }),
+        platformConcurrency,
       );
 
       const usdPrices = allListings

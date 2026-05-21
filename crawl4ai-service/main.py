@@ -15,16 +15,20 @@ LLM key is configured.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import re
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
+from cachetools import TTLCache
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from extractors import (
@@ -62,6 +66,104 @@ THEREALREAL_PROFILE_DIR = os.path.expanduser("~/.crawl4ai/profiles/therealreal")
 THEREALREAL_WARMUP_URL = "https://www.therealreal.com/"
 
 
+# ── Concurrency / driver-health state ────────────────────────────────────────
+# A1: global cap on simultaneous crawler.arun() calls. Defends a single
+# Chromium against the all-platforms-at-once fan-out from the Next route.
+# Env-driven so production can scale it with the box; default tuned for an
+# 8 GB laptop. See .env.example for per-host recommendations.
+SIDECAR_MAX_CONCURRENT_RENDERS = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_RENDERS", "6")))
+
+# Semaphore + restart lock are initialised in lifespan() (asyncio primitives
+# must bind to the running loop).
+_render_semaphore: Optional[asyncio.Semaphore] = None
+_restart_lock: Optional[asyncio.Lock] = None
+_restart_task: Optional[asyncio.Task] = None
+
+# A2: when the Playwright driver subprocess dies, every subsequent
+# BrowserContext.new_page() returns one of these error strings instantly.
+# Detecting them lets the sidecar short-circuit instead of piling requests
+# onto a corpse.
+_DRIVER_DEAD_PATTERNS = (
+    "the handler is closed",
+    "Connection closed while reading from the driver",
+    "WriteUnixTransport closed",
+)
+_driver_dead: bool = False
+
+
+def _looks_like_driver_death(error_message: Optional[str]) -> bool:
+    if not error_message:
+        return False
+    return any(pat in error_message for pat in _DRIVER_DEAD_PATTERNS)
+
+
+async def _restart_crawler_once() -> None:
+    """A3: rebuild the global crawler after a driver-subprocess death.
+
+    Guarded by `_restart_lock` so concurrent observers all wait on the same
+    recovery rather than each spawning their own. If `start()` fails the
+    flag stays True so the next request retries — we never crash the
+    FastAPI process trying to recover.
+    """
+    global crawler, _driver_dead
+    assert _restart_lock is not None
+    async with _restart_lock:
+        if not _driver_dead:
+            return
+        log.warning("[crawler] driver dead — restarting Chromium")
+        try:
+            if crawler is not None:
+                await crawler.close()
+        except Exception:  # noqa: BLE001 — close may itself error on a dead pipe
+            log.exception("[crawler] close errored during restart (continuing)")
+        try:
+            from crawl4ai import AsyncWebCrawler, BrowserConfig
+            browser_cfg = BrowserConfig(
+                headless=True,
+                verbose=False,
+                enable_stealth=True,
+                user_agent_mode="random",
+            )
+            crawler = AsyncWebCrawler(config=browser_cfg)
+            await crawler.start()
+            _driver_dead = False
+            log.info("[crawler] restart complete")
+        except Exception:  # noqa: BLE001
+            log.exception("[crawler] restart failed — will retry on next request")
+
+
+def _trigger_restart_in_background() -> None:
+    """Fire-and-forget the recovery coroutine. Idempotent — extra calls
+    bounce off the lock without spawning duplicate tasks."""
+    global _restart_task
+    if _restart_task is None or _restart_task.done():
+        try:
+            _restart_task = asyncio.create_task(_restart_crawler_once())
+        except RuntimeError:
+            # No running loop (e.g. called outside async context) — let the
+            # next request trigger it.
+            pass
+
+
+def _mark_driver_dead(error_message: str) -> None:
+    """Set the dead flag and kick off restart. Called once we see the
+    'handler is closed' family of errors on a crawler.arun() result."""
+    global _driver_dead
+    if not _driver_dead:
+        log.error("[crawler] detected driver death: %s", error_message[:200])
+    _driver_dead = True
+    _trigger_restart_in_background()
+
+
+# A6: response caches for /scrape (per URL) and /scrape-search (per
+# platform+query). Cache hits skip Playwright + LLM entirely — same load
+# surface as the semaphore, from the demand side. Misses are NOT cached so
+# transient failures can retry; only successful, non-empty results land here.
+_scrape_cache: TTLCache = TTLCache(maxsize=500, ttl=1800)   # 30 min per URL
+_search_cache: TTLCache = TTLCache(maxsize=200, ttl=600)    # 10 min per (platform, query)
+_cache_lock = threading.Lock()
+
+
 # ── Provider / key resolution ────────────────────────────────────────────────
 
 _PROVIDER_KEY_ENV = {
@@ -94,8 +196,12 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global crawler
+    global crawler, _render_semaphore, _restart_lock
     from crawl4ai import AsyncWebCrawler, BrowserConfig
+
+    # Bind asyncio primitives to the running event loop.
+    _render_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_RENDERS)
+    _restart_lock = asyncio.Lock()
 
     browser_cfg = BrowserConfig(
         headless=True,
@@ -108,7 +214,7 @@ async def lifespan(app: FastAPI):
     # or producing empty chunk sections for the LLM strategy. Keep plain.
     crawler = AsyncWebCrawler(config=browser_cfg)
     await crawler.start()
-    log.info("crawl4ai crawler started")
+    log.info("crawl4ai crawler started (max_concurrent_renders=%d)", SIDECAR_MAX_CONCURRENT_RENDERS)
     try:
         yield
     finally:
@@ -187,7 +293,12 @@ async def _warmup_realreal(c) -> None:
     )
     log.info("[realreal] warmup nav → %s (20s — solve any press-and-hold in the Chromium window)", THEREALREAL_WARMUP_URL)
     try:
-        await c.arun(url=THEREALREAL_WARMUP_URL, config=cfg)
+        assert _render_semaphore is not None
+        async with _render_semaphore:
+            warmup_result = await c.arun(url=THEREALREAL_WARMUP_URL, config=cfg)
+        if warmup_result is not None and _looks_like_driver_death(getattr(warmup_result, "error_message", None)):
+            _mark_driver_dead(warmup_result.error_message or "")
+            return
     except Exception:  # noqa: BLE001
         log.exception("[realreal] warmup failed (will retry on next request)")
         return
@@ -355,16 +466,30 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
 
     crawler_override: optional per-platform crawler (e.g. realreal's managed-profile
     instance). When None, the global default crawler is used.
+
+    A1+A2: every arun() call goes through `_render_semaphore`, and the result's
+    error_message is scanned for "handler is closed" / "Connection closed while
+    reading from the driver" so a dead driver subprocess flips `_driver_dead`
+    and triggers background recovery instead of being retried into the corpse.
     """
     c = crawler_override if crawler_override is not None else crawler
     assert c is not None
+    assert _render_semaphore is not None
     cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target)
-    result = await c.arun(url=url, config=cfg)
+    async with _render_semaphore:
+        result = await c.arun(url=url, config=cfg)
     err = (result.error_message or "") if result is not None else ""
+    if _looks_like_driver_death(err):
+        _mark_driver_dead(err)
+        return result
     if (not result.success or _POSHMARK_NAV_ERROR in err) and platform == "poshmark":
         log.info("[retry] poshmark crawl hit navigation error, retrying with networkidle wait")
         cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target)
-        result = await c.arun(url=url, config=cfg)
+        async with _render_semaphore:
+            result = await c.arun(url=url, config=cfg)
+        err = (result.error_message or "") if result is not None else ""
+        if _looks_like_driver_death(err):
+            _mark_driver_dead(err)
     return result
 
 
@@ -393,12 +518,35 @@ async def health():
         "status": "ok",
         "llm_mode": "active" if llm else "stub",
         "provider": llm[0] if llm else None,
+        # A4: distinguish "FastAPI up" from "Chromium up". When the
+        # Playwright driver dies this flips to False until auto-restart
+        # finishes (~5s).
+        "crawler_alive": not _driver_dead,
+        "max_concurrent_renders": SIDECAR_MAX_CONCURRENT_RENDERS,
     }
 
 
+# Helper for the three scrape endpoints. Returns a JSONResponse with HTTP 503
+# when the driver is dead so the caller doesn't queue requests onto a corpse.
+# Triggers the background restart in the same call so recovery starts ASAP.
+def _driver_dead_response(endpoint: str) -> Optional[JSONResponse]:
+    if _driver_dead:
+        _trigger_restart_in_background()
+        log.warning("[%s] short-circuit 503 — driver dead, restart in progress", endpoint)
+        return JSONResponse(
+            status_code=503,
+            content={"error": "sidecar restarting", "endpoint": endpoint},
+        )
+    return None
+
+
 @app.post("/scrape", response_model=ScrapeResponse)
-async def scrape(req: ScrapeRequest) -> ScrapeResponse:
+async def scrape(req: ScrapeRequest):
     from crawl4ai.extraction_strategy import LLMExtractionStrategy
+
+    dead = _driver_dead_response("scrape")
+    if dead is not None:
+        return dead
 
     assert crawler is not None, "crawler not initialised"
 
@@ -409,6 +557,16 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
     if req.platform == "thredup":
         parsed = urlparse(req.url)
         req = req.model_copy(update={"url": urlunparse(parsed._replace(query="", fragment=""))})
+
+    # A6: response cache check. Keyed by canonical URL (post-ThredUp-strip).
+    # Cache survives induced driver death — if we have a hit, we serve it
+    # without ever touching the crawler.
+    cache_key = req.url
+    with _cache_lock:
+        cached = _scrape_cache.get(cache_key)
+    if cached is not None:
+        log.info("[cache] hit for %s", req.url)
+        return ScrapeResponse(result=cached)
 
     llm = resolve_llm()
 
@@ -429,7 +587,10 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
                     # StockX legitimately returns price=None for no-Ask listings.
                     # Other platforms only return non-None if they found a price.
                     log.info("[structured] hit for %s (price=%s)", req.url, extracted.get("price"))
-                    return ScrapeResponse(result=coerce_listing(req.url, extracted))
+                    listing = coerce_listing(req.url, extracted)
+                    with _cache_lock:
+                        _scrape_cache[cache_key] = listing
+                    return ScrapeResponse(result=listing)
                 log.info("[structured] miss for %s — falling back to LLM", req.url)
             else:
                 log.warning("[structured] crawl failed for %s: %s", req.url, result.error_message)
@@ -497,7 +658,10 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
             log.warning("[llm] unexpected payload shape for %s: %r", req.url, type(parsed))
             return ScrapeResponse(result=None)
 
-        return ScrapeResponse(result=coerce_listing(req.url, parsed))
+        listing = coerce_listing(req.url, parsed)
+        with _cache_lock:
+            _scrape_cache[cache_key] = listing
+        return ScrapeResponse(result=listing)
 
     except Exception as exc:  # noqa: BLE001 — match firecrawl.ts swallow-and-null behaviour
         log.exception("scrape failed for %s: %s", req.url, exc)
@@ -505,18 +669,32 @@ async def scrape(req: ScrapeRequest) -> ScrapeResponse:
 
 
 @app.post("/scrape-search", response_model=ScrapeSearchResponse)
-async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
+async def scrape_search(req: ScrapeSearchRequest):
     """Render a platform's onsite search page and pull a grid of listings.
 
     Used for platforms (e.g. ThredUp, The RealReal) whose individual listing URLs
     aren't discoverable via Firecrawl's `site:` search — instead, every listing
     card on the search page carries the data we need (price, image, title, URL).
     """
+    dead = _driver_dead_response("scrape-search")
+    if dead is not None:
+        return dead
+
     assert crawler is not None, "crawler not initialised"
 
     if req.platform not in SEARCH_PAGE_PLATFORMS:
         log.warning("[scrape-search] unsupported platform: %s", req.platform)
         return ScrapeSearchResponse(results=[])
+
+    # A6: cache by (platform, normalized query). Same render is re-requested
+    # every time someone types the same search — watchlist refresh and back-
+    # nav hammer this without it.
+    cache_key = f"{req.platform}::{req.query.strip().lower()}"
+    with _cache_lock:
+        cached = _search_cache.get(cache_key)
+    if cached is not None:
+        log.info("[cache] search hit for %s/%s (%d results)", req.platform, req.query, len(cached))
+        return ScrapeSearchResponse(results=cached)
 
     target_url = search_url_for(req.platform, req.query)
     if not target_url:
@@ -575,6 +753,11 @@ async def scrape_search(req: ScrapeSearchRequest) -> ScrapeSearchResponse:
                 log.exception("[realreal] failed to dump empty HTML")
 
         log.info("[scrape-search] %s '%s' → %d listings", req.platform, req.query, len(listings))
+        # Only cache non-empty results — empty likely means transient failure
+        # (e.g. PerimeterX, rate-limit) that we want to retry next time.
+        if listings:
+            with _cache_lock:
+                _search_cache[cache_key] = listings
         return ScrapeSearchResponse(results=listings)
     except Exception as exc:  # noqa: BLE001
         log.exception("[scrape-search] failed for %s '%s': %s", req.platform, req.query, exc)
@@ -612,7 +795,7 @@ def _refresh_result_from_extracted(extracted: dict, tier: str) -> RefreshPriceRe
 
 
 @app.post("/refresh-price", response_model=RefreshPriceResponse)
-async def refresh_price(req: RefreshPriceRequest) -> RefreshPriceResponse:
+async def refresh_price(req: RefreshPriceRequest):
     """Watchlist-refresh-only path: fetch a single listing URL and return
     just price + isSold. Tiered for accuracy:
       1. httpx GET → structured extract  (fast, works for SSR'd platforms)
@@ -620,7 +803,14 @@ async def refresh_price(req: RefreshPriceRequest) -> RefreshPriceResponse:
       3. LLM extract on best HTML        (final safety net, matches /scrape)
     Returns price=None, isSold=False, fetched=False if all tiers miss.
     The caller still bumps last_checked_at so the UI shows the attempt.
+
+    No response cache here: watchlist refresh is explicitly the "go re-check
+    prices now" path. Caching would defeat the purpose.
     """
+    dead = _driver_dead_response("refresh-price")
+    if dead is not None:
+        return dead
+
     assert crawler is not None, "crawler not initialised"
 
     # Defensive: strip tracking params for ThredUp (server-side redirects on these).
