@@ -1,6 +1,28 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (PR 2 — crawler pool + per-domain pacing + in-flight log line; plan `1-3-4-sound-like-a-prancy-waterfall`)
+**Last updated:** 2026-05-20 (size filter parity for Grailed/Firecrawl platforms + filter audit)
+
+**Latest change (2026-05-20 — size filter now applied to Grailed/Depop/Poshmark/etc., not just ThredUp):**
+
+User-reported bug: searching Grailed with Size L returned a Medium hoodie. Root cause was two-fold: (1) the size post-filter was only applied in the SEARCH_PAGE_PLATFORMS branch (ThredUp/RealReal) — the Firecrawl path skipped it entirely; (2) even if added, `matchListingSize` only checked title text (works for ThredUp's "… Size L" titles) but Grailed titles don't embed size.
+
+**Fix:** thread a structured `size` field through the whole pipeline.
+- [structured_extractors.py](crawl4ai-service/structured_extractors.py) — `_extract_size_from_product()` reads `product.size` or scans `additionalProperty[]` for a `size` PropertyValue; included in the JSON-LD return dict (Grailed, Depop, Poshmark, ThredUp).
+- [extractors.py](crawl4ai-service/extractors.py) — added `size` to `LISTING_SCHEMA` so the LLM fallback also captures it.
+- [main.py](crawl4ai-service/main.py) — `size: Optional[str]` on `ScrapedListing` + `coerce_listing`.
+- [lib/firecrawl.ts](lib/firecrawl.ts), [lib/types.ts](lib/types.ts), [lib/parse.ts](lib/parse.ts) — `size` threaded through `ScrapedListing` → `Listing`.
+- [lib/sizeFilter.ts](lib/sizeFilter.ts) — new `matchRawSize(rawSize, sizeKey)` for direct value matching ("L"/"Large" → key `l`, handles "(US)" suffixes, "L/XL" multi-size, shoe numbers). `matchListingSize` now checks the structured field first, falls back to title regex.
+- [app/api/search/route.ts](app/api/search/route.ts) — Firecrawl branch now applies the size filter (was missing); both branches pass `l.size`.
+
+**Filter audit done in the same session (no code changes — documented in §7 J below):**
+- size ✓ now strict (this fix), price ✓ strict, color/category/condition rely on query-suffix + platform fuzzy search only.
+- User explicitly chose to keep color/category/condition permissive ("show on close calls") — no strict post-filters being added. Targeted post-filters (like the existing Off-White/white brand collision) are still on the table per-bug.
+
+**Verified:** `npx tsc --noEmit` clean; Python files parse clean.
+
+---
+
+**Previous change (2026-05-20 — PR 2: crawler pool + per-domain pacing + in-flight observability):**
 
 > **Scaling questions belong in [SCALING.md](SCALING.md).** Future chats: if the user asks about hosting, throughput, infrastructure, or any tier-related question, read SCALING.md and quote the matrix. Do not improvise scaling recommendations from training data.
 
