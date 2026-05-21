@@ -80,7 +80,7 @@ async function searchAndScrape(
     // a typed-in size word (handles "nike shoes large" with no panel filter).
     const sizeKey = filters?.size ?? detectSizeFromQuery(query);
     const sizeFiltered = sizeKey
-      ? listings.filter((l) => matchListingSize(l.title, sizeKey))
+      ? listings.filter((l) => matchListingSize(l.title, sizeKey, l.size))
       : listings;
     const colorFiltered = sizeFiltered.filter((l) =>
       matchListingColor(l.title, filters?.color, query),
@@ -108,7 +108,11 @@ async function searchAndScrape(
     .filter((s): s is ScrapedListing => s !== null);
 
   const parsed = parseScrapedListings(scraped, platform, query);
-  const colorFiltered = parsed.filter((l) => matchListingColor(l.title, filters?.color, query));
+  const sizeKey = filters?.size ?? detectSizeFromQuery(query);
+  const sizeFiltered = sizeKey
+    ? parsed.filter((l) => matchListingSize(l.title, sizeKey, l.size))
+    : parsed;
+  const colorFiltered = sizeFiltered.filter((l) => matchListingColor(l.title, filters?.color, query));
   return colorFiltered.filter((l) => matchListingPrice(l, filters));
 }
 

@@ -521,6 +521,7 @@ class ScrapedListing(BaseModel):
     isSold: bool = False
     condition: Optional[str] = None
     imageUrl: Optional[str] = None
+    size: Optional[str] = None
 
 
 class ScrapeResponse(BaseModel):
@@ -582,6 +583,7 @@ def coerce_listing(url: str, raw: dict) -> ScrapedListing:
             is_sold = True
     condition = raw.get("condition") if isinstance(raw.get("condition"), str) else None
     image_url = raw.get("imageUrl") if isinstance(raw.get("imageUrl"), str) else None
+    size = raw.get("size") if isinstance(raw.get("size"), str) else None
     return ScrapedListing(
         url=url,
         title=title,
@@ -590,6 +592,7 @@ def coerce_listing(url: str, raw: dict) -> ScrapedListing:
         isSold=is_sold,
         condition=condition,
         imageUrl=image_url,
+        size=size,
     )
 
 

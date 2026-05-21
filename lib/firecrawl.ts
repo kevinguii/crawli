@@ -69,6 +69,7 @@ export interface ScrapedListing {
   isSold: boolean;
   condition: string | null;
   imageUrl: string | null;
+  size: string | null;
 }
 
 export async function scrapeListing(

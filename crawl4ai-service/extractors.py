@@ -9,6 +9,7 @@ LISTING_SCHEMA = {
         "isSold": {"type": "boolean", "description": "True if the item is sold or no longer available"},
         "condition": {"type": "string", "description": "Item condition, e.g. New, Used, Like New, Deadstock"},
         "imageUrl": {"type": "string", "description": "Full URL of the main product image"},
+        "size": {"type": "string", "description": "Item size, e.g. S, M, L, XL, 7.5, 10"},
     },
 }
 

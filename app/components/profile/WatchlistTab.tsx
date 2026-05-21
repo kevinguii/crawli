@@ -351,6 +351,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
       price: row.price_current ?? row.price_at_add,
       currency: row.currency,
       condition: null,
+      size: null,
       seller: null,
       url: row.listing_url,
       image: row.image_url,

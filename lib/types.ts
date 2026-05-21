@@ -30,6 +30,7 @@ export interface Listing {
   price: number | null;
   currency: string; // 'USD', 'GBP', 'EUR', etc.
   condition: string | null;
+  size: string | null;
   seller: string | null;
   url: string;
   image: string | null;

@@ -1,9 +1,7 @@
-// Size matching helpers for post-filtering ThredUp results.
-// ThredUp's onsite search is fuzzy ("large" matches X-Large too), so for
-// SEARCH_PAGE_PLATFORMS we drop the size into a post-filter step instead of
-// relying on the platform's text search. Titles consistently end with the
-// item's size (e.g. "Nike Black Sneakers Size 7", "T-Shirt Size XL"), so a
-// regex match on title is reliable.
+// Size matching helpers for post-filtering listing results.
+// Used for SEARCH_PAGE_PLATFORMS (ThredUp) where titles embed size text, AND
+// for all other platforms (Grailed, Depop, etc.) where a structured `size`
+// field is extracted directly from the listing page.
 
 import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from './filterOptions';
 
@@ -43,13 +41,60 @@ function shoeRegex(num: string): RegExp {
   return new RegExp(`\\bSize\\s+${num}(?!\\s*(?:\\.|\\s+1/2))\\b`, 'i');
 }
 
+// Clothing size tokens for direct size-field matching (Grailed, Depop, etc.)
+// Normalized: lowercase, hyphens/spaces collapsed, "(US)"/"(EU)" suffixes stripped.
+const CLOTHING_RAW_TOKENS: Record<string, string[]> = {
+  xs:  ['xs', 'xsmall', 'extrasmall', 'xsmall'],
+  s:   ['s', 'sm', 'small'],
+  m:   ['m', 'md', 'med', 'medium'],
+  l:   ['l', 'lg', 'large'],
+  xl:  ['xl', 'xlarge', 'extralarge'],
+  xxl: ['xxl', '2xl', 'xxlarge', '2xlarge'],
+};
+
 /**
- * Does this listing title's embedded size match the requested size key?
+ * Match a raw size value (e.g. "L", "Large", "XL", "7.5") against a filter key.
+ * Used when the platform returns a structured size field rather than embedding it in the title.
+ */
+export function matchRawSize(rawSize: string, sizeKey: string): boolean {
+  // Normalize: lowercase, collapse hyphens/spaces, strip parenthetical suffixes like "(US)"
+  const v = rawSize.toLowerCase().replace(/\s*\([^)]*\)/g, '').replace(/[-\s]+/g, '').trim();
+
+  const tokens = CLOTHING_RAW_TOKENS[sizeKey];
+  if (tokens) {
+    return tokens.some((t) => v === t || v.startsWith(t + '/'));
+  }
+
+  const num = shoeKeyToNumber(sizeKey);
+  if (num) {
+    // Strip everything except digits and dots, take the first numeric token
+    const numPart = rawSize.replace(/[^\d.]/g, ' ').trim().split(/\s+/)[0] ?? '';
+    return numPart === num;
+  }
+
+  return true;
+}
+
+/**
+ * Does this listing match the requested size key?
+ * Checks `rawSize` (structured field) first — more reliable than title text.
+ * Falls back to title regex matching for platforms (ThredUp) that embed size in the title.
  * sizeKey is a FilterState.size value like 'l', 'm7_5', or 'xxl'.
  * Returns true when no size key is provided (no-op filter).
  */
-export function matchListingSize(title: string | null | undefined, sizeKey: string | null | undefined): boolean {
+export function matchListingSize(
+  title: string | null | undefined,
+  sizeKey: string | null | undefined,
+  rawSize?: string | null,
+): boolean {
   if (!sizeKey) return true;
+
+  // Prefer the structured size field when available
+  if (rawSize) {
+    return matchRawSize(rawSize, sizeKey);
+  }
+
+  // Fall back to title text pattern matching (ThredUp format: "… Size XL")
   if (!title) return false;
 
   if (sizeKey in CLOTHING_PATTERNS) {

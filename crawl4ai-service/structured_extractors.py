@@ -118,6 +118,32 @@ def _first_image(product: dict) -> Optional[str]:
     return None
 
 
+def _extract_size_from_product(product: dict) -> Optional[str]:
+    """Extract size from a Schema.org Product node.
+
+    Grailed and similar platforms may store size as a top-level "size" string or
+    inside "additionalProperty" (a list of PropertyValue objects).
+    """
+    # Direct string field
+    raw = product.get("size")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+
+    # additionalProperty list: [{@type: PropertyValue, name: "size", value: "L"}, ...]
+    additional = product.get("additionalProperty")
+    if isinstance(additional, list):
+        for prop in additional:
+            if not isinstance(prop, dict):
+                continue
+            name = prop.get("name", "")
+            if isinstance(name, str) and name.lower() == "size":
+                val = prop.get("value")
+                if isinstance(val, str) and val.strip():
+                    return val.strip()
+
+    return None
+
+
 def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     """Generic JSON-LD Product extractor (Depop, Grailed, Poshmark).
 
@@ -145,6 +171,7 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
 
     name = product.get("name") if isinstance(product.get("name"), str) else None
     image = _first_image(product)
+    size = _extract_size_from_product(product)
 
     # Reject the node if it has NO price — caller should fall back.
     if price is None:
@@ -157,6 +184,7 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
         "isSold": is_sold,
         "condition": condition_label,
         "imageUrl": image,
+        "size": size,
     }
 
 

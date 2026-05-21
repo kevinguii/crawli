@@ -21,7 +21,12 @@ const STAGES = [
   'Parsing prices…',
 ];
 
-const STAGE_INTERVAL_MS = 2000;
+const STAGE_INTERVAL_MIN_MS = 3000;
+const STAGE_INTERVAL_MAX_MS = 5000;
+
+function nextStageDelay() {
+  return STAGE_INTERVAL_MIN_MS + Math.random() * (STAGE_INTERVAL_MAX_MS - STAGE_INTERVAL_MIN_MS);
+}
 
 export default function SearchProgress({ platforms, statuses, errors, counts, onCancel }: Props) {
   const total = platforms.length;
@@ -84,31 +89,39 @@ function PlatformRow({
 }) {
   const [stageIdx, setStageIdx] = useState(0);
   const [open, setOpen] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let resetTimeout: number | null = null;
 
+    const clearPending = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
     if (status === 'loading') {
       resetTimeout = window.setTimeout(() => setStageIdx(0), 0);
-      intervalRef.current = setInterval(() => {
-        setStageIdx((i) => Math.min(i + 1, STAGES.length - 1));
-      }, STAGE_INTERVAL_MS);
+      const scheduleNext = () => {
+        timeoutRef.current = setTimeout(() => {
+          setStageIdx((i) => {
+            const next = Math.min(i + 1, STAGES.length - 1);
+            if (next < STAGES.length - 1) scheduleNext();
+            return next;
+          });
+        }, nextStageDelay());
+      };
+      scheduleNext();
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      clearPending();
     }
 
     return () => {
       if (resetTimeout !== null) {
         window.clearTimeout(resetTimeout);
       }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      clearPending();
     };
   }, [status]);
 
