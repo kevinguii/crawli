@@ -2,6 +2,8 @@ import { FirecrawlClient } from '@mendable/firecrawl-js';
 import { PLATFORM_DOMAINS } from './types';
 import { scrapeViaSidecar } from './scraper';
 import { searchPlatformViaSerper } from './serper';
+import { searchPlatformViaBrave } from './brave';
+import { filterListingUrls } from './parse';
 
 const client = new FirecrawlClient({
   apiKey: process.env.FIRECRAWL_API_KEY,
@@ -57,6 +59,59 @@ async function searchPlatformViaFirecrawl(
   }));
 }
 
+// Per-platform routing strategy for SEARCH_PROVIDER=hybrid mode.
+// Derived from scripts/search_bakeoff_results.csv (20 queries × 8 platforms):
+//   - BRAVE_ONLY:    Brave matches or beats Firecrawl on listing-URL count.
+//   - HYBRID:        Brave usually wins; fall back to Firecrawl if Brave
+//                    returns fewer than BRAVE_HYBRID_THRESHOLD listings.
+//   - FIRECRAWL_ONLY: Brave too unreliable (eBay/Mercari); skip the Brave
+//                    call entirely to save a round-trip.
+type PlatformStrategy = 'brave-only' | 'hybrid' | 'firecrawl-only';
+
+const PLATFORM_STRATEGY: Record<string, PlatformStrategy> = {
+  vinted: 'brave-only',
+  stockx: 'brave-only',
+  poshmark: 'brave-only',
+  depop: 'hybrid',
+  grailed: 'hybrid',
+  vestiaire: 'hybrid',
+  mercari: 'firecrawl-only',
+  ebay: 'firecrawl-only',
+};
+
+function getHybridThreshold(): number {
+  const raw = parseInt(process.env.BRAVE_HYBRID_THRESHOLD ?? '5', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : 5;
+}
+
+async function searchPlatformHybrid(
+  platform: string,
+  query: string,
+  searchLimit: number,
+): Promise<RawSearchResult[]> {
+  const strategy = PLATFORM_STRATEGY[platform] ?? 'hybrid';
+
+  if (strategy === 'firecrawl-only') {
+    return searchPlatformViaFirecrawl(platform, query, searchLimit);
+  }
+  if (strategy === 'brave-only') {
+    return searchPlatformViaBrave(platform, query, searchLimit);
+  }
+
+  // hybrid: try Brave first, fall back to Firecrawl if listing-shape URL
+  // count is below the threshold OR Brave errors out (rate limit, outage).
+  try {
+    const braveResults = await searchPlatformViaBrave(platform, query, searchLimit);
+    const listingCount = filterListingUrls(braveResults, platform).length;
+    if (listingCount >= getHybridThreshold()) {
+      return braveResults;
+    }
+  } catch (err) {
+    console.warn(`[search] brave failed for ${platform}, falling back to firecrawl:`, err instanceof Error ? err.message : err);
+  }
+  return searchPlatformViaFirecrawl(platform, query, searchLimit);
+}
+
 export async function searchPlatform(
   platform: string,
   query: string
@@ -66,6 +121,12 @@ export async function searchPlatform(
 
   if (provider === 'serper') {
     return searchPlatformViaSerper(platform, query, searchLimit);
+  }
+  if (provider === 'brave') {
+    return searchPlatformViaBrave(platform, query, searchLimit);
+  }
+  if (provider === 'hybrid') {
+    return searchPlatformHybrid(platform, query, searchLimit);
   }
   return searchPlatformViaFirecrawl(platform, query, searchLimit);
 }
