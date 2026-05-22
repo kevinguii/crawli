@@ -1,6 +1,7 @@
 import { FirecrawlClient } from '@mendable/firecrawl-js';
 import { PLATFORM_DOMAINS } from './types';
 import { scrapeViaSidecar } from './scraper';
+import { searchPlatformViaSerper } from './serper';
 
 const client = new FirecrawlClient({
   apiKey: process.env.FIRECRAWL_API_KEY,
@@ -34,19 +35,18 @@ export interface RawSearchResult {
   description?: string;
 }
 
-export async function searchPlatform(
+async function searchPlatformViaFirecrawl(
   platform: string,
-  query: string
+  query: string,
+  limit: number,
 ): Promise<RawSearchResult[]> {
   const domain = PLATFORM_DOMAINS[platform];
   if (!domain) throw new Error(`Unknown platform: ${platform}`);
 
   const siteQuery = `site:${domain} ${query}`;
 
-  const searchLimit = 20;
-
   const data = await withRetry(() =>
-    client.search(siteQuery, { limit: searchLimit })
+    client.search(siteQuery, { limit })
   );
 
   const web = data.web ?? [];
@@ -55,6 +55,19 @@ export async function searchPlatform(
     title: (item as RawSearchResult).title,
     description: (item as RawSearchResult).description,
   }));
+}
+
+export async function searchPlatform(
+  platform: string,
+  query: string
+): Promise<RawSearchResult[]> {
+  const provider = (process.env.SEARCH_PROVIDER ?? 'firecrawl').toLowerCase();
+  const searchLimit = 20;
+
+  if (provider === 'serper') {
+    return searchPlatformViaSerper(platform, query, searchLimit);
+  }
+  return searchPlatformViaFirecrawl(platform, query, searchLimit);
 }
 
 // ── Individual listing scraping (delegated to crawl4ai sidecar) ────────────
