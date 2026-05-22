@@ -112,9 +112,10 @@ def _first_image(product: dict) -> Optional[str]:
         if isinstance(first, str):
             return first
         if isinstance(first, dict):
-            return first.get("url") or first.get("@id")
+            # contentUrl: Schema.org ImageObject (Vestiaire). url/@id: simpler shapes (Depop/Grailed).
+            return first.get("contentUrl") or first.get("url") or first.get("@id")
     if isinstance(img, dict):
-        return img.get("url") or img.get("@id")
+        return img.get("contentUrl") or img.get("url") or img.get("@id")
     return None
 
 
@@ -467,6 +468,28 @@ def extract_thredup(html: str) -> Optional[dict]:
     return _extract_from_jsonld(soup)
 
 
+def extract_ebay(html: str) -> Optional[dict]:
+    """eBay /itm/ pages embed Schema.org Product JSON-LD with offers.price,
+    priceCurrency, availability, and itemCondition. Same shape the generic
+    helper handles. Surveyed 4/4 listings 2026-05-21 (gucci marmont bag).
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+    return _extract_from_jsonld(soup)
+
+
+def extract_vestiaire(html: str) -> Optional[dict]:
+    """Vestiaire Collective product pages emit Schema.org Product JSON-LD with
+    offers.price (USD when fetched from us.vestiairecollective.com), itemCondition,
+    and availability. Generic helper handles it. Surveyed 5/5 listings 2026-05-21.
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+    return _extract_from_jsonld(soup)
+
+
 PLATFORM_EXTRACTORS = {
     "depop": extract_depop,
     "grailed": extract_grailed,
@@ -475,6 +498,8 @@ PLATFORM_EXTRACTORS = {
     "mercari": extract_mercari,
     "vinted": extract_vinted,
     "thredup": extract_thredup,
+    "ebay": extract_ebay,
+    "vestiaire": extract_vestiaire,
 }
 
 

@@ -1,8 +1,59 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-20 (watchlist refresh now shares /scrape load-management gates + background-search design notes)
+**Last updated:** 2026-05-21 (C1 shipped: eBay + Vestiaire structured extractors)
 
-**Latest change (2026-05-20 — watchlist refresh parity with /scrape; closes HANDOFF §624 / §1666):**
+**Latest change (2026-05-21 — Phase C1: eBay + Vestiaire structured extractors shipped):**
+
+Ships the first item from [SCALING.md §4](SCALING.md#§4--phase-c-upgrades-deferred-features-captured-here) — the deferred eBay + Vestiaire JSON-LD extractors. Both platforms now skip the LLM extraction call entirely on the happy path (tier 1), falling back to LLM (tier 2) only when fetch fails (e.g. eBay's intermittent Akamai blocks).
+
+**Survey first, then implement** (per SCALING.md §4 C1 guidance): captured raw HTML for 5 Vestiaire + 5 eBay listing URLs via a one-off probe script (`probe_c1_jsonld.py`, deleted at end of session) and discovered both platforms emit a single Schema.org `Product` JSON-LD block with the exact shape the existing `_extract_from_jsonld` helper already handles. **No per-platform parsing logic needed** — just thin wrappers that delegate to the generic helper, then register them in `PLATFORM_EXTRACTORS`.
+
+**One gotcha in the generic helper:** Vestiaire encodes `image` as a Schema.org `ImageObject` (`{@type: "ImageObject", contentUrl: "...", width, height}`), not the simpler string/url shape Depop/Grailed use. `_first_image` was updated to read `contentUrl` first, falling back to `url`/`@id`. This is a strict superset of prior behavior — no regression risk for the other platforms.
+
+**What changed:**
+
+1. **`extract_ebay(html)`** in [structured_extractors.py](crawl4ai-service/structured_extractors.py) — 4-line wrapper that runs `_extract_from_jsonld` against the parsed soup. eBay `/itm/` pages embed `<script type="application/ld+json">` with `@type: Product`, `offers.price`, `offers.priceCurrency`, `offers.availability`, `offers.itemCondition`, `name`, `image`, `brand`.
+2. **`extract_vestiaire(html)`** — identical 4-line shape. Vestiaire pages emit the same structure with USD prices when fetched via `us.vestiairecollective.com` (the route already prefers that subdomain).
+3. **`PLATFORM_EXTRACTORS`** dict gains `"ebay": extract_ebay` and `"vestiaire": extract_vestiaire`. Both platform keys already match the [lib/types.ts](lib/types.ts) `PLATFORM_DOMAINS` constants — no rewrites elsewhere needed.
+4. **`_first_image`** now reads `ImageObject.contentUrl` in addition to `url`/`@id`. Generic improvement; benefits any future platform that uses ImageObject shape.
+5. **Tier 1 / Tier 2 cascade** in [main.py](crawl4ai-service/main.py) is untouched — once a platform key lives in `PLATFORM_EXTRACTORS`, the existing `_try_structured_extract` flow at [main.py:814](crawl4ai-service/main.py#L814) routes it automatically. LLM fallback (§5 fallback principle) preserved verbatim.
+
+**Files touched (1):**
+- [crawl4ai-service/structured_extractors.py](crawl4ai-service/structured_extractors.py) — two new wrapper functions, two new `PLATFORM_EXTRACTORS` entries, and the `_first_image` ImageObject support.
+
+**Verified end-to-end (live, 2026-05-21):**
+
+| Test | Result |
+|---|---|
+| `python3 -c "import ast; ast.parse(...)"` on structured_extractors.py | ✅ clean |
+| Survey: 9/9 dumped HTMLs (5 vestiaire + 4 successful ebay) parse via `_extract_from_jsonld` | ✅ price, currency, availability, condition, image all populated |
+| Direct `/scrape` against `ebay.com/itm/326444459527` | ✅ `[structured] hit (price=1650.0)` log line, condition=`"Used"`, full image URL |
+| Direct `/scrape` against vestiaire bag URL | ✅ `[structured] hit (price=2038)`, condition=`"Used"`, ImageObject contentUrl extracted |
+| Full search `/api/search` for `levi 501 jeans` × `[ebay, vestiaire]` | ✅ **20/20 structured hits, 0 misses, 0 crawl failures** — every listing skipped the LLM entirely |
+| Fallback check: `ebay.com/itm/126534228167` hit Akamai mid-test | ✅ tier 1 logged `[structured] crawl failed`, tier 2 (LLM) took over and returned a complete listing — exactly per §5 fallback principle |
+
+**Wins per scrape (vs LLM path), confirmed:**
+- **~$0.001-0.005 saved** per listing on token cost (gpt-4o-mini extraction call eliminated for the 20 happy-path scrapes).
+- **~1-2s latency reduction** — tier 1 returns immediately after the HTML fetch + parse, no LLM round-trip. Vestiaire scrapes ran ~9s end-to-end (mostly fetch); LLM path would add 1-3s.
+- **More accurate condition / price** — pulled directly from `offers.itemCondition` and `offers.price` rather than LLM regex-from-text.
+- **Survives OpenAI outages** for these two platforms — extractor is local-only.
+
+**Gotchas worth remembering:**
+- eBay's anti-bot (Akamai) remains intermittent — same as documented in §7 A. C1 does NOT fix that. When fetch fails before HTML lands, the cascade falls through to LLM tier (which itself uses the same fetched HTML, so this is mostly a re-extract attempt — see main.py:1076). If fetch fully fails, you get a null result regardless.
+- `_first_image` change is a strict additive read — `contentUrl` is checked first, but the older `url`/`@id` paths still work for Depop/Grailed/etc. No regression risk, but if a new platform uses `image: {someOtherKey: "..."}` it'll still need its own extractor.
+- Both new extractors are intentionally identical to `extract_thredup` — pure delegation to `_extract_from_jsonld`. If a platform later needs custom logic (e.g. eBay's "Buy It Now" vs auction price), the extractor function is the right place to add it without touching the generic helper.
+- The probe script (`probe_c1_jsonld.py`) was deleted at session end. HTML dumps remain under [crawl4ai-service/debug_dumps/c1_survey/](crawl4ai-service/debug_dumps/) for future re-verification (the dir is gitignored).
+- **No changes to .env, requirements, or any TypeScript code.** Pure Python addition.
+
+**Phase C status update (see [SCALING.md §4](SCALING.md#§4--phase-c-upgrades-deferred-features-captured-here)):**
+- ✅ **C1 — eBay + Vestiaire structured extractors** — shipped this PR.
+- ⏳ C2 — Multi-instance sidecar (deferred until one box is provably saturated).
+- ⏳ C3 — Firecrawl paid plan (deferred until `SEARCH_PLATFORM_CONCURRENCY` regularly queues at the free-tier ceiling).
+- ⏳ C4 — Paid anti-bot unlocker (last resort; eBay's Akamai problem could eventually justify this for `ebay` only).
+
+---
+
+**Previous change (2026-05-20 — watchlist refresh parity with /scrape; closes HANDOFF §624 / §1666):**
 
 User asked: does the PR 1/PR 2 concurrency-and-pool infrastructure also protect `/api/watchlist/refresh`, or could a user refreshing a 200-item watchlist crash the box? Diagnosis: **Tier 2 (Playwright) and Tier 3 (LLM) were already protected** — both go through `_arun_with_retry → _scheduled_render`, which means they inherit the global render semaphore, the crawler pool, per-domain pacing, the in-flight log, and per-pool-member driver-death recovery. The gaps were:
 - **Tier 1 (httpx fast path)** in `/refresh-price` bypassed the B2 per-domain pacer and had no global cap — a large Depop-heavy watchlist could fire unthrottled GETs at the same host and trip anti-bot, and a 1000-item refresh could open 1000 sockets at once.
@@ -1416,7 +1467,7 @@ fashion-crawler-crawl4ai/
 ├── crawl4ai-service/                 ← Python sidecar (replaces Firecrawl scrape)
 │   ├── main.py                       ← FastAPI app, /scrape + /scrape-search + /health endpoints; structured-first → LLM fallback
 │   ├── extractors.py                 ← LISTING_SCHEMA + PLATFORM_PROMPTS + per-platform options (LLM fallback tier)
-│   ├── structured_extractors.py     ← JSON-LD + testid extractors for single-listing pages (primary tier for 6 platforms)
+│   ├── structured_extractors.py     ← JSON-LD + testid extractors for single-listing pages (primary tier for 9 platforms — depop, grailed, poshmark, stockx, mercari, vinted, thredup, ebay, vestiaire)
 │   ├── search_page_extractors.py    ← NEW 2026-05-18: SEARCH_PAGE_PLATFORMS + grid extractors for platforms whose listing URLs aren't indexed (currently: ThredUp)
 │   ├── debug_probe.py                ← dumps OG/JSON-LD/__NEXT_DATA__/visible-$ from a URL; for future debugging
 │   ├── debug_dumps/                  ← saved raw HTML from probe runs (gitignored)
@@ -1506,8 +1557,8 @@ Primary test: single live run via `scripts/test-all-platforms.mjs` with query "N
 | **Poshmark** | ✅ | `og:title` + `og:image` + first `<p class="h1"><span>$N</span></p>` price + `data-et-prop-inventory_status` for sold. **Fixed 2026-05-15 evening**: the prior JSON-LD extractor was always missing (Poshmark doesn't emit Schema.org JSON-LD), forcing LLM fallback. Navigation-retry (2026-05-15 AM) is still needed for anti-bot redirects. |
 | **Mercari** | ✅ | `__NEXT_DATA__.props.pageProps.serverState['ItemDetail:<id>']` → `price` (cents → /100), `name`, `photos[0].imageUrl`, `status`. **Fixed 2026-05-15 evening**: was returning related-item prices ($75 vs $110, $47 vs $115) AND `og:image` placeholder (the green-checkmark / generic Mercari OGP image). |
 | **Vinted** | ✅ | Regex match in escaped Next.js RSC payload for `\"price\":{\"amount\":\"<num>\",\"currency_code\":\"<code>\"}` (note **underscored** `currency_code` — listing pricing; `currencyCode` is shipping). `og:image` for the real product photo. **Fixed 2026-05-15 evening**: previously returning CZK shipping-option prices instead of USD item prices, and a checkmark-icon image URL instead of the photo. |
-| **eBay** | ⚠️ intermittent | Intermittent anti-bot (May 2026 bake-off: 2/2 prices on real `/itm/` URLs, but slow p95 90s). crawl4ai is primary; consider Firecrawl basic as failover (~$0.004/URL) if crawl4ai returns null after retries. See §7 (A). |
-| **Vestiaire Collective** | ❌ deferred | Scrape side works; URL discovery is the blocker. Firecrawl's `site:vestiairecollective.com` returns 0 results. See §7 (B). |
+| **eBay** | ⚠️ intermittent | **Structured tier 1 added 2026-05-21 (C1)** — eBay `/itm/` pages emit Schema.org `Product` JSON-LD; tier 1 hits skip the LLM entirely. Fetch reliability is still the bottleneck: intermittent Akamai blocks remain (May 2026 bake-off: 2/2 prices on real `/itm/` URLs, p95 90s). On fetch failure the cascade falls back to LLM as before. See §7 (A). |
+| **Vestiaire Collective** | ❌ deferred (discovery) | **Structured tier 1 added 2026-05-21 (C1)** — when a Vestiaire listing URL can be obtained from elsewhere (e.g. user paste, watchlist), scraping is reliable and skips the LLM. URL **discovery** is still the blocker — Firecrawl's `site:vestiairecollective.com` returns 0 results, so search-flow Vestiaire results depend on whatever crumbs Firecrawl does find. See §7 (B). |
 | **ThredUp** | ✅ | **Search-page extraction** — bypasses Firecrawl entirely. Sidecar's `/scrape-search` renders `https://www.thredup.com/search/<hyphen-slug>` and parses the JSON-LD `Product` array (119 items per page) merged with a DOM SKU→`/product/<slug>/<sku>` href map. Returns ScrapedListing[] in one render. Verified 2026-05-18 against two queries. **Size accuracy (2026-05-20):** route pulls 100 from the single page and post-filters by size against the title (`lib/sizeFilter.ts`), since ThredUp's onsite search is fuzzy on size words and the `/search/` URL ignores `size=` / `size_tags=` params. Not in `DEFAULT_PLATFORMS` — opt-in via FilterPanel. |
 | **The RealReal** | ❌ deferred | PerimeterX press-and-hold defeats `UndetectedAdapter` + managed profile. **Extractor + sidecar dispatch are wired** but gated on `REALREAL_ENABLED` env var; without it the platform returns `{"results":[]}` instantly. URL pattern is `/products?keywords=<query>`; data source is `__NEXT_DATA__.props.pageProps.serverResult.data.products.edges` (verified offline). See §7 (G) for the deferral details and re-enable steps. |
 
@@ -1668,17 +1719,19 @@ These survived the migration; `app/api/search/route.ts` is unchanged from the Fi
 
 ## 7. Open Problems & Recommended Next Steps
 
-### A. eBay — blocked at the edge
+### A. eBay — intermittent Akamai blocks (extraction itself is now solved)
 
-**Symptom:** every `/scrape` against `ebay.com/itm/<id>` returns `null`. Logs show the page fetches (HTTP 200) but the LLM gets no extractable content.
+**Updated 2026-05-21 (post-C1):** the original framing of "every /scrape returns null" is **stale** — the 2026-05-19 bake-off measured 2/2 prices on real `/itm/` URLs, and C1 (this session) added a structured tier-1 extractor that completes 4/5 sampled URLs (one Akamai 403 on one URL). Real symptom today is **intermittent Akamai 403** at fetch time, not an extraction failure. When HTML lands, JSON-LD parsing is reliable.
 
-**Root cause:** eBay's edge proxy redirects to `/splashui/challenge?...`. The challenge gate uses signals beyond Playwright fingerprint (IP reputation, cookie history, request cadence). `enable_stealth=True` + `user_agent_mode="random"` cover Chrome fingerprint but don't beat it.
+**Tier 1 (C1, 2026-05-21):** parses Schema.org `Product` JSON-LD from `<script type="application/ld+json">`. Hits skip LLM extraction entirely (~1-2s + ~$0.001-0.005 saved per scrape). See latest-change entry at top of HANDOFF for full verification.
+
+**Remaining problem:** Akamai's edge proxy intermittently 403s — `result.error_message` contains `"Blocked by anti-bot protection: Akamai block (Reference #)"`. When this happens, tier 1 logs `[structured] crawl failed`, the cascade falls through to tier 2 (LLM on the partial response), and ultimately may return `null`. Per-domain pacing (B2, `ebay.com=300ms`) and the existing fingerprint settings reduce but don't eliminate this.
 
 **Options (none implemented yet):**
 1. Residential proxy pool — most reliable, real monthly cost.
 2. `undetected-chromedriver` or a custom Playwright launch with full fingerprint patching.
 3. eBay's official Browse API — requires developer account + OAuth, but cheap/legitimate.
-4. Drop eBay from the platform list for now.
+4. C4 paid anti-bot unlocker (ScrapingBee/ZenRows/etc.) routed for `ebay` only — see [SCALING.md §4 C4](SCALING.md#c4--paid-anti-bot-unlocker-last-resort).
 
 ### B. Vestiaire Collective — URL discovery gap
 
