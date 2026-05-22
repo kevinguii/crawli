@@ -41,6 +41,14 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS_PATH = ROOT / "scripts" / "search_bakeoff_results.csv"
 
+# Load .env from project root if python-dotenv is available. Optional — env
+# vars passed inline still work, this is just a convenience for local dev.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
+
 # Same queries the engine bake-off used, so they're already-vetted realistic.
 QUERIES = ["gucci bag", "nike air jordan 1", "levis 501 jeans"]
 
@@ -89,6 +97,9 @@ FIRECRAWL_COST_STANDARD = FIRECRAWL_CREDITS_PER_CALL * FIRECRAWL_PRICE_STANDARD
 SERPER_COST_STARTER = 0.001    # $50/mo → 50K queries
 SERPER_COST_ULTIMATE = 0.0003  # high-volume tier
 
+# Brave: $3-$5 per 1K queries (web endpoint). Free tier is metered $5 credit/mo.
+BRAVE_COST_PER_CALL = 0.003
+
 
 @dataclass
 class Attempt:
@@ -136,20 +147,28 @@ def search_firecrawl(platform: str, query: str) -> Attempt:
 
 
 # ── Provider: Serper ───────────────────────────────────────────────────────
+#
+# Free tier blocks `site:` operator with HTTP 400. We test three query
+# variants so we can see whether the cheaper non-site: forms still return
+# enough listing-shape URLs to be useful:
+#
+#   serper-site      "site:depop.com gucci bag"   (only works on paid plan)
+#   serper-domain    "gucci bag depop.com"        (free-tier-safe)
+#   serper-word      "gucci bag depop"            (free-tier-safe, looser)
+#
+# All three then run through the same LISTING_URL_PATTERNS filter — so the
+# comparison is "after filtering for real listings, how many do you get?"
 
-def search_serper(platform: str, query: str) -> Attempt:
-    a = Attempt(query=query, platform=platform, provider="serper")
+def _serper_call(query_str: str, platform: str, provider_label: str) -> Attempt:
+    a = Attempt(query=query_str, platform=platform, provider=provider_label)
     a.cost_usd = SERPER_COST_STARTER
-    domain = PLATFORM_DOMAINS[platform]
-    site_query = f"site:{domain} {query}"
-
     t0 = time.monotonic()
     try:
         api_key = os.environ["SERPER_API_KEY"]
         resp = httpx.post(
             "https://google.serper.dev/search",
             headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
-            json={"q": site_query, "num": SEARCH_LIMIT},
+            json={"q": query_str, "num": SEARCH_LIMIT},
             timeout=30,
         )
         a.wallclock_ms = int((time.monotonic() - t0) * 1000)
@@ -162,6 +181,69 @@ def search_serper(platform: str, query: str) -> Attempt:
         _record(a, urls)
     except KeyError:
         a.error = "SERPER_API_KEY not set"
+    except Exception as e:  # noqa: BLE001
+        a.error = f"{type(e).__name__}: {str(e)[:160]}"
+        a.wallclock_ms = int((time.monotonic() - t0) * 1000)
+    return a
+
+
+def search_serper_site(platform: str, query: str) -> Attempt:
+    domain = PLATFORM_DOMAINS[platform]
+    a = _serper_call(f"site:{domain} {query}", platform, "serper-site")
+    a.query = query  # store original for cross-provider grouping
+    return a
+
+
+def search_serper_domain(platform: str, query: str) -> Attempt:
+    """Append the full domain as a search term (no operator)."""
+    domain = PLATFORM_DOMAINS[platform]
+    a = _serper_call(f"{query} {domain}", platform, "serper-domain")
+    a.query = query
+    return a
+
+
+def search_serper_word(platform: str, query: str) -> Attempt:
+    """Append the platform name (domain without TLD) as a search term."""
+    domain_word = PLATFORM_DOMAINS[platform].split(".")[0]
+    a = _serper_call(f"{query} {domain_word}", platform, "serper-word")
+    a.query = query
+    return a
+
+
+# ── Provider: Brave Search API ─────────────────────────────────────────────
+#
+# Brave's docs state `site:` is supported on every tier. Free tier (new
+# scheme) is $5 prepaid credit/mo. Endpoint returns web.results[].
+
+def search_brave(platform: str, query: str) -> Attempt:
+    a = Attempt(query=query, platform=platform, provider="brave")
+    a.cost_usd = BRAVE_COST_PER_CALL
+    domain = PLATFORM_DOMAINS[platform]
+    site_query = f"site:{domain} {query}"
+
+    t0 = time.monotonic()
+    try:
+        api_key = os.environ["BRAVE_API_KEY"]
+        resp = httpx.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers={
+                "X-Subscription-Token": api_key,
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+            },
+            params={"q": site_query, "count": SEARCH_LIMIT},
+            timeout=30,
+        )
+        a.wallclock_ms = int((time.monotonic() - t0) * 1000)
+        if resp.status_code != 200:
+            a.error = f"HTTP {resp.status_code}: {resp.text[:160]}"
+            return a
+        data = resp.json()
+        web = (data.get("web") or {}).get("results") or []
+        urls = [item["url"] for item in web if item.get("url")]
+        _record(a, urls)
+    except KeyError:
+        a.error = "BRAVE_API_KEY not set"
     except Exception as e:  # noqa: BLE001
         a.error = f"{type(e).__name__}: {str(e)[:160]}"
         a.wallclock_ms = int((time.monotonic() - t0) * 1000)
@@ -189,14 +271,14 @@ def run() -> list[Attempt]:
     for query in QUERIES:
         for platform in PLATFORMS:
             print(f"\n=== {query!r} / {platform} ===", flush=True)
-            for fn in (search_firecrawl, search_serper):
+            for fn in (search_firecrawl, search_serper_site, search_serper_domain, search_serper_word, search_brave):
                 a = fn(platform, query)
                 rows.append(a)
                 if a.error:
-                    print(f"  [{a.provider:9}] ERROR: {a.error}")
+                    print(f"  [{a.provider:14}] ERROR: {a.error[:90]}")
                 else:
                     print(
-                        f"  [{a.provider:9}] total={a.total_urls:>2}  "
+                        f"  [{a.provider:14}] total={a.total_urls:>2}  "
                         f"listings={a.listing_urls:>2}  unique={a.unique_listing_urls:>2}  "
                         f"{a.wallclock_ms:>5}ms"
                     )
@@ -246,28 +328,51 @@ def print_summary(rows: list[Attempt]) -> None:
             f"{p50} | {p95} | ${total_cost:.4f} |"
         )
 
-    # Per-platform listing-URL counts side by side.
-    print("\n## Listing URLs per platform (sum across all queries)")
-    print("| Platform | Firecrawl | Serper | Δ (Serper − Firecrawl) |")
-    print("|---|---|---|---|")
-    for platform in PLATFORMS:
-        fc_count = sum(r.listing_urls for r in rows if r.provider == "firecrawl" and r.platform == platform)
-        sr_count = sum(r.listing_urls for r in rows if r.provider == "serper" and r.platform == platform)
-        delta = sr_count - fc_count
-        marker = "✅" if delta >= 0 else "⚠️"
-        print(f"| {platform} | {fc_count} | {sr_count} | {delta:+d} {marker} |")
+    providers_in_order = ["firecrawl", "serper-site", "serper-domain", "serper-word", "brave"]
 
-    # Per-query, per-platform deltas for the eyeball check.
-    print("\n## Per-query, per-platform")
-    print("| Query | Platform | Firecrawl listings | Serper listings |")
-    print("|---|---|---|---|")
+    def _listing_count(provider: str, platform: str) -> int:
+        return sum(r.listing_urls for r in rows
+                   if r.provider == provider and r.platform == platform and not r.error)
+
+    # Per-platform listing-URL counts side by side, with delta vs Firecrawl baseline.
+    print("\n## Listing URLs per platform (sum across all queries)")
+    header = "| Platform | " + " | ".join(providers_in_order) + " |"
+    sep = "|" + "|".join(["---"] * (len(providers_in_order) + 1)) + "|"
+    print(header)
+    print(sep)
+    for platform in PLATFORMS:
+        cells = [str(_listing_count(p, platform)) for p in providers_in_order]
+        print(f"| {platform} | " + " | ".join(cells) + " |")
+
+    other_providers = [p for p in providers_in_order if p != "firecrawl"]
+    print("\n## Δ vs Firecrawl baseline (per platform, sum across queries)")
+    print("| Platform | " + " | ".join(other_providers) + " |")
+    print("|" + "|".join(["---"] * (len(other_providers) + 1)) + "|")
+    for platform in PLATFORMS:
+        fc = _listing_count("firecrawl", platform)
+        deltas = []
+        for p in other_providers:
+            d = _listing_count(p, platform) - fc
+            marker = "✅" if d >= 0 else "⚠️"
+            deltas.append(f"{d:+d} {marker}")
+        print(f"| {platform} | " + " | ".join(deltas) + " |")
+
+    # Per-query, per-platform for the eyeball check.
+    print("\n## Per-query, per-platform listing counts")
+    print("| Query | Platform | " + " | ".join(providers_in_order) + " |")
+    print("|" + "|".join(["---"] * (len(providers_in_order) + 2)) + "|")
     for query in QUERIES:
         for platform in PLATFORMS:
-            fc = next((r for r in rows if r.provider == "firecrawl" and r.query == query and r.platform == platform), None)
-            sr = next((r for r in rows if r.provider == "serper" and r.query == query and r.platform == platform), None)
-            fc_n = fc.listing_urls if fc and not fc.error else "ERR" if fc else "-"
-            sr_n = sr.listing_urls if sr and not sr.error else "ERR" if sr else "-"
-            print(f"| {query} | {platform} | {fc_n} | {sr_n} |")
+            cells: list[str] = []
+            for prov in providers_in_order:
+                row = next((r for r in rows if r.provider == prov and r.query == query and r.platform == platform), None)
+                if row is None:
+                    cells.append("-")
+                elif row.error:
+                    cells.append("ERR")
+                else:
+                    cells.append(str(row.listing_urls))
+            print(f"| {query} | {platform} | " + " | ".join(cells) + " |")
 
     # Cost projection.
     fc_total_cost_per_search = FIRECRAWL_COST_HOBBY * len(PLATFORMS)
