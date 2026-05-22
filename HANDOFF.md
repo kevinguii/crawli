@@ -1,8 +1,16 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-21 (C1 shipped: eBay + Vestiaire structured extractors)
+**Last updated:** 2026-05-21 (C1 shipped + background-searches plan parked)
 
-**Latest change (2026-05-21 — Phase C1: eBay + Vestiaire structured extractors shipped):**
+**Latest change (2026-05-21 — Background-searches plan parked in [docs/BACKGROUND_SEARCHES_PLAN.md](docs/BACKGROUND_SEARCHES_PLAN.md)):**
+
+Companion to the C1 work this session. After planning Phase C2/C3/C4 with the user, the conclusion was that **none of those are the next move** — the highest-leverage work today is the background-searches + notifications feature, but it's **deferred until payments, hosting, and search-speed improvements land first**. Locked-in design decisions, full phased plan (Phase 0-4), schema, file list, and gotchas all captured in the new doc. Next session picking this up should start there, not re-derive from the "Concise considerations" sketch below in this file.
+
+No code or schema changes in this parking — just the new planning doc and this index entry. SYSTEM_DESIGN §8 already lists background searches as the #1 next step.
+
+---
+
+**Previous change (2026-05-21 — Phase C1: eBay + Vestiaire structured extractors shipped):**
 
 Ships the first item from [SCALING.md §4](SCALING.md#§4--phase-c-upgrades-deferred-features-captured-here) — the deferred eBay + Vestiaire JSON-LD extractors. Both platforms now skip the LLM extraction call entirely on the happy path (tier 1), falling back to LLM (tier 2) only when fetch fails (e.g. eBay's intermittent Akamai blocks).
 
@@ -92,6 +100,19 @@ These were the exact open questions in §624 and §1666; both now closed.
 ---
 
 ### Concise considerations: background searches + "search done" notification
+
+**Status (as of 2026-05-21):** full implementation plan now lives in [docs/BACKGROUND_SEARCHES_PLAN.md](docs/BACKGROUND_SEARCHES_PLAN.md). All design decisions are locked (opt-in toggle, 409 conflict, Phase 0+1 first PR, in-process worker, Realtime+toast+favicon notification). Schema, file list, gotchas, and Phase 2-4 deferred work all captured there. **Read that file first** when picking this up — the next session should be able to go straight to writing the migration without re-deciding anything.
+
+**Deferred until prerequisites are done (user instruction 2026-05-21):**
+1. **Payments** wired up (Stripe or similar)
+2. **Hosting** on a real VPS (not laptop)
+3. **Search speed** improvements that make the 1-2s Realtime polling jitter a small fraction of total latency
+
+Once those three are done, **this is the first extra feature to ship.** Estimated ~1.5 days for the smallest viable cut (Phase 0 + Phase 1).
+
+The notes below were the original sketch and are now superseded by the plan doc — kept for context.
+
+---
 
 User wants the ability to start a search, leave the tab/page, and be notified when results are ready (while preventing a second search from starting while one is in flight). Capturing the design space here so a future session can pick it up cleanly — **not implemented yet, not in scope for this PR.**
 
