@@ -13,11 +13,10 @@ import FilterPanel, {
   FilterState,
 } from './FilterPanel';
 import { useSearchHistory } from './SearchHistoryProvider';
+import { createClient } from '@/lib/supabase/client';
 
 const PENDING_SEARCH_KEY = 'crawli_pending_search';
 
-// Start with a small reliable set rather than every platform. Keeps the first
-// search fast and avoids the two known-broken platforms (eBay, Vestiaire).
 const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
 
 interface Props {
@@ -35,6 +34,17 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { addSearch } = useSearchHistory();
+
+  // Load user's saved default platforms from their account settings.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const saved = user?.user_metadata?.default_platforms;
+      if (Array.isArray(saved) && saved.length > 0) {
+        setSelected(saved);
+      }
+    });
+  }, []);
 
   // Re-run a search that was queued from /search-history.
   useEffect(() => {
