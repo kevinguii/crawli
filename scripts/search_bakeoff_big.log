@@ -1,0 +1,691 @@
+Running 20 queries × 8 platforms × 2 providers = 320 calls
+
+=== 'gucci marmont bag' / grailed ===
+/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/crawl4ai-service/venv/lib/python3.11/site-packages/firecrawl/v2/types.py:966: UserWarning: Field name "json" in "MonitorPageDiff" shadows an attribute in parent "BaseModel"
+  class MonitorPageDiff(BaseModel):
+/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/crawl4ai-service/venv/lib/python3.11/site-packages/firecrawl/v2/types.py:981: UserWarning: Field name "json" in "MonitorPageSnapshot" shadows an attribute in parent "BaseModel"
+  class MonitorPageSnapshot(BaseModel):
+  [firecrawl     ] total=20  listings=18  unique=16   3049ms
+  [brave         ] total=20  listings=13  unique=13    608ms
+
+=== 'gucci marmont bag' / depop ===
+  [firecrawl     ] total=20  listings=17  unique=17   1758ms
+  [brave         ] total=20  listings=10  unique=10    505ms
+
+=== 'gucci marmont bag' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   1731ms
+  [brave         ] total=20  listings=17  unique=17    607ms
+
+=== 'gucci marmont bag' / mercari ===
+  [firecrawl     ] total=20  listings=17  unique=15   2674ms
+  [brave         ] total=20  listings= 1  unique= 1    761ms
+
+=== 'gucci marmont bag' / vinted ===
+  [firecrawl     ] total=10  listings= 4  unique= 4   1472ms
+  [brave         ] total=20  listings=13  unique=13    522ms
+
+=== 'gucci marmont bag' / stockx ===
+  [firecrawl     ] total=20  listings=17  unique=17   1739ms
+  [brave         ] total=20  listings=20  unique=20    510ms
+
+=== 'gucci marmont bag' / ebay ===
+  [firecrawl     ] total=20  listings=14  unique=14    509ms
+  [brave         ] total=18  listings= 0  unique= 0    853ms
+
+=== 'gucci marmont bag' / vestiaire ===
+  [firecrawl     ] total=20  listings=16  unique=16    399ms
+  [brave         ] total=20  listings=14  unique=14    482ms
+
+=== 'louis vuitton neverfull' / grailed ===
+  [firecrawl     ] total=20  listings=19  unique=19   2665ms
+  [brave         ] total=20  listings=16  unique=16    503ms
+
+=== 'louis vuitton neverfull' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=17   2259ms
+  [brave         ] total=20  listings=17  unique=17    511ms
+
+=== 'louis vuitton neverfull' / poshmark ===
+  [firecrawl     ] total=20  listings=19  unique=19   1938ms
+  [brave         ] total=20  listings=13  unique=13    519ms
+
+=== 'louis vuitton neverfull' / mercari ===
+  [firecrawl     ] total=20  listings=15  unique=15   2174ms
+  [brave         ] total=20  listings= 7  unique= 7    812ms
+
+=== 'louis vuitton neverfull' / vinted ===
+  [firecrawl     ] total=12  listings= 4  unique= 4   1529ms
+  [brave         ] total=20  listings=18  unique=18    462ms
+
+=== 'louis vuitton neverfull' / stockx ===
+  [firecrawl     ] total=20  listings=16  unique=16   2487ms
+  [brave         ] total=20  listings=18  unique=18    457ms
+
+=== 'louis vuitton neverfull' / ebay ===
+  [firecrawl     ] total=20  listings=14  unique=14   1651ms
+  [brave         ] total=18  listings= 4  unique= 4    768ms
+
+=== 'louis vuitton neverfull' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=19   2538ms
+  [brave         ] total=18  listings=12  unique=12    433ms
+
+=== 'chanel flap bag' / grailed ===
+  [firecrawl     ] total=20  listings=18  unique=15   2292ms
+  [brave         ] total=20  listings=17  unique=17    543ms
+
+=== 'chanel flap bag' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=15   1740ms
+  [brave         ] total=20  listings= 9  unique= 9    510ms
+
+=== 'chanel flap bag' / poshmark ===
+  [firecrawl     ] total=20  listings=19  unique=19   2353ms
+  [brave         ] total=20  listings=10  unique=10    615ms
+
+=== 'chanel flap bag' / mercari ===
+  [firecrawl     ] total=20  listings=12  unique=10   1821ms
+  [brave         ] total=20  listings= 2  unique= 2    839ms
+
+=== 'chanel flap bag' / vinted ===
+  [firecrawl     ] total=14  listings= 4  unique= 4   2604ms
+  [brave         ] total=20  listings=14  unique=14    558ms
+
+=== 'chanel flap bag' / stockx ===
+  [firecrawl     ] total=20  listings=14  unique=14   1844ms
+  [brave         ] total=20  listings=18  unique=18    507ms
+
+=== 'chanel flap bag' / ebay ===
+  [firecrawl     ] total=20  listings= 9  unique= 9   1891ms
+  [brave         ] total=18  listings= 1  unique= 1    801ms
+
+=== 'chanel flap bag' / vestiaire ===
+  [firecrawl     ] total=20  listings=17  unique=17   2213ms
+  [brave         ] total=20  listings= 5  unique= 5    511ms
+
+=== 'nike air force 1' / grailed ===
+  [firecrawl     ] total=20  listings= 1  unique= 1   2053ms
+  [brave         ] total=20  listings= 6  unique= 6    505ms
+
+=== 'nike air force 1' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=16   1951ms
+  [brave         ] total=20  listings=14  unique=14    446ms
+
+=== 'nike air force 1' / poshmark ===
+  [firecrawl     ] total=20  listings=19  unique=19   1938ms
+  [brave         ] total=20  listings=11  unique=11    579ms
+
+=== 'nike air force 1' / mercari ===
+  [firecrawl     ] total=20  listings=19  unique=17   2364ms
+  [brave         ] total=20  listings= 6  unique= 6    748ms
+
+=== 'nike air force 1' / vinted ===
+  [firecrawl     ] total=20  listings=17  unique=17   2303ms
+  [brave         ] total=20  listings=20  unique=20    509ms
+
+=== 'nike air force 1' / stockx ===
+  [firecrawl     ] total=20  listings=14  unique=14   2044ms
+  [brave         ] total=20  listings=17  unique=17    618ms
+
+=== 'nike air force 1' / ebay ===
+  [firecrawl     ] total=20  listings= 0  unique= 0   2150ms
+  [brave         ] total=19  listings= 0  unique= 0    820ms
+
+=== 'nike air force 1' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=19   2761ms
+  [brave         ] total=18  listings= 9  unique= 9    509ms
+
+=== 'jordan 4' / grailed ===
+  [firecrawl     ] total=20  listings=14  unique=14   2765ms
+  [brave         ] total=20  listings= 9  unique= 9    509ms
+
+=== 'jordan 4' / depop ===
+  [firecrawl     ] total=20  listings=14  unique=13   1991ms
+  [brave         ] total=20  listings=13  unique=13    465ms
+
+=== 'jordan 4' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   1959ms
+  [brave         ] total=20  listings=13  unique=13    541ms
+
+=== 'jordan 4' / mercari ===
+  [firecrawl     ] total=20  listings=13  unique=13   9178ms
+  [brave         ] total=20  listings=11  unique=11    725ms
+
+=== 'jordan 4' / vinted ===
+  [firecrawl     ] total=20  listings=18  unique=18   2342ms
+  [brave         ] total=20  listings=20  unique=20    504ms
+
+=== 'jordan 4' / stockx ===
+  [firecrawl     ] total=20  listings=14  unique=13   1664ms
+  [brave         ] total=20  listings=19  unique=19    591ms
+
+=== 'jordan 4' / ebay ===
+  [firecrawl     ] total=20  listings= 5  unique= 5   3883ms
+  [brave         ] total=20  listings= 0  unique= 0    742ms
+
+=== 'jordan 4' / vestiaire ===
+  [firecrawl     ] total=20  listings=17  unique=17   2226ms
+  [brave         ] total=20  listings=16  unique=16    512ms
+
+=== 'adidas samba' / grailed ===
+  [firecrawl     ] total=20  listings=17  unique=15   4608ms
+  [brave         ] total=20  listings=14  unique=14    510ms
+
+=== 'adidas samba' / depop ===
+  [firecrawl     ] total=20  listings=19  unique=19   1842ms
+  [brave         ] total=20  listings=19  unique=19    448ms
+
+=== 'adidas samba' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   1802ms
+  [brave         ] total=20  listings=12  unique=12    488ms
+
+=== 'adidas samba' / mercari ===
+  [firecrawl     ] total=20  listings=18  unique=17   2220ms
+  [brave         ] total=20  listings=10  unique=10    611ms
+
+=== 'adidas samba' / vinted ===
+  [firecrawl     ] total=20  listings= 9  unique= 9   1794ms
+  [brave         ] total=20  listings=16  unique=16    511ms
+
+=== 'adidas samba' / stockx ===
+  [firecrawl     ] total=20  listings=18  unique=17   2153ms
+  [brave         ] total=20  listings=18  unique=18    509ms
+
+=== 'adidas samba' / ebay ===
+  [firecrawl     ] total=20  listings= 8  unique= 8   2161ms
+  [brave         ] total=17  listings= 2  unique= 2    725ms
+
+=== 'adidas samba' / vestiaire ===
+  [firecrawl     ] total=20  listings=18  unique=18   4066ms
+  [brave         ] total=14  listings= 8  unique= 8    509ms
+
+=== 'yeezy 350' / grailed ===
+  [firecrawl     ] total=20  listings=11  unique=11   2049ms
+  [brave         ] total=20  listings= 0  unique= 0    509ms
+
+=== 'yeezy 350' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=16   2150ms
+  [brave         ] total=20  listings=13  unique=13    436ms
+
+=== 'yeezy 350' / poshmark ===
+  [firecrawl     ] total=20  listings=17  unique=17   2331ms
+  [brave         ] total=20  listings= 9  unique= 9    510ms
+
+=== 'yeezy 350' / mercari ===
+  [firecrawl     ] total=20  listings=14  unique=14   7476ms
+  [brave         ] total=20  listings= 7  unique= 7    838ms
+
+=== 'yeezy 350' / vinted ===
+  [firecrawl     ] total=14  listings=12  unique=12   2202ms
+  [brave         ] total=20  listings=18  unique=18    511ms
+
+=== 'yeezy 350' / stockx ===
+  [firecrawl     ] total=20  listings=15  unique=15   2233ms
+  [brave         ] total=20  listings=19  unique=19    527ms
+
+=== 'yeezy 350' / ebay ===
+  [firecrawl     ] total=20  listings= 7  unique= 6   2357ms
+  [brave         ] total=18  listings= 0  unique= 0    656ms
+
+=== 'yeezy 350' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=18   1674ms
+  [brave         ] total=20  listings=18  unique=18    453ms
+
+=== 'new balance 990' / grailed ===
+  [firecrawl     ] total=20  listings=13  unique=12   1624ms
+  [brave         ] total=20  listings= 5  unique= 5    507ms
+
+=== 'new balance 990' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=18   2478ms
+  [brave         ] total=20  listings=17  unique=17    483ms
+
+=== 'new balance 990' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   2797ms
+  [brave         ] total=20  listings=15  unique=15    480ms
+
+=== 'new balance 990' / mercari ===
+  [firecrawl     ] total=20  listings=15  unique=14   2663ms
+  [brave         ] total=20  listings= 7  unique= 7    610ms
+
+=== 'new balance 990' / vinted ===
+  [firecrawl     ] total= 8  listings= 3  unique= 3   1932ms
+  [brave         ] total=20  listings=12  unique=12    542ms
+
+=== 'new balance 990' / stockx ===
+  [firecrawl     ] total=20  listings=11  unique=11   4476ms
+  [brave         ] total=20  listings=13  unique=13    510ms
+
+=== 'new balance 990' / ebay ===
+  [firecrawl     ] total=20  listings= 8  unique= 7   2558ms
+  [brave         ] total=19  listings= 0  unique= 0    738ms
+
+=== 'new balance 990' / vestiaire ===
+  [firecrawl     ] total=20  listings=17  unique=17   1675ms
+  [brave         ] total=17  listings=14  unique=14    545ms
+
+=== 'levis 501' / grailed ===
+  [firecrawl     ] total=20  listings=17  unique=17   2025ms
+  [brave         ] total=20  listings= 4  unique= 4    532ms
+
+=== 'levis 501' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=17   2768ms
+  [brave         ] total=20  listings=17  unique=17    509ms
+
+=== 'levis 501' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   3792ms
+  [brave         ] total=20  listings=12  unique=12    539ms
+
+=== 'levis 501' / mercari ===
+  [firecrawl     ] total=20  listings=18  unique=17   2025ms
+  [brave         ] total=20  listings= 7  unique= 7    692ms
+
+=== 'levis 501' / vinted ===
+  [firecrawl     ] total=20  listings=14  unique=14   1949ms
+  [brave         ] total=20  listings=20  unique=20    510ms
+
+=== 'levis 501' / stockx ===
+  [firecrawl     ] total=20  listings=16  unique=16   2162ms
+  [brave         ] total=20  listings=19  unique=19    600ms
+
+=== 'levis 501' / ebay ===
+  [firecrawl     ] total=20  listings=14  unique=14   2789ms
+  [brave         ] total=20  listings= 4  unique= 4    924ms
+
+=== 'levis 501' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=19   3133ms
+  [brave         ] total=20  listings=19  unique=19    508ms
+
+=== 'carhartt double knee' / grailed ===
+  [firecrawl     ] total=20  listings=16  unique=16   1949ms
+  [brave         ] total=20  listings= 9  unique= 9    495ms
+
+=== 'carhartt double knee' / depop ===
+  [firecrawl     ] total=20  listings=19  unique=18   2979ms
+  [brave         ] total=20  listings=17  unique=17    513ms
+
+=== 'carhartt double knee' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   2662ms
+  [brave         ] total=20  listings=18  unique=18    611ms
+
+=== 'carhartt double knee' / mercari ===
+  [firecrawl     ] total=20  listings=20  unique=20   1845ms
+  [brave         ] total=20  listings=10  unique=10    734ms
+
+=== 'carhartt double knee' / vinted ===
+  [firecrawl     ] total=17  listings= 8  unique= 8   2725ms
+  [brave         ] total=20  listings=14  unique=14    554ms
+
+=== 'carhartt double knee' / stockx ===
+  [firecrawl     ] total=20  listings=20  unique=19   1872ms
+  [brave         ] total=20  listings=18  unique=18    516ms
+
+=== 'carhartt double knee' / ebay ===
+  [firecrawl     ] total=20  listings=13  unique=12   2056ms
+  [brave         ] total=20  listings= 8  unique= 8    768ms
+
+=== 'carhartt double knee' / vestiaire ===
+  [firecrawl     ] total=20  listings=20  unique=20   2451ms
+  [brave         ] total=20  listings= 4  unique= 4    578ms
+
+=== 'north face nuptse' / grailed ===
+  [firecrawl     ] total=20  listings=16  unique=16   2968ms
+  [brave         ] total=20  listings= 6  unique= 6    510ms
+
+=== 'north face nuptse' / depop ===
+  [firecrawl     ] total=20  listings=17  unique=17   2052ms
+  [brave         ] total=20  listings=15  unique=15    508ms
+
+=== 'north face nuptse' / poshmark ===
+  [firecrawl     ] total=20  listings=17  unique=17   1843ms
+  [brave         ] total=20  listings=13  unique=13    615ms
+
+=== 'north face nuptse' / mercari ===
+  [firecrawl     ] total=20  listings=17  unique=16   2754ms
+  [brave         ] total=20  listings= 8  unique= 8    737ms
+
+=== 'north face nuptse' / vinted ===
+  [firecrawl     ] total=20  listings= 9  unique= 9   1504ms
+  [brave         ] total=20  listings=20  unique=20    466ms
+
+=== 'north face nuptse' / stockx ===
+  [firecrawl     ] total=20  listings=18  unique=18   1900ms
+  [brave         ] total=20  listings=19  unique=19    604ms
+
+=== 'north face nuptse' / ebay ===
+  [firecrawl     ] total=20  listings=16  unique=16   2086ms
+  [brave         ] total=20  listings= 2  unique= 2    920ms
+
+=== 'north face nuptse' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=19   1693ms
+  [brave         ] total=20  listings= 3  unique= 3    509ms
+
+=== 'patagonia fleece' / grailed ===
+  [firecrawl     ] total=20  listings=16  unique=15   2053ms
+  [brave         ] total=20  listings= 6  unique= 6    502ms
+
+=== 'patagonia fleece' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=18   5638ms
+  [brave         ] total=20  listings=17  unique=17    507ms
+
+=== 'patagonia fleece' / poshmark ===
+  [firecrawl     ] total=20  listings=19  unique=19   2049ms
+  [brave         ] total=20  listings=10  unique=10    505ms
+
+=== 'patagonia fleece' / mercari ===
+  [firecrawl     ] total=20  listings=10  unique=10   3363ms
+  [brave         ] total=20  listings= 2  unique= 2    768ms
+
+=== 'patagonia fleece' / vinted ===
+  [firecrawl     ] total=20  listings=11  unique=11   1931ms
+  [brave         ] total=20  listings=13  unique=13    537ms
+
+=== 'patagonia fleece' / stockx ===
+  [firecrawl     ] total=20  listings=13  unique=13   2603ms
+  [brave         ] total=16  listings= 6  unique= 6    384ms
+
+=== 'patagonia fleece' / ebay ===
+  [firecrawl     ] total=20  listings= 4  unique= 4   2431ms
+  [brave         ] total=20  listings= 0  unique= 0    887ms
+
+=== 'patagonia fleece' / vestiaire ===
+  [firecrawl     ] total=20  listings=20  unique=20   2438ms
+  [brave         ] total=20  listings= 3  unique= 3    497ms
+
+=== 'stussy hoodie' / grailed ===
+  [firecrawl     ] total=20  listings=15  unique=13   2009ms
+  [brave         ] total=20  listings= 1  unique= 1    554ms
+
+=== 'stussy hoodie' / depop ===
+  [firecrawl     ] total=20  listings=17  unique=14   2462ms
+  [brave         ] total=19  listings=12  unique=12    479ms
+
+=== 'stussy hoodie' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   2584ms
+  [brave         ] total=20  listings=17  unique=17    614ms
+
+=== 'stussy hoodie' / mercari ===
+  [firecrawl     ] total=20  listings=11  unique=11   2661ms
+  [brave         ] total=20  listings= 6  unique= 6    816ms
+
+=== 'stussy hoodie' / vinted ===
+  [firecrawl     ] total=13  listings= 7  unique= 7   2543ms
+  [brave         ] total=20  listings=18  unique=18    470ms
+
+=== 'stussy hoodie' / stockx ===
+  [firecrawl     ] total=20  listings=17  unique=16   1784ms
+  [brave         ] total=20  listings=17  unique=17    501ms
+
+=== 'stussy hoodie' / ebay ===
+  [firecrawl     ] total=20  listings=12  unique=12   1938ms
+  [brave         ] total=20  listings= 3  unique= 3    900ms
+
+=== 'stussy hoodie' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=18   2747ms
+  [brave         ] total=19  listings= 4  unique= 4    469ms
+
+=== 'supreme tee' / grailed ===
+  [firecrawl     ] total=20  listings=10  unique=10   1907ms
+  [brave         ] total=20  listings= 7  unique= 7    515ms
+
+=== 'supreme tee' / depop ===
+  [firecrawl     ] total=20  listings=17  unique=15   1736ms
+  [brave         ] total=20  listings=11  unique=11    505ms
+
+=== 'supreme tee' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   1739ms
+  [brave         ] total=20  listings=16  unique=16    612ms
+
+=== 'supreme tee' / mercari ===
+  [firecrawl     ] total=20  listings= 8  unique= 8   1946ms
+  [brave         ] total=20  listings= 0  unique= 0   1349ms
+
+=== 'supreme tee' / vinted ===
+  [firecrawl     ] total=20  listings=14  unique=14   2016ms
+  [brave         ] total=20  listings=18  unique=18    512ms
+
+=== 'supreme tee' / stockx ===
+  [firecrawl     ] total=20  listings=11  unique=10   1739ms
+  [brave         ] total=20  listings=17  unique=17    613ms
+
+=== 'supreme tee' / ebay ===
+  [firecrawl     ] total=20  listings=15  unique=12   2653ms
+  [brave         ] total=19  listings= 7  unique= 7    708ms
+
+=== 'supreme tee' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=19   2057ms
+  [brave         ] total=18  listings= 8  unique= 8    513ms
+
+=== 'polo ralph lauren rugby' / grailed ===
+  [firecrawl     ] total=20  listings=16  unique=16   2869ms
+  [brave         ] total=20  listings=13  unique=13    607ms
+
+=== 'polo ralph lauren rugby' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=18   2570ms
+  [brave         ] total=20  listings=17  unique=17    501ms
+
+=== 'polo ralph lauren rugby' / poshmark ===
+  [firecrawl     ] total=20  listings=18  unique=18   1971ms
+  [brave         ] total=20  listings=15  unique=15    522ms
+
+=== 'polo ralph lauren rugby' / mercari ===
+  [firecrawl     ] total=20  listings= 4  unique= 3   2112ms
+  [brave         ] total=20  listings= 2  unique= 2    669ms
+
+=== 'polo ralph lauren rugby' / vinted ===
+  [firecrawl     ] total=20  listings= 5  unique= 5   1780ms
+  [brave         ] total=20  listings=19  unique=19    613ms
+
+=== 'polo ralph lauren rugby' / stockx ===
+  [firecrawl     ] total=20  listings=15  unique=15   2143ms
+  [brave         ] total=20  listings=11  unique=11    480ms
+
+=== 'polo ralph lauren rugby' / ebay ===
+  [firecrawl     ] total=20  listings=15  unique=13   1882ms
+  [brave         ] total=20  listings=12  unique=12    739ms
+
+=== 'polo ralph lauren rugby' / vestiaire ===
+  [firecrawl     ] total=20  listings=19  unique=17   1917ms
+  [brave         ] total=18  listings=10  unique=10    461ms
+
+=== 'uniqlo down jacket' / grailed ===
+  [firecrawl     ] total=20  listings=19  unique=17   1996ms
+  [brave         ] total=20  listings= 8  unique= 8    496ms
+
+=== 'uniqlo down jacket' / depop ===
+  [firecrawl     ] total=20  listings=17  unique=14   1853ms
+  [brave         ] total=20  listings=14  unique=14    510ms
+
+=== 'uniqlo down jacket' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   1946ms
+  [brave         ] total=18  listings=11  unique=11    719ms
+
+=== 'uniqlo down jacket' / mercari ===
+  [firecrawl     ] total=20  listings= 9  unique= 9   1637ms
+  [brave         ] total=20  listings= 0  unique= 0    797ms
+
+=== 'uniqlo down jacket' / vinted ===
+  [firecrawl     ] total= 8  listings= 2  unique= 2   1741ms
+  [brave         ] total=20  listings=18  unique=18    509ms
+
+=== 'uniqlo down jacket' / stockx ===
+  [firecrawl     ] total=20  listings=18  unique=17   1853ms
+  [brave         ] total=20  listings=15  unique=15    603ms
+
+=== 'uniqlo down jacket' / ebay ===
+  [firecrawl     ] total=20  listings=18  unique=16   2078ms
+  [brave         ] total=19  listings= 9  unique= 9    810ms
+
+=== 'uniqlo down jacket' / vestiaire ===
+  [firecrawl     ] total=10  listings=10  unique=10   1892ms
+  [brave         ] total=20  listings= 1  unique= 1    532ms
+
+=== 'champion reverse weave' / grailed ===
+  [firecrawl     ] total=20  listings=17  unique=14   1746ms
+  [brave         ] total=20  listings= 8  unique= 8    609ms
+
+=== 'champion reverse weave' / depop ===
+  [firecrawl     ] total=20  listings=18  unique=17   2358ms
+  [brave         ] total=20  listings=17  unique=17    431ms
+
+=== 'champion reverse weave' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   2143ms
+  [brave         ] total=20  listings=18  unique=18    822ms
+
+=== 'champion reverse weave' / mercari ===
+  [firecrawl     ] total=20  listings=14  unique=14   1528ms
+  [brave         ] total=20  listings= 8  unique= 8    545ms
+
+=== 'champion reverse weave' / vinted ===
+  [firecrawl     ] total= 9  listings= 4  unique= 4   1636ms
+  [brave         ] total=20  listings=17  unique=17    532ms
+
+=== 'champion reverse weave' / stockx ===
+  [firecrawl     ] total=20  listings=19  unique=19   2886ms
+  [brave         ] total=20  listings=12  unique=12    525ms
+
+=== 'champion reverse weave' / ebay ===
+  [firecrawl     ] total=20  listings=14  unique=14   2359ms
+  [brave         ] total=19  listings= 5  unique= 5    837ms
+
+=== 'champion reverse weave' / vestiaire ===
+  [firecrawl     ] total=20  listings=20  unique=19   1823ms
+  [brave         ] total=20  listings= 1  unique= 1    487ms
+
+=== 'vintage denim jacket' / grailed ===
+  [firecrawl     ] total=20  listings=11  unique=10   1742ms
+  [brave         ] total=20  listings= 9  unique= 9    493ms
+
+=== 'vintage denim jacket' / depop ===
+  [firecrawl     ] total=20  listings=19  unique=16   1686ms
+  [brave         ] total=20  listings=16  unique=16    584ms
+
+=== 'vintage denim jacket' / poshmark ===
+  [firecrawl     ] total=20  listings=17  unique=17   2047ms
+  [brave         ] total=20  listings=12  unique=12    558ms
+
+=== 'vintage denim jacket' / mercari ===
+  [firecrawl     ] total=20  listings= 1  unique= 1   1901ms
+  [brave         ] total=20  listings= 3  unique= 3    752ms
+
+=== 'vintage denim jacket' / vinted ===
+  [firecrawl     ] total=20  listings=16  unique=16   2712ms
+  [brave         ] total=20  listings=17  unique=17    479ms
+
+=== 'vintage denim jacket' / stockx ===
+  [firecrawl     ] total=20  listings=18  unique=17   1669ms
+  [brave         ] total=20  listings=16  unique=16    613ms
+
+=== 'vintage denim jacket' / ebay ===
+  [firecrawl     ] total=20  listings=13  unique=13   2354ms
+  [brave         ] total=19  listings= 3  unique= 3    843ms
+
+=== 'vintage denim jacket' / vestiaire ===
+  [firecrawl     ] total=20  listings=18  unique=18   2126ms
+  [brave         ] total=19  listings= 3  unique= 3    479ms
+
+=== 'rick owens' / grailed ===
+  [firecrawl     ] total=20  listings= 0  unique= 0   2749ms
+  [brave         ] total=20  listings= 4  unique= 4    549ms
+
+=== 'rick owens' / depop ===
+  [firecrawl     ] total=20  listings=10  unique= 8   3176ms
+  [brave         ] total=19  listings= 4  unique= 4    431ms
+
+=== 'rick owens' / poshmark ===
+  [firecrawl     ] total=20  listings=19  unique=19   1616ms
+  [brave         ] total=20  listings=13  unique=13    508ms
+
+=== 'rick owens' / mercari ===
+  [firecrawl     ] total=20  listings= 9  unique= 9   2241ms
+  [brave         ] total=20  listings= 1  unique= 1    745ms
+
+=== 'rick owens' / vinted ===
+  [firecrawl     ] total=20  listings=10  unique=10   1825ms
+  [brave         ] total=20  listings= 7  unique= 7    504ms
+
+=== 'rick owens' / stockx ===
+  [firecrawl     ] total=20  listings=16  unique=16   1569ms
+  [brave         ] total=19  listings=10  unique=10    477ms
+
+=== 'rick owens' / ebay ===
+  [firecrawl     ] total=20  listings= 8  unique= 7   1844ms
+  [brave         ] total=20  listings= 0  unique= 0    843ms
+
+=== 'rick owens' / vestiaire ===
+  [firecrawl     ] total=20  listings=14  unique=14   2509ms
+  [brave         ] total=19  listings= 0  unique= 0    526ms
+
+=== 'comme des garcons play' / grailed ===
+  [firecrawl     ] total=20  listings= 8  unique= 8   2151ms
+  [brave         ] total=20  listings=10  unique=10    611ms
+
+=== 'comme des garcons play' / depop ===
+  [firecrawl     ] total=20  listings=16  unique=14   2320ms
+  [brave         ] total=20  listings=17  unique=17    472ms
+
+=== 'comme des garcons play' / poshmark ===
+  [firecrawl     ] total=20  listings=20  unique=20   1716ms
+  [brave         ] total=20  listings= 9  unique= 9    493ms
+
+=== 'comme des garcons play' / mercari ===
+  [firecrawl     ] total=20  listings=12  unique=10   2060ms
+  [brave         ] total=20  listings= 0  unique= 0    685ms
+
+=== 'comme des garcons play' / vinted ===
+  [firecrawl     ] total=15  listings=10  unique=10   1498ms
+  [brave         ] total=20  listings= 9  unique= 9    548ms
+
+=== 'comme des garcons play' / stockx ===
+  [firecrawl     ] total=20  listings=15  unique=14   2256ms
+  [brave         ] total=20  listings=14  unique=14    606ms
+
+=== 'comme des garcons play' / ebay ===
+  [firecrawl     ] total=20  listings=19  unique=17   5050ms
+  [brave         ] total=19  listings= 8  unique= 8    771ms
+
+=== 'comme des garcons play' / vestiaire ===
+  [firecrawl     ] total=20  listings=17  unique=17   2466ms
+  [brave         ] total=20  listings=11  unique=11    453ms
+
+Wrote /Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/scripts/search_bakeoff_results.csv (320 rows)
+
+## Overall
+| Provider | Calls | Errors | Total URLs | Listing URLs | Unique Listings | p50 ms | p95 ms | $ total (one run) |
+|---|---|---|---|---|---|---|---|---|
+| firecrawl | 160 | 0 | 3110 | 2324 | 2241 | 2078 | 3883 | $2.5600 |
+| brave | 160 | 0 | 3153 | 1681 | 1681 | 527 | 843 | $0.4800 |
+
+## Listing URLs per platform (sum across all queries)
+| Platform | firecrawl | brave |
+|---|---|---|
+| grailed | 272 | 165 |
+| depop | 344 | 286 |
+| poshmark | 374 | 264 |
+| mercari | 256 | 98 |
+| vinted | 181 | 321 |
+| stockx | 315 | 316 |
+| ebay | 226 | 68 |
+| vestiaire | 356 | 163 |
+
+## Δ vs Firecrawl baseline (per platform, sum across queries)
+| Platform | brave |
+|---|---|
+| grailed | -107 ⚠️ |
+| depop | -58 ⚠️ |
+| poshmark | -110 ⚠️ |
+| mercari | -158 ⚠️ |
+| vinted | +140 ✅ |
+| stockx | +1 ✅ |
+| ebay | -158 ⚠️ |
+| vestiaire | -193 ⚠️ |
+
+## Per-query, per-platform listing counts
+| Query | Platform | firecrawl | brave |
+|---|---|---|---|
+Traceback (most recent call last):
+  File "/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/scripts/search_bakeoff.py", line 531, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/scripts/search_bakeoff.py", line 526, in main
+    print_summary(rows, queries)
+  File "/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/scripts/search_bakeoff.py", line 404, in print_summary
+    for query in QUERIES:
+                 ^^^^^^^
+NameError: name 'QUERIES' is not defined

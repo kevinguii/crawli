@@ -26,6 +26,7 @@ Pricing (kept in sync with docs/FIRECRAWL_PRICING.md and Serper public pricing):
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import os
@@ -49,8 +50,42 @@ try:
 except ImportError:
     pass
 
-# Same queries the engine bake-off used, so they're already-vetted realistic.
-QUERIES = ["gucci bag", "nike air jordan 1", "levis 501 jeans"]
+# Small default set — quick smoke run.
+QUERIES_SMALL = ["gucci bag", "nike air jordan 1", "levis 501 jeans"]
+
+# Big set — 20 diverse fashion-resale queries spanning luxury bags, sneakers
+# (iconic + trending), denim, workwear, outdoor, streetwear, basics, designer.
+# Used when --big is passed. Picked to mirror real Crawli traffic mix.
+QUERIES_BIG = [
+    # Luxury bags
+    "gucci marmont bag",
+    "louis vuitton neverfull",
+    "chanel flap bag",
+    # Sneakers — mix iconic + trending
+    "nike air force 1",
+    "jordan 4",
+    "adidas samba",
+    "yeezy 350",
+    "new balance 990",
+    # Denim / workwear
+    "levis 501",
+    "carhartt double knee",
+    # Outdoor
+    "north face nuptse",
+    "patagonia fleece",
+    # Streetwear
+    "stussy hoodie",
+    "supreme tee",
+    # Preppy / basics
+    "polo ralph lauren rugby",
+    "uniqlo down jacket",
+    "champion reverse weave",
+    # Vintage qualifier
+    "vintage denim jacket",
+    # Designer
+    "rick owens",
+    "comme des garcons play",
+]
 
 # 8 Firecrawl-search platforms (ThredUp/RealReal use the sidecar's /scrape-search instead).
 PLATFORMS = [
@@ -266,12 +301,16 @@ def _record(a: Attempt, urls: list[str]) -> None:
 
 # ── Runner ─────────────────────────────────────────────────────────────────
 
-def run() -> list[Attempt]:
+SMALL_PROVIDERS = (search_firecrawl, search_serper_site, search_serper_domain, search_serper_word, search_brave)
+BIG_PROVIDERS = (search_firecrawl, search_brave)  # only the two viable candidates
+
+
+def run(queries: list[str], providers: tuple) -> list[Attempt]:
     rows: list[Attempt] = []
-    for query in QUERIES:
+    for query in queries:
         for platform in PLATFORMS:
             print(f"\n=== {query!r} / {platform} ===", flush=True)
-            for fn in (search_firecrawl, search_serper_site, search_serper_domain, search_serper_word, search_brave):
+            for fn in providers:
                 a = fn(platform, query)
                 rows.append(a)
                 if a.error:
@@ -305,7 +344,7 @@ def write_csv(rows: list[Attempt]) -> None:
     print(f"\nWrote {RESULTS_PATH} ({len(rows)} rows)")
 
 
-def print_summary(rows: list[Attempt]) -> None:
+def print_summary(rows: list[Attempt], queries: list[str]) -> None:
     by_provider: dict[str, list[Attempt]] = {}
     for r in rows:
         by_provider.setdefault(r.provider, []).append(r)
@@ -328,7 +367,8 @@ def print_summary(rows: list[Attempt]) -> None:
             f"{p50} | {p95} | ${total_cost:.4f} |"
         )
 
-    providers_in_order = ["firecrawl", "serper-site", "serper-domain", "serper-word", "brave"]
+    all_known_providers = ["firecrawl", "serper-site", "serper-domain", "serper-word", "brave"]
+    providers_in_order = [p for p in all_known_providers if p in by_provider]
 
     def _listing_count(provider: str, platform: str) -> int:
         return sum(r.listing_urls for r in rows
@@ -361,7 +401,7 @@ def print_summary(rows: list[Attempt]) -> None:
     print("\n## Per-query, per-platform listing counts")
     print("| Query | Platform | " + " | ".join(providers_in_order) + " |")
     print("|" + "|".join(["---"] * (len(providers_in_order) + 2)) + "|")
-    for query in QUERIES:
+    for query in queries:
         for platform in PLATFORMS:
             cells: list[str] = []
             for prov in providers_in_order:
@@ -377,25 +417,113 @@ def print_summary(rows: list[Attempt]) -> None:
     # Cost projection.
     fc_total_cost_per_search = FIRECRAWL_COST_HOBBY * len(PLATFORMS)
     sr_total_cost_per_search = SERPER_COST_STARTER * len(PLATFORMS)
+    brave_total_cost_per_search = BRAVE_COST_PER_CALL * len(PLATFORMS)
     print("\n## Cost projection (per full user search, 8 platforms)")
     print(f"- Firecrawl Hobby:     ${fc_total_cost_per_search:.4f}")
     print(f"- Firecrawl Standard:  ${FIRECRAWL_COST_STANDARD * len(PLATFORMS):.4f}")
     print(f"- Serper Starter:      ${sr_total_cost_per_search:.4f}  "
           f"({fc_total_cost_per_search / sr_total_cost_per_search:.1f}× cheaper than Hobby)")
     print(f"- Serper Ultimate:     ${SERPER_COST_ULTIMATE * len(PLATFORMS):.4f}")
+    print(f"- Brave (web):         ${brave_total_cost_per_search:.4f}  "
+          f"({fc_total_cost_per_search / brave_total_cost_per_search:.1f}× cheaper than Hobby)")
+
+    # ── Brave-first / Firecrawl-fallback hybrid analysis ──────────────────
+    if "brave" in by_provider and "firecrawl" in by_provider:
+        print("\n## Hybrid analysis: Brave-first, Firecrawl-fallback when Brave < N")
+        print("\nPer-platform: % of queries where Brave hit the threshold (and would skip the fallback).")
+        print("Higher = Brave more reliable on this platform = less fallback firing.")
+        thresholds = [1, 3, 5, 8]
+        header = "| Platform | " + " | ".join(f"≥{n}" for n in thresholds) + " | mean Brave | mean Firecrawl |"
+        sep = "|" + "|".join(["---"] * (len(thresholds) + 3)) + "|"
+        print(header)
+        print(sep)
+        n_queries = len(queries)
+        for platform in PLATFORMS:
+            brave_rows = [r for r in rows if r.provider == "brave" and r.platform == platform and not r.error]
+            fc_rows = [r for r in rows if r.provider == "firecrawl" and r.platform == platform and not r.error]
+            if not brave_rows or not fc_rows:
+                continue
+            counts = [r.listing_urls for r in brave_rows]
+            pct_cells = []
+            for n in thresholds:
+                hits = sum(1 for c in counts if c >= n)
+                pct = 100 * hits / n_queries
+                pct_cells.append(f"{pct:.0f}%")
+            mean_brave = sum(counts) / len(counts)
+            mean_fc = sum(r.listing_urls for r in fc_rows) / len(fc_rows)
+            print(f"| {platform} | " + " | ".join(pct_cells) + f" | {mean_brave:.1f} | {mean_fc:.1f} |")
+
+        # Per-search cost at each threshold: Brave always + Firecrawl when fallback fires.
+        print("\n### Projected cost per user search at each threshold")
+        print("Brave runs on every platform. Firecrawl fires only on platforms where Brave returned < N.")
+        print("| Threshold N | Mean fallback-firing platforms | Cost (Hobby FC) | Cost (Standard FC) |")
+        print("|---|---|---|---|")
+        for n in thresholds:
+            # Per query: count how many platforms in this query had Brave < N → fallback fires for each
+            fallback_fires_per_query = []
+            for q in queries:
+                fires = 0
+                for platform in PLATFORMS:
+                    brave_r = next((r for r in rows if r.provider == "brave" and r.query == q and r.platform == platform), None)
+                    if brave_r and not brave_r.error and brave_r.listing_urls < n:
+                        fires += 1
+                fallback_fires_per_query.append(fires)
+            mean_fires = sum(fallback_fires_per_query) / len(fallback_fires_per_query) if fallback_fires_per_query else 0
+            brave_cost = brave_total_cost_per_search  # always all 8
+            hobby_fb = mean_fires * FIRECRAWL_COST_HOBBY
+            std_fb = mean_fires * FIRECRAWL_COST_STANDARD
+            print(
+                f"| ≥{n} | {mean_fires:.1f} / 8 | "
+                f"${brave_cost + hobby_fb:.4f} (vs ${fc_total_cost_per_search:.4f} pure FC, "
+                f"{(1 - (brave_cost + hobby_fb) / fc_total_cost_per_search) * 100:.0f}% savings) | "
+                f"${brave_cost + std_fb:.4f} |"
+            )
+
+        # Coverage at each threshold: how many total listings would the hybrid return vs pure Firecrawl?
+        print("\n### Listing-URL coverage at each threshold")
+        print("Hybrid = Brave's listings when ≥N, else Firecrawl's listings. Compared to pure Firecrawl baseline.")
+        print("| Threshold N | Hybrid listings | Pure Firecrawl | Coverage |")
+        print("|---|---|---|---|")
+        fc_total_listings = sum(r.listing_urls for r in rows if r.provider == "firecrawl" and not r.error)
+        for n in thresholds:
+            hybrid_listings = 0
+            for q in queries:
+                for platform in PLATFORMS:
+                    brave_r = next((r for r in rows if r.provider == "brave" and r.query == q and r.platform == platform), None)
+                    fc_r = next((r for r in rows if r.provider == "firecrawl" and r.query == q and r.platform == platform), None)
+                    if brave_r and not brave_r.error and brave_r.listing_urls >= n:
+                        hybrid_listings += brave_r.listing_urls
+                    elif fc_r and not fc_r.error:
+                        hybrid_listings += fc_r.listing_urls
+            pct = 100 * hybrid_listings / fc_total_listings if fc_total_listings else 0
+            print(f"| ≥{n} | {hybrid_listings} | {fc_total_listings} | {pct:.0f}% |")
 
 
 def main() -> int:
-    if not os.environ.get("FIRECRAWL_API_KEY"):
-        print("FIRECRAWL_API_KEY not set in env — cannot run.", file=sys.stderr)
-        return 1
-    if not os.environ.get("SERPER_API_KEY"):
-        print("SERPER_API_KEY not set in env — cannot run.", file=sys.stderr)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--big", action="store_true",
+                    help="Use the 20-query set + Firecrawl/Brave only (skips Serper variants).")
+    args = ap.parse_args()
+
+    if args.big:
+        queries = QUERIES_BIG
+        providers = BIG_PROVIDERS
+        required = ["FIRECRAWL_API_KEY", "BRAVE_API_KEY"]
+    else:
+        queries = QUERIES_SMALL
+        providers = SMALL_PROVIDERS
+        required = ["FIRECRAWL_API_KEY", "SERPER_API_KEY", "BRAVE_API_KEY"]
+
+    missing = [k for k in required if not os.environ.get(k)]
+    if missing:
+        print(f"Missing required env vars: {missing}", file=sys.stderr)
         return 1
 
-    rows = run()
+    print(f"Running {len(queries)} queries × {len(PLATFORMS)} platforms × {len(providers)} providers "
+          f"= {len(queries) * len(PLATFORMS) * len(providers)} calls", flush=True)
+    rows = run(queries, providers)
     write_csv(rows)
-    print_summary(rows)
+    print_summary(rows, queries)
     return 0
 
 
