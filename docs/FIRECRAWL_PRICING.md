@@ -1,8 +1,24 @@
-# Firecrawl Pricing — Canonical Reference
+# Search-Provider Pricing — Canonical Reference
 
-**Last verified:** 2026-05-19 against Firecrawl docs.
+**Last verified:** 2026-05-22 (Brave + hybrid added). Original 2026-05-19 (Firecrawl).
 
-This is the source of truth for Firecrawl credit costs in this project. If a number in any `scripts/*.py` cost-estimator conflicts with this file, **this file wins** — update the others.
+This is the source of truth for **search-provider** credit/dollar costs in this project. If a number in any `scripts/*.py` cost-estimator conflicts with this file, **this file wins** — update the others.
+
+> The file is named `FIRECRAWL_PRICING.md` for git history continuity, but it now covers Firecrawl + Brave + Serper. Renaming is a follow-up.
+
+---
+
+## Quick comparison (per search call, limit=20 results)
+
+| Provider | $/call | Free tier | Concurrency | `site:` operator? |
+|---|---|---|---|---|
+| Firecrawl Hobby ($20/mo) | $0.016 | 5,000 credits/mo built-in | 2 concurrent | ✅ |
+| Firecrawl Standard ($99/mo) | $0.00396 | 100,000 credits/mo built-in | 50 concurrent | ✅ |
+| **Brave Search API** | **$0.005** ($5/1,000) | $5 prepaid credit/mo (~1,000 queries) | Generous, undocumented | ✅ on every tier |
+| Serper.dev Starter ($50/mo) | $0.001 ($1/1,000) | 2,500 queries/mo | ~5 concurrent | ✅ on Starter+ |
+| Serper.dev free | n/a | 2,500/mo | low | ❌ **BLOCKED** (HTTP 400) — kills our pipeline |
+
+Bake-off data (20 queries × 8 platforms × Firecrawl+Brave = 320 calls) lives in [scripts/search_bakeoff_results.csv](../scripts/search_bakeoff_results.csv).
 
 ---
 
@@ -103,22 +119,47 @@ crawl4ai (our current scrape engine) has no provider-imposed concurrency cap —
 
 ## What this project uses today
 
-**As of 2026-05-19:**
+**As of 2026-05-22:**
 
-- **Search only.** [lib/firecrawl.ts:46-49](../lib/firecrawl.ts#L46-L49) calls `client.search(siteQuery, { limit: 20 })` — markdown response, no JSON format, no enhanced proxy.
+- **Search routes through a per-platform hybrid** ([lib/firecrawl.ts](../lib/firecrawl.ts) `searchPlatform()`). Default code path is still Firecrawl-only; production sets `SEARCH_PROVIDER=hybrid` in env to activate routing.
 - **No Firecrawl scrape.** All per-URL scraping runs through the crawl4ai sidecar ([crawl4ai-service/main.py](../crawl4ai-service/main.py) `POST /scrape`).
-- **ThredUp** and **The RealReal** (when re-enabled) bypass Firecrawl entirely — they use the sidecar's `/scrape-search` grid extraction.
+- **ThredUp** and **The RealReal** (when re-enabled) bypass third-party search entirely — they use the sidecar's `/scrape-search` grid extraction.
 
-### Real per-search Firecrawl cost today
+### Per-search cost — current (hybrid) vs alternatives
 
-8 working Firecrawl-search platforms × 4 credits (limit=20) = **32 credits per full search**.
+| Mode | Composition | Per search | vs Firecrawl Hobby |
+|---|---|---|---|
+| **`hybrid`** (production default) | 6 Brave calls + 2 Firecrawl-Hobby calls + ~0.66 expected fallback Firecrawl calls (Brave-below-threshold) | **~$0.073** | **43% cheaper** |
+| `firecrawl` Hobby | 8 Firecrawl calls × $0.016 | $0.128 | baseline |
+| `firecrawl` Standard | 8 Firecrawl calls × $0.00396 | $0.032 | 75% cheaper (BUT $99/mo flat) |
+| `brave` (all platforms) | 8 Brave calls × $0.005 | $0.040 | 69% cheaper, **~28% URL coverage drop** |
 
-- Hobby: **$0.128 per search**
-- Standard: **$0.032 per search**
+**Composition math for `hybrid` (always-on calls):**
 
-Per-URL scrape cost: **$0.00** (crawl4ai, not Firecrawl).
+```
+BRAVE_ONLY platforms (3):  vinted, stockx, poshmark
+  → 3 × $0.005 = $0.015 (always Brave)
 
-OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 Firecrawl-search platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. See [engine_bakeoff_findings.md](engine_bakeoff_findings.md) §3 for measured token costs.
+HYBRID platforms (3):  depop, grailed, vestiaire
+  → 3 × $0.005 = $0.015 (always Brave, attempted first)
+  → Plus fallback FC when Brave listings < BRAVE_HYBRID_THRESHOLD (default 5)
+  → Expected fallback rate (from bake-off): depop ~5%, grailed ~20%, vestiaire ~40%
+  → Avg fallback = 0.05 + 0.20 + 0.40 = 0.65 ≈ 0.66 FC calls × $0.016 = $0.0106
+
+FIRECRAWL_ONLY platforms (2):  mercari, ebay
+  → 2 × $0.016 = $0.032 (always Firecrawl, Brave skipped)
+
+TOTAL: $0.015 + $0.015 + $0.0106 + $0.032 ≈ $0.073/search
+```
+
+**Tuning the threshold:** higher `BRAVE_HYBRID_THRESHOLD` → more fallback → higher cost + higher coverage. From the bake-off:
+- N=5 (default): $0.073/search, 87% coverage
+- N=8: $0.066 + ~$0.013 extra fallback = $0.079, 92% coverage
+- N=3: $0.073 - ~$0.008 saved fallback = $0.065, 82% coverage
+
+Per-URL scrape cost: **$0.00** (crawl4ai, not a third-party search engine).
+
+OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. See [engine_bakeoff_findings.md](engine_bakeoff_findings.md) §3 for measured token costs.
 
 ---
 
@@ -158,6 +199,20 @@ Standard: 432 × $0.00099 = $0.428 per search
 
 ## Update this file when
 
-- Firecrawl publishes a new pricing page (check quarterly).
+- Firecrawl, Brave, or Serper publishes a new pricing page (check quarterly).
 - We switch to a different plan or buy add-on credits.
 - We start using JSON format or enhanced proxy in production calls (so the modifier columns become "actually used").
+- `PLATFORM_STRATEGY` in `lib/firecrawl.ts` changes (e.g., a platform moves between BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY) — the composition math above will need re-deriving.
+- `BRAVE_HYBRID_THRESHOLD` default changes.
+
+---
+
+## Brave Search API specifics
+
+- **Endpoint:** `GET https://api.search.brave.com/res/v1/web/search?q=<urlencoded>&count=<n>`
+- **Auth header:** `X-Subscription-Token: <BRAVE_API_KEY>`
+- **Free tier:** as of 2026-05, new sign-ups receive a $5 prepaid metered credit/month (legacy subscribers retained 2,000 queries/mo). At $0.005/query this is ~1,000 queries/mo.
+- **Paid tier:** $3-$5 per 1,000 queries (volume-dependent). Project uses $0.005 as the conservative per-call estimate.
+- **`site:` operator:** supported on every tier (key differentiator vs Serper free).
+- **Concurrency:** Brave does not publish a hard concurrency cap on standard plans; observed behavior is "rate-limited but generous." If we ever see 429s, add an exponential-backoff layer to `lib/brave.ts`.
+- **Response shape:** `{web: {results: [{url, title, description}, ...]}}` — adapter at [lib/brave.ts](../lib/brave.ts) normalizes to `RawSearchResult[]`.

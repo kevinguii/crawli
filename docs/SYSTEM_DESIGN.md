@@ -236,23 +236,44 @@ Each platform_done → emit event → UI snaps row to "Done — N results"
    (bypass Firecrawl)
 ```
 
-**Path B — Firecrawl URL discovery (6 platforms):**
+**Path B — Search-provider URL discovery (8 platforms — was Firecrawl-only, now env-routed):**
 
 ```
-Firecrawl.search("site:grailed.com <query>")
-      → returns ~20 candidate URLs
-      → filterListingUrls() — per-platform regex keeps only listing pages
-          grailed:   /listings/\d+/
-          depop:     /products/\w+/
-          stockx:    /products/\w+/
-          poshmark:  /listing/\w+/
-          mercari:   /item/\w+/
-          vinted:    /items/\d+/
-      → dedupe
-      → ~8–12 clean listing URLs
-      → scrape each (Step 3)
+searchPlatform(platform, query)
+  ↓
+  env SEARCH_PROVIDER decides:
+     "firecrawl"  → Firecrawl.search("site:<domain> <query>")     ← code default
+     "brave"      → Brave.search("site:<domain> <query>")
+     "hybrid"     → per-platform routing (PLATFORM_STRATEGY table):
+                     vinted, stockx, poshmark  → Brave only
+                     depop, grailed, vestiaire → Brave first,
+                                                 Firecrawl fallback
+                                                 if listings < BRAVE_HYBRID_THRESHOLD (5)
+                     mercari, ebay             → Firecrawl only
+                                                 (Brave too unreliable)
 
-Cost: 4 Firecrawl credits per platform per search
+  → returns ~20 candidate URLs (RawSearchResult[])
+  → filterListingUrls() — per-platform regex keeps only listing pages
+      grailed:   /listings/\d+/
+      depop:     /products/\w+/
+      stockx:    /products/\w+/
+      poshmark:  /listing/\w+/
+      mercari:   /item/\w+/
+      vinted:    /items/\d+/
+      vestiaire: /\d{5,}/ (numeric trailing id)
+      ebay:      /itm/
+  → dedupe
+  → ~5–18 clean listing URLs (varies by platform + search-engine index density)
+  → scrape each (Step 3)
+
+Cost (hybrid mode, default in production):
+  Brave call:     $0.005 each (BRAVE_ONLY + HYBRID platforms always)
+  Firecrawl call: $0.016 (Hobby) / $0.00396 (Standard) — FC_ONLY + hybrid fallback
+  Expected per-search total: ~$0.073 hybrid Hobby / $0.128 pure Firecrawl Hobby
+
+Logging:
+  Each search emits: [search] platform=X provider=brave|firecrawl strategy=...
+                     urls=N listings=M [threshold=K] [brave_listings=N]
 ```
 
 **Path A — Search-page extraction (ThredUp):**
@@ -623,15 +644,17 @@ EditProfileModal:
 ### Per-search cost breakdown
 
 ```
-Scenario: 6 platforms, 10 listings/platform returned
+Scenario: 8 platforms (excluding ThredUp/RealReal which use Path A),
+          10 listings/platform returned
 
-FIRECRAWL (URL discovery)
-6 platforms × 4 credits = 24 credits/search
+URL DISCOVERY — depends on SEARCH_PROVIDER env
+  (see PLATFORM_STRATEGY in lib/firecrawl.ts; pricing in docs/FIRECRAWL_PRICING.md)
 
-Tier             Credits/mo    Cost/search
-Free             1,400         $0 (~58 searches/mo cap)
-Hobby ($20/mo)   5,000         $0.096
-Standard($83/mo) 100,000       $0.020
+Mode             Composition                                      $/search
+firecrawl Hobby  8 × Firecrawl ($0.016)                          $0.128
+firecrawl Std    8 × Firecrawl ($0.00396, $99/mo flat)           $0.032
+brave            8 × Brave ($0.005)                              $0.040 (but ~28% URL loss)
+hybrid (default) 6 × Brave + 2 × FC Hobby + ~0.66 fallback FC    ~$0.073
 
 OPENAI (LLM fallback — Tier 2 only)
 All 9 platforms have Tier 1 structured extractors as of
@@ -644,16 +667,20 @@ in practice means:
 Estimate: ~1 LLM call per search on average (eBay residual).
 1 listing × ~$0.001                 = $0.001/search
 
-TOTAL PER SEARCH
-                 Free      Hobby     Standard
-Firecrawl:       $0        $0.096    $0.020
-OpenAI LLM:      $0.001    $0.001    $0.001
-Infra:           $0        ~$0       ~$0
-                 ──────    ──────    ──────
-Total:           $0.001    $0.097    $0.021
+TOTAL PER SEARCH (URL discovery + OpenAI residual)
+                 hybrid    firecrawl-Hobby  firecrawl-Standard
+URL discovery:   $0.073    $0.128           $0.032
+OpenAI LLM:      $0.001    $0.001           $0.001
+Infra:           ~$0       ~$0              ~$0
+                 ───────   ───────          ───────
+Total:           $0.074    $0.129           $0.033
 ```
 
+**Switch point:** flip `SEARCH_PROVIDER=firecrawl` once on Firecrawl Standard (≥ ~$100 MRR justifies the $99/mo flat). At that point Standard's $0.033/search beats hybrid's $0.074 AND restores full coverage. No code change — env flip + plan upgrade.
+
 **Before C1 (2026-05-20):** total was $0.010 / $0.106 / $0.030 — eBay+Vestiaire forced 20 LLM calls per search. C1 (shipped 2026-05-21) drops the OpenAI line by ~10× because both platforms now skip the LLM on the happy path.
+
+**Before hybrid (2026-05-21):** every platform paid Firecrawl Hobby's $0.016/call → $0.128/search. Hybrid (2026-05-22) brings that to ~$0.073 by routing 3 platforms to Brave-only (no FC cost) and another 3 to Brave-first with FC fallback.
 
 ### Cost by platform
 
