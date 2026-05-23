@@ -608,7 +608,7 @@ def coerce_listing(url: str, raw: dict) -> ScrapedListing:
 _POSHMARK_NAV_ERROR = "Unable to retrieve content because the page is navigating"
 
 
-def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1, scope_to_target: bool = False):
+def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1, scope_to_target: bool = False, search_page: bool = False):
     """Build a CrawlerRunConfig with platform-specific tuning.
 
     scope_to_target: when True, apply target_elements from
@@ -656,6 +656,15 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if platform == "realreal":
         cfg_kwargs["page_timeout"] = 90_000
         cfg_kwargs["delay_before_return_html"] = 20.0
+    # Grailed's /shop?query= search page is client-side rendered via Algolia —
+    # the SSR HTML ships an empty grid shell; listing cards hydrate after JS
+    # runs (~2s after navigation). Wait explicitly for a listing anchor before
+    # returning HTML, otherwise extract_grailed_grid sees zero cards.
+    if search_page and platform == "grailed":
+        cfg_kwargs["wait_for"] = "css:a[href*='/listings/']"
+        cfg_kwargs["page_timeout"] = 60_000
+        cfg_kwargs["delay_before_return_html"] = 2.0
+
     # On retry, be more patient regardless of platform.
     if attempt > 1:
         cfg_kwargs["page_timeout"] = 60_000
@@ -668,7 +677,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     return CrawlerRunConfig(**cfg_kwargs)
 
 
-async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False, crawler_override=None):
+async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None, scope_to_target: bool = False, crawler_override=None, search_page: bool = False):
     """Run a crawl; on Poshmark-style navigation errors, retry once.
 
     crawler_override: optional per-platform crawler (e.g. realreal's
@@ -690,7 +699,7 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
             # Race: pool died between endpoint-level check and now.
             raise RuntimeError("crawler pool unavailable — all members dead")
 
-    cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target)
+    cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target, search_page=search_page)
     async with _scheduled_render(platform, url):
         result = await c.arun(url=url, config=cfg)
     err = (result.error_message or "") if result is not None else ""
@@ -702,7 +711,7 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
         return result
     if (not result.success or _POSHMARK_NAV_ERROR in err) and platform == "poshmark":
         log.info("[retry] poshmark crawl hit navigation error, retrying with networkidle wait")
-        cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target)
+        cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=2, scope_to_target=scope_to_target, search_page=search_page)
         # Pick a fresh pool member on retry (could be a different one) if not overridden.
         if crawler_override is None:
             idx2, c2 = await _pick_crawler()
@@ -951,7 +960,7 @@ async def scrape_search(req: ScrapeSearchRequest):
         await _warmup_realreal(crawler_override)
 
     try:
-        result = await _arun_with_retry(target_url, req.platform, crawler_override=crawler_override)
+        result = await _arun_with_retry(target_url, req.platform, crawler_override=crawler_override, search_page=True)
 
         # For TRR, crawl4ai's anti-bot detector flags the real 2MB /products
         # response as a false-positive 403 (it triggers on a sub-resource header).

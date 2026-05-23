@@ -294,9 +294,118 @@ def extract_therealreal_grid(html: str, *, limit: int = 24) -> list[dict]:
     return results
 
 
+# ── Grailed ─────────────────────────────────────────────────────────────────
+
+GRAILED_BASE = "https://www.grailed.com"
+
+
+def grailed_search_url(query: str) -> str:
+    """Build the Grailed onsite search URL for a query.
+
+    Grailed uses `/shop?query=<urlencoded>` (verified 2026-05-22 via probe).
+    The page is client-side rendered: empty shell ships, Algolia call hydrates
+    the grid ~2s later. crawl4ai must wait for the listing anchors to appear.
+    `/search?query=` returns 302 and is not the right path.
+    """
+    return f"{GRAILED_BASE}/shop?query={quote(query.strip())}"
+
+
+_GRAILED_PRICE_RE = re.compile(r"[\d,]+(?:\.\d+)?")
+
+
+def _grailed_parse_price(text) -> Optional[float]:
+    if not isinstance(text, str):
+        return None
+    m = _GRAILED_PRICE_RE.search(text)
+    if not m:
+        return None
+    try:
+        return float(m.group(0).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def extract_grailed_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Grailed `/shop?query=...` results page.
+
+    Source: DOM cards under `div[class*='UserItem_root']`. Grailed uses CSS
+    Modules — class names get hash suffixes that change every deploy, so we
+    match on the `UserItem_*` prefix.
+
+    Verified card structure (2026-05-22):
+        div[class*='UserItem_root']
+          a[href*='/listings/']                          → URL (strip tracking params)
+          img[class*='CoverPhoto']                       → imageUrl (src is real, no lazy placeholder)
+          p[class*='UserItem_designer']                  → brand (e.g. "Nike") — informational only
+          p[class*='UserItem_size']                      → size (e.g. "xl")
+          span[class*='UserItem_title']                  → title
+          span[class*='Money_root'][data-testid='Current'] → price (e.g. "$20")
+
+    The `/shop?query=` page is filtered to active listings by default — no
+    "Sold" badges observed across 40 probed cards. We set isSold=False
+    universally; if Grailed later surfaces sold items here, the badge div
+    `div[class*='UserItem_badge']` would carry the indicator.
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    cards = soup.select("div[class*='UserItem_root']")
+    if not cards:
+        log.warning("[grailed-grid] no UserItem_root cards found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    for card in cards:
+        a = card.select_one("a[href*='/listings/']")
+        if not a:
+            continue
+        href = a.get("href")
+        if not isinstance(href, str):
+            continue
+        # Strip Algolia tracking params (g_aidx, g_aqid) — same redirect-on-load
+        # issue ThredUp had. The canonical path is /listings/<id>-<slug>.
+        clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
+        url = urljoin(GRAILED_BASE, clean_href)
+
+        title_el = card.select_one("span[class*='UserItem_title']")
+        title = title_el.get_text(strip=True) if title_el else None
+        if isinstance(title, str):
+            title = html_module.unescape(title)
+
+        price_el = (
+            card.select_one("[data-testid='Current']")
+            or card.select_one("span[class*='Money_root']")
+        )
+        price = _grailed_parse_price(price_el.get_text(strip=True) if price_el else "")
+
+        size_el = card.select_one("p[class*='UserItem_size']")
+        size = size_el.get_text(strip=True) if size_el else None
+
+        img_el = card.select_one("img[class*='CoverPhoto']") or card.select_one("img")
+        image = img_el.get("src") if img_el else None
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",
+            "isSold": False,
+            "condition": None,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[grailed-grid] extracted %d listings (out of %d cards)", len(results), len(cards))
+    return results
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────────
 
-SEARCH_PAGE_PLATFORMS = {"thredup", "realreal"}
+SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed"}
 
 
 def search_url_for(platform: str, query: str) -> Optional[str]:
@@ -304,6 +413,8 @@ def search_url_for(platform: str, query: str) -> Optional[str]:
         return thredup_search_url(query)
     if platform == "realreal":
         return therealreal_search_url(query)
+    if platform == "grailed":
+        return grailed_search_url(query)
     return None
 
 
@@ -312,4 +423,6 @@ def extract_search_grid(platform: str, html: str, *, limit: int = 24) -> list[di
         return extract_thredup_grid(html, limit=limit)
     if platform == "realreal":
         return extract_therealreal_grid(html, limit=limit)
+    if platform == "grailed":
+        return extract_grailed_grid(html, limit=limit)
     return []

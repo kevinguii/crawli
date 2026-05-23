@@ -1,8 +1,60 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-22 (user-query search cache landed — §7 N)
+**Last updated:** 2026-05-22 (Avenue A/B framing + per-platform extraction-signal table + Avenue A survey playbook consolidated into §3 + §7 M — no code change)
 
-**Latest change (2026-05-22 — User-query NDJSON cache in Supabase; resolves §7 N):**
+**Latest change (2026-05-22 — Grailed-native search-page extractor; resolves §7 M):**
+
+Replaces Grailed's `site:grailed.com` URL discovery (Brave/Firecrawl `searchPlatform` → per-listing `scrapeListing` fan-out) with the same single-render `/scrape-search` pattern used for ThredUp/RealReal. The old path was structurally capped at ~5 results per query because Brave/Google's `site:` index of Grailed is sparse (thousands of new listings/day, crawlers can't keep up). Native search-page extraction surfaces ~40 active listings per query directly from Grailed's own grid.
+
+**Survey first, then implement** (per C1 precedent). One-off probe of `https://www.grailed.com/shop?query=nike%20hoodie` revealed:
+- Page is **client-side rendered**: empty Next.js shell ships, Algolia fetch hydrates the grid ~2s after navigation. crawl4ai's default `delay_before_return_html=5.0` is not enough on its own — needs `wait_for="css:a[href*='/listings/']"` to be deterministic.
+- `__NEXT_DATA__` exists but `pageProps` only carries `{status, uuid}` — no listing data SSR'd. Algolia call hydrates DOM only, no embedded JSON state.
+- 40 listing cards per page under `div[class*='UserItem_root']`. CSS Modules class names get hash suffixes per deploy, so the extractor matches on the `UserItem_*` prefix.
+- Per card: anchor `a[href*='/listings/']` → URL (strip `?g_aidx=…&g_aqid=…` Algolia tracking params, same redirect-on-load issue ThredUp had); `span[class*='UserItem_title']` → title; `span[data-testid='Current']` → price; `p[class*='UserItem_size']` → size; `img[class*='CoverPhoto']` → image.
+- `/shop?query=` returns **active listings only** — no "Sold" badges across all 40 probed cards. This solves the original §7 C "Grailed ~83% sold rate" gripe (Google indexed lots of dead listings; the native search-page filters them by default).
+- `/search?query=` returns HTTP 302 — not the right path.
+
+**What shipped:**
+
+1. **`grailed_search_url(query)`** in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py) — builds `/shop?query=<urlencoded>`.
+2. **`extract_grailed_grid(html, limit)`** in the same file — DOM selectors above; strips Algolia tracking params from URLs; sets `isSold=False`, `currency="USD"`, `condition=None` (Grailed listing condition isn't on the card; the per-listing JSON-LD extractor at [structured_extractors.py extract_grailed](crawl4ai-service/structured_extractors.py#L204) would still get it on full-listing scrapes).
+3. **`SEARCH_PAGE_PLATFORMS`** in both Python and TypeScript gains `"grailed"`. The Next route already routes `SEARCH_PAGE_PLATFORMS.has(platform)` through `/scrape-search`, so no other route changes were needed.
+4. **`_build_run_cfg(search_page=True)`** — new optional flag, plumbed through `_arun_with_retry`. When `True` and `platform == "grailed"`, adds `wait_for="css:a[href*='/listings/']"`, `page_timeout=60_000`, `delay_before_return_html=2.0`. Only the `/scrape-search` callsite passes `search_page=True`; per-listing `/scrape` calls remain unaffected (they don't render search-grid pages).
+5. **`PLATFORM_STRATEGY['grailed'] = 'hybrid'`** in [lib/firecrawl.ts](lib/firecrawl.ts) — **left in place intentionally**. It's now inert code because the route checks `SEARCH_PAGE_PLATFORMS` first, but kept as a fallback in case someone removes grailed from `SEARCH_PAGE_PLATFORMS` later.
+
+**Files touched (3):**
+- [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py) — `grailed_search_url`, `extract_grailed_grid`, dispatch entries.
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) — `search_page` parameter on `_build_run_cfg` + `_arun_with_retry`; `/scrape-search` passes `search_page=True`.
+- [lib/scraper.ts](lib/scraper.ts) — `SEARCH_PAGE_PLATFORMS` gains `'grailed'`.
+
+**Verified end-to-end (live, 2026-05-22, sidecar booted locally):**
+
+| Test | Result |
+|---|---|
+| `curl /scrape-search platform=grailed query="nike hoodie"` | ✅ 10/10 listings, all with title + price + size + image; URLs are clean `/listings/<id>-<slug>` (Algolia tracking params stripped); first call ~7s (5s render + 2s hydrate) |
+| Repeat same query | ✅ sidecar cache hit, 15 ms |
+| Different query `"supreme box logo"` | ✅ 5/5 listings — `Supreme x cdg split box logo tee $70`, `Supreme x sterling ruby box logo tee $67`, `Supreme Small Box Logo $45`, etc. |
+| Python `ast.parse` on main.py + search_page_extractors.py | ✅ clean |
+| `npx tsc --noEmit` | ✅ clean |
+
+**Wins vs old `site:grailed.com` path (confirmed):**
+- **~5 → 10+ listings per query** (we cap at the route's slice(0, 10); the page has up to ~40 available).
+- **0% sold-listing pollution** — was ~83% on the old Google-indexed path.
+- **~1 Brave/Firecrawl URL discovery call eliminated per Grailed search** — small per-call cost saving ($0.005-$0.016).
+- **N per-listing `/scrape` calls eliminated per Grailed search** — the bigger savings: each per-listing scrape was 10-25s + 1 LLM call. The single search-page render replaces all of it. Estimated **~80-95% latency drop** for Grailed.
+- **Cleaner data** — title/price/size pulled from the structured card, no LLM extraction at all on this path.
+
+**Gotchas worth remembering:**
+- The `UserItem_*` CSS Modules hash suffix changes every Grailed deploy. The extractor uses prefix-match (`[class*='UserItem_root']`) so it survives that. If Grailed renames the *root* class (not the suffix), the selector breaks silently — extract logs `[grailed-grid] no UserItem_root cards found` and the result is empty. The size word ("xl") and price selector are platform-specific too; verify after any Grailed redesign.
+- `search_page=True` is a per-platform decision — currently only grailed needs `wait_for`. ThredUp/RealReal are SSR-heavy and don't need it (their data is already in the HTML when crawl4ai grabs it). Don't blanket-enable.
+- `PLATFORM_STRATEGY['grailed']` in lib/firecrawl.ts is now inert. If a future bake-off says Grailed search-page extraction is broken (e.g. Algolia 403s), removing grailed from `SEARCH_PAGE_PLATFORMS` falls back cleanly to the hybrid Brave/Firecrawl path. No code change to revert.
+- §7 N (search cache) layers on top of this for free — the cache key includes platforms, so Grailed cache entries are independent of other platforms. Cached Grailed responses replay the structured per-card data, same as fresh.
+
+**Next backlog item (per the roadmap):** §7 L brand-aware queries — but the user explicitly said "focus on getting pricing and hosting set up" after §M lands. So this is a checkpoint, not a continuation prompt.
+
+---
+
+**Previous change (2026-05-22 — User-query NDJSON cache in Supabase; resolves §7 N):**
 
 Caches `/api/search` results across users at the Next.js layer. Key = `sha256(normalized_query + sorted(platforms) + canonical(filters))`. Same query/platforms/filters combo from any user inside the TTL window replays the cached NDJSON stream instantly (no Brave / no Firecrawl / no sidecar) — the biggest cost lever after the hybrid routing. Misses stream as normal and write the recorded events to Supabase on completion. Cache writes only happen when `allListings.length > 0` so transient all-failure responses retry next time.
 
@@ -1523,6 +1575,11 @@ POST /api/search ─────────────────────
                                                                ▼
 ```
 
+**Two search avenues (mental model — added 2026-05-22):** every platform takes one of two paths from `/api/search`.
+- **Avenue A — search-page native** (zero search credits, zero LLM, one render per query): route checks `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts) first. If present → `POST /scrape-search` → sidecar renders the platform's own search URL once → grid extractor in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py) pulls cards from DOM → returns `ScrapedListing[]`. Current members: **thredup, realreal (deferred — PerimeterX), grailed**.
+- **Avenue B — URL discovery + per-listing fan-out**: route falls through to `searchPlatform` in [lib/firecrawl.ts](lib/firecrawl.ts), which routes URL discovery via `PLATFORM_STRATEGY` (BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY — see bake-off table in the hybrid latest-change at the top). Returned URLs fan out to `POST /scrape` (capped at 10 per platform, 2 concurrent). Sidecar runs tier-1 structured extractors → tier-2 LLM fallback. Current members: **vinted, stockx, poshmark, depop, vestiaire, mercari, ebay**.
+- Per-platform extraction-signal table + Avenue A survey playbook live in [§7 M](#m-search-engine-site-index-sparsity-caps-per-platform-results-especially-grailed--resolved-2026-05-22-grailed).
+
 **Load-management invariants (PR 1 + PR 2 of `1-3-4-sound-like-a-prancy-waterfall`):**
 - Across-platform cap (`SEARCH_PLATFORM_CONCURRENCY`) × per-platform scrape cap (2) ≤ sidecar semaphore (`SIDECAR_MAX_CONCURRENT_RENDERS`). Keep the math working when tuning.
 - Browser pool (`SIDECAR_BROWSER_POOL_SIZE`, default 1) shares the global render semaphore — pool size only changes *where* renders run, not *how many*. Pool=1 behaves identically to pre-B1.
@@ -1628,7 +1685,7 @@ fashion-crawler-crawl4ai/
 │   ├── main.py                       ← FastAPI app, /scrape + /scrape-search + /health endpoints; structured-first → LLM fallback
 │   ├── extractors.py                 ← LISTING_SCHEMA + PLATFORM_PROMPTS + per-platform options (LLM fallback tier)
 │   ├── structured_extractors.py     ← JSON-LD + testid extractors for single-listing pages (primary tier for 9 platforms — depop, grailed, poshmark, stockx, mercari, vinted, thredup, ebay, vestiaire)
-│   ├── search_page_extractors.py    ← NEW 2026-05-18: SEARCH_PAGE_PLATFORMS + grid extractors for platforms whose listing URLs aren't indexed (currently: ThredUp)
+│   ├── search_page_extractors.py    ← SEARCH_PAGE_PLATFORMS + grid extractors for platforms whose listing URLs aren't well-indexed (currently: ThredUp, RealReal, Grailed). Grailed uses native /shop?query=… search page via wait_for + DOM card extraction.
 │   ├── debug_probe.py                ← dumps OG/JSON-LD/__NEXT_DATA__/visible-$ from a URL; for future debugging
 │   ├── debug_dumps/                  ← saved raw HTML from probe runs (gitignored)
 │   ├── requirements.txt
@@ -1656,7 +1713,7 @@ This is where the Firecrawl-replacement lives. Treat it as a separate process th
 |---|---|---|
 | `GET` | `/health` | Returns `{status, llm_mode: "active"\|"stub", provider}`. Use to verify the API key is loaded. |
 | `POST` | `/scrape` | Body: `{url, platform}`. Returns `{result: ScrapedListing \| null}`. Mirrors the original Firecrawl-shaped output exactly. Used by all platforms except those in `SEARCH_PAGE_PLATFORMS`. |
-| `POST` | `/scrape-search` | Body: `{platform, query, limit?}`. Returns `{results: ScrapedListing[]}`. Builds the platform's onsite search URL, renders once, returns a grid of listings. Used only for `SEARCH_PAGE_PLATFORMS` (currently `{thredup}`) — platforms whose listing URLs aren't indexed by Firecrawl. |
+| `POST` | `/scrape-search` | Body: `{platform, query, limit?}`. Returns `{results: ScrapedListing[]}`. Builds the platform's onsite search URL, renders once, returns a grid of listings. Used for `SEARCH_PAGE_PLATFORMS` = `{thredup, realreal, grailed}` — platforms whose individual listing URLs are either not indexed (`site:` sparse) or where one render replaces N per-listing scrapes. Grailed needs `search_page=True` to add a `wait_for` for the CSR Algolia hydration. |
 
 ### How it works
 1. `main.py` boots a long-lived `AsyncWebCrawler` (Playwright Chromium) with `enable_stealth=True` and `user_agent_mode="random"`.
@@ -1711,7 +1768,7 @@ Primary test: single live run via `scripts/test-all-platforms.mjs` with query "N
 
 | Platform | Scrape works? | Notes |
 |---|:-:|---|
-| **Grailed** | ✅ | JSON-LD Product → reliable. LLM fallback if JSON-LD missing. |
+| **Grailed** | ✅ | **Native search-page extraction 2026-05-22 (§7 M)** — search now uses `/scrape-search` (`/shop?query=…` rendered with `wait_for` for the Algolia-hydrated grid). One render per query, ~40 cards available, post-filtered to 10. Active-listings-only by default. The per-listing JSON-LD Product extractor still backs full-listing scrapes (watchlist refresh, direct URLs). |
 | **Depop** | ✅ | JSON-LD Product → reliable. **Fixed 2026-05-15 PM**: was returning related-item prices ($39.55 instead of $45). Root cause was 1.5s render delay + LLM seeing "More from seller" rail. |
 | **StockX** | ⚠️ partial | `[data-testid="trade-box-buy-amount"]` → reliable when present. **Known caveat (deferred)**: StockX prices change in real time — a $74 ask scraped now can be $87 by the time the user clicks. Sometimes the testid contains a stale or cached value that doesn't match the live page (observed on `…fleece-hoodie-black`, `…fleece-hoodie-jet-black`, `…modern-fleece-hoodie-jet-black`). Listings with no Lowest Ask correctly return `price=null`. See §7 (E) for the full deferred-issues list. |
 | **Poshmark** | ✅ | `og:title` + `og:image` + first `<p class="h1"><span>$N</span></p>` price + `data-et-prop-inventory_status` for sold. **Fixed 2026-05-15 evening**: the prior JSON-LD extractor was always missing (Poshmark doesn't emit Schema.org JSON-LD), forcing LLM fallback. Navigation-retry (2026-05-15 AM) is still needed for anti-bot redirects. |
@@ -2026,7 +2083,47 @@ Do NOT re-propose strict filters here without a specific bad-case bug to motivat
 
 **Carry-forward instruction:** option 3 has the biggest payoff (also lets us use Grailed/Depop/Mercari's `brand` query parameters natively) but it's a UX change affecting the FilterPanel + SearchForm + route schema + parse step. Build a small PoC against ThredUp first to verify the JSON-LD `brand` field is populated on the search-grid response, then design the UX.
 
-### M. Search-engine `site:` index sparsity caps per-platform results (especially Grailed) (surfaced 2026-05-22)
+### M. Search-engine `site:` index sparsity caps per-platform results (especially Grailed) — **RESOLVED 2026-05-22 (Grailed)**
+
+Grailed now uses native search-page extraction via `/scrape-search` (`SEARCH_PAGE_PLATFORMS`). See Latest change at top of file for the survey findings + implementation. **Open for Depop / Vinted / Mercari / Poshmark / StockX / Vestiaire** — same pattern can extend to each one-at-a-time. Original framing kept for context below.
+
+**Per-platform extraction signal (current, as of 2026-05-22) — where each platform pulls structured data from:**
+
+| Platform | Avenue | Extraction signal |
+|---|---|---|
+| grailed | A (search-page) | DOM cards under `div[class*='UserItem_root']` (CSS Modules prefix-match); needs `wait_for="css:a[href*='/listings/']"` for Algolia CSR hydration |
+| thredup | A (search-page) | `<script type="application/ld+json">` array of `@type=Product` (~119 per page) + DOM SKU→href merge |
+| realreal | A (search-page, **deferred**) | `__NEXT_DATA__` GraphQL edges — blocked by PerimeterX press-and-hold (§7 G) |
+| vinted | B (per-listing) | Regex over escaped RSC payload |
+| stockx | B (per-listing) | `[data-testid='trade-box-buy-amount']` |
+| poshmark | B (per-listing) | `og:title` + `og:image` + `<p class="h1"><span>` price |
+| depop | B (per-listing) | JSON-LD `Product` |
+| vestiaire | B (per-listing) | JSON-LD `Product` (image uses `ImageObject.contentUrl` — handled by `_first_image`) |
+| mercari | B (per-listing) | `__NEXT_DATA__.props.pageProps.serverState['ItemDetail:<id>']` |
+| ebay | B (per-listing) | JSON-LD `Product` |
+
+**Proven Avenue B → Avenue A migrations:**
+- **ThredUp** moved A on 2026-05-18 (`site:thredup.com` returned 0 URLs — Firecrawl couldn't index the JS-heavy SPA).
+- **Grailed** moved A on 2026-05-22 (`site:grailed.com` capped at ~5; native `/shop?query=` gives ~40 active-only listings).
+
+**Survey playbook for migrating a new platform to Avenue A** (~1 day each, follows the Grailed and ThredUp precedents):
+
+1. Write a one-off probe at `crawl4ai-service/probe_<platform>_search.py` — hit the platform's onsite search URL via crawl4ai stealth, dump HTML to `debug_dumps/`.
+2. Inspect the dump for one of three parseable signals:
+   - `__NEXT_DATA__` script (best — preloaded React props)
+   - `<script type="application/ld+json">` with `@type=Product` array on the search page (ThredUp pattern)
+   - DOM cards with a stable class prefix (Grailed `UserItem_*` pattern — robust to CSS Modules hash suffixes)
+3. Check **SSR vs CSR**: if listing data is missing from initial HTML, it's CSR — needs `wait_for="css:<selector>"` in `_build_run_cfg(search_page=True)` like Grailed. SSR'd platforms (ThredUp) don't need it.
+4. If a clean signal exists → add `<platform>_search_url(query)` + `extract_<platform>_grid(html, limit)` in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py); register in `SEARCH_PAGE_PLATFORMS` and the dispatch maps in **both** Python and [lib/scraper.ts](lib/scraper.ts) (the `SEARCH_PAGE_PLATFORMS` set is duplicated — keep them in sync).
+5. Verify via `curl -X POST localhost:8000/scrape-search` with the new platform before declaring done. Expect ≥10 cards on a popular query, no sold listings (most platforms' native search filters those by default), tracking params stripped from URLs.
+6. Delete the probe script (HTML dumps in `debug_dumps/` are gitignored and can stay for future re-verification).
+7. Leave `PLATFORM_STRATEGY[<platform>]` in [lib/firecrawl.ts](lib/firecrawl.ts) in place — it's inert once the platform is in `SEARCH_PAGE_PLATFORMS` (route checks A first), but kept as a fallback if the search-page extractor breaks later.
+
+**Pre-launch context:** payments + hosting are the immediate priorities (per user 2026-05-22). Avenue A migrations are queued behind those. Per-platform ROI varies — Depop is the highest-value next candidate (Brave/FC `site:depop.com` index has the same sparsity issue as Grailed); Mercari/eBay are FIRECRAWL_ONLY in the hybrid strategy and would benefit most cost-wise but the JSON-LD per-listing path already works well, so the win is smaller.
+
+---
+
+**Original entry (surfaced 2026-05-22)**
 
 **Symptom:** A Grailed-only search consistently returns ~5 listings even for popular queries. Same behavior on main (Firecrawl) and the hybrid branch (Brave) — not a regression.
 
