@@ -1,8 +1,82 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-21 (C1 shipped + background-searches plan parked)
+**Last updated:** 2026-05-22 (hybrid Brave/Firecrawl search routing landed)
 
-**Latest change (2026-05-21 — Background-searches plan parked in [docs/BACKGROUND_SEARCHES_PLAN.md](docs/BACKGROUND_SEARCHES_PLAN.md)):**
+**Latest change (2026-05-22 — Hybrid Brave/Firecrawl URL discovery + per-platform routing; merged from `try-serper`):**
+
+Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid**. The pipeline still ends in the same crawl4ai sidecar scrape; only the *URL discovery* step changes. Production behavior is unchanged unless `SEARCH_PROVIDER=hybrid` is set in env — the code-level default is still `firecrawl` so any deploy without the new env var sees zero change.
+
+**Background (driving question):** can we replace Firecrawl search with something cheaper without giving up listing-URL coverage? Investigated three providers (Firecrawl, Serper.dev, Brave) on three query sets and ruled out Serper (free tier blocks the `site:` operator). Brave came out as a viable cheap alternative with platform-dependent quality variance — strong on some platforms, weak on others — so we chose **per-platform routing**, not a wholesale swap.
+
+**Bake-off data driving the strategy (20 queries × 8 platforms × 2 providers = 320 calls; see [scripts/search_bakeoff.py](scripts/search_bakeoff.py) and [scripts/search_bakeoff_results.csv](scripts/search_bakeoff_results.csv)):**
+
+| Platform | Brave / Firecrawl listing-URL ratio | Strategy chosen |
+|---|---|---|
+| vinted | 126% (Brave wins) | BRAVE_ONLY |
+| stockx | 102% (tie) | BRAVE_ONLY |
+| poshmark | 71% but 100% reliability ≥5 listings | BRAVE_ONLY |
+| depop | 83% (Brave usually wins) | HYBRID (Brave-first, FC fallback if <N listings) |
+| grailed | 61% | HYBRID |
+| vestiaire | 46% | HYBRID |
+| mercari | 38% | FIRECRAWL_ONLY (Brave too lossy) |
+| ebay | 30% | FIRECRAWL_ONLY |
+
+`PLATFORM_STRATEGY` map lives at the top of [lib/firecrawl.ts](lib/firecrawl.ts) — tunable in one place.
+
+**Cost math at Brave $5/1000 (`$0.005/query`) + Firecrawl Hobby ($0.016/search call at limit=20):**
+- Pure Firecrawl Hobby (current main): **$0.128/search** (8 platforms × $0.016)
+- Pure Brave: **$0.040/search** (8 × $0.005), 69% cheaper but loses ~28% coverage
+- **Hybrid (production default once env is flipped): ~$0.073/search** = 6 always-Brave + 2 always-FC + ~0.66 expected fallback FC calls. 43% cheaper than Firecrawl Hobby, full coverage on the FC-only platforms, ~87–92% coverage on the hybrid ones (depending on `BRAVE_HYBRID_THRESHOLD`, default 5).
+- **Firecrawl Standard** ($99/mo flat) lands at $0.032/search and beats hybrid on both cost and coverage. **Switch target: ≥100 MRR / volume to justify Standard, then flip `SEARCH_PROVIDER=firecrawl` and we're done — no code change.**
+
+**What shipped:**
+1. **`lib/brave.ts` (new)** — Brave Search API adapter. Same `RawSearchResult[]` return shape as `searchPlatformViaFirecrawl` and `searchPlatformViaSerper`, so everything downstream is unchanged.
+2. **`lib/firecrawl.ts`** — `searchPlatform()` now routes on `SEARCH_PROVIDER ∈ {firecrawl, brave, hybrid, serper}` (default `firecrawl`). Hybrid mode uses `PLATFORM_STRATEGY` + `BRAVE_HYBRID_THRESHOLD` env. Brave failures in hybrid mode catch + fall back to Firecrawl so the safety net actually catches.
+3. **Per-call logging.** Every search emits `[search] platform=X provider=brave|firecrawl strategy=brave-only|firecrawl-only|hybrid-hit|hybrid-fallback|hybrid-error-fallback urls=N listings=M [threshold=K] [brave_listings=N]`. Tail the Next.js logs during a search to see which engine each platform used.
+4. **`.env.example`** — documents `BRAVE_API_KEY`, the four valid `SEARCH_PROVIDER` values, `BRAVE_HYBRID_THRESHOLD`, and the upgrade path to Firecrawl Standard.
+5. **`scripts/search_bakeoff.py`** — full bake-off harness with `--big` flag (20 queries, Firecrawl+Brave only) and threshold/coverage analysis. Results checked in: [scripts/search_bakeoff_results.csv](scripts/search_bakeoff_results.csv) (320 rows), [scripts/search_bakeoff_big.log](scripts/search_bakeoff_big.log) (full transcript).
+
+**Smoke-tested locally** with `SEARCH_PROVIDER=hybrid` on vinted/stockx/poshmark + ebay searches. All hybrid-routed platforms came back without errors; eBay still hit intermittent Akamai (§7 A — known issue, unrelated). Search latency unchanged end-to-end because the bottleneck is scraping (10–25s per Playwright fetch), not URL discovery — Brave's speed win (~500ms vs ~2s for Firecrawl) doesn't show up against a 98s scrape phase.
+
+**Files touched:**
+- new: [lib/brave.ts](lib/brave.ts), [lib/serper.ts](lib/serper.ts), [scripts/search_bakeoff.py](scripts/search_bakeoff.py), [scripts/search_bakeoff_results.csv](scripts/search_bakeoff_results.csv)
+- edited: [lib/firecrawl.ts](lib/firecrawl.ts), [.env.example](.env.example)
+- doc updates also in [SCALING.md](SCALING.md), [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md), [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md)
+
+**New env vars:**
+| Var | Default | Where | Purpose |
+|---|---|---|---|
+| `SEARCH_PROVIDER` | `firecrawl` | Next route | `firecrawl` (unchanged) / `brave` / `hybrid` / `serper`. Production should set `hybrid`. |
+| `BRAVE_API_KEY` | (none) | Next route | Required when SEARCH_PROVIDER ∈ {brave, hybrid}. Free tier = $5 credit/mo (~1000 queries). |
+| `BRAVE_HYBRID_THRESHOLD` | `5` | Next route | Hybrid mode: min listing-URL count from Brave to skip Firecrawl fallback. Raise to 8 for 92% coverage at 49% cost savings vs Hobby. |
+
+**Backlog (4 issues surfaced during smoke-test review, captured below in §7):**
+- §7 K — color in query text is not treated as a strict filter (design choice; revisit if users complain)
+- §7 L — brand-driven queries return generic results on platforms without that brand (ThredUp returning generic white hoodies for "fear of god essentials hoodie white")
+- §7 M — Grailed (and likely Depop/Vinted) `site:` index sparsity caps results at ~5–13 per query; strategic fix is platform-native search via `/scrape-search`
+- §7 A unchanged — eBay Akamai blocks remain intermittent
+
+**Gotchas worth remembering:**
+- The `lib/firecrawl.ts` filename is now a misnomer — it's the search-router entry point. Renaming is a follow-up; keeping it for now to minimize diff blast radius. Only `app/api/search/route.ts` imports `searchPlatform` and `scrapeListing` from it.
+- `lib/serper.ts` is kept in the tree but inert at runtime unless `SEARCH_PROVIDER=serper`. Serper's free tier blocks `site:` (HTTP 400 "Query pattern not allowed for free accounts") so it's only useful if/when we pay for Starter ($50/mo, 50K queries).
+- The hybrid path imports `filterListingUrls` from `lib/parse.ts`, which itself imports types from `lib/firecrawl.ts` — circular at type-erase level. `npx tsc --noEmit` is clean; Next.js / webpack handles it. Don't refactor without re-checking.
+- `BRAVE_API_KEY` was leaked in a prior chat transcript (user has been told to rotate). All subsequent commits redact key values from grep output.
+
+**Per-platform router behavior at a glance:**
+
+```
+SEARCH_PROVIDER=hybrid + this platform → which engine runs
+
+vinted, stockx, poshmark   → brave (1 call)
+depop, grailed, vestiaire  → brave first; if listings < BRAVE_HYBRID_THRESHOLD → firecrawl fallback
+mercari, ebay              → firecrawl (1 call, brave skipped)
+```
+
+**Out-of-scope this PR (worth tracking):** ranged backfill if a query hits 0 listings on a hybrid platform, structured-color extraction, brand-aware query tokenization, Grailed-native search-page extractor. All listed in §7 below.
+
+---
+
+**Previous change (2026-05-21 — Background-searches plan parked in [docs/BACKGROUND_SEARCHES_PLAN.md](docs/BACKGROUND_SEARCHES_PLAN.md)):**
 
 Companion to the C1 work this session. After planning Phase C2/C3/C4 with the user, the conclusion was that **none of those are the next move** — the highest-leverage work today is the background-searches + notifications feature, but it's **deferred until payments, hosting, and search-speed improvements land first**. Locked-in design decisions, full phased plan (Phase 0-4), schema, file list, and gotchas all captured in the new doc. Next session picking this up should start there, not re-derive from the "Concise considerations" sketch below in this file.
 
@@ -1316,7 +1390,8 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - **Auth layer:** `@supabase/ssr` for client + server clients; `proxy.ts` (Next 16 convention, not `middleware.ts`) refreshes session cookie on every request
 - `@supabase/supabase-js` v2.x for auth + database access
 - **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm + `cachetools` (response cache) + `asyncio.Semaphore` (global render gate) + **configurable browser pool** (`SIDECAR_BROWSER_POOL_SIZE`, default 1; round-robin picker, per-member driver-death recovery) + **per-domain pacer** (min-interval lock per host; defends anti-bot 403s on Depop/Grailed/eBay/Vestiaire)
-- Firecrawl (`@mendable/firecrawl-js` v4.23.0) — used **only for search**, not for scraping
+- **Search-provider router** (`lib/firecrawl.ts` — entry point, file is misnamed) — env-driven, routes to one of: Firecrawl (`@mendable/firecrawl-js` v4.23.0), Brave Search API (raw `fetch` to `api.search.brave.com/res/v1/web/search`), Serper.dev (raw POST, kept in tree but inert unless used), or a per-platform **hybrid** (Brave + Firecrawl fallback). All four return identical `RawSearchResult[]` shape so the downstream pipeline is engine-agnostic. **Default `SEARCH_PROVIDER=firecrawl`; production runs `hybrid` via env.**
+- Firecrawl used **only for search**, not for scraping; Brave likewise — every per-URL scrape goes through the crawl4ai sidecar.
 - Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
 - **Naming reminder:** the `saves` table and `/api/saves` routes are surfaced in the UI as "Collection". Both names refer to the same thing; only UI strings were renamed.
 - **"My Collection" is the default folder AND the all-items view.** New saves get `folder_id = <default folder id>` from `ensureDefaultFolder()`. Custom folders filter strictly by `folder_id`. My Collection's GET filter applies no folder restriction — every save renders there regardless. Items orphaned by folder delete (FK `on delete set null`) also show under My Collection automatically.
@@ -1858,6 +1933,47 @@ Audit triggered by size-filter bug fix. Findings:
 **User decision:** keep color/category/condition permissive. Reasoning: these three are inherently fuzzy ("Like New" vs "New", "navy" vs "blue", "hoodie" = tops or outerwear?), so a strict post-filter would drop too many listings the user actually wants. Pattern going forward: add **narrowly-targeted** post-filters only when a specific semantic collision shows up (like the Off-White case) — don't add broad strict filters.
 
 Do NOT re-propose strict filters here without a specific bad-case bug to motivate them.
+
+### K. Color in query text is NOT a strict filter (surfaced 2026-05-22 user smoke test of hybrid)
+
+**Symptom:** A search for "fear of god essentials hoodie white" returned Vinted listings explicitly titled "black-zip-up", "burgundy", and "dark-oatmeal". The color word in the query had no narrowing effect.
+
+**Root cause (working as designed):** [lib/colorFilter.ts](lib/colorFilter.ts) → `matchListingColor` is *only* the Off-White-brand-vs-white-color disambiguator. For any other color, AND for any case where the user typed a color in the query but didn't tick the FilterPanel color swatch, the function returns `true` for every listing. This matches §7 J's design choice (color/category/condition deliberately permissive).
+
+**Why it shows up now:** the user expected typing "white" in the query to act like a soft filter; the platform's onsite text-relevance ranks color words below brand/item, so a typed color barely constrains results.
+
+**Options to address (none chosen):**
+1. **UX nudge (cheapest):** if the typed query contains a color word and no color swatch is ticked, surface a toast "Tip — for cleaner color results, use the color filter in the panel." No filtering logic changes.
+2. **Strict-when-ticked:** raise the bar for the existing color swatch — drop listings whose title clearly says a different color word. Requires reversing §7 J's "color stays permissive" rule.
+3. **Structured color extraction:** add a `color` field to `Listing` (extracted via the LLM tier or a regex over the listing body, not just the title), then post-filter. Most accurate, most code.
+
+**Carry-forward instruction:** do not implement (2) or (3) without revisiting §7 J — the user explicitly chose permissive once. Option (1) is the minimal-risk first move.
+
+### L. Brand-driven queries return generic results on platforms without that brand (surfaced 2026-05-22)
+
+**Symptom:** "fear of god essentials hoodie white" on ThredUp returned 10 generic white hoodies, none Fear of God Essentials.
+
+**Root cause:** ThredUp's `/search/<slug>` is a fuzzy keyword match against ThredUp's own inventory (Gap/Madewell/basics — designer rare). When the brand isn't in inventory, ThredUp falls back to keyword match on "hoodie" + "white". Then [parseScrapedListings](lib/parse.ts#L61-L69) compounds the looseness: `titleMatchesQuery` accepts a listing if **any one** substantive query token appears in the title. "Nike White Hoodie" passes because "hoodie" matched even though "fear/god/essentials" didn't.
+
+**Options to address (none chosen):**
+1. **Brand-tier token detection:** split query tokens into brand-ish (multi-word, capitalized, dictionary lookup against a brand list, or LLM-tagged) vs descriptor. When a brand-ish token is present, require ≥1 brand-tier token in the title.
+2. **Use platform-side `brand` field:** ThredUp's JSON-LD per-product object has a `brand` field. Match the query against `brand + name` instead of just `name`.
+3. **UX redesign:** add a brand-name field to the search form (separate from the descriptor query); platforms with a `brand` URL parameter use it natively. Suggested by user during the smoke test.
+
+**Carry-forward instruction:** option 3 has the biggest payoff (also lets us use Grailed/Depop/Mercari's `brand` query parameters natively) but it's a UX change affecting the FilterPanel + SearchForm + route schema + parse step. Build a small PoC against ThredUp first to verify the JSON-LD `brand` field is populated on the search-grid response, then design the UX.
+
+### M. Search-engine `site:` index sparsity caps per-platform results (especially Grailed) (surfaced 2026-05-22)
+
+**Symptom:** A Grailed-only search consistently returns ~5 listings even for popular queries. Same behavior on main (Firecrawl) and the hybrid branch (Brave) — not a regression.
+
+**Root cause:** Both Google and Brave's `site:grailed.com` index is sparse relative to Grailed's actual catalog (thousands of new listings/day, crawlers can't keep up). `searchPlatform` requests 20 results; `filterListingUrls` keeps only `/grailed.com/listings/` URLs (drops brand/designer hubs); typically only 5–15 listing URLs survive. Vinted and Depop have the same structural limit, less visible because their bake-off counts averaged higher.
+
+**Options to address (none chosen):**
+1. **Platform-native search** (strategic, recommended): extend the `/scrape-search` pattern (already used for ThredUp/RealReal) to Grailed, Depop, Vinted, Mercari, Poshmark, StockX, Vestiaire — render the platform's own search page, harvest listing URLs from the grid + JSON-LD, drop into the existing scrape pipeline. One-platform-at-a-time, ~1 day each, no third-party search cost on that platform, no `site:` index dependency.
+2. **Use platform-native search just for Grailed first** (smallest unit of work). High ROI because Grailed is the worst current offender and has a clean JSON-LD on its search page.
+3. **Raise `searchLimit`** above 20. Capped at 20 today; raising it to 50 would cost 4× the search credits but might surface more listings if the index is just rate-limited not exhausted. Not recommended — Firecrawl's pricing model is per-result and the marginal listings are usually low-quality.
+
+**Carry-forward instruction:** start with (2) — survey Grailed's search-page HTML for the JSON-LD shape (same approach as the C1 eBay+Vestiaire survey), build a `crawl4ai-service/search_page_extractors.py` extractor for Grailed, add it to `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts). Estimated ~1 day if the HTML is clean. Subsequent platforms reuse the pattern.
 
 ### D. Carryover from Phase 1 (still open)
 

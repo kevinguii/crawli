@@ -6,7 +6,7 @@ hosting, throughput, infrastructure choices, or any scaling-related question.
 **Do not improvise scaling recommendations from training data — read this file
 and quote it.**
 
-Last updated: 2026-05-20 (PR 2 — pool + pacing + in-flight logging).
+Last updated: 2026-05-22 (hybrid Brave/Firecrawl search routing landed — see §4 C3).
 
 ---
 
@@ -30,7 +30,8 @@ Crawli is a **single-operator hosted service**:
 | "I'm moving to a VPS, what changes?" | See §1 tier matrix. Most likely: `POOL_SIZE=1`, bump renders to match RAM. |
 | "Should I enable the crawler pool?" | Only when you have a VPS with ≥4 GB RAM and ≥2 vCPU spare for a second Chromium. Pool=1 is correct for laptops and 2 GB VPSes. |
 | "When do I need a second sidecar instance?" | When `pool_alive` × renders is saturated AND CPU pegs >90% under normal load. See §4 (C2). |
-| "Should I pay for Firecrawl?" | When `SEARCH_PLATFORM_CONCURRENCY` regularly bunches up against the free tier (2). See §4 (C3). |
+| "Should I pay for Firecrawl?" | Not yet. As of 2026-05-22 the **hybrid Brave/Firecrawl router** is the default production setup — see §4 (C3). When MRR clears ~$100, flip `SEARCH_PROVIDER=firecrawl` and upgrade to Firecrawl Standard ($99/mo flat). Until then, hybrid wins on $/search. |
+| "What does the hybrid actually cost?" | ~$0.073/search at Brave $5/1000 + Firecrawl Hobby, vs $0.128/search pure Firecrawl Hobby (43% cheaper) and $0.032/search Firecrawl Standard. See §8 cost model. |
 | "Should I pay for an anti-bot unlocker?" | Last resort. Only after pacing (B2) and extractors (C1) fail to stabilize Depop/Grailed/eBay/Vestiaire under your production load. |
 
 ---
@@ -147,14 +148,37 @@ chats know what to implement when the user hits the right tier.
 - *Option a:* per-instance caches (each instance warms its own) — wastes some renders, simpler. Acceptable up to ~4 instances.
 - *Option b:* Redis-backed shared cache. Worth doing when N>4.
 
-### C3 — Firecrawl paid plan
+### C3 — Search-provider routing (Firecrawl ⇄ Brave hybrid ⇄ Firecrawl Standard)
 
-**Tier trigger:** `SEARCH_PLATFORM_CONCURRENCY` regularly bunches up against the free 2-concurrent ceiling (visible as: discovery wait time eats >20% of total search latency in production).
+**Status:** SHIPPED 2026-05-22 — hybrid router available behind `SEARCH_PROVIDER` env. Production should run `hybrid` until MRR justifies Firecrawl Standard.
 
-**What changes:** Firecrawl paid plan = 5 concurrent searches. Bump
-`SEARCH_PLATFORM_CONCURRENCY` to 5 in `.env`. Zero code changes.
+**Three modes, one env-var flip:**
 
-**Note:** Firecrawl is **search-only** in this app (URL discovery, see `lib/firecrawl.ts`). Scraping is the self-hosted sidecar. The paid plan does NOT speed up scraping; it only allows more parallel URL-discovery searches when many platforms are selected at once.
+| Mode | Per-search cost | Coverage | When to use |
+|---|---|---|---|
+| `firecrawl` (Hobby plan) | $0.128 | 100% baseline | Code default — set if you want the old behavior |
+| `hybrid` ← **recommended day-1** | ~$0.073 | ~87–92% depending on `BRAVE_HYBRID_THRESHOLD` | Free tier of Brave (~$5 credit/mo) + existing Firecrawl Hobby ($20/mo, 5000 credits) covers ~125 searches/mo before metering kicks in. 43% cheaper than `firecrawl` mode on Hobby. |
+| `firecrawl` (Standard plan) | $0.032 | 100% | Switch target when MRR clears ~$100 — Standard is $99/mo flat. Beats hybrid on both cost and coverage at that volume. **No code change** to switch; just bump the Firecrawl plan and keep `SEARCH_PROVIDER=firecrawl`. |
+| `brave` | $0.040 | ~72% | Aggressive cost cut, but loses 28% of listing URLs (esp. ebay/mercari). Not recommended. |
+
+**Per-platform routing inside `hybrid` mode** (see `PLATFORM_STRATEGY` in `lib/firecrawl.ts`):
+
+```
+vinted, stockx, poshmark    → BRAVE_ONLY    (Brave matches or beats Firecrawl)
+depop, grailed, vestiaire   → HYBRID        (Brave first; FC fallback if listings < BRAVE_HYBRID_THRESHOLD, default 5)
+mercari, ebay               → FIRECRAWL_ONLY (Brave too unreliable here)
+```
+
+**Pricing math (2026-05-22):**
+- Brave: **$5 per 1,000 queries** ($0.005/query) on paid tier. Free tier is $5 prepaid credit/mo (~1,000 queries).
+- Firecrawl Hobby: $20/mo, 5,000 credits, $0.004/credit. Each search call = 4 credits (limit=20 results) = $0.016/call.
+- Firecrawl Standard: $99/mo, 100,000 credits, $0.00099/credit. Each search call = $0.00396.
+
+**`SEARCH_PLATFORM_CONCURRENCY` is now mostly orthogonal** — Brave has no documented free-tier concurrency cap (rate-limited but generous), and Firecrawl Hobby's 2-concurrent ceiling matters less when only 2-3 platforms route through it per search.
+
+**Note:** Firecrawl is **search-only** in this app (URL discovery, see `lib/firecrawl.ts`). Scraping is the self-hosted sidecar. The paid Firecrawl plan does NOT speed up scraping; it only allows more parallel URL-discovery searches when many platforms are selected at once.
+
+**Source-of-truth bake-off:** [scripts/search_bakeoff_results.csv](scripts/search_bakeoff_results.csv) — 20 queries × 8 platforms × 2 providers (320 calls), `--big` mode of [scripts/search_bakeoff.py](scripts/search_bakeoff.py).
 
 ### C4 — Paid anti-bot unlocker (last resort)
 
@@ -266,17 +290,27 @@ The boundaries above are rough; actual transition is signal-driven:
 
 ## §8 — Cost model (rough)
 
-| Tier | Server | LLM tokens (post-C1) | Firecrawl | Paid unlocker | Total |
+| Tier | Server | LLM tokens (post-C1) | Search providers | Paid unlocker | Total |
 |---|---|---|---|---|---|
-| Solo | $0-5 | $1-3 | $0 | $0 | **$5-10** |
-| Small | $20-30 | $5-15 | $0 | $0 | **$25-45** |
-| Medium | $40-80 | $20-50 | $19 (paid) | $0 | **$80-150** |
-| Large | $200-400 | $100-300 | $19 | $30-100 (optional) | **$350-820** |
-| Enterprise | $1000+ | $500+ | $19+ | $200-1000 | **$2000+** |
+| Solo | $0-5 | $1-3 | $0 (free Brave + Hobby trial credits cover hybrid) | $0 | **$5-10** |
+| Small | $20-30 | $5-15 | Firecrawl Hobby ($20) + Brave metered ($0-5) — hybrid | $0 | **$45-70** |
+| Medium | $40-80 | $20-50 | Firecrawl Standard ($99) only, drop hybrid | $0 | **$160-230** |
+| Large | $200-400 | $100-300 | Firecrawl Standard + Brave overflow | $30-100 (optional) | **$350-820** |
+| Enterprise | $1000+ | $500+ | Standard+ | $200-1000 | **$2000+** |
 
-**LLM tokens scale down sharply once C1 lands** — eBay+Vestiaire alone are
-~40-60% of the LLM cost depending on platform mix. Implementing C1 may be
-worth more than upgrading server hardware.
+**Per-search cost projection** (at search volume ~5000/mo, beyond Hobby's free credits):
+
+| Mode | Per-search | 5000 searches/mo | 50,000 searches/mo |
+|---|---|---|---|
+| `firecrawl` Hobby | $0.128 | **$640** | n/a (caps before this) |
+| `hybrid` (Brave + Firecrawl Hobby) | $0.073 | **$365** | $3,650 — Hobby still doesn't fit |
+| `firecrawl` Standard | $0.032 | $99 fixed + ~$60 overflow ≈ **$160** | $99 fixed + $1,000 overflow = **$1,099** |
+| `brave` only | $0.040 | **$200** | **$2,000** |
+
+**Switch points (rules of thumb):**
+- Hybrid is the right default until you regularly exceed ~3000 searches/mo OR have ≥$100 MRR — whichever lands first.
+- Beyond ~3000 searches/mo, Firecrawl Standard's flat $99 beats hybrid's per-call pricing.
+- LLM tokens scale down sharply once C1 lands — eBay+Vestiaire alone are ~40-60% of the LLM cost. Implementing C1 may be worth more than upgrading anything else.
 
 ---
 

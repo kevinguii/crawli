@@ -84,6 +84,22 @@ function getHybridThreshold(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : 5;
 }
 
+function logSearch(
+  platform: string,
+  provider: 'firecrawl' | 'brave' | 'serper',
+  strategy: 'single' | 'brave-only' | 'firecrawl-only' | 'hybrid-hit' | 'hybrid-fallback' | 'hybrid-error-fallback',
+  results: RawSearchResult[],
+  extra?: Record<string, string | number>,
+): void {
+  const listings = filterListingUrls(results, platform).length;
+  const extras = extra
+    ? ' ' + Object.entries(extra).map(([k, v]) => `${k}=${v}`).join(' ')
+    : '';
+  console.info(
+    `[search] platform=${platform} provider=${provider} strategy=${strategy} urls=${results.length} listings=${listings}${extras}`,
+  );
+}
+
 async function searchPlatformHybrid(
   platform: string,
   query: string,
@@ -92,24 +108,41 @@ async function searchPlatformHybrid(
   const strategy = PLATFORM_STRATEGY[platform] ?? 'hybrid';
 
   if (strategy === 'firecrawl-only') {
-    return searchPlatformViaFirecrawl(platform, query, searchLimit);
+    const results = await searchPlatformViaFirecrawl(platform, query, searchLimit);
+    logSearch(platform, 'firecrawl', 'firecrawl-only', results);
+    return results;
   }
   if (strategy === 'brave-only') {
-    return searchPlatformViaBrave(platform, query, searchLimit);
+    const results = await searchPlatformViaBrave(platform, query, searchLimit);
+    logSearch(platform, 'brave', 'brave-only', results);
+    return results;
   }
 
   // hybrid: try Brave first, fall back to Firecrawl if listing-shape URL
   // count is below the threshold OR Brave errors out (rate limit, outage).
+  const threshold = getHybridThreshold();
   try {
     const braveResults = await searchPlatformViaBrave(platform, query, searchLimit);
     const listingCount = filterListingUrls(braveResults, platform).length;
-    if (listingCount >= getHybridThreshold()) {
+    if (listingCount >= threshold) {
+      logSearch(platform, 'brave', 'hybrid-hit', braveResults, { threshold });
       return braveResults;
     }
+    const fcResults = await searchPlatformViaFirecrawl(platform, query, searchLimit);
+    logSearch(platform, 'firecrawl', 'hybrid-fallback', fcResults, {
+      threshold,
+      brave_listings: listingCount,
+    });
+    return fcResults;
   } catch (err) {
-    console.warn(`[search] brave failed for ${platform}, falling back to firecrawl:`, err instanceof Error ? err.message : err);
+    console.warn(
+      `[search] brave failed for ${platform}, falling back to firecrawl:`,
+      err instanceof Error ? err.message : err,
+    );
+    const fcResults = await searchPlatformViaFirecrawl(platform, query, searchLimit);
+    logSearch(platform, 'firecrawl', 'hybrid-error-fallback', fcResults, { threshold });
+    return fcResults;
   }
-  return searchPlatformViaFirecrawl(platform, query, searchLimit);
 }
 
 export async function searchPlatform(
@@ -120,15 +153,21 @@ export async function searchPlatform(
   const searchLimit = 20;
 
   if (provider === 'serper') {
-    return searchPlatformViaSerper(platform, query, searchLimit);
+    const results = await searchPlatformViaSerper(platform, query, searchLimit);
+    logSearch(platform, 'serper', 'single', results);
+    return results;
   }
   if (provider === 'brave') {
-    return searchPlatformViaBrave(platform, query, searchLimit);
+    const results = await searchPlatformViaBrave(platform, query, searchLimit);
+    logSearch(platform, 'brave', 'single', results);
+    return results;
   }
   if (provider === 'hybrid') {
     return searchPlatformHybrid(platform, query, searchLimit);
   }
-  return searchPlatformViaFirecrawl(platform, query, searchLimit);
+  const results = await searchPlatformViaFirecrawl(platform, query, searchLimit);
+  logSearch(platform, 'firecrawl', 'single', results);
+  return results;
 }
 
 // ── Individual listing scraping (delegated to crawl4ai sidecar) ────────────
