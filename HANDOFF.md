@@ -1,6 +1,35 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-23 (full Stripe payments + search quota enforcement shipped)
+**Last updated:** 2026-05-23 (HTTPS / Let's Encrypt + Cloudflare Full strict)
+
+**Latest change (2026-05-23 — HTTPS / Let's Encrypt on origin + Cloudflare Full (strict)):**
+
+Site was returning Cloudflare 521 (web server down) because Cloudflare SSL/TLS was set to "Full" but nginx only listened on port 80. Fixed by:
+
+1. Temporarily set both Cloudflare A records (`@` and `www`) to DNS-only (grey cloud) so ACME challenge could reach origin directly.
+2. Ran `certbot --nginx -d thecrawli.com -d www.thecrawli.com` — cert issued, nginx auto-updated to add port 443 block. Cert saved at `/etc/letsencrypt/live/thecrawli.com/`. Auto-renews every 90 days via certbot cron.
+3. Re-enabled Cloudflare proxy (orange cloud) on both A records.
+4. Set Cloudflare SSL/TLS → Overview to **Full (strict)** — both the browser→Cloudflare and Cloudflare→origin legs are now encrypted with a valid cert.
+
+**Verified:** `curl -sv https://thecrawli.com` → TLS 1.3, cert verify ok, HTTP/2 307 → /login.
+
+**Deploying future code changes:**
+```bash
+ssh root@5.78.187.97
+cd /opt/crawli && git pull && npm run build && systemctl restart crawli-next
+# If sidecar code also changed:
+systemctl restart crawli-sidecar
+```
+
+**Gotchas:**
+- Cert expires 2026-08-21. Certbot cron handles renewal automatically — no manual action needed.
+- If cert renewal ever fails, Cloudflare Full (strict) will start 521-ing again (same as before). Check `certbot renew --dry-run` if you suspect issues.
+- To renew manually: `ssh root@5.78.187.97` then `certbot renew`.
+- When re-issuing a cert in the future, temporarily grey-cloud the DNS records in Cloudflare first (ACME HTTP challenge can't reach origin through Cloudflare proxy).
+- **nginx default site** — if you ever see the "Welcome to nginx" page instead of Crawli, run `rm /etc/nginx/sites-enabled/default && systemctl reload nginx`. The default site ships enabled and takes priority.
+- **Playwright on Ubuntu 26.04** — Python 3.14 has no pre-built lxml wheel and Playwright rejects the OS. Worked around by: (1) installing lxml via apt, (2) recreating the venv with `--system-site-packages`, (3) creating a wrapper script at `/root/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome` that delegates to `/snap/bin/chromium`. If Playwright upgrades and changes the expected chromium path (the `1223` revision number), recreate the wrapper at the new path.
+
+---
 
 **Latest change (2026-05-23 — Stripe payments + search quota enforcement, full stack):**
 
