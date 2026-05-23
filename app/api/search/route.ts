@@ -9,8 +9,14 @@ import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
 import { matchListingColor } from '@/lib/colorFilter';
 import { convertToUSD } from '@/lib/currency';
 import { buildCacheKey, getCachedEvents, setCachedEvents } from '@/lib/searchCache';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
+
+const FREE_SEARCH_CAP = 10;
+const PRO_SEARCH_CAP = 100;
+const FREE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
 
@@ -119,6 +125,14 @@ async function searchAndScrape(
 }
 
 export async function POST(request: Request) {
+  // Auth gate — Crawli is a hosted service for signed-in users. Anonymous
+  // requests are rejected so the quota counter has a user to attach to.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'unauthorized', message: 'Sign in to search' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -131,6 +145,59 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'Invalid request', details: parsed.error.issues },
       { status: 400 }
+    );
+  }
+
+  // Quota check. Pro/past_due users get PRO_SEARCH_CAP per billing period
+  // (reset by Stripe's invoice.payment_succeeded webhook). Free users get
+  // FREE_SEARCH_CAP per 30-day rolling window (reset lazily here on first
+  // search after the window expires).
+  const admin = createAdminClient();
+  const { data: profile, error: profileErr } = await admin
+    .from('profiles')
+    .select('subscription_status, searches_used_this_period, searches_period_start')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr || !profile) {
+    console.error(`[search] profile load failed for user=${user.id}:`, profileErr);
+    return NextResponse.json({ error: 'profile_unavailable' }, { status: 500 });
+  }
+
+  const status = profile.subscription_status ?? 'free';
+  const isPro = status === 'active' || status === 'past_due';
+  const cap = isPro ? PRO_SEARCH_CAP : FREE_SEARCH_CAP;
+
+  let used = profile.searches_used_this_period ?? 0;
+  if (!isPro) {
+    const periodStartMs = profile.searches_period_start
+      ? new Date(profile.searches_period_start).getTime()
+      : 0;
+    if (Date.now() - periodStartMs > FREE_PERIOD_MS) {
+      const { error: resetErr } = await admin
+        .from('profiles')
+        .update({
+          searches_used_this_period: 0,
+          searches_period_start: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+      if (resetErr) console.error(`[search] free-tier reset failed for user=${user.id}:`, resetErr);
+      else used = 0;
+    }
+  }
+
+  if (used >= cap) {
+    return NextResponse.json(
+      {
+        error: 'quota_exceeded',
+        message: isPro
+          ? 'You have used all 100 searches for this billing period.'
+          : 'You have used all 10 free searches this month. Upgrade to Crawli Pro for 100/month.',
+        used,
+        cap,
+        plan: isPro ? 'pro' : 'free',
+      },
+      { status: 402 },
     );
   }
 
@@ -228,6 +295,18 @@ export async function POST(request: Request) {
       // Skips empty/all-failed results so transient failures retry next time.
       if (allListings.length > 0) {
         void setCachedEvents(cacheKey, recordedEvents);
+        // Charge the quota only when the search actually produced results.
+        // Mirrors the cache-write rule: transient all-failure responses don't
+        // burn a search slot. Cache hits never reach this code path (early
+        // return above), so they're also free to the user — correct UX since
+        // they cost us nothing.
+        void admin
+          .from('profiles')
+          .update({ searches_used_this_period: used + 1 })
+          .eq('id', user.id)
+          .then(({ error }) => {
+            if (error) console.error(`[search] quota increment failed for user=${user.id}:`, error);
+          });
       }
     },
   });

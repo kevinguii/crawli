@@ -14,6 +14,7 @@ import FilterPanel, {
 } from './FilterPanel';
 import { useSearchHistory } from './SearchHistoryProvider';
 import { createClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 const PENDING_SEARCH_KEY = 'crawli_pending_search';
 
@@ -98,10 +99,28 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
       if (!res.ok) {
         let msg = 'Search failed. Please try again.';
+        let errorCode: string | undefined;
+        let quotaMessage: string | undefined;
         try {
           const data = await res.json();
-          msg = data?.error ?? msg;
+          errorCode = data?.error;
+          quotaMessage = data?.message;
+          msg = quotaMessage ?? data?.error ?? msg;
         } catch {}
+
+        // 402 quota_exceeded — show a richer toast with an Upgrade CTA
+        // instead of routing through the generic onError red banner.
+        if (res.status === 402 && errorCode === 'quota_exceeded') {
+          toast.error(quotaMessage ?? 'Search limit reached.', {
+            action: {
+              label: 'Upgrade',
+              onClick: () => { window.location.href = '/pricing'; },
+            },
+            duration: 8000,
+          });
+          return;
+        }
+
         onError(msg);
         return;
       }

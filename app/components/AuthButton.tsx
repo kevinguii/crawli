@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import SubscriptionBadge from './SubscriptionBadge';
 
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
@@ -77,8 +78,10 @@ export default function AuthButton() {
   const initial = (user.email ?? '?').charAt(0).toUpperCase();
 
   return (
-    <div ref={menuRef} className="relative">
-      <button
+    <div className="flex items-center gap-3">
+      <SubscriptionBadge />
+      <div ref={menuRef} className="relative">
+        <button
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
         aria-haspopup="menu"
@@ -153,6 +156,13 @@ export default function AuthButton() {
         >
           Settings
         </Link>
+        <Link
+          href="/pricing"
+          onClick={() => setMenuOpen(false)}
+          className="menu-item block w-full text-left px-3 py-2.5 text-sm"
+        >
+          Pricing
+        </Link>
         <button
           type="button"
           onClick={handleSignOut}
@@ -161,6 +171,7 @@ export default function AuthButton() {
         >
           Sign out
         </button>
+      </div>
       </div>
     </div>
   );

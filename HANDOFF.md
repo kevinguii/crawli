@@ -1,6 +1,133 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-22 (Avenue A/B framing + per-platform extraction-signal table + Avenue A survey playbook consolidated into §3 + §7 M — no code change)
+**Last updated:** 2026-05-23 (full Stripe payments + search quota enforcement shipped)
+
+**Latest change (2026-05-23 — Stripe payments + search quota enforcement, full stack):**
+
+End-to-end paid subscription flow now live. **Crawli Pro** at $10/mo or $100/yr ($20 annual discount). Single paid tier intentional — second tier deferred until usage data justifies it. Free tier: 10 searches/mo. Pro: 100 searches/mo. Caps are server-enforced in `/api/search`; UI surfaces remaining quota + upgrade CTAs.
+
+**Pricing decision (locked):**
+- Free: 10 searches/month, unlimited saves/watchlist (cheap to host).
+- Pro: $10/mo or $100/yr, 100 searches/month. Worst-case margin ~20% pre-cache, ~50% with realistic cache hits (cross-user dedup via §7 N).
+- No trial — free tier IS the trial.
+- `past_due` users keep Pro quota during Stripe's ~21-day retry window (standard SaaS practice). Webhook drops them to free on `customer.subscription.deleted`.
+- Quota resets are **event-driven for Pro** (Stripe `invoice.payment_succeeded` webhook resets `searches_used_this_period=0`) and **calendar-based for Free** (30-day rolling window, reset lazily in `/api/search` on first search after expiry). Closes the "let card expire and get a free 100 searches" abuse vector.
+
+**Schema additions (one-time migration already applied):**
+
+```sql
+alter table public.profiles
+  add column stripe_customer_id text unique,
+  add column subscription_status text default 'free',          -- free | active | past_due | canceled
+  add column subscription_price_id text,
+  add column subscription_period_end timestamptz,
+  add column searches_used_this_period int default 0,
+  add column searches_period_start timestamptz default now();
+
+-- Required for webhook + /api/search admin writes to land:
+GRANT SELECT, UPDATE ON public.profiles TO service_role;
+```
+
+The GRANT bit is critical — RLS alone is not enough on Supabase. Webhook handler silently failed for an hour without it (SYSTEM_DESIGN §4 already documented this gotcha; the new columns just inherited the missing GRANT). If a future schema change adds more columns or tables touched by admin client, repeat the GRANT.
+
+**API routes shipped (4 new + 1 modified):**
+
+| Route | Purpose |
+|---|---|
+| `POST /api/billing/checkout` | Creates Stripe Checkout session for `{plan: 'monthly'|'yearly'}`. Lazily creates Stripe customer + caches `stripe_customer_id` on profile. `client_reference_id` = Supabase user UUID (this is how webhook links events back to user). |
+| `POST /api/billing/portal` | Creates a Stripe-hosted Customer Portal session for cancel/swap-plan/update-card. |
+| `GET /api/billing/status` | Returns `{status, plan, used, cap, periodEnd}` for the signed-in user. Used by `SubscriptionBadge` + Settings billing section. |
+| `POST /api/webhooks/stripe` | Signature-verified webhook. Handles `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.payment_succeeded` (resets quota), `invoice.payment_failed` (sets past_due). |
+| `POST /api/search` (modified) | **Now requires auth** (401 for anonymous — was previously open). Reads profile, enforces cap, increments `searches_used_this_period` only on cache miss + non-empty results. Cache hits don't burn quota (they cost us nothing). Free-tier counter resets lazily after 30 days. |
+
+**Stripe API gotcha hit and fixed:** in `2026-04-22.dahlia`, `current_period_end` moved off the `Subscription` object onto the subscription item (`sub.items.data[0].current_period_end`). The webhook handler reads both locations defensively in case Stripe rolls it back.
+
+**Frontend pieces shipped:**
+- `/app/pricing/` — public marketing page (not under `(protected)/`). Server component reads auth + Pro status; client component `PricingCards` renders two plan cards. Anonymous "Subscribe" click → `/login?next=/pricing`. Pro user sees "Manage subscription" button (opens Stripe portal) instead of Subscribe.
+- `app/components/SubscriptionBadge.tsx` — header pill that fetches `/api/billing/status` and renders quota counter (`8/10` or `42/100`) + orange "Upgrade" pill for free users. Counter color shifts amber → red at 70% / 100%. Mounted inside `AuthButton` so it appears on every protected page automatically.
+- Settings → Billing section — plan pill, usage progress bar, next billing date (Pro only), Manage/Upgrade button. `?billing=success` query param shows a Sonner success toast on return from checkout, then strips itself from the URL via `replaceState` (no reload).
+- `SearchForm` — detects `402 quota_exceeded` and shows a Sonner toast with an Upgrade action button instead of the generic error banner.
+- `AuthButton` dropdown — added "Pricing" nav item between Settings and Sign out.
+
+**Env vars added (`.env`):**
+
+```
+NEXT_PUBLIC_SITE_URL=http://localhost:3000          # used for checkout success/cancel URLs; switch to https://thecrawli.com in prod
+STRIPE_SECRET_KEY=sk_test_...                       # or sk_live_ in prod
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_PRICE_ID_MONTHLY=price_...                   # NOTE: test-mode and live-mode prices have different IDs
+STRIPE_PRICE_ID_YEARLY=price_...
+STRIPE_WEBHOOK_SECRET=whsec_...                     # from `stripe listen` locally; from Stripe Dashboard for prod
+```
+
+**Local testing harness:**
+
+```bash
+brew install stripe/stripe-cli/stripe
+stripe login
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+# Copy the printed whsec_... into .env as STRIPE_WEBHOOK_SECRET, then restart `npm run dev:all`
+```
+
+Then trigger checkout from a signed-in browser tab via DevTools console:
+```js
+fetch('/api/billing/checkout', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({plan:'monthly'}) }).then(r=>r.json()).then(d=>window.location=d.url)
+```
+Pay with `4242 4242 4242 4242` / any future expiry / any CVC. Verify the webhook log shows 200 for all six event types, then check profile row populated.
+
+**Production launch checklist (Stripe side — not yet executed; Hetzner + DNS not yet set up):**
+1. Stripe dashboard → switch to **Live mode** (top-right toggle).
+2. Re-create `Crawli Pro` product + $10/mo + $100/yr prices in live mode (test/live IDs are separate namespaces).
+3. Grab live `pk_live_...` + `sk_live_...` API keys.
+4. In Stripe Dashboard → Developers → Webhooks → Add endpoint:
+   - URL: `https://thecrawli.com/api/webhooks/stripe`
+   - Events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed`
+   - Save → copy live `whsec_...` → that's prod `STRIPE_WEBHOOK_SECRET`.
+5. Activate Stripe account (business info, bank account, tax) before going live.
+6. Production `.env`: swap to `sk_live_...`, `pk_live_...`, live price IDs, live `whsec_...`, and `NEXT_PUBLIC_SITE_URL=https://thecrawli.com`.
+
+**Files touched / new (this session):**
+- new: `lib/stripe.ts`
+- new: `app/api/billing/checkout/route.ts`, `app/api/billing/portal/route.ts`, `app/api/billing/status/route.ts`, `app/api/webhooks/stripe/route.ts`
+- new: `app/pricing/page.tsx`, `app/pricing/PricingCards.tsx`
+- new: `app/components/SubscriptionBadge.tsx`
+- edited: `app/api/search/route.ts` (auth gate + quota), `app/components/AuthButton.tsx` (badge + Pricing menu item), `app/components/SearchForm.tsx` (402 toast), `app/(protected)/settings/page.tsx` (billing section + ?billing=success toast), `.env`, schema
+
+**Gotchas worth remembering:**
+- **Service-role GRANT** — see schema block above. Without it, every admin-client write to `profiles` silently fails with 42501 even though RLS passes.
+- **Test vs live mode** in Stripe are isolated namespaces. `price_...` from test won't resolve in live. Same for `whsec_...`. Re-create everything on launch day.
+- **`stripe listen` keeps webhooks reachable** during local dev; without it, `localhost:3000` is unreachable from Stripe's edge. Don't forget to restart the dev server after the first `stripe listen` (so it picks up the new `STRIPE_WEBHOOK_SECRET`).
+- **Cache hits don't burn quota.** Intentional UX. The `searches_used_this_period` increment is inside the `allListings.length > 0` block in `/api/search`, after a cache-miss path returned listings. Mirrors the cache-write rule (transient failures don't get cached either).
+- **`past_due` is still treated as Pro** in the quota cap (`PRO_SEARCH_CAP=100`). The grace window is intentional — Stripe Smart Retries recover ~40% of failed renewals in this window. The Settings billing section + SubscriptionBadge expose the status so the user can update their card.
+- **eBay Akamai residual LLM cost** (§7 A) is unchanged by all this — different system entirely. Search quota counts the *whole search*, not per-platform; eBay being slow/expensive doesn't change quota math.
+- **Anonymous users hitting `/api/search` now get 401** — this is a behavior change from before. The home page already required sign-in via `(protected)/` layout, so the practical impact is nil unless something is hitting the API directly without auth.
+
+**Verified:** `npx tsc --noEmit` clean. End-to-end flow tested with `4242` card: checkout completes, webhook fires all six event types (200s), profile row populates with all 4 fields, quota increments on real search, cache hits don't increment, 402 returned at cap and toast shows Upgrade button, settings billing section renders for both Free and Pro states, Stripe portal opens and cancellation propagates back to `subscription_status='free'`.
+
+**Next backlog items** (per roadmap memory, in order):
+1. Background searches + notifications (highest user leverage; deferred behind payments/hosting/search-speed — payments now done).
+2. Watchlist saved-searches + price filter polish.
+3. RealReal / ThredUp platform expansion.
+4. Help forum.
+
+---
+
+**Previous change (2026-05-22 — Stripe billing frontend wired up; UX polish):**
+
+Stripe payments frontend is now complete end-to-end. All API routes were already scaffolded by a prior session; this session verified correctness and added two small UX gaps:
+
+1. **`?billing=success` toast** — settings page now reads the `?billing=success` query param (set by the checkout redirect URL) and shows a Sonner success toast: "You're on Crawli Pro! Your subscription is active." The param is cleaned from the URL via `history.replaceState` without a page reload.
+2. **Pricing link in user dropdown** — `AuthButton.tsx` menu now includes a "Pricing" nav item between Settings and Sign out. Free users also see the Upgrade badge in the nav bar (unchanged).
+
+**Files touched (2):**
+- [app/(protected)/settings/page.tsx](app/(protected)/settings/page.tsx) — `useSearchParams` + success toast effect
+- [app/components/AuthButton.tsx](app/components/AuthButton.tsx) — Pricing link in dropdown
+
+**Server note:** The server's `/opt/crawli/.env` must include `SUPABASE_SERVICE_ROLE_KEY` — it is used by all billing API routes (checkout, portal, webhook) and the search quota check. It is in the local `.env` but was omitted from the handoff's server env-vars list. Add it before deploying.
+
+**Verified:** `npx tsc --noEmit` clean.
+
+---
 
 **Latest change (2026-05-22 — Grailed-native search-page extractor; resolves §7 M):**
 
@@ -2191,7 +2318,16 @@ GEMINI_API_KEY=...
 # Optional
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...                  # required for admin-client writes (search cache, billing webhook, /api/search quota)
 PORT=8000
+
+# Stripe payments (Crawli Pro $10/mo or $100/yr — see §0 latest change)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000     # swap to https://thecrawli.com in prod
+STRIPE_SECRET_KEY=sk_test_...                  # sk_live_... in prod
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_PRICE_ID_MONTHLY=price_...              # test-mode and live-mode have different IDs
+STRIPE_PRICE_ID_YEARLY=price_...
+STRIPE_WEBHOOK_SECRET=whsec_...                # from `stripe listen` locally; from Dashboard for prod
 ```
 
 **Provider rules:**

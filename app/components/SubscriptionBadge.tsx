@@ -1,0 +1,67 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+
+type BillingStatus = {
+  status: string;
+  plan: 'free' | 'pro';
+  used: number;
+  cap: number;
+  periodEnd: string | null;
+};
+
+export default function SubscriptionBadge() {
+  const [data, setData] = useState<BillingStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/billing/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        setData(d);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading || !data) return null;
+
+  const remaining = Math.max(0, data.cap - data.used);
+  const ratio = data.used / data.cap;
+  const isFree = data.plan === 'free';
+
+  // Color the counter as the user approaches the cap.
+  const counterColor =
+    ratio >= 1 ? 'var(--error, #dc2626)' : ratio >= 0.7 ? '#d97706' : 'var(--text-muted)';
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="hidden sm:inline text-xs font-medium tabular-nums"
+        style={{ color: counterColor }}
+        title={`${data.used} of ${data.cap} searches used${
+          isFree ? ' this month' : ' this billing period'
+        }`}
+      >
+        {remaining}/{data.cap}
+      </span>
+      {isFree && (
+        <Link
+          href="/pricing"
+          className="text-xs font-semibold rounded-full px-2.5 py-1 transition-opacity hover:opacity-90"
+          style={{ background: 'var(--accent)', color: '#ffffff' }}
+        >
+          Upgrade
+        </Link>
+      )}
+    </div>
+  );
+}

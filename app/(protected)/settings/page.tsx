@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import ThemeToggle from '@/app/components/ThemeToggle';
 import AuthButton from '@/app/components/AuthButton';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
@@ -112,9 +113,18 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
   );
 }
 
+type BillingStatus = {
+  status: string;
+  plan: 'free' | 'pro';
+  used: number;
+  cap: number;
+  periodEnd: string | null;
+};
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState<string | null>(null);
 
   // Preferences
@@ -123,9 +133,27 @@ export default function SettingsPage() {
   const [prefSaving, setPrefSaving] = useState(false);
   const [prefSaved, setPrefSaved] = useState(false);
 
+  // Billing
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
+
   // Delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('billing') === 'success') {
+      toast.success("You're on Crawli Pro!", {
+        description: 'Your subscription is active. Enjoy 100 searches per month.',
+        duration: 6000,
+      });
+      // Clean up the param without reloading
+      const url = new URL(window.location.href);
+      url.searchParams.delete('billing');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -138,7 +166,30 @@ export default function SettingsPage() {
       }
       setPrefLoading(false);
     });
+
+    fetch('/api/billing/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        setBilling(d);
+        setBillingLoading(false);
+      })
+      .catch(() => setBillingLoading(false));
   }, []);
+
+  async function handleOpenPortal() {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      alert(data.error ?? 'Could not open billing portal');
+    } finally {
+      setPortalLoading(false);
+    }
+  }
 
   function togglePlatform(key: string) {
     setPlatforms((prev) =>
@@ -269,6 +320,120 @@ export default function SettingsPage() {
               Delete account
             </button>
           </Row>
+        </Section>
+
+        {/* ── Billing ── */}
+        <Section title="Billing" description="Manage your plan and search quota.">
+          {billingLoading || !billing ? (
+            <div className="pt-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+              Loading…
+            </div>
+          ) : (
+            <>
+              <Row
+                label="Plan"
+                sublabel={
+                  billing.plan === 'pro'
+                    ? billing.status === 'past_due'
+                      ? 'Payment failed — update your card to keep your subscription active'
+                      : 'Crawli Pro'
+                    : 'Crawli Free'
+                }
+              >
+                <span
+                  className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  style={{
+                    background:
+                      billing.status === 'past_due'
+                        ? '#d97706'
+                        : billing.plan === 'pro'
+                        ? 'var(--accent)'
+                        : 'var(--surface-hover)',
+                    color: billing.plan === 'pro' || billing.status === 'past_due' ? '#ffffff' : 'var(--text-muted)',
+                  }}
+                >
+                  {billing.plan === 'pro' ? 'Pro' : 'Free'}
+                </span>
+              </Row>
+              <Row
+                label="Searches used"
+                sublabel={
+                  billing.plan === 'pro'
+                    ? 'Resets on your next billing date'
+                    : 'Resets 30 days after your first search this period'
+                }
+              >
+                <div className="flex items-center gap-3 w-48">
+                  <div
+                    className="flex-1 h-2 rounded-full overflow-hidden"
+                    style={{ background: 'var(--surface-hover)' }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, Math.round((billing.used / billing.cap) * 100))}%`,
+                        background:
+                          billing.used / billing.cap >= 1
+                            ? '#dc2626'
+                            : billing.used / billing.cap >= 0.7
+                            ? '#d97706'
+                            : 'var(--accent)',
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-xs tabular-nums font-medium"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {billing.used}/{billing.cap}
+                  </span>
+                </div>
+              </Row>
+              {billing.plan === 'pro' && billing.periodEnd && (
+                <Row label="Next billing date" sublabel="When your next payment will be charged">
+                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {new Date(billing.periodEnd).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </Row>
+              )}
+              <Row
+                label={billing.plan === 'pro' ? 'Manage subscription' : 'Upgrade to Pro'}
+                sublabel={
+                  billing.plan === 'pro'
+                    ? 'Change plan, update card, or cancel'
+                    : '100 searches/mo, $10/mo or $100/yr'
+                }
+              >
+                {billing.plan === 'pro' ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenPortal}
+                    disabled={portalLoading}
+                    className="rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{
+                      background: 'var(--surface-hover)',
+                      color: 'var(--text)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {portalLoading ? 'Opening…' : 'Manage'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/pricing"
+                    className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
+                    style={{ background: 'var(--accent)' }}
+                  >
+                    Upgrade
+                  </Link>
+                )}
+              </Row>
+            </>
+          )}
         </Section>
 
         {/* ── Preferences ── */}

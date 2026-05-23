@@ -75,6 +75,27 @@ export async function POST(req: NextRequest) {
         await admin.from('profiles').update({ subscription_status: 'past_due' }).eq('id', userId);
         break;
       }
+      case 'invoice.payment_succeeded': {
+        // Fires on every successful charge — initial subscription, renewals,
+        // and recovery after past_due. We use it to reset the Pro user's
+        // search quota for the new billing period. Free users reset via
+        // calendar-based logic in /api/search (they never hit this code path).
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        const userId = await userIdFromCustomer(admin, customerId);
+        console.log(`[stripe-webhook] invoice.payment_succeeded customer=${customerId} userId=${userId}`);
+        if (!userId) break;
+        const { error } = await admin.from('profiles').update({
+          searches_used_this_period: 0,
+          searches_period_start: new Date().toISOString(),
+        }).eq('id', userId);
+        if (error) {
+          console.error(`[stripe-webhook] quota reset failed for user=${userId}:`, error);
+        } else {
+          console.log(`[stripe-webhook] quota reset for user=${userId}`);
+        }
+        break;
+      }
       default:
         break;
     }
