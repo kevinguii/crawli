@@ -29,7 +29,7 @@ export default async function PricingPage() {
         <Link
           href="/"
           aria-label="Close"
-          className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
           style={{ color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
