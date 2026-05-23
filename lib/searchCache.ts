@@ -25,13 +25,26 @@ function canonicalFilters(filters: FilterState | undefined): Record<string, unkn
   return out;
 }
 
+// Normalization is for cache-key hashing ONLY. The original query is sent to
+// the providers verbatim; we just want "nike hoodie white" and "white-nike
+// hoodie" to hit the same cache row since platforms treat them identically.
+function normalizeQuery(query: string): string {
+  const stripped = query
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ') // drop punctuation; keep letters/numbers
+    .replace(/\s+/g, ' ')
+    .trim();
+  const tokens = stripped.split(' ').filter(Boolean).sort();
+  return tokens.join(' ');
+}
+
 export function buildCacheKey(
   query: string,
   platforms: string[],
   filters: FilterState | undefined,
 ): string {
   const payload = JSON.stringify({
-    q: query.trim().toLowerCase().replace(/\s+/g, ' '),
+    q: normalizeQuery(query),
     p: [...platforms].sort(),
     f: canonicalFilters(filters),
   });
