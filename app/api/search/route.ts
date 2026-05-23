@@ -8,6 +8,7 @@ import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
 import { matchListingColor } from '@/lib/colorFilter';
 import { convertToUSD } from '@/lib/currency';
+import { buildCacheKey, getCachedEvents, setCachedEvents } from '@/lib/searchCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +136,7 @@ export async function POST(request: Request) {
 
   const { query, platforms, filters } = parsed.data;
   const encoder = new TextEncoder();
+  const cacheKey = buildCacheKey(query, platforms, filters as FilterState | undefined);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -142,8 +144,17 @@ export async function POST(request: Request) {
         controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
       };
 
+      const cached = await getCachedEvents(cacheKey);
+      if (cached && cached.length > 0) {
+        console.log(`[search-cache] hit key=${cacheKey.slice(0, 12)} events=${cached.length}`);
+        for (const event of cached) write(event);
+        controller.close();
+        return;
+      }
+
       write({ type: 'start', query, platforms });
 
+      const recordedEvents: SearchStreamEvent[] = [{ type: 'start', query, platforms }];
       const allListings: Listing[] = [];
 
       // A5: cap how many platforms enter the scrape phase at once. The
@@ -161,12 +172,17 @@ export async function POST(request: Request) {
         parseInt(process.env.SEARCH_PLATFORM_CONCURRENCY ?? '3', 10) || 3,
       );
 
+      const writeAndRecord = (event: SearchStreamEvent) => {
+        write(event);
+        recordedEvents.push(event);
+      };
+
       await allSettledWithConcurrency(
         platforms.map((platform) => async () => {
           try {
             const listings = await searchAndScrape(platform, query, filters as FilterState | undefined);
             allListings.push(...listings);
-            write({
+            writeAndRecord({
               type: 'platform_done',
               platform,
               status: 'ok',
@@ -175,7 +191,7 @@ export async function POST(request: Request) {
             });
           } catch (err) {
             console.error(`[search] ${platform} failed:`, err);
-            write({
+            writeAndRecord({
               type: 'platform_done',
               platform,
               status: 'failed',
@@ -203,8 +219,16 @@ export async function POST(request: Request) {
           ? Math.round(usdPrices.reduce((a, b) => a + b, 0) / usdPrices.length)
           : null;
 
-      write({ type: 'final', priceRange, averagePrice });
+      const finalEvent: SearchStreamEvent = { type: 'final', priceRange, averagePrice };
+      write(finalEvent);
+      recordedEvents.push(finalEvent);
       controller.close();
+
+      // Cache only successful searches that returned at least one listing.
+      // Skips empty/all-failed results so transient failures retry next time.
+      if (allListings.length > 0) {
+        void setCachedEvents(cacheKey, recordedEvents);
+      }
     },
   });
 

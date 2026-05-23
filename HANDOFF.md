@@ -1,8 +1,72 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-22 (hybrid Brave/Firecrawl search routing landed)
+**Last updated:** 2026-05-22 (user-query search cache landed — §7 N)
 
-**Latest change (2026-05-22 — Hybrid Brave/Firecrawl URL discovery + per-platform routing; merged from `try-serper`):**
+**Latest change (2026-05-22 — User-query NDJSON cache in Supabase; resolves §7 N):**
+
+Caches `/api/search` results across users at the Next.js layer. Key = `sha256(normalized_query + sorted(platforms) + canonical(filters))`. Same query/platforms/filters combo from any user inside the TTL window replays the cached NDJSON stream instantly (no Brave / no Firecrawl / no sidecar) — the biggest cost lever after the hybrid routing. Misses stream as normal and write the recorded events to Supabase on completion. Cache writes only happen when `allListings.length > 0` so transient all-failure responses retry next time.
+
+**Why now:** at projected 500 users / 3.5K searches/mo on hybrid, 20-40% of search infra cost is duplicate work across users. At $0.073/search that's $30-60/mo of pure dedup waste, and it pulls the Firecrawl Standard switch point closer. Cache also gives every later platform-native-search migration (§7 M) free dedup with no extra code.
+
+**What shipped:**
+1. **`lib/searchCache.ts` (new)** — `buildCacheKey(query, platforms, filters)`, `getCachedEvents(key)`, `setCachedEvents(key, events)`. Normalizes query (lowercase, collapse whitespace), sorts platforms, drops null/empty filter keys + sorts the rest. Both reads and writes are best-effort: Supabase failures log + return `null` / no-op so the cache never blocks a real search.
+2. **`app/api/search/route.ts`** — before emitting `start`, looks up the cache key. On hit: replay all stored events verbatim + close. On miss: stream normally while recording every event (`start` + each `platform_done` + `final`) into an in-memory array, then write to Supabase after `controller.close()` (fire-and-forget via `void`).
+3. **`.env.example`** — documents `SEARCH_CACHE_ENABLED` (default 1) and `SEARCH_CACHE_TTL_SECONDS` (default 3600 = 1 hour).
+4. **New env vars** (both optional, sensible defaults baked in — don't add to `.env` unless overriding):
+
+| Var | Default | Where | Purpose |
+|---|---|---|---|
+| `SEARCH_CACHE_ENABLED` | `1` | Next route | Set `0` to disable entirely (forces every search through the providers) |
+| `SEARCH_CACHE_TTL_SECONDS` | `3600` | Next route | How long a cached response stays valid |
+
+**Required migration — run once in Supabase SQL editor:**
+
+```sql
+create table if not exists public.search_cache (
+  key text primary key,
+  events jsonb not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null
+);
+create index if not exists idx_search_cache_expires_at on public.search_cache(expires_at);
+
+-- Service role only — end-users never read/write this table directly.
+alter table public.search_cache enable row level security;
+
+-- pg_cron cleanup (Supabase free tier supports pg_cron). Run nightly at 03:00 UTC.
+-- Enable the extension first (one-time): Database → Extensions → enable "pg_cron".
+select cron.schedule(
+  'search_cache_cleanup',
+  '0 3 * * *',
+  $$delete from public.search_cache where expires_at < now()$$
+);
+```
+
+If you don't want pg_cron, the lazy fall-back is fine: expired rows are filtered out by `expires_at > now()` on every read, they just accumulate dead weight until you cleanup. At 1-hour TTL and ~3.5K searches/mo, table peak size is ~30 MB (rows ~30 KB each, ~1K alive at any time) — well under the 500 MB free-tier limit, so even without cleanup you're fine for months.
+
+**Free-tier impact:** negligible. ~6% of database budget at peak (~30 MB / 500 MB), ~2% of egress budget (105 MB / 5 GB).
+
+**Cache hit/miss observability:**
+- Hits log `[search-cache] hit key=<12char> events=N` and skip all provider/sidecar work entirely.
+- Misses log nothing extra; the existing `[search] platform=X provider=…` log lines fire as normal.
+- Write failures log `[search-cache] write failed: <reason>` but never bubble up to the user.
+
+**Files touched (3 + 1 new):**
+- new: [lib/searchCache.ts](lib/searchCache.ts)
+- edited: [app/api/search/route.ts](app/api/search/route.ts), [.env.example](.env.example)
+
+**Verified:** `npx tsc --noEmit` clean. End-to-end test pending — run the migration in Supabase, then trigger the same search twice; second call should log `[search-cache] hit` and return instantly.
+
+**Gotchas worth remembering:**
+- The `SearchStreamEvent` discriminated union round-trips cleanly through JSONB — `Listing[]` inside `platform_done` is plain JSON already. No serialization shenanigans.
+- We use the **admin client** (`SUPABASE_SERVICE_ROLE_KEY`) for cache reads/writes — no per-user auth needed because the cache is global. RLS is enabled on the table as defense-in-depth; service role bypasses it.
+- Cache key intentionally **does not** include user ID — that's the entire point (cross-user dedup). If we later add user-specific filtering (e.g. saved-search exclusions), the key shape would change.
+- Failure mode: if Supabase is down, the cache silently no-ops — searches still work, they're just uncached. No 500s, no degraded UX.
+- §7 N is now RESOLVED; if you see it in the §7 list, the entry can be marked closed in the next sync.
+
+---
+
+**Previous change (2026-05-22 — Hybrid Brave/Firecrawl URL discovery + per-platform routing; merged from `try-serper`):**
 
 Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid**. The pipeline still ends in the same crawl4ai sidecar scrape; only the *URL discovery* step changes. Production behavior is unchanged unless `SEARCH_PROVIDER=hybrid` is set in env — the code-level default is still `firecrawl` so any deploy without the new env var sees zero change.
 
@@ -1975,7 +2039,13 @@ Do NOT re-propose strict filters here without a specific bad-case bug to motivat
 
 **Carry-forward instruction:** start with (2) — survey Grailed's search-page HTML for the JSON-LD shape (same approach as the C1 eBay+Vestiaire survey), build a `crawl4ai-service/search_page_extractors.py` extractor for Grailed, add it to `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts). Estimated ~1 day if the HTML is clean. Subsequent platforms reuse the pattern.
 
-### N. Search-result caching at the user-query level (surfaced 2026-05-22 — user expressed interest after cost analysis)
+### N. Search-result caching at the user-query level — **RESOLVED 2026-05-22**
+
+Shipped as option 1 (Supabase NDJSON replay cache). See Latest change at top of file for full details. Original framing below kept for context.
+
+---
+
+**Original entry (surfaced 2026-05-22 — user expressed interest after cost analysis)**
 
 **Symptom (cost driver, not a bug):** today's `_scrape_cache` and `_search_cache` (sidecar TTLCache, 30 min / 10 min respectively) only cache per-URL or per-platform-query at the sidecar layer. The Next.js `/api/search` endpoint has **no cache** — every call hits Brave + Firecrawl + the sidecar from scratch, even if 10 users searched `gucci marmont bag` in the same hour.
 
