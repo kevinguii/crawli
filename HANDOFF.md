@@ -1975,6 +1975,27 @@ Do NOT re-propose strict filters here without a specific bad-case bug to motivat
 
 **Carry-forward instruction:** start with (2) — survey Grailed's search-page HTML for the JSON-LD shape (same approach as the C1 eBay+Vestiaire survey), build a `crawl4ai-service/search_page_extractors.py` extractor for Grailed, add it to `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts). Estimated ~1 day if the HTML is clean. Subsequent platforms reuse the pattern.
 
+### N. Search-result caching at the user-query level (surfaced 2026-05-22 — user expressed interest after cost analysis)
+
+**Symptom (cost driver, not a bug):** today's `_scrape_cache` and `_search_cache` (sidecar TTLCache, 30 min / 10 min respectively) only cache per-URL or per-platform-query at the sidecar layer. The Next.js `/api/search` endpoint has **no cache** — every call hits Brave + Firecrawl + the sidecar from scratch, even if 10 users searched `gucci marmont bag` in the same hour.
+
+**Why it matters:** at scale, this is the biggest single cost-reduction lever after the hybrid. From the cost analysis (2026-05-22): 20-40% of search infra cost likely repeats across users. At ~$0.073/search and projected 500+ users, that's $30-$60/mo of pure duplicate cost — and it delays the Firecrawl Standard switch point (currently estimated at ~500 users / 3,500 searches/mo).
+
+**Proposed shape:**
+- Cache key: `hash(normalized_query + sorted(platforms) + sorted(filters))` — same query/filter combo across users hits the cache.
+- TTL: aggressive (1-4 hours). Resale listings change frequently; stale URLs are worse than re-fetching.
+- Location: Supabase table `search_cache(key, response_json, platforms_done text[], created_at)` OR Redis (introduces a new dep). Supabase wins on simplicity; Redis wins on speed + already-considered for C2 multi-instance scaling (SCALING.md §4).
+- **Tricky bit:** the response is a streaming NDJSON. A cache hit would need to *replay* all `platform_done` events back to the client. Either (a) cache the full final aggregate and replay it with synthetic event timing, or (b) cache per-platform-result and stream them in immediately.
+
+**Options (none chosen):**
+1. **Per-query NDJSON replay cache** (Supabase table). Cache the final aggregated result; on hit, replay all events instantly. Simplest. Best for cost.
+2. **Per-platform cache** (Redis, layered with current sidecar TTLCache). More granular; survives partial fan-out. Bigger infra change.
+3. **Skip — let Brave/Firecrawl absorb their own dedup.** Cheapest to build; neither provider caches user-side, so this saves nothing.
+
+**Carry-forward instruction:** option 1 has the best ROI for now. Schema add + a few-lines wrapper in `app/api/search/route.ts` to (a) hash the request, (b) check the cache, (c) on miss stream as normal and write to cache after the final event. Estimate ~half day. Pair with the FC Standard switch — the cache reduces the volume that drives the switch.
+
+**Synergy with §M (platform-native search):** if Grailed/Depop migrate to `/scrape-search`, the user-query cache covers them too with no extra code.
+
 ### D. Carryover from Phase 1 (still open)
 
 - **Grailed ~83% sold rate** — Google indexes lots of sold Grailed listings; nothing to do without paying for more search results or finding a different discovery method.
