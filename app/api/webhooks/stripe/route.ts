@@ -28,12 +28,17 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
 
   try {
+    console.log(`[stripe-webhook] received ${event.type}`);
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id;
         const subscriptionId = session.subscription as string | null;
-        if (!userId || !subscriptionId) break;
+        console.log(`[stripe-webhook] checkout.session.completed userId=${userId} sub=${subscriptionId}`);
+        if (!userId || !subscriptionId) {
+          console.warn('[stripe-webhook] missing userId or subscriptionId — skipping');
+          break;
+        }
 
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         await applySubscription(admin, userId, sub);
@@ -43,7 +48,11 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.created': {
         const sub = event.data.object as Stripe.Subscription;
         const userId = (sub.metadata?.supabase_user_id as string) ?? await userIdFromCustomer(admin, sub.customer as string);
-        if (!userId) break;
+        console.log(`[stripe-webhook] ${event.type} userId=${userId} customer=${sub.customer}`);
+        if (!userId) {
+          console.warn('[stripe-webhook] could not resolve userId — skipping');
+          break;
+        }
         await applySubscription(admin, userId, sub);
         break;
       }
@@ -82,16 +91,26 @@ async function applySubscription(
   userId: string,
   sub: Stripe.Subscription,
 ) {
-  const priceId = sub.items.data[0]?.price.id ?? null;
-  const periodEndUnix = (sub as unknown as { current_period_end?: number }).current_period_end;
+  const item = sub.items.data[0];
+  const priceId = item?.price.id ?? null;
+  const periodEndUnix =
+    (item as unknown as { current_period_end?: number })?.current_period_end ??
+    (sub as unknown as { current_period_end?: number }).current_period_end;
   const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null;
   const status = sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status;
+  const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
 
-  await admin.from('profiles').update({
+  const { error, data } = await admin.from('profiles').update({
     subscription_status: status,
     subscription_price_id: priceId,
     subscription_period_end: periodEnd,
-  }).eq('id', userId);
+    stripe_customer_id: customerId,
+  }).eq('id', userId).select();
+  if (error) {
+    console.error(`[stripe-webhook] supabase update failed for user=${userId}:`, error);
+  } else {
+    console.log(`[stripe-webhook] updated user=${userId} status=${status} rows=${data?.length ?? 0}`);
+  }
 }
 
 async function userIdFromCustomer(
