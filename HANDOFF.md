@@ -1,6 +1,16 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-23 (Auth deliverability + prod URL config)
+**Last updated:** 2026-05-24 (Supabase security linter fixes)
+
+**Latest change (2026-05-24 — Supabase security linter fixes):**
+
+Cleared Supabase database linter warnings pre-launch. All SQL run in Supabase SQL Editor, no code changes, no redeploy needed.
+
+- `REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC` — trigger function was callable via `/rest/v1/rpc/handle_new_user` by anon + authenticated. Revoking from PUBLIC (not just individual roles) fixes it. Trigger still fires correctly on signup.
+- `ALTER FUNCTION public.handle_new_user() SET search_path = public` + same for `handle_updated_at` — locks search_path to prevent schema-injection attacks.
+- `CREATE POLICY "no_direct_access" ON public.search_cache AS RESTRICTIVE TO anon, authenticated USING (false)` — RLS was enabled on search_cache with no policy; service_role bypasses RLS anyway so this is a no-op functionally.
+- Avatars bucket: dropped broad public SELECT policy, replaced with `TO authenticated USING (bucket_id = 'avatars')`. Also changed bucket from "public" to "private" in Storage settings — access now controlled entirely by RLS.
+- **Remaining:** `auth_leaked_password_protection` (HaveIBeenPwned check) — requires Supabase Pro. Deferred.
 
 **Latest change (2026-05-23 — Resend SMTP + prod URL config + signup-collision fix):**
 
