@@ -50,7 +50,7 @@ function LoginContent() {
       router.push('/');
       router.refresh();
     } else {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -60,6 +60,15 @@ function LoginContent() {
       if (error) {
         setLoading(null);
         setError(error.message);
+        return;
+      }
+      // Supabase returns a fake user with empty identities[] when the email
+      // is already registered (anti-enumeration). Detect and message clearly.
+      if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        setLoading(null);
+        setError(
+          'This email is already registered. Try logging in, or use "Forgot password" if you signed up with Google.'
+        );
         return;
       }
       router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);

@@ -1,8 +1,46 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-23 (HTTPS / Let's Encrypt + Cloudflare Full strict)
+**Last updated:** 2026-05-23 (Auth deliverability + prod URL config)
 
-**Latest change (2026-05-23 — HTTPS / Let's Encrypt on origin + Cloudflare Full (strict)):**
+**Latest change (2026-05-23 — Resend SMTP + prod URL config + signup-collision fix):**
+
+Pre-launch hygiene pass for friends-launch this week. Three changes, two dashboards + one tiny code edit.
+
+**1. Resend → Supabase Auth SMTP (no code change, no redeploy).** Supabase free tier caps SMTP at ~4 emails/hr (the "do I pay $25/mo for Pro" question). Resend free tier (3000/mo, 100/day) plugs into Supabase Dashboard → Authentication → Emails → SMTP Settings. Sender `noreply@thecrawli.com`, host `smtp.resend.com`, port 465, username `resend`, password = Resend API key. Domain verified via SPF+DKIM TXT records in Cloudflare DNS. Supabase rate limit bumped from 4 → 50/hr. **Important:** emails are sent from Supabase's infra using these creds — your Hetzner box is not involved, so no `.env` change or redeploy needed.
+
+**2. Production URL configuration (dashboard-only).** Google OAuth was redirecting to `localhost:3000` in prod because Supabase's Site URL defaulted to local-dev. Fixed in two dashboards:
+- **Supabase → Auth → URL Configuration:** Site URL = `https://thecrawli.com`; Redirect URLs include both `https://thecrawli.com/**` and `http://localhost:3000/**` (keep both so local dev still works).
+- **Google Cloud Console → APIs & Services → Credentials → OAuth client:** Authorized JavaScript origins = `https://thecrawli.com` + `http://localhost:3000`; Authorized redirect URIs MUST include `https://peyqxfijdrziqfjkxjsn.supabase.co/auth/v1/callback` (the Supabase callback — this is what Google posts to, not your app).
+- **Server `/opt/crawli/.env`:** set `NEXT_PUBLIC_SITE_URL=https://thecrawli.com` (used by Stripe checkout return URLs, not OAuth, but should be correct for consistency). Restart with `systemctl restart crawli-next` after.
+
+**3. Signup-collision UX fix ([app/login/page.tsx](app/login/page.tsx)).** Supabase's anti-enumeration behavior returns `{ user: { identities: [] }, session: null }` instead of an error when you sign up with an email that already exists (including Google-OAuth users). UI was routing to `/check-email` with no email ever sent → users waited forever for a confirmation that wasn't coming. Now detects empty `identities[]` and shows: *"This email is already registered. Try logging in, or use Forgot password if you signed up with Google."* — clearer path forward without leaking account existence to attackers (the response shape is still the same as a real signup; only the post-signup branch differs).
+
+**Google OAuth consent screen branding (free fix for the ugly `peyqxfijdrziqfjkxjsn.supabase.co` URL):** Google Cloud Console → OAuth consent screen → set App name "Crawli", upload logo, set Application home page + privacy policy + TOS URLs, add `thecrawli.com` to Authorized domains. The supabase URL still appears in small print on the consent screen but users focus on Crawli branding. **Full fix** would be Supabase custom auth domain (`auth.thecrawli.com`) — requires Supabase Pro ($25/mo). Deferred until/unless Pro is justified for other reasons (PITR backups, no SMTP cap, etc.).
+
+**Gotchas worth remembering:**
+- Resend free tier is 100/day. Friends launch fine; password-reset storms or bulk signups will hit it. Upgrade is $20/mo for 50K/mo.
+- Domain verification in Resend requires SPF + DKIM TXT records in your DNS provider (Cloudflare). TXT records bypass Cloudflare proxy automatically.
+- After Resend domain verification, send a test email via Supabase dashboard's "Send test email" button (bottom of SMTP Settings panel) OR just sign up with a real email in incognito on prod.
+- The Google consent screen's "to continue to <host>" line comes from the **redirect URI host**, not Authorized domains. Adding/removing entries to Authorized domains doesn't change what users see — it's a permission gate, not a display.
+- Don't disable email verification to dodge SMTP limits — security regression (accounts get squatted post-launch). Resend solves this without giving up verification.
+
+**Verified:** Resend domain verified ✓, Supabase test email sends ✓. Production URL fixes pending dashboard updates by user.
+
+**Files touched (1):**
+- edited: [app/login/page.tsx](app/login/page.tsx) (signup-collision detection)
+
+**Pre-launch order this week (per session planning):**
+1. ✅ Resend SMTP + Supabase Site URL + Google OAuth URLs + signup fix (this entry)
+2. ⏳ Stripe activation paperwork submitted; live keys staged in `.env` commented out; flip to live once Stripe approves
+3. ⏳ Sentry (Next.js + Python sidecar) + UptimeRobot for `/health`
+4. ⏳ End-to-end smoke test (signup → search → quota → checkout → portal cancel)
+5. ⏳ Rate-limit `/api/search` (Upstash Redis); Supabase daily backups script
+6. ⏳ Drop eBay + Vestiaire from `DEFAULT_PLATFORMS` (RealReal already gated behind `REALREAL_ENABLED`)
+7. Repo cleanup (safe wins: build artifacts, scripts/ result CSVs, dead sibling repo at `../fashion-crawler/`) — Day 5
+
+---
+
+**Previous change (2026-05-23 — HTTPS / Let's Encrypt on origin + Cloudflare Full (strict)):**
 
 Site was returning Cloudflare 521 (web server down) because Cloudflare SSL/TLS was set to "Full" but nginx only listened on port 80. Fixed by:
 
