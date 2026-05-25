@@ -57,6 +57,17 @@ export async function POST(req: NextRequest) {
   if (name.length > 60) return NextResponse.json({ error: 'name too long' }, { status: 400 });
   if (descRaw.length > 280) return NextResponse.json({ error: 'description too long' }, { status: 400 });
 
+  const { data: existing } = await supabase
+    .from('collection_folders')
+    .select('id')
+    .eq('user_id', user.id)
+    .ilike('name', name)
+    .eq('is_default', false)
+    .limit(1);
+  if (existing && existing.length > 0) {
+    return NextResponse.json({ error: 'A collection with this name already exists' }, { status: 409 });
+  }
+
   const { data, error } = await supabase
     .from('collection_folders')
     .insert({

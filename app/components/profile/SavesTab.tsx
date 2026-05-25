@@ -346,12 +346,15 @@ export default function SavesTab() {
             setCardViewFolderId(folderId);
             setActiveFolderId(folderId);
           }}
+          onEdit={(f) => setEditMode({ kind: 'edit', folder: f })}
+          onDelete={(f) => setDeleteTarget(f)}
         />
       )}
 
       {editMode && (
         <FolderEditModal
           mode={editMode}
+          folders={folders}
           onClose={() => setEditMode(null)}
           onSubmit={(payload) => submitFolder(editMode, payload).then(() => setEditMode(null))}
         />
@@ -532,10 +535,12 @@ function FolderPill({
 }
 
 function FolderCardGrid({
-  folders, onSelect,
+  folders, onSelect, onEdit, onDelete,
 }: {
   folders: CollectionFolder[];
   onSelect: (id: string) => void;
+  onEdit: (f: CollectionFolder) => void;
+  onDelete: (f: CollectionFolder) => void;
 }) {
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
 
@@ -567,39 +572,104 @@ function FolderCardGrid({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {folders.map((f) => (
-        <button
+        <FolderCard
           key={f.id}
-          type="button"
-          onClick={() => onSelect(f.id)}
-          className="flex aspect-square flex-col items-start justify-end rounded-2xl overflow-hidden text-left transition-transform hover:scale-[1.02] relative group"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          {previews[f.id]?.length ? (
-            <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-2 opacity-60 group-hover:opacity-75 transition-opacity">
-              {previews[f.id].map((url, idx) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={idx}
-                  src={url}
-                  alt=""
-                  className="w-full h-full object-cover rounded"
-                />
-              ))}
-            </div>
-          ) : null}
-          <div className="relative z-10 p-4 w-full flex flex-col items-start justify-end">
-            <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-              {f.name}
-            </div>
-            <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-              {f.item_count ?? 0} items
-            </div>
-          </div>
-        </button>
+          folder={f}
+          previews={previews[f.id] ?? []}
+          onSelect={() => onSelect(f.id)}
+          onEdit={() => onEdit(f)}
+          onDelete={() => onDelete(f)}
+        />
       ))}
+    </div>
+  );
+}
+
+function FolderCard({
+  folder, previews, onSelect, onEdit, onDelete,
+}: {
+  folder: CollectionFolder;
+  previews: string[];
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [menuOpen]);
+
+  return (
+    <div
+      onClick={onSelect}
+      className="flex aspect-square flex-col items-start justify-end rounded-2xl overflow-hidden text-left transition-transform hover:scale-[1.02] relative group cursor-pointer"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      {previews.length ? (
+        <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-2 opacity-60 group-hover:opacity-75 transition-opacity">
+          {previews.map((url, idx) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={idx} src={url} alt="" className="w-full h-full object-cover rounded" />
+          ))}
+        </div>
+      ) : null}
+
+      <div
+        ref={menuRef}
+        className="absolute top-2 right-2 z-20"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="Folder menu"
+          className="flex h-7 w-7 items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+        >
+          ⋯
+        </button>
+        {menuOpen && (
+          <div
+            className="absolute right-0 top-full z-30 mt-1 w-40 rounded-lg py-1 text-sm shadow-xl"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+          >
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onEdit(); }}
+              className="block w-full px-3 py-2 text-left hover:opacity-80"
+              style={{ color: 'var(--text)' }}
+            >
+              {folder.is_default ? 'Edit description' : 'Edit collection'}
+            </button>
+            {!folder.is_default && (
+              <button
+                type="button"
+                onClick={() => { setMenuOpen(false); onDelete(); }}
+                className="block w-full px-3 py-2 text-left hover:opacity-80"
+                style={{ color: '#E24B4A' }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="relative z-10 p-4 w-full flex flex-col items-start justify-end">
+        <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          {folder.name}
+        </div>
+        <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
+          {folder.item_count ?? 0} items
+        </div>
+      </div>
     </div>
   );
 }
@@ -870,11 +940,12 @@ function ModalShell({ onClose, children }: { onClose: () => void; children: Reac
 }
 
 function FolderEditModal({
-  mode, onClose, onSubmit,
+  mode, onClose, onSubmit, folders,
 }: {
   mode: FolderEditMode;
   onClose: () => void;
   onSubmit: (payload: { name: string; description: string }) => void;
+  folders: CollectionFolder[];
 }) {
   const isEdit = mode.kind === 'edit';
   const folder = mode.kind === 'edit' ? mode.folder : null;
@@ -884,13 +955,24 @@ function FolderEditModal({
   const [description, setDescription] = useState(folder?.description ?? '');
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = isDefault ? true : name.trim().length > 0;
+  const currentFolderId = folder?.id ?? null;
+  const isDuplicate = !isDefault && name.trim().length > 0 && folders.some(
+    (f) => !f.is_default && f.id !== currentFolderId && f.name.toLowerCase() === name.trim().toLowerCase()
+  );
+  const canSubmit = isDefault ? true : (name.trim().length > 0 && !isDuplicate);
   const title = isEdit ? (isDefault ? 'Edit My Collection' : 'Edit collection') : 'New collection';
 
   const handleSubmit = () => {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
     onSubmit({ name: name.trim(), description: description.trim() });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   return (
@@ -927,9 +1009,14 @@ function FolderEditModal({
             style={isDefault ? { opacity: 0.6 } : undefined}
           />
           {isDefault && (
-          <p className="mt-1 text-[11px]" style={{ color: 'var(--text-dim)' }}>
-            My Collection&apos;s name can&apos;t be changed.
-          </p>
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--text-dim)' }}>
+              My Collection&apos;s name can&apos;t be changed.
+            </p>
+          )}
+          {isDuplicate && (
+            <p className="mt-1 text-[11px]" style={{ color: '#E24B4A' }}>
+              A collection with this name already exists.
+            </p>
           )}
         </div>
 
@@ -940,6 +1027,7 @@ function FolderEditModal({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="What kind of items belong here?"
             maxLength={280}
             rows={3}

@@ -36,6 +36,20 @@ export async function PATCH(
     return NextResponse.json({ error: 'cannot rename default folder' }, { status: 403 });
   }
 
+  if (nameProvided && name) {
+    const { data: existing } = await supabase
+      .from('collection_folders')
+      .select('id')
+      .eq('user_id', user.id)
+      .ilike('name', name)
+      .eq('is_default', false)
+      .neq('id', id)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ error: 'A collection with this name already exists' }, { status: 409 });
+    }
+  }
+
   const updates: Record<string, string | null> = {};
   if (nameProvided) updates.name = name;
   if (descProvided) updates.description = descRaw || null;
