@@ -4,7 +4,6 @@ import { scrapeViaSidecar } from './scraper';
 import { searchPlatformViaSerper } from './serper';
 import { searchPlatformViaBrave } from './brave';
 import { filterListingUrls } from './parse';
-import { estimateFirecrawlSearchCredits, logApiUsage } from './apiMetrics';
 
 const client = new FirecrawlClient({
   apiKey: process.env.FIRECRAWL_API_KEY,
@@ -51,14 +50,6 @@ async function searchPlatformViaFirecrawl(
   const data = await withRetry(() =>
     client.search(siteQuery, { limit })
   );
-
-  // Log estimated credit usage
-  const estimatedCredits = estimateFirecrawlSearchCredits(limit);
-  logApiUsage({
-    provider: 'firecrawl',
-    platform,
-    estimatedCreditsUsed: estimatedCredits,
-  });
 
   const web = data.web ?? [];
   return web.map((item) => ({
