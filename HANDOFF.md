@@ -1,8 +1,12 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (production deployment + auth callback fixes)
+**Last updated:** 2026-05-25 (driver death pattern fix + production deployment)
 
-**Latest change (2026-05-25 — Production deployment + auth callback fixes):**
+**Latest change (2026-05-25 — Sidecar driver-death pattern fix):**
+
+Critical one-liner fix to [crawl4ai-service/main.py:91](crawl4ai-service/main.py#L91). The `_DRIVER_DEAD_PATTERNS` tuple was missing `"Target page, context or browser has been closed"` — when Depop's antibot killed the Playwright context, this error wasn't recognized, the pool member stayed "alive" with a dead context inside, and all subsequent renders (Grailed, other platforms) silently returned 0 results. Now the missing pattern is detected, `_mark_driver_dead()` triggers auto-recovery (~2–3s), and the pool member restarts. Verified: restarting sidecar post-fix restored Grailed from `{"results":[]}` to working searches. **This is distinct from the IP-blocking issue** (§7 O, O_1); antibot will still block on the first render, but the pool self-heals instead of staying poisoned.
+
+**Previous change (2026-05-25 — Production deployment + auth callback fixes):**
 
 First successful production deployment to Hetzner CCX13. Google OAuth now works end-to-end.
 
@@ -77,7 +81,7 @@ Pre-launch hygiene pass for friends-launch this week. Three changes, two dashboa
 **Pre-launch order this week (per session planning):**
 1. ✅ Resend SMTP + Supabase Site URL + Google OAuth URLs + signup fix (this entry)
 2. ⏳ Stripe activation paperwork submitted; live keys staged in `.env` commented out; flip to live once Stripe approves
-3. ⏳ Sentry (Next.js + Python sidecar) + UptimeRobot for `/health`
+3. ⏳ **Sentry (Next.js + Python sidecar) + UptimeRobot for `/health`** — CRITICAL after §7 O fix. UptimeRobot alerts on sidecar down; Sentry captures driver-death patterns so new error strings are visible before they cascade. Consider adding: smoke-test cron that runs real searches and alerts if urls > 0 but listings = 0 (catches silent pool poisoning).
 4. ⏳ End-to-end smoke test (signup → search → quota → checkout → portal cancel)
 5. ⏳ Rate-limit `/api/search` (Upstash Redis); Supabase daily backups script
 6. ⏳ Drop eBay + Vestiaire from `DEFAULT_PLATFORMS` (RealReal already gated behind `REALREAL_ENABLED`)
@@ -2412,6 +2416,10 @@ _DRIVER_DEAD_PATTERNS = (
 **Verified broken:** `curl -s -X POST http://localhost:8000/scrape -d '{"platform":"depop","url":"..."}' → {"result":null}` on the Hetzner prod box (2026-05-25). The sidecar was serving 200 OK with null on every /scrape request because the Chromium context was dead and undetected.
 
 **Note:** this fix makes recovery automatic but does NOT fix the underlying antibot/datacenter-IP issue. When Depop kills the context due to IP blocking, the pool member restarts (~2–3s) and the NEXT request gets a fresh context — but that fresh context will be blocked again immediately on the same IP. The proper fix for antibot is either (a) a residential proxy or (b) moving Depop to `SEARCH_PAGE_PLATFORMS` (Avenue A) so individual listing pages are never scraped. Both are tracked separately (§7 F and §7 M).
+
+**Verified fix (2026-05-25):** Deployed to prod (CCX13). Before: `curl /scrape-search platform=grailed` returned `{"results":[]}` persistently. After: same curl returned 5 results. The broken pool member now auto-recovers (~2s) on the next context-close error instead of silencing all platforms indefinitely.
+
+**Future improvement (LLM-based anomaly detection):** The whitelist approach (§7 O_1 future) is fragile long-term. An alternative for catching novel driver-death-pattern strings: batch-analyze sidecar logs weekly via Claude with a prompt like "flag any error messages that look like connection/handler failures even if the exact string is new." This would surface patterns like "unable to perform operation on <closed=True>", "pipe is broken", etc. before they cascade in prod. Not justified pre-launch (signal-to-noise too high at low volume), but worth revisiting post-launch if new error variants keep appearing.
 
 ### N. Search-result caching at the user-query level — **RESOLVED 2026-05-22**
 
