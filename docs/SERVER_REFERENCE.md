@@ -18,18 +18,18 @@ Both should have **Proxied** (orange cloud) enabled so Cloudflare handles HTTPS 
 Every time you push new code to GitHub and want the server to run it:
 
 ```bash
-# 1. SSH into the server
 ssh root@5.78.187.97
-
-# 2. Pull, build, restart (one line)
-cd /opt/crawli && git pull && npm run build && systemctl restart crawli-next
+cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next
 ```
 
-The build takes ~30 seconds. The site is briefly unavailable during `systemctl restart` (a couple seconds). That's it.
+**Order matters:** build first, restart after. Restarting before the build completes loads the old code.
 
-If you also changed Python sidecar code (`crawl4ai-service/`):
+`npm install` only needed when `package.json` changed. Safe to always run — fast if nothing changed.
+
+If Python sidecar code changed (`crawl4ai-service/`):
 ```bash
 systemctl restart crawli-sidecar
+# If port 8000 still in use: fuser -k 8000/tcp && systemctl restart crawli-sidecar
 ```
 
 ---
@@ -89,18 +89,28 @@ Use card `4242 4242 4242 4242`, any future expiry, any CVC. No real money charge
 | Chromium pool poisoned (alive process, dead context) | ❌ | ❌ — needs smoke-test cron |
 
 ### UptimeRobot
-- Checks `https://thecrawli.com/api/health` every 5 minutes
-- Emails you when the site goes down or recovers
 - Dashboard: https://uptimerobot.com
+- 2 monitors (both require token — see `.env` `INTERNAL_API_TOKEN`):
 
-**When you get an alert:**
+| Monitor | URL | Interval | Timeout |
+|---|---|---|---|
+| Crawli Health | `https://thecrawli.com/api/health?token=<INTERNAL_API_TOKEN>` | 5 min | 30s |
+| Crawli Smoke | `https://thecrawli.com/api/smoke?token=<INTERNAL_API_TOKEN>` | 15 min | 60s |
+
+**When health alert fires** (Next.js or sidecar down):
 ```bash
 ssh root@5.78.187.97
 systemctl status crawli-next crawli-sidecar
 journalctl -u crawli-next -n 50
 journalctl -u crawli-sidecar -n 50
-# If sidecar port conflict on restart:
-fuser -k 8000/tcp && systemctl restart crawli-sidecar
+# If sidecar port conflict: fuser -k 8000/tcp && systemctl restart crawli-sidecar
+```
+
+**When smoke alert fires** (sidecar alive but returning 0 results — pool poisoning):
+```bash
+systemctl restart crawli-sidecar
+# crontab usually handles this automatically — check if it fired:
+cat /var/log/crawli-smoke.log
 ```
 
 ### Sentry
@@ -130,11 +140,12 @@ Runs a real Grailed search for "nike air force 1" and returns 200 if ≥1 result
 5. Timeout: 60 seconds (the search takes up to 45s)
 6. Same alert email as the health monitor
 
-**Auto-healing cron (set this up on the server):**
+**Auto-healing cron (already configured on server):**
 ```bash
-crontab -e
-# Add this line:
-*/15 * * * * curl -sf https://thecrawli.com/api/smoke || (systemctl restart crawli-sidecar && echo "sidecar restarted at $(date)" >> /var/log/crawli-smoke.log)
+# View current crontab:
+crontab -l
+# The line should be:
+*/15 * * * * curl -sf "https://thecrawli.com/api/smoke?token=<INTERNAL_API_TOKEN>" || (systemctl restart crawli-sidecar && echo "sidecar restarted at $(date)" >> /var/log/crawli-smoke.log)
 ```
 This restarts the sidecar automatically when the smoke test fails — no human needed for the common pool-poisoning case. Check the log occasionally: `cat /var/log/crawli-smoke.log`
 

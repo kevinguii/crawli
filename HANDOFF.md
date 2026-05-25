@@ -1,8 +1,21 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (Sentry monitoring + health endpoint setup)
+**Last updated:** 2026-05-25 (monitoring stack complete)
 
-**Latest change (2026-05-25 — Sentry + /api/health monitoring setup):**
+**Latest change (2026-05-25 — monitoring stack: Sentry + UptimeRobot + smoke test + token auth):**
+
+Full monitoring stack shipped. See `docs/SERVER_REFERENCE.md §Monitoring` for the complete reference. Summary:
+
+- `/api/health` — sidecar liveness check (requires `?token=INTERNAL_API_TOKEN`)
+- `/api/smoke` — real Grailed search, returns 503 if 0 results (requires `?token=INTERNAL_API_TOKEN`)
+- Sentry — error capture, tunnel route at `/monitoring` bypasses ad blockers
+- UptimeRobot — 2 monitors: `/api/health` (5 min) + `/api/smoke` (15 min, 60s timeout)
+- Server crontab — auto-restarts sidecar if smoke fails (self-healing for pool poisoning)
+- `INTERNAL_API_TOKEN` added to `.env` — health + smoke are now protected, previously open to anyone
+
+**Gotcha:** `/api/smoke` returns 503 instantly (< 100ms) when the sidecar pool has a dead Chromium context — process looks healthy but returns no results. Fix is `systemctl restart crawli-sidecar`. The crontab does this automatically every 15 min.
+
+**Previous change (2026-05-25 — Sentry + /api/health monitoring setup):**
 
 Set up error monitoring infrastructure pre-launch. Two pieces shipped:
 
