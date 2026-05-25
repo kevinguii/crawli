@@ -21,6 +21,7 @@ function LoginContent() {
 
   const callbackFailed = params.get('error') === 'callback_failed';
   const resetExpired = params.get('error') === 'reset_expired';
+  const linkExpired = params.get('error') === 'link_expired';
 
   function switchTab(next: Tab) {
     if (next === tab) return;
@@ -62,13 +63,21 @@ function LoginContent() {
         setError(error.message);
         return;
       }
-      // Supabase returns a fake user with empty identities[] when the email
-      // is already registered (anti-enumeration). Detect and message clearly.
+      // Supabase returns identities:[] for both confirmed accounts and unconfirmed
+      // (e.g. expired confirmation link). Try resending confirmation first — if it
+      // succeeds the account was unconfirmed and they'll get a fresh link. If it
+      // errors the account is already confirmed and they should just log in.
       if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        const { error: resendError } = await supabase.auth.resend({
+          type: 'signup',
+          email: trimmedEmail,
+        });
         setLoading(null);
-        setError(
-          'This email is already registered. Try logging in, or use "Forgot password" if you signed up with Google.'
-        );
+        if (!resendError) {
+          router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);
+        } else {
+          setError('This email is already registered. Try logging in instead.');
+        }
         return;
       }
       router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);
@@ -91,6 +100,7 @@ function LoginContent() {
 
   const banner =
     error ??
+    (linkExpired && 'Your confirmation link expired. Sign up again with the same email to get a new one.') ??
     (callbackFailed && "We couldn't complete sign-in. Please try again.") ??
     (resetExpired && 'Your password-reset link expired. Please request a new one.') ??
     null;
