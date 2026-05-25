@@ -2375,6 +2375,44 @@ Grailed now uses native search-page extraction via `/scrape-search` (`SEARCH_PAG
 
 **Carry-forward instruction:** start with (2) — survey Grailed's search-page HTML for the JSON-LD shape (same approach as the C1 eBay+Vestiaire survey), build a `crawl4ai-service/search_page_extractors.py` extractor for Grailed, add it to `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts). Estimated ~1 day if the HTML is clean. Subsequent platforms reuse the pattern.
 
+### O. `_DRIVER_DEAD_PATTERNS` missing the "context or browser has been closed" error — **CRITICAL, fix ASAP**
+
+**Symptom (confirmed 2026-05-25 in prod):** When Playwright's browser context is killed by antibot protection (Depop Cloudflare, Grailed, others), the sidecar logs:
+
+```
+[ANTIBOT] Error: Proxy direct failed: BrowserContext.new_page: Target page, context or browser has been closed
+[WARNING] [llm] no extracted content for <url>
+```
+
+**Root cause:** `_DRIVER_DEAD_PATTERNS` in [crawl4ai-service/main.py](crawl4ai-service/main.py#L91) only contains three strings:
+
+```python
+_DRIVER_DEAD_PATTERNS = (
+    "the handler is closed",
+    "Connection closed while reading from the driver",
+    "WriteUnixTransport closed",
+)
+```
+
+The string `"Target page, context or browser has been closed"` is NOT in this list. As a result, `_looks_like_driver_death()` returns `False`, `_mark_driver_dead()` is never called, and the pool member stays in a broken state instead of triggering background auto-recovery. Every subsequent request against that pool member also returns `null` silently.
+
+**Why this is dangerous:** on a single-member pool (prod CCX13 default, `SIDECAR_BROWSER_POOL_SIZE=1`), one undetected context crash silently returns 0 results for ALL platforms for ALL users until the sidecar is manually restarted. There's no 503 short-circuit, no user-visible error — the search just completes with 0 listings.
+
+**Fix (one line):** add the missing pattern to `_DRIVER_DEAD_PATTERNS`:
+
+```python
+_DRIVER_DEAD_PATTERNS = (
+    "the handler is closed",
+    "Connection closed while reading from the driver",
+    "WriteUnixTransport closed",
+    "Target page, context or browser has been closed",   # ← ADD THIS
+)
+```
+
+**Verified broken:** `curl -s -X POST http://localhost:8000/scrape -d '{"platform":"depop","url":"..."}' → {"result":null}` on the Hetzner prod box (2026-05-25). The sidecar was serving 200 OK with null on every /scrape request because the Chromium context was dead and undetected.
+
+**Note:** this fix makes recovery automatic but does NOT fix the underlying antibot/datacenter-IP issue. When Depop kills the context due to IP blocking, the pool member restarts (~2–3s) and the NEXT request gets a fresh context — but that fresh context will be blocked again immediately on the same IP. The proper fix for antibot is either (a) a residential proxy or (b) moving Depop to `SEARCH_PAGE_PLATFORMS` (Avenue A) so individual listing pages are never scraped. Both are tracked separately (§7 F and §7 M).
+
 ### N. Search-result caching at the user-query level — **RESOLVED 2026-05-22**
 
 Shipped as option 1 (Supabase NDJSON replay cache). See Latest change at top of file for full details. Original framing below kept for context.

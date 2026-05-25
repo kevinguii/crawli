@@ -92,6 +92,7 @@ _DRIVER_DEAD_PATTERNS = (
     "the handler is closed",
     "Connection closed while reading from the driver",
     "WriteUnixTransport closed",
+    "Target page, context or browser has been closed",
 )
 _driver_dead: bool = False
 
