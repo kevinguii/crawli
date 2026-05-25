@@ -1,6 +1,41 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-24 (Supabase security linter fixes)
+**Last updated:** 2026-05-25 (production deployment + auth callback fixes)
+
+**Latest change (2026-05-25 — Production deployment + auth callback fixes):**
+
+First successful production deployment to Hetzner CCX13. Google OAuth now works end-to-end.
+
+**Bugs fixed during deploy:**
+
+1. **`PORT=8000` in `.env` conflicts with Next.js in production.** `next start` (prod) reads `PORT` and tries to bind to 8000, colliding with the sidecar. `next dev` ignores `PORT` (hardcodes 3000), so this only breaks in prod. Fix: remove `PORT` from `.env` — both processes default correctly (Next.js → 3000, sidecar → 8000).
+
+2. **Stale process holds port after restart.** If `systemctl restart crawli-sidecar` is too fast, old process still owns port 8000. Fix: `fuser -k 8000/tcp && systemctl restart crawli-sidecar`.
+
+3. **Auth callback redirected to `localhost:3000`.** `request.url` behind nginx is the internal URL, so `origin` = `http://localhost:3000`. Fixed in `app/auth/callback/route.ts` to use `NEXT_PUBLIC_SITE_URL` when set, falling back to `requestOrigin`.
+
+4. **nginx "upstream sent too big header" on auth callback.** Supabase sets large session cookies on the redirect response. Fixed by adding to nginx config: `proxy_buffer_size 128k; proxy_buffers 4 256k; proxy_busy_buffers_size 256k;`.
+
+5. **`NEXT_PUBLIC_SITE_URL` must be `https://` not `http://`.** Manually verify this when setting prod `.env` — it controls Stripe return URLs and auth redirects.
+
+**Deploy command (server):**
+```bash
+ssh root@5.78.187.97
+cd /opt/crawli && git pull && npm run build && systemctl restart crawli-next
+systemctl restart crawli-sidecar  # only if Python code changed
+# If sidecar port conflict: fuser -k 8000/tcp first
+```
+
+**Prod env vars that differ from local:**
+- `PORT` — do NOT set (removed from prod `.env`)
+- `NEXT_PUBLIC_SITE_URL=https://thecrawli.com` (must be https)
+- `STRIPE_SECRET_KEY=sk_live_...` (live key, not test)
+- `STRIPE_WEBHOOK_SECRET=whsec_...` (from Stripe Dashboard, not `stripe listen`)
+- `SIDECAR_MAX_CONCURRENT_RENDERS=8`, `SEARCH_PLATFORM_CONCURRENCY=4` (CCX13 tuning)
+
+**`.env` survives `git pull`** — it's gitignored and never overwritten by deploys.
+
+**CCX13 perf settings (2 vCPU, 8 GB):** `RENDERS=8, POOL=1, PLATFORM_CONC=4, SEARCH_PROVIDER=hybrid`. Do not set `POOL_SIZE=2` — not enough vCPU for two Chromiums.
 
 **Latest change (2026-05-24 — Supabase security linter fixes):**
 
