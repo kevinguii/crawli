@@ -1,8 +1,12 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (monitoring stack complete)
+**Last updated:** 2026-05-25 (API credit monitoring added)
 
-**Latest change (2026-05-25 — monitoring stack: Sentry + UptimeRobot + smoke test + token auth):**
+**Latest change (2026-05-25 — API credit monitoring cron):**
+
+Added `scripts/check-credits.mjs` — runs daily at 9am PST (5pm UTC) via crontab, checks Firecrawl credits, emails owner@example.com when below 20%/10%/5%. Server crontab entry: `0 17 * * * cd /opt/crawli && /usr/bin/node scripts/check-credits.mjs >> /var/log/crawli-credits.log 2>&1`. Test with `node scripts/check-credits.mjs --dry-run`.
+
+**Previous change (2026-05-25 — monitoring stack: Sentry + UptimeRobot + smoke test + token auth):**
 
 Full monitoring stack shipped. See `docs/SERVER_REFERENCE.md §Monitoring` for the complete reference. Summary:
 
