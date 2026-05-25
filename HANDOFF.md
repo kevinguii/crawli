@@ -1,8 +1,66 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (driver death pattern fix + production deployment)
+**Last updated:** 2026-05-25 (Sentry monitoring + health endpoint setup)
 
-**Latest change (2026-05-25 — Sidecar driver-death pattern fix):**
+**Latest change (2026-05-25 — Sentry + /api/health monitoring setup):**
+
+Set up error monitoring infrastructure pre-launch. Two pieces shipped:
+
+**1. `/api/health` endpoint** ([app/api/health/route.ts](app/api/health/route.ts)) — checks sidecar liveness and returns `{crawler_alive, pool_alive, pool_size, in_flight, llm_mode}`. Used by UptimeRobot to detect when the sidecar is down (which is the most common silent-failure mode — Next.js stays up while Python crashes).
+
+**2. Sentry integration** (Next.js side only — Python sidecar still pending). Ran `npx @sentry/wizard@latest -i nextjs --saas --org crawli --project javascript-nextjs`. Created:
+- `instrumentation.ts` — registers server + edge configs on Node startup
+- `instrumentation-client.ts` — initializes Sentry on the browser (Next.js 15+ convention)
+- `sentry.server.config.ts`, `sentry.client.config.ts`, `sentry.edge.config.ts` — runtime-specific init
+- `app/sentry-provider.tsx` — client-side wrapper in root layout
+- `app/global-error.tsx` — catches React render errors
+- `next.config.ts` wrapped with `withSentryConfig` for source map upload
+
+Sentry project: `crawli/javascript-nextjs`. DSN: `https://98f1b00078a83a19960c3a3d3dbaa0bd@o4511449671663616.ingest.us.sentry.io/4511449672843264`.
+
+**Wizard choices (recorded for future reference):**
+- Tunnel: enabled (originally said No, flipped to Yes — see gotcha below)
+- Tracing: yes
+- Session Replay: no
+- Logs: yes
+- Example page: no
+- CI/CD: no
+- MCP: no
+
+**Critical gotcha — ad blockers:** Errors from the browser send to `*.ingest.sentry.io`, which is blocked by uBlock/Brave/AdBlock/Privacy Badger. Without the tunnel route, ALL client-side errors silently fail to send (visible as `(blocked:other)` in DevTools Network tab). Fix: enabled `tunnelRoute: "/monitoring"` in [next.config.ts](next.config.ts). Browser now POSTs to `thecrawli.com/monitoring` (own domain, indistinguishable from a normal API call). Server-side errors are unaffected — they go server→Sentry directly. **Do NOT remove the tunnel route** unless you want to lose ~30% of real-user errors.
+
+**Other gotchas:**
+- Sentry's default config has `debug: true` in dev — produces massive log spam in `npm run dev:all` output. Set `debug: false` in all three config files.
+- Manually typing `myUndefinedFunction()` in the browser console does NOT trigger Sentry — only unhandled errors are captured. Use `setTimeout(() => { throw new Error("test"); }, 0)` for console testing.
+- `instrumentation-client.ts` is the Next.js 15+ way to init client Sentry; `app/sentry-provider.tsx` is redundant but harmless. Keep both for now; can clean up later.
+- DSN is hardcoded in server/edge configs (wizard default); only client config reads from `NEXT_PUBLIC_SENTRY_DSN`. Add both env vars to prod `.env` for consistency.
+
+**Env vars added (`.env`):**
+```
+NEXT_PUBLIC_SENTRY_DSN=https://98f1b00078a83a19960c3a3d3dbaa0bd@o4511449671663616.ingest.us.sentry.io/4511449672843264
+SENTRY_DSN=https://98f1b00078a83a19960c3a3d3dbaa0bd@o4511449671663616.ingest.us.sentry.io/4511449672843264
+SENTRY_AUTH_TOKEN=<token>  # for source map upload during build
+```
+
+**Prod deploy checklist:**
+1. `git pull` on server
+2. Add `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_AUTH_TOKEN` to `/opt/crawli/.env`
+3. `npm run build && systemctl restart crawli-next`
+4. Verify in Sentry dashboard: trigger a test error from prod browser, confirm `environment=production` tag appears
+5. Set up UptimeRobot monitor on `https://thecrawli.com/api/health` (5-min interval, email alert)
+6. Set up Sentry alert rule: "When a new issue is created → email me"
+
+**Files touched:**
+- created: [app/api/health/route.ts](app/api/health/route.ts), [instrumentation.ts](instrumentation.ts), [instrumentation-client.ts](instrumentation-client.ts), [sentry.client.config.ts](sentry.client.config.ts), [sentry.server.config.ts](sentry.server.config.ts), [sentry.edge.config.ts](sentry.edge.config.ts), [app/sentry-provider.tsx](app/sentry-provider.tsx), [app/global-error.tsx](app/global-error.tsx)
+- edited: [app/layout.tsx](app/layout.tsx) (wrapped with SentryProvider), [next.config.ts](next.config.ts) (withSentryConfig + tunnelRoute), [.env](.env) (Sentry DSN), [package.json](package.json) (@sentry/nextjs ^10.53.1)
+
+**Still TODO (pre-launch monitoring):**
+- Sentry on Python sidecar (`sentry-sdk[fastapi]` — captures driver-death exceptions in real-time)
+- UptimeRobot account + monitor for `/api/health`
+- Sentry alert rules (new issue → email)
+- Smoke-test cron (runs real searches every N minutes, alerts if `urls > 0 && listings == 0` — catches the §7 O pool-poisoning class of bugs Sentry can't see because nothing throws)
+
+**Previous change (2026-05-25 — Sidecar driver-death pattern fix):**
 
 Critical one-liner fix to [crawl4ai-service/main.py:91](crawl4ai-service/main.py#L91). The `_DRIVER_DEAD_PATTERNS` tuple was missing `"Target page, context or browser has been closed"` — when Depop's antibot killed the Playwright context, this error wasn't recognized, the pool member stayed "alive" with a dead context inside, and all subsequent renders (Grailed, other platforms) silently returned 0 results. Now the missing pattern is detected, `_mark_driver_dead()` triggers auto-recovery (~2–3s), and the pool member restarts. Verified: restarting sidecar post-fix restored Grailed from `{"results":[]}` to working searches. **This is distinct from the IP-blocking issue** (§7 O, O_1); antibot will still block on the first render, but the pool self-heals instead of staying poisoned.
 
