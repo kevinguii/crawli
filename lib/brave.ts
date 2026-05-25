@@ -1,5 +1,6 @@
 import { PLATFORM_DOMAINS } from './types';
 import type { RawSearchResult } from './firecrawl';
+import { parseBraveHeaders, logApiUsage } from './apiMetrics';
 
 const BRAVE_URL = 'https://api.search.brave.com/res/v1/web/search';
 
@@ -61,6 +62,13 @@ export async function searchPlatformViaBrave(
       err.status = res.status;
       throw err;
     }
+
+    // Log API usage from response headers
+    const metrics = parseBraveHeaders(res.headers);
+    if (metrics.requestsRemaining !== undefined) {
+      logApiUsage({ provider: 'brave', platform, ...metrics });
+    }
+
     return (await res.json()) as BraveResponse;
   });
 

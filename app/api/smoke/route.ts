@@ -5,7 +5,11 @@ const SMOKE_QUERY = 'nike air force 1';
 const SMOKE_PLATFORM = 'grailed';
 const MIN_RESULTS = 1;
 
-export async function GET() {
+export async function GET(request: Request) {
+  const token = new URL(request.url).searchParams.get('token');
+  if (token !== process.env.INTERNAL_API_TOKEN) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
   const started = Date.now();
 
   try {

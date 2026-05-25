@@ -130,10 +130,19 @@ Runs a real Grailed search for "nike air force 1" and returns 200 if ≥1 result
 5. Timeout: 60 seconds (the search takes up to 45s)
 6. Same alert email as the health monitor
 
-**When it fires:** pool is poisoned or Grailed is blocked. SSH in, restart the sidecar:
+**Auto-healing cron (set this up on the server):**
 ```bash
+crontab -e
+# Add this line:
+*/15 * * * * curl -sf https://thecrawli.com/api/smoke || (systemctl restart crawli-sidecar && echo "sidecar restarted at $(date)" >> /var/log/crawli-smoke.log)
+```
+This restarts the sidecar automatically when the smoke test fails — no human needed for the common pool-poisoning case. Check the log occasionally: `cat /var/log/crawli-smoke.log`
+
+**If UptimeRobot still fires after the cron restart:** the sidecar can't recover on its own (Chromium crashed hard). SSH in and investigate:
+```bash
+systemctl status crawli-sidecar
+journalctl -u crawli-sidecar -n 50
 systemctl restart crawli-sidecar
-# wait ~10s then re-check
 curl https://thecrawli.com/api/smoke
 ```
 

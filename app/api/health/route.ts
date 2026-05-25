@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 
 const SIDECAR_URL = process.env.SIDECAR_URL || 'http://localhost:8000';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const token = new URL(request.url).searchParams.get('token');
+  if (token !== process.env.INTERNAL_API_TOKEN) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
