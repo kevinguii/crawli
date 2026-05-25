@@ -75,6 +75,74 @@ Use card `4242 4242 4242 4242`, any future expiry, any CVC. No real money charge
 
 ---
 
+## Monitoring (Sentry + UptimeRobot)
+
+### What each tool covers
+
+| Failure type | UptimeRobot | Sentry |
+|---|---|---|
+| Site / Next.js completely down | ✅ | ❌ |
+| Sidecar crashed (Python dead) | ✅ via `/api/health` | ❌ |
+| One user hits a 500 error | ❌ | ✅ |
+| Stripe webhook handler crashes | ❌ | ✅ |
+| Search silently returns `[]` | ❌ | ❌ — needs smoke-test cron |
+| Chromium pool poisoned (alive process, dead context) | ❌ | ❌ — needs smoke-test cron |
+
+### UptimeRobot
+- Checks `https://thecrawli.com/api/health` every 5 minutes
+- Emails you when the site goes down or recovers
+- Dashboard: https://uptimerobot.com
+
+**When you get an alert:**
+```bash
+ssh root@5.78.187.97
+systemctl status crawli-next crawli-sidecar
+journalctl -u crawli-next -n 50
+journalctl -u crawli-sidecar -n 50
+# If sidecar port conflict on restart:
+fuser -k 8000/tcp && systemctl restart crawli-sidecar
+```
+
+### Sentry
+- Captures exceptions thrown inside the app (server + browser)
+- Project: https://crawli.sentry.io — org `crawli`, project `javascript-nextjs`
+- Emails you when a new error type appears
+
+**When you get an alert:**
+1. Click the issue link in the email
+2. Read **Stack Trace** — which file/line threw
+3. Read **Breadcrumbs** — what the user did before the error
+4. Reproduce locally → fix → deploy → click Resolve in Sentry
+
+**Important gotcha — ad blockers:** Browser errors route through `thecrawli.com/monitoring` (not directly to Sentry) so ad blockers don't silently swallow them. Do not remove `tunnelRoute: "/monitoring"` from `next.config.ts`.
+
+### The gap neither tool covers
+The 2026-05-25 Chromium pool-poisoning bug — sidecar alive, health check passing, no exception thrown, but all searches returning `{}`. Only a smoke-test cron (run a real search, assert `listings.length > 0`) catches this class of failure.
+
+### Smoke-test endpoint (`/api/smoke`)
+Runs a real Grailed search for "nike air force 1" and returns 200 if ≥1 result comes back, 503 otherwise. Add a second UptimeRobot monitor pointing at `https://thecrawli.com/api/smoke` (15-min interval is fine — it's slow, ~10–30s per check).
+
+**Setup:**
+1. UptimeRobot → New Monitor
+2. Type: HTTP(s)
+3. URL: `https://thecrawli.com/api/smoke`
+4. Interval: 15 minutes
+5. Timeout: 60 seconds (the search takes up to 45s)
+6. Same alert email as the health monitor
+
+**When it fires:** pool is poisoned or Grailed is blocked. SSH in, restart the sidecar:
+```bash
+systemctl restart crawli-sidecar
+# wait ~10s then re-check
+curl https://thecrawli.com/api/smoke
+```
+
+### Weekly habit (5 min)
+1. Sentry → Issues → sort by Events — anything spiking?
+2. UptimeRobot → Dashboard — uptime % below 99.9%? Correlate downtime windows with deploy times.
+
+---
+
 ## Server at a glance
 
 | Thing | Value |

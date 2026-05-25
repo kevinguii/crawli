@@ -56,9 +56,7 @@ SENTRY_AUTH_TOKEN=<token>  # for source map upload during build
 
 **Still TODO (pre-launch monitoring):**
 - Sentry on Python sidecar (`sentry-sdk[fastapi]` — captures driver-death exceptions in real-time)
-- UptimeRobot account + monitor for `/api/health`
-- Sentry alert rules (new issue → email)
-- Smoke-test cron (runs real searches every N minutes, alerts if `urls > 0 && listings == 0` — catches the §7 O pool-poisoning class of bugs Sentry can't see because nothing throws)
+- Smoke-test cron — see `docs/SERVER_REFERENCE.md §Monitoring`
 
 **Previous change (2026-05-25 — Sidecar driver-death pattern fix):**
 
