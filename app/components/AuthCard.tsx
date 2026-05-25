@@ -42,6 +42,16 @@ export default function AuthCard({ children }: { children: ReactNode }) {
           </span>
         </Link>
         {children}
+        <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-dim)' }}>
+          By continuing you agree to our{' '}
+          <Link href="/terms" className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: 'var(--text-muted)' }}>
+            Terms
+          </Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: 'var(--text-muted)' }}>
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </main>
   );

@@ -516,6 +516,28 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        {/* ── Legal ── */}
+        <Section title="Legal">
+          <Row label="Privacy Policy" sublabel="How we collect and use your data">
+            <Link
+              href="/privacy"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+            >
+              View
+            </Link>
+          </Row>
+          <Row label="Terms of Service" sublabel="Rules for using Crawli">
+            <Link
+              href="/terms"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+            >
+              View
+            </Link>
+          </Row>
+        </Section>
+
         {/* ── Notifications ── */}
         <Section title="Notifications">
           <div

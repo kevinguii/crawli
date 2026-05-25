@@ -89,10 +89,6 @@ export function filtersToQuerySuffix(filters: FilterState): string {
   const parts: string[] = [];
   if (filters.color) parts.push(filters.color);
   if (filters.category) parts.push(filters.category);
-  if (filters.condition) {
-    const c = CONDITION_OPTIONS.find((o) => o.key === filters.condition);
-    if (c) parts.push(c.queryTerm);
-  }
   if (filters.size) {
     const s = SIZE_OPTIONS.find((o) => o.key === filters.size);
     if (s) parts.push(s.queryTerm);
