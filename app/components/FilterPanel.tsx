@@ -13,7 +13,6 @@ import {
   CATEGORY_OPTIONS,
   CLOTHING_SIZE_OPTIONS,
   COLOR_OPTIONS,
-  CONDITION_OPTIONS,
   SHOE_SIZE_OPTIONS,
   type FilterState,
 } from '@/lib/filterOptions';
@@ -21,7 +20,6 @@ import {
 export {
   COLOR_OPTIONS,
   CATEGORY_OPTIONS,
-  CONDITION_OPTIONS,
   CLOTHING_SIZE_OPTIONS,
   SHOE_SIZE_OPTIONS,
   SIZE_OPTIONS,
@@ -135,12 +133,6 @@ export default function FilterPanel({
           value={filters.size}
           options={sizeOptions.map((o) => ({ key: o.key, label: o.label }))}
           onChange={(v) => setField('size', v)}
-        />
-        <FilterDropdown
-          label="Condition"
-          value={filters.condition}
-          options={CONDITION_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
-          onChange={(v) => setField('condition', v)}
         />
         <FilterDropdown
           label="Color"

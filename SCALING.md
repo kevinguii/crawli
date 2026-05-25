@@ -165,9 +165,15 @@ chats know what to implement when the user hits the right tier.
 
 ```
 vinted, stockx, poshmark    → BRAVE_ONLY    (Brave matches or beats Firecrawl)
-depop, grailed, vestiaire   → HYBRID        (Brave first; FC fallback if listings < BRAVE_HYBRID_THRESHOLD, default 5)
+depop, vestiaire            → HYBRID        (Brave first; FC fallback if listings < BRAVE_HYBRID_THRESHOLD, default 5)
 mercari, ebay               → FIRECRAWL_ONLY (Brave too unreliable here)
 ```
+
+**Note:** Grailed bypasses the search-provider layer entirely. It is in `SEARCH_PAGE_PLATFORMS`
+(see `lib/scraper.ts` + `crawl4ai-service/search_page_extractors.py`) — the sidecar renders
+Grailed's own `/shop?query=` search results page via Playwright and extracts the listing grid
+directly from the DOM (CSS selectors on `UserItem_root` cards). One render returns ~100
+listings in bulk. Grailed does NOT use Brave or Firecrawl for URL discovery.
 
 **Pricing math (2026-05-22):**
 - Brave: **$5 per 1,000 queries** ($0.005/query) on paid tier. Free tier is $5 prepaid credit/mo (~1,000 queries).
