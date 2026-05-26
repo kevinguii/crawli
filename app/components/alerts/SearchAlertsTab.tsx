@@ -32,17 +32,20 @@ export default function SearchAlertsTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
 
-  async function load() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/saved-searches');
-      if (res.ok) setAlerts(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (cancelled) return;
+      setLoading(true);
+      try {
+        const res = await fetch('/api/saved-searches');
+        if (!cancelled && res.ok) setAlerts(await res.json());
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Pull billing so the "+ New alert" button can intercept quota-exceeded clicks.
   useEffect(() => {
@@ -78,8 +81,8 @@ export default function SearchAlertsTab() {
     if (billing && billing.used >= billing.cap) {
       toast.error(
         isPro
-          ? 'You have used all 100 searches for this billing period.'
-          : 'You have used all 10 free searches this month.',
+          ? 'You have used all 100 searches for this billing period. Creating search alerts requires 1 credit.'
+          : 'You have used all 10 free searches this month. Creating search alerts requires 1 credit.',
         {
           action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
           duration: 8000,
