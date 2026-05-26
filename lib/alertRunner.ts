@@ -31,12 +31,22 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
     (p) => !ALERT_EXCLUDED_PLATFORMS.has(p),
   );
 
+  // Owner's tier dictates the native-platform results cap on this run.
+  const { data: ownerProfile } = await admin
+    .from('profiles')
+    .select('native_results_cap')
+    .eq('id', savedSearch.user_id)
+    .single();
+  const nativeCap = ownerProfile?.native_results_cap ?? 10;
+
   let listings: Awaited<ReturnType<typeof runSearchJob>> = [];
   try {
     listings = await runSearchJob(
       savedSearch.query,
       platforms,
       savedSearch.filters ?? undefined,
+      undefined,
+      nativeCap,
     );
   } catch (err) {
     console.error(`[alertRunner] search failed for alert=${savedSearch.id}:`, err);

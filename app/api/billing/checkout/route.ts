@@ -1,18 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { stripe, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_YEARLY } from '@/lib/stripe';
+import { stripe, priceIdForTier, type BillingCycle, type Tier } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const { plan } = await req.json().catch(() => ({}));
-  if (plan !== 'monthly' && plan !== 'yearly') {
-    return NextResponse.json({ error: 'plan must be "monthly" or "yearly"' }, { status: 400 });
+  const body = await req.json().catch(() => ({}));
+  // Accept new {tier, cycle} shape. Fall back to legacy {plan} = Pro for any
+  // stale clients in flight; remove the fallback once the frontend redeploy
+  // settles.
+  let tier: Exclude<Tier, 'free'> | undefined;
+  let cycle: BillingCycle | undefined;
+  if (body?.tier && body?.cycle) {
+    if (body.tier !== 'pro' && body.tier !== 'max') {
+      return NextResponse.json({ error: 'tier must be "pro" or "max"' }, { status: 400 });
+    }
+    if (body.cycle !== 'monthly' && body.cycle !== 'yearly') {
+      return NextResponse.json({ error: 'cycle must be "monthly" or "yearly"' }, { status: 400 });
+    }
+    tier = body.tier;
+    cycle = body.cycle;
+  } else if (body?.plan === 'monthly' || body?.plan === 'yearly') {
+    tier = 'pro';
+    cycle = body.plan;
+  } else {
+    return NextResponse.json({ error: 'tier+cycle required' }, { status: 400 });
   }
-  const priceId = plan === 'monthly' ? STRIPE_PRICE_MONTHLY : STRIPE_PRICE_YEARLY;
+  const priceId = priceIdForTier(tier!, cycle!);
 
   const admin = createAdminClient();
   const { data: profile } = await admin

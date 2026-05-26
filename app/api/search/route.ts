@@ -10,9 +10,9 @@ import { allSettledWithConcurrency, searchAndScrape } from '@/lib/searchWorker';
 
 export const dynamic = 'force-dynamic';
 
-const FREE_SEARCH_CAP = 10;
-const PRO_SEARCH_CAP = 100;
 const FREE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+const DEFAULT_FREE_CAP = 10;        // fallback if profile column null (pre-migration)
+const DEFAULT_NATIVE_CAP = 10;
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
 
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: profile, error: profileErr } = await admin
     .from('profiles')
-    .select('subscription_status, searches_used_this_period, searches_period_start')
+    .select('subscription_status, subscription_tier, searches_used_this_period, searches_period_start, max_searches_per_period, native_results_cap')
     .eq('id', user.id)
     .single();
 
@@ -77,7 +77,9 @@ export async function POST(request: Request) {
 
   const status = profile.subscription_status ?? 'free';
   const isPro = status === 'active' || status === 'past_due';
-  const cap = isPro ? PRO_SEARCH_CAP : FREE_SEARCH_CAP;
+  const tier = (profile.subscription_tier as 'free' | 'pro' | 'max' | null) ?? (isPro ? 'pro' : 'free');
+  const cap = profile.max_searches_per_period ?? DEFAULT_FREE_CAP;
+  const nativeCap = profile.native_results_cap ?? DEFAULT_NATIVE_CAP;
 
   let used = profile.searches_used_this_period ?? 0;
   if (!isPro) {
@@ -102,11 +104,11 @@ export async function POST(request: Request) {
       {
         error: 'quota_exceeded',
         message: isPro
-          ? 'You have used all 100 searches for this billing period.'
-          : 'You have used all 10 free searches for this month. Upgrade to Crawli Pro to get more.',
+          ? `You have used all ${cap} searches for this billing period.`
+          : `You have used all ${cap} free searches for this month. Upgrade to Crawli for more.`,
         used,
         cap,
-        plan: isPro ? 'pro' : 'free',
+        plan: tier,
       },
       { status: 402 },
     );
@@ -164,7 +166,7 @@ export async function POST(request: Request) {
       await allSettledWithConcurrency(
         platforms.map((platform) => async () => {
           try {
-            const listings = await searchAndScrape(platform, query, filters as FilterState | undefined, signal);
+            const listings = await searchAndScrape(platform, query, filters as FilterState | undefined, signal, nativeCap);
             allListings.push(...listings);
             writeAndRecord({
               type: 'platform_done',

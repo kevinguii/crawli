@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
 import { PricingCards } from './PricingCards';
+import type { Tier } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,16 +10,17 @@ export default async function PricingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let isPro = false;
+  let currentTier: Tier = 'free';
   if (user) {
     const admin = createAdminClient();
     const { data: profile } = await admin
       .from('profiles')
-      .select('subscription_status')
+      .select('subscription_status, subscription_tier')
       .eq('id', user.id)
       .single();
     const status = profile?.subscription_status ?? 'free';
-    isPro = status === 'active' || status === 'past_due';
+    const isPaying = status === 'active' || status === 'past_due';
+    currentTier = (profile?.subscription_tier as Tier | null) ?? (isPaying ? 'pro' : 'free');
   }
 
   return (
@@ -35,20 +37,20 @@ export default async function PricingPage() {
           </svg>
         </Link>
       </div>
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h1
             className="text-4xl sm:text-5xl font-semibold tracking-tight"
             style={{ color: 'var(--text)' }}
           >
-            Crawli Pro
+            Crawli
           </h1>
           <p className="mt-3 text-base sm:text-lg" style={{ color: 'var(--text-muted)' }}>
-            Search 9 resale platforms at once. Find the best price.
+            Search every resale platform at once. Find the best price.
           </p>
         </div>
 
-        <PricingCards isSignedIn={!!user} isPro={isPro} />
+        <PricingCards isSignedIn={!!user} currentTier={currentTier} />
 
         <div className="mt-12 text-center text-sm" style={{ color: 'var(--text-dim)' }}>
           <p>Cancel anytime. Searches reset at the start of each billing period.</p>

@@ -93,8 +93,8 @@ export async function POST(request: Request) {
       {
         error: 'quota_exceeded',
         message: isPro
-          ? `You've reached your limit of ${maxAlerts} saved alerts.`
-          : 'Upgrade to Crawli Pro to create more alerts.',
+          ? `You've reached your limit of ${maxAlerts} saved alert${maxAlerts === 1 ? '' : 's'}. Pause or delete one to create another, or upgrade your plan for more.`
+          : `Free includes ${maxAlerts} alert${maxAlerts === 1 ? '' : 's'}. Upgrade your plan to create more.`,
         limit: maxAlerts,
       },
       { status: 402 },

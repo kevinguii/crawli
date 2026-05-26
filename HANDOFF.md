@@ -1,8 +1,82 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-26 (Phase 4 polish #2 — timezone scheduling + UI fixes)
+**Last updated:** 2026-05-26 (three-tier pricing: Free / Pro / Max)
 
-**Latest change (2026-05-26 — Phase 4 polish #3: pause-frees-slot + final touches):**
+**Latest change (2026-05-26 — three-tier pricing shipped):**
+
+Replaced the binary Free/Pro model with three tiers. All caps now live on
+the `profiles` table and the Stripe webhook switches on price ID.
+
+**Tier table:**
+
+| | Free | Pro $10/mo · $100/yr | Max $30/mo · $300/yr |
+|---|---|---|---|
+| Searches / month | 10 | 75 | 300 |
+| Search alerts | 1 | 3 | 10 |
+| Tracked listings | 50 | 200 | 1,000 |
+| Native results / platform | 10 | 30 | 60 |
+| Alert cadence | 24h | 24h | 24h |
+
+(Old Pro 100-searches / 5-alerts plan is gone; the SQL migration backfills
+existing Pro subscribers to the **new** Pro caps — 75 / 3 / 200 / 30.)
+
+**⚠️ DB MIGRATION REQUIRED — run before deploy:** see
+`docs/migrations/three-tier.sql`. Adds four columns to `profiles`:
+`subscription_tier`, `max_searches_per_period`, `max_tracked_listings`,
+`native_results_cap`. Backfills currently-paying users to the Pro caps.
+
+**⚠️ Env vars to add (test + live, Hetzner too):**
+```
+STRIPE_PRICE_ID_MAX_MONTHLY=price_...
+STRIPE_PRICE_ID_MAX_YEARLY=price_...
+```
+Existing `STRIPE_PRICE_ID_MONTHLY` / `_YEARLY` remain as the Pro IDs — no rename.
+
+**Cost model (worst case, per user/mo):** Free $2.13 (intentional subsidy),
+Pro $9.50 (break-even worst, ~$5 realistic), Max $35.10 ($28.83 net; -$6
+worst, +$10-12 realistic at ~40% utilization). Fixed floor unchanged at
+$40/mo (Hetzner + Firecrawl Hobby).
+
+**Files touched:**
+- new: `docs/migrations/three-tier.sql`
+- `lib/stripe.ts` — `TIER_CAPS`, `tierFromPriceId`, `priceIdForTier` helpers
+- `app/api/webhooks/stripe/route.ts` — `applySubscription` switches on price
+  ID; `customer.subscription.deleted` resets all four cap columns
+- `app/api/billing/checkout/route.ts` — accepts `{tier, cycle}`; legacy
+  `{plan}` falls through as Pro for in-flight clients
+- `app/api/search/route.ts` — reads `max_searches_per_period`,
+  `native_results_cap` from profile; quota message uses actual cap
+- `lib/searchWorker.ts` — `searchAndScrape` and `runSearchJob` accept
+  `nativeResultsCap` (only applied to `SEARCH_PAGE_PLATFORMS`; URL-discovery
+  platforms still slice to 10)
+- `lib/alertRunner.ts` — looks up alert owner's `native_results_cap`
+- `app/api/watchlist/route.ts` — enforces `max_tracked_listings` on POST;
+  duplicate adds short-circuit before the cap so re-adds don't 402
+- `app/api/billing/status/route.ts` — returns `{tier, caps, usage}` block
+- `app/pricing/PricingCards.tsx` — three-card layout, tier-aware CTAs,
+  "up to N" copy on every native-platform feature line
+- `app/pricing/page.tsx` — passes `currentTier` instead of `isPro`
+- `.env.example` — Stripe section appended
+
+**Things still to do (out-of-band, not code):**
+1. Create the Max product in Stripe (test + live) and copy the four price IDs.
+2. Run `docs/migrations/three-tier.sql` in Supabase **before deploying**.
+3. Drop the new env vars in Hetzner.
+4. (Optional) Notify existing Pro subs that caps changed (100→75 / 5→3).
+
+**Gotchas:**
+- Webhook overwrites caps on every event. Manual DB overrides will be
+  clobbered next time Stripe fires — fine for first ship.
+- Any caller of `runSearchJob` without the cap arg falls back to 10. Today
+  only two call sites: `/api/search` route + `lib/alertRunner.ts`. Both updated.
+- `subscription_tier='free'` defaults from the migration. The webhook now
+  also writes `'free'` on cancel — no drift.
+- Free user with a null `max_*` column (shouldn't happen after migration,
+  but defensive) falls back to the cap in `TIER_CAPS.free` everywhere.
+
+---
+
+**Previous change (2026-05-26 — Phase 4 polish #3: pause-frees-slot + final touches):**
 
 Wrap-up session for Phase 4.
 
@@ -2085,7 +2159,8 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - **Python sidecar** (`crawl4ai-service/`) — FastAPI + crawl4ai 0.8.6 + Playwright 1.59.0 + litellm + `cachetools` (response cache) + `asyncio.Semaphore` (global render gate) + **configurable browser pool** (`SIDECAR_BROWSER_POOL_SIZE`, default 1; round-robin picker, per-member driver-death recovery) + **per-domain pacer** (min-interval lock per host; defends anti-bot 403s on Depop/Grailed/eBay/Vestiaire)
 - **Search-provider router** (`lib/firecrawl.ts` — entry point, file is misnamed) — env-driven, routes to one of: Firecrawl (`@mendable/firecrawl-js` v4.23.0), Brave Search API (raw `fetch` to `api.search.brave.com/res/v1/web/search`), Serper.dev (raw POST, kept in tree but inert unless used), or a per-platform **hybrid** (Brave + Firecrawl fallback). All four return identical `RawSearchResult[]` shape so the downstream pipeline is engine-agnostic. **Default `SEARCH_PROVIDER=firecrawl`; production runs `hybrid` via env.**
 - Firecrawl used **only for search**, not for scraping; Brave likewise — every per-URL scrape goes through the crawl4ai sidecar.
-- Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
+- **Payments:** Stripe (`stripe` v18.x). Three tiers, identified by price ID: Free / Pro ($10/mo · $100/yr) / Max ($30/mo · $300/yr). `lib/stripe.ts` owns `TIER_CAPS`, `tierFromPriceId`, `priceIdForTier`. Webhook at `app/api/webhooks/stripe/route.ts` switches on price ID and writes four cap columns to `profiles`. Checkout route accepts `{tier, cycle}`.
+- Supabase Postgres — auth users + `public.profiles` (id, email, display_name, avatar_url, **bio**, created_at, updated_at; **tier columns:** `subscription_status`, `subscription_tier`, `subscription_price_id`, `subscription_period_end`, `stripe_customer_id`, `max_searches_per_period`, `max_saved_searches`, `max_tracked_listings`, `native_results_cap`, `min_alert_cadence_hours`, `searches_used_this_period`, `searches_period_start`; auto-trigger creates row on signup) + `public.saves` (user_id, listing_url unique-per-user, cached title/price/image/condition/seller, saved_at, **folder_id** nullable FK → collection_folders) + `public.collection_folders` (id, user_id, name, **description**, is_default, created_at; one default per user via partial unique index)
 - **Naming reminder:** the `saves` table and `/api/saves` routes are surfaced in the UI as "Collection". Both names refer to the same thing; only UI strings were renamed.
 - **"My Collection" is the default folder AND the all-items view.** New saves get `folder_id = <default folder id>` from `ensureDefaultFolder()`. Custom folders filter strictly by `folder_id`. My Collection's GET filter applies no folder restriction — every save renders there regardless. Items orphaned by folder delete (FK `on delete set null`) also show under My Collection automatically.
 - Supabase Storage — `avatars` public bucket (2 MB cap; PNG/JPG/WebP). Files stored at `{user_id}/avatar-{timestamp}.{ext}`. RLS scopes write access to own folder.

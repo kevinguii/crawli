@@ -294,21 +294,99 @@ This is the killer entry point. Most users will discover Search Alerts through t
 
 ---
 
-## Tier strategy (defer to later — placeholder values)
+## ✅ Tier strategy SHIPPED 2026-05-26 (three-tier model)
 
-To be decided after Phase 1+2 ship and we have early usage data. Initial defaults
-in code:
+Implementation landed: SQL migration at `docs/migrations/three-tier.sql`,
+webhook + checkout switched on price ID, search/alert/tracked caps now
+profile-driven, native-results cap applied in `lib/searchWorker.ts`, three-card
+pricing page live. See HANDOFF.md latest-change for full file list.
 
-| Tier | Saved searches | Min cadence | Manual re-run |
+## Tier strategy (locked 2026-05-26 — three-tier model)
+
+Decided after cost re-analysis post-Phase-4 ship. Three tiers, 24h cadence
+across the board (12h removed — too costly per alert run, may return later as a
+Max-only perk if data justifies).
+
+### Final tier table
+
+| | **Free** | **Pro** $10/mo · $100/yr | **Max** $30/mo · $300/yr |
 |---|---|---|---|
-| Free | 1 | 24 hours | No |
-| Pro | 5 | 6 hours | Yes |
+| Searches / month | 10 | 75 | 300 |
+| Search alerts | 1 | 3 | 10 |
+| Alert cadence | 24h | 24h | 24h |
+| Tracked listings | 50 | 200 | 1,000 |
+| Up to results per native platform | 10 | 30 | 60 |
+| Alert health sparkline | — | — | ✅ |
+| Email notifications | ✅ | ✅ | ✅ |
 
-These are seeds, not commitments. The webhook code that sets them should live in
-one place so changing the numbers is a one-file edit.
+### Cost model behind these caps
 
-If a third tier is added later, it's an additive change — bump the cap columns
-in `profiles` based on `subscription_price_id`. No table changes.
+Per-search worst case (all 7 alert-eligible platforms, no cache, today's
+hybrid Brave/Firecrawl + native Grailed/ThredUp setup): **~$0.069/search**.
+Per-alert-run worst case (same minus eBay): **~$0.048/run**.
+Tracked-listing refresh: **~$0** (self-hosted httpx → Playwright cascade,
+Firecrawl never touched).
+
+| Tier | Worst-case cost/mo | Net revenue (post-Stripe) | Margin worst | Margin realistic (~40% util) |
+|---|---|---|---|---|
+| Free | $2.13 | $0 | -$2.13 (intentional subsidy / trial) | -$0.85 |
+| Pro $10 | $9.50 | $9.41 | -$0.09 (break-even) | ~+$5 |
+| Max $30 | $35.10 | $28.83 | -$6.27 | +$10-12 |
+
+Max's worst-case loss is acceptable because:
+1. Realistic utilization is 30-50% of cap, not 100%.
+2. Future platform migrations to native search-page extraction (Mercari,
+   Vinted next on the roadmap) will drop alert-run cost ~50%, moving Max
+   into positive worst-case margin without changing the price.
+3. The worst-case Max user is the highest-LTV customer — subsidizing them
+   is a moat, not a leak.
+
+### "Up to N results per native platform" — what this means
+
+This cap applies **only to platforms in `SEARCH_PAGE_PLATFORMS`** (currently
+grailed, thredup, realreal). For those, the sidecar does **one Playwright
+render** and extracts however many listings the grid contains — pulling 10
+vs 60 from the same render is $0 marginal. URL-discovery platforms (vinted,
+stockx, poshmark, depop, vestiaire, mercari, ebay) are bounded by the
+Brave/Firecrawl `limit=20` already, untouched by this cap.
+
+It's a **ceiling, not a guarantee** — a narrow query like "vintage Margiela
+tabi size 41" might only return 7 listings even on Max. Frontend copy must
+say "up to N" explicitly so users don't expect a floor.
+
+**Frontend clarification work (Phase 4.5):**
+- Pricing page card: "Up to 60 listings per platform (when available)" — not just "60 listings per platform"
+- Settings → Billing usage row: no change (this isn't a metered resource).
+- Result-count display on search results: optional tooltip near the platform header — "Showing 23 of up to 30 on Pro. [Upgrade to Max for up to 60.]" Only show the upsell if the platform actually returned ≥ tier cap (i.e. the cap is the bottleneck, not the query).
+- Empty/short result states: do NOT show upsell when fewer results returned because the platform had nothing — that misrepresents what the upgrade gives.
+
+### Schema impact
+
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS max_search_alerts int DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS max_tracked_listings int DEFAULT 50,
+  ADD COLUMN IF NOT EXISTS native_results_cap int DEFAULT 10;
+```
+
+(`max_saved_searches` already exists from Phase 4 — rename optional; the
+two new columns are net additions. `min_alert_cadence_hours` becomes
+effectively dead since all tiers are 24h, but leave the column in place in
+case 12h returns as a Max perk.)
+
+The Stripe webhook in `app/api/webhooks/stripe/route.ts` sets all three
+columns on `subscription.created/updated`. Pro and Max each get a distinct
+`STRIPE_PRICE_ID_*` env var; the webhook switches on price ID.
+
+### Env vars to add for Max tier
+
+```
+STRIPE_PRICE_ID_MAX_MONTHLY=price_...
+STRIPE_PRICE_ID_MAX_YEARLY=price_...
+```
+
+(Pro's existing `STRIPE_PRICE_ID_MONTHLY` and `STRIPE_PRICE_ID_YEARLY` stay
+as-is; consider renaming to `_PRO_` for parity once Max ships.)
 
 ---
 
@@ -354,3 +432,20 @@ Steps 1+2 are safe to ship this week. Steps 3+4 are a focused mini-sprint after.
 - [ ] Update memory: mark `project_roadmap.md` (Watchlist saved-searches is now done)
 - [ ] Update memory: mark `project_background_searches_deferred.md` as resolved
 - [ ] Delete `docs/BACKGROUND_SEARCHES_PLAN.md` if fully consumed (Phase 0+1 shipped)
+
+---
+
+## ⚠️ When the three-tier pricing ships → update HANDOFF.md
+
+When the Max tier + updated caps + native-results-cap lever land in code/prod, add a
+"Latest change" entry to HANDOFF.md covering:
+
+1. **Tier table** — Free 10/1/50/10, Pro $10 75/3/200/30, Max $30 300/10/1000/60 (24h cadence across all tiers).
+2. **Cost model** — worst case Free $2.13 / Pro $9.50 / Max $35.10 per user/mo; net margin Pro break-even worst, Max -$6 worst / +$10 realistic. Fixed floor still $40/mo ($20 Hetzner + $20 Firecrawl Hobby).
+3. **Schema changes** — new `profiles` columns `max_search_alerts`, `max_tracked_listings`, `native_results_cap`; webhook switches on Stripe price ID to set the three of them.
+4. **Frontend additions** — "up to N" copy on pricing cards; tier-aware upsell tooltip on native-platform result counts (only when cap is bottleneck).
+5. **Stripe price IDs** — Max monthly + yearly created in both test and live Stripe modes; env vars added.
+6. **What this replaces** — the 100-searches / 5-alerts Pro at $10 from 2026-05-23 is gone. Anyone on the old plan should be grandfathered or migrated (decide before flipping).
+
+Then update SCALING.md §8 cost model with the new per-tier worst-case numbers
+(currently still uses the pre-tier-restructure rough buckets).

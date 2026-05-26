@@ -41,6 +41,7 @@ export async function searchAndScrape(
   query: string,
   filters: FilterState | undefined,
   signal?: AbortSignal,
+  nativeResultsCap: number = 10,
 ): Promise<Listing[]> {
   if (SEARCH_PAGE_PLATFORMS.has(platform)) {
     const scraped = await scrapeSearchPageViaSidecar(platform, query, 100, 2, signal);
@@ -52,7 +53,7 @@ export async function searchAndScrape(
     const colorFiltered = sizeFiltered.filter((l) =>
       matchListingColor(l.title, filters?.color, query),
     );
-    return colorFiltered.filter((l) => matchListingPrice(l, filters)).slice(0, 10);
+    return colorFiltered.filter((l) => matchListingPrice(l, filters)).slice(0, nativeResultsCap);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -93,6 +94,7 @@ export async function runSearchJob(
   platforms: string[],
   filters: FilterState | undefined,
   signal?: AbortSignal,
+  nativeResultsCap: number = 10,
 ): Promise<Listing[]> {
   const platformConcurrency = Math.max(
     1,
@@ -101,7 +103,7 @@ export async function runSearchJob(
 
   const settled = await allSettledWithConcurrency(
     platforms.map((platform) => async () => {
-      const listings = await searchAndScrape(platform, query, filters, signal);
+      const listings = await searchAndScrape(platform, query, filters, signal, nativeResultsCap);
       return { platform, listings };
     }),
     platformConcurrency,

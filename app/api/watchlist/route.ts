@@ -20,6 +20,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing required fields' }, { status: 400 });
   }
 
+  // Enforce tier-driven tracked-listings cap. Done before insert so the cap
+  // error message can include the actual limit, and so an at-cap user
+  // re-adding a duplicate (handled below via 23505) doesn't pay the cap.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('max_tracked_listings')
+    .eq('id', user.id)
+    .single();
+  const maxTracked = profile?.max_tracked_listings ?? 50;
+
+  const { count: currentCount } = await supabase
+    .from('watchlist')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  if ((currentCount ?? 0) >= maxTracked) {
+    // Allow duplicates to short-circuit to the existing row instead of 402.
+    const { data: existing } = await supabase
+      .from('watchlist')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('listing_url', listing_url)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json({ watch_id: existing.id, already_watched: true });
+    }
+    return NextResponse.json(
+      {
+        error: 'quota_exceeded',
+        message: `You've reached your ${maxTracked}-item tracked-listings limit. Upgrade or remove items to add more.`,
+        cap: maxTracked,
+      },
+      { status: 402 },
+    );
+  }
+
   const row = {
     user_id: user.id,
     listing_url,

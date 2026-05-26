@@ -113,14 +113,31 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
   );
 }
 
+type Tier = 'free' | 'pro' | 'max';
+
 type BillingStatus = {
   status: string;
-  plan: 'free' | 'pro';
+  tier: Tier;
+  plan: Tier; // legacy alias from API
+  caps: {
+    searches: number;
+    alerts: number;
+    tracked: number;
+    nativeResults: number;
+  };
+  usage: {
+    searches: number;
+    alerts: number;
+    tracked: number;
+  };
+  // Legacy flat fields, kept for backward compat:
   used: number;
   cap: number;
   periodEnd: string | null;
   searchResetDate: string | null;
 };
+
+const TIER_LABEL: Record<Tier, string> = { free: 'Free', pro: 'Pro', max: 'Max' };
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function SettingsPage() {
@@ -146,8 +163,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (searchParams.get('billing') === 'success') {
-      toast.success("You're on Crawli Pro!", {
-        description: 'Your subscription is active. Enjoy 100 searches per month.',
+      toast.success("Subscription active!", {
+        description: 'Your new plan is live. Refresh in a moment if details look stale.',
         duration: 6000,
       });
       // Clean up the param without reloading
@@ -315,119 +332,123 @@ export default function SettingsPage() {
             </div>
           ) : (
             <>
-              <Row
-                label="Plan"
-                sublabel={
-                  billing.plan === 'pro'
-                    ? billing.status === 'past_due'
-                      ? 'Payment failed — update your card to keep your subscription active'
-                      : 'Crawli Pro'
-                    : 'Crawli Free'
-                }
-              >
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{
-                    background:
-                      billing.status === 'past_due'
-                        ? '#d97706'
-                        : billing.plan === 'pro'
-                        ? 'var(--accent)'
-                        : 'var(--surface-hover)',
-                    color: billing.plan === 'pro' || billing.status === 'past_due' ? '#ffffff' : 'var(--text-muted)',
-                  }}
-                >
-                  {billing.plan === 'pro' ? 'Pro' : 'Free'}
-                </span>
-              </Row>
-              <Row
-                label="Searches used"
-                sublabel={
-                  billing.plan === 'pro'
-                    ? 'Resets on your next billing date'
-                    : billing.searchResetDate
-                    ? `Resets ${new Date(billing.searchResetDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
-                    : 'Resets 30 days after your first search'
-                }
-              >
-                <div className="flex items-center gap-3 w-48">
-                  <div
-                    className="flex-1 h-2 rounded-full overflow-hidden"
-                    style={{ background: 'var(--surface-hover)' }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(100, Math.round((billing.used / billing.cap) * 100))}%`,
-                        background:
-                          billing.used / billing.cap >= 1
-                            ? '#dc2626'
-                            : billing.used / billing.cap >= 0.7
-                            ? '#d97706'
-                            : 'var(--accent)',
-                      }}
-                    />
-                  </div>
-                  <span
-                    className="text-xs tabular-nums font-medium"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {billing.used}/{billing.cap}
-                  </span>
-                </div>
-              </Row>
-              <Row
-                label="Search alerts"
-                sublabel={
-                  billing.plan === 'pro'
-                    ? 'Up to 5 alerts, checks every 12h or 24h'
-                    : 'Up to 1 alert, checks every 24h — upgrade for more'
-                }
-              >
-                <div className="flex items-center gap-3 w-48">
-                  <div
-                    className="flex-1 h-2 rounded-full overflow-hidden"
-                    style={{ background: 'var(--surface-hover)' }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: alertsUsed === null
-                          ? '0%'
-                          : `${Math.min(100, Math.round(((alertsUsed) / (billing.plan === 'pro' ? 5 : 1)) * 100))}%`,
-                        background: 'var(--accent)',
-                      }}
-                    />
-                  </div>
-                  <span
-                    className="text-xs tabular-nums font-medium"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {alertsUsed ?? '–'}/{billing.plan === 'pro' ? 5 : 1}
-                  </span>
-                </div>
-              </Row>
+              {(() => {
+                const tier: Tier = billing.tier ?? billing.plan ?? 'free';
+                const isPaid = tier !== 'free';
+                const tierLabel = TIER_LABEL[tier];
+                const searchCap = billing.caps?.searches ?? billing.cap;
+                const alertCap = billing.caps?.alerts ?? (isPaid ? 3 : 1);
+                const searchesUsed = billing.usage?.searches ?? billing.used;
+                const alertsUsedNow = alertsUsed ?? billing.usage?.alerts ?? null;
+                return (
+                  <>
+                    <Row
+                      label="Plan"
+                      sublabel={
+                        billing.status === 'past_due'
+                          ? 'Payment failed — update your card to keep your subscription active'
+                          : `Crawli ${tierLabel}`
+                      }
+                    >
+                      <span
+                        className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                        style={{
+                          background:
+                            billing.status === 'past_due'
+                              ? '#d97706'
+                              : isPaid
+                              ? 'var(--accent)'
+                              : 'var(--surface-hover)',
+                          color: isPaid || billing.status === 'past_due' ? '#ffffff' : 'var(--text-muted)',
+                        }}
+                      >
+                        {tierLabel}
+                      </span>
+                    </Row>
+                    <Row
+                      label="Searches used"
+                      sublabel={
+                        isPaid
+                          ? 'Resets on your next billing date'
+                          : billing.searchResetDate
+                          ? `Resets ${new Date(billing.searchResetDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
+                          : 'Resets 30 days after your first search'
+                      }
+                    >
+                      <div className="flex items-center gap-3 w-48">
+                        <div
+                          className="flex-1 h-2 rounded-full overflow-hidden"
+                          style={{ background: 'var(--surface-hover)' }}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(100, Math.round((searchesUsed / searchCap) * 100))}%`,
+                              background:
+                                searchesUsed / searchCap >= 1
+                                  ? '#dc2626'
+                                  : searchesUsed / searchCap >= 0.7
+                                  ? '#d97706'
+                                  : 'var(--accent)',
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="text-xs tabular-nums font-medium"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {searchesUsed}/{searchCap}
+                        </span>
+                      </div>
+                    </Row>
+                    <Row
+                      label="Search alerts"
+                      sublabel={`Up to ${alertCap} alert${alertCap === 1 ? '' : 's'}, checks every 24h`}
+                    >
+                      <div className="flex items-center gap-3 w-48">
+                        <div
+                          className="flex-1 h-2 rounded-full overflow-hidden"
+                          style={{ background: 'var(--surface-hover)' }}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: alertsUsedNow === null
+                                ? '0%'
+                                : `${Math.min(100, Math.round((alertsUsedNow / alertCap) * 100))}%`,
+                              background: 'var(--accent)',
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="text-xs tabular-nums font-medium"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {alertsUsedNow ?? '–'}/{alertCap}
+                        </span>
+                      </div>
+                    </Row>
 
-              {billing.plan === 'pro' && billing.periodEnd && (
-                <Row label="Next billing date" sublabel="When your next payment will be charged">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {new Date(billing.periodEnd).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </Row>
-              )}
-              <Row
-                label={billing.plan === 'pro' ? 'Manage subscription' : 'Upgrade to Pro'}
-                sublabel={
-                  billing.plan === 'pro'
-                    ? 'Change plan, update card, or cancel'
-                    : '100 searches/mo, $10/mo or $100/yr'
-                }
-              >
-                {billing.plan === 'pro' ? (
+                    {isPaid && billing.periodEnd && (
+                      <Row label="Next billing date" sublabel="When your next payment will be charged">
+                        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          {new Date(billing.periodEnd).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </Row>
+                    )}
+                    <Row
+                      label={isPaid ? 'Manage subscription' : 'Upgrade'}
+                      sublabel={
+                        isPaid
+                          ? 'Change plan, update card, or cancel'
+                          : 'Unlock more searches, alerts, and tracked listings'
+                      }
+                    >
+                      {isPaid ? (
                   <button
                     type="button"
                     onClick={handleOpenPortal}
@@ -451,6 +472,9 @@ export default function SettingsPage() {
                   </Link>
                 )}
               </Row>
+                  </>
+                );
+              })()}
             </>
           )}
         </Section>
