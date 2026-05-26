@@ -154,7 +154,6 @@ export default function SettingsPage() {
   // Billing
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [alertsUsed, setAlertsUsed] = useState<number | null>(null);
 
   // Delete
@@ -202,21 +201,6 @@ export default function SettingsPage() {
       })
       .catch(() => {});
   }, []);
-
-  async function handleOpenPortal() {
-    setPortalLoading(true);
-    try {
-      const res = await fetch('/api/billing/portal', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      alert(data.error ?? 'Could not open billing portal');
-    } finally {
-      setPortalLoading(false);
-    }
-  }
 
   function togglePlatform(key: string) {
     setPlatforms((prev) =>
@@ -366,7 +350,7 @@ export default function SettingsPage() {
                       </span>
                     </Row>
                     <Row
-                      label="Searches used"
+                      label="Searches remaining"
                       sublabel={
                         isPaid
                           ? 'Resets on your next billing date'
@@ -375,31 +359,35 @@ export default function SettingsPage() {
                           : 'Resets 30 days after your first search'
                       }
                     >
-                      <div className="flex items-center gap-3 w-48">
-                        <div
-                          className="flex-1 h-2 rounded-full overflow-hidden"
-                          style={{ background: 'var(--surface-hover)' }}
-                        >
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${Math.min(100, Math.round((searchesUsed / searchCap) * 100))}%`,
-                              background:
-                                searchesUsed / searchCap >= 1
-                                  ? '#dc2626'
-                                  : searchesUsed / searchCap >= 0.7
-                                  ? '#d97706'
-                                  : 'var(--accent)',
-                            }}
-                          />
-                        </div>
-                        <span
-                          className="text-xs tabular-nums font-medium"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {searchesUsed}/{searchCap}
-                        </span>
-                      </div>
+                      {(() => {
+                        const remaining = Math.max(0, searchCap - searchesUsed);
+                        const remainingPct = searchCap > 0 ? remaining / searchCap : 0;
+                        const barColor =
+                          remainingPct <= 0
+                            ? '#dc2626'
+                            : remainingPct <= 0.3
+                            ? '#d97706'
+                            : '#22c55e';
+                        return (
+                          <div className="flex items-center gap-3 w-48">
+                            <div
+                              className="flex-1 h-2 rounded-full overflow-hidden"
+                              style={{ background: 'var(--surface-hover)' }}
+                            >
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${Math.round(remainingPct * 100)}%`, background: barColor }}
+                              />
+                            </div>
+                            <span
+                              className="text-xs tabular-nums font-medium"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              {remaining}/{searchCap}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </Row>
                     <Row
                       label="Search alerts"
@@ -444,34 +432,23 @@ export default function SettingsPage() {
                       label={isPaid ? 'Manage subscription' : 'Upgrade'}
                       sublabel={
                         isPaid
-                          ? 'Change plan, update card, or cancel'
+                          ? 'Upgrade, switch plan, or cancel'
                           : 'Unlock more searches, alerts, and tracked listings'
                       }
                     >
-                      {isPaid ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenPortal}
-                    disabled={portalLoading}
-                    className="rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
-                    style={{
-                      background: 'var(--surface-hover)',
-                      color: 'var(--text)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {portalLoading ? 'Opening…' : 'Manage'}
-                  </button>
-                ) : (
-                  <Link
-                    href="/pricing"
-                    className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
-                    style={{ background: 'var(--accent)' }}
-                  >
-                    Upgrade
-                  </Link>
-                )}
-              </Row>
+                      <Link
+                        href="/pricing"
+                        className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+                        style={{
+                          background: isPaid ? 'var(--surface-hover)' : 'var(--accent)',
+                          color: isPaid ? 'var(--text)' : '#fff',
+                          border: isPaid ? '1px solid var(--border)' : 'none',
+                          fontWeight: isPaid ? 500 : 600,
+                        }}
+                      >
+                        {isPaid ? 'Manage' : 'Upgrade'}
+                      </Link>
+                    </Row>
                   </>
                 );
               })()}

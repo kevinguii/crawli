@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Tier } from '@/lib/stripe';
@@ -11,7 +11,7 @@ type PaidTier = Exclude<Tier, 'free'>;
 interface TierConfig {
   tier: PaidTier;
   name: string;
-  icon: string;
+  icon: React.ReactNode;
   tagline: string;
   monthly: number;
   yearly: number; // total billed yearly
@@ -154,7 +154,11 @@ export function PricingCards({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* ── Free plan ── */}
         <PlanCard
-          icon="⚡"
+          icon={
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--text)' }} aria-hidden>
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          }
           name="Free"
           tagline="Get started at no cost"
           priceLabel="$0"
@@ -200,7 +204,7 @@ export function PricingCards({
 }
 
 interface PlanCardProps {
-  icon: string;
+  icon: React.ReactNode;
   name: string;
   tagline: string;
   priceLabel: string;
@@ -239,7 +243,7 @@ function PlanCard({
       }}
     >
       <div className="flex items-center gap-2">
-        <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+        <span className="flex items-center" style={{ fontSize: '1.1rem', lineHeight: 1 }}>{icon}</span>
         <span className="text-base font-semibold" style={{ color: 'var(--text)' }}>{name}</span>
         {isCurrent && (
           <span
