@@ -363,10 +363,10 @@ export default function SettingsPage() {
                         const remaining = Math.max(0, searchCap - searchesUsed);
                         const remainingPct = searchCap > 0 ? remaining / searchCap : 0;
                         const barColor =
-                          remainingPct <= 0
+                          remainingPct <= 0.1
                             ? '#dc2626'
-                            : remainingPct <= 0.3
-                            ? '#d97706'
+                            : remainingPct <= 0.4
+                            ? '#f59e0b'
                             : '#22c55e';
                         return (
                           <div className="flex items-center gap-3 w-48">
@@ -390,31 +390,27 @@ export default function SettingsPage() {
                       })()}
                     </Row>
                     <Row
-                      label="Search alerts"
+                      label="Search alerts remaining"
                       sublabel={`Up to ${alertCap} alert${alertCap === 1 ? '' : 's'}, checks every 24h`}
                     >
-                      <div className="flex items-center gap-3 w-48">
-                        <div
-                          className="flex-1 h-2 rounded-full overflow-hidden"
-                          style={{ background: 'var(--surface-hover)' }}
-                        >
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: alertsUsedNow === null
-                                ? '0%'
-                                : `${Math.min(100, Math.round((alertsUsedNow / alertCap) * 100))}%`,
-                              background: 'var(--accent)',
-                            }}
-                          />
-                        </div>
-                        <span
-                          className="text-xs tabular-nums font-medium"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {alertsUsedNow ?? '–'}/{alertCap}
-                        </span>
-                      </div>
+                      {(() => {
+                        const alertRemaining = alertsUsedNow === null ? alertCap : Math.max(0, alertCap - alertsUsedNow);
+                        const alertPct = alertCap > 0 ? alertRemaining / alertCap : 0;
+                        const alertColor = alertPct <= 0.1 ? '#dc2626' : alertPct <= 0.4 ? '#f59e0b' : '#22c55e';
+                        return (
+                          <div className="flex items-center gap-3 w-48">
+                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-hover)' }}>
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${Math.round(alertPct * 100)}%`, background: alertColor }}
+                              />
+                            </div>
+                            <span className="text-xs tabular-nums font-medium" style={{ color: 'var(--text-muted)' }}>
+                              {alertsUsedNow === null ? alertCap : alertRemaining}/{alertCap}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </Row>
 
                     {isPaid && billing.periodEnd && (

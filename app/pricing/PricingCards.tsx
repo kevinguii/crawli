@@ -172,13 +172,19 @@ export function PricingCards({
         {/* ── Paid tiers ── */}
         {PAID_TIERS.map((t) => {
           const isCurrent = currentTier === t.tier;
-          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : t.monthly;
-          const priceLabel = `$${displayPriceNum % 1 === 0 ? displayPriceNum : displayPriceNum.toFixed(2)}`;
-          const yearlyHint = cycle === 'yearly' ? `$${t.yearly} billed yearly` : null;
+          // User already has a paid plan — any plan change (upgrade, downgrade,
+          // or billing cycle switch) goes through the Stripe Customer Portal so
+          // Stripe handles proration. Only free users go to a new checkout.
+          const isOnOtherPaidPlan = !isFree && !isCurrent;
           const loadingKey = `${t.tier}-${cycle}`;
           const ctaLabel = isCurrent
             ? (loading === 'portal' ? 'Opening…' : 'Manage subscription')
+            : isOnOtherPaidPlan
+            ? (loading === 'portal' ? 'Opening…' : `Switch to ${t.name}`)
             : (loading === loadingKey ? 'Loading…' : 'Subscribe');
+          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : t.monthly;
+          const priceLabel = `$${displayPriceNum % 1 === 0 ? displayPriceNum : displayPriceNum.toFixed(2)}`;
+          const yearlyHint = cycle === 'yearly' ? `$${t.yearly} billed yearly` : null;
 
           return (
             <PlanCard
@@ -193,7 +199,7 @@ export function PricingCards({
               isCurrent={isCurrent}
               ctaLabel={ctaLabel}
               ctaDisabled={loading !== null}
-              onCtaClick={() => (isCurrent ? handleManage() : handleSubscribe(t.tier))}
+              onCtaClick={() => (isCurrent || isOnOtherPaidPlan ? handleManage() : handleSubscribe(t.tier))}
               features={t.features}
             />
           );
