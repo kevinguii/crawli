@@ -68,7 +68,7 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
       >
         <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Delete account</h3>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          This permanently deletes your account and all data — watchlist, saves, and search history. This cannot be undone.
+          This permanently deletes your account and all data — tracked listings, saves, and search history. This cannot be undone.
         </p>
         <p className="mt-4 text-sm font-medium" style={{ color: 'var(--text)' }}>
           Type <span style={{ color: '#E24B4A' }}>DELETE</span> to confirm
@@ -119,6 +119,7 @@ type BillingStatus = {
   used: number;
   cap: number;
   periodEnd: string | null;
+  searchResetDate: string | null;
 };
 
 // ── Main page ──────────────────────────────────────────────────────────────
@@ -178,7 +179,10 @@ export default function SettingsPage() {
 
     fetch('/api/saved-searches')
       .then((r) => (r.ok ? r.json() : []))
-      .then((d: unknown[]) => setAlertsUsed(d.length))
+      .then((d: { paused?: boolean }[]) => {
+        // Paused alerts don't count toward the cap.
+        setAlertsUsed(d.filter((a) => !a.paused).length);
+      })
       .catch(() => {});
   }, []);
 
@@ -341,7 +345,9 @@ export default function SettingsPage() {
                 sublabel={
                   billing.plan === 'pro'
                     ? 'Resets on your next billing date'
-                    : 'Resets 30 days after your first search this period'
+                    : billing.searchResetDate
+                    ? `Resets ${new Date(billing.searchResetDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
+                    : 'Resets 30 days after your first search'
                 }
               >
                 <div className="flex items-center gap-3 w-48">

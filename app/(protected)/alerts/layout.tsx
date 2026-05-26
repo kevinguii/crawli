@@ -37,11 +37,11 @@ export default function AlertsLayout({ children }: { children: React.ReactNode }
       </nav>
 
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <header className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+        <header className="mb-8" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem' }}>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
             Alerts
           </h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
             Track listings and get notified when new matches appear.
           </p>
         </header>

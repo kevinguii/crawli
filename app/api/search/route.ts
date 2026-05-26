@@ -103,7 +103,7 @@ export async function POST(request: Request) {
         error: 'quota_exceeded',
         message: isPro
           ? 'You have used all 100 searches for this billing period.'
-          : 'You have used all 10 free searches this month. Upgrade to Crawli Pro for 100/month.',
+          : 'You have used all 10 free searches for this month. Upgrade to Crawli Pro to get more.',
         used,
         cap,
         plan: isPro ? 'pro' : 'free',

@@ -1,8 +1,148 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (Phase 3 + Phase 4 — background worker + /alerts page)
+**Last updated:** 2026-05-26 (Phase 4 polish #2 — timezone scheduling + UI fixes)
 
-**Latest change (2026-05-25 — Phase 3 + Phase 4: background worker + /alerts page):**
+**Latest change (2026-05-26 — Phase 4 polish #3: pause-frees-slot + final touches):**
+
+Wrap-up session for Phase 4.
+
+**Pause now frees the alert slot:**
+- `POST /api/saved-searches` count query filters `eq('paused', false)` — only active alerts occupy a slot.
+- `PATCH /api/saved-searches/[id]` now guards unpause: if flipping `paused: false` would push the user over `max_saved_searches`, returns `402 quota_exceeded` with a message telling them to pause/delete another alert first. Client shows that message in a toast.
+- Settings page "Search alerts" usage row counts active alerts only (`d.filter(a => !a.paused).length`).
+- Client-side "+ New alert" gate counts active alerts only.
+
+**"+ New alert" quota check order:**
+- Alert quota is checked **before** search quota — more specific reason ("you already have an active alert; pause/delete it") beats the generic "you used all your searches".
+- Free-tier message updated to mention pause/delete as alternatives to upgrade.
+
+**UI:**
+- Pause/Resume button now fills the whole box on hover (no longer just a text color change). Pause fills with `var(--text-muted)` (neutral grey). Resume fills with green `#22c55e`. Both with white text. Delete remains red. Three distinct hover colors signal the three distinct destructive levels.
+
+**Files touched:**
+- `app/api/saved-searches/route.ts` — count filter
+- `app/api/saved-searches/[id]/route.ts` — PATCH unpause guard
+- `app/components/alerts/SearchAlertsTab.tsx` — quota check order, error toast for PATCH conflict, paused-aware client count
+- `app/components/alerts/SavedSearchCard.tsx` — pause/resume filled hover
+- `app/(protected)/settings/page.tsx` — count active alerts only
+
+---
+
+**Previous change (2026-05-26 — Phase 4 polish #2: timezone-anchored alerts + UI fixes):**
+
+Second polish pass on Phase 4. The big addition is **timezone-aware scheduling** — alerts now anchor to 9 AM local time in the user's timezone instead of running 24h after creation (which could land at 3 AM).
+
+**⚠️ DB MIGRATION REQUIRED — run before deploy:**
+```sql
+ALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS notify_timezone TEXT;
+```
+
+**New: `lib/alertSchedule.ts`**
+- `nextAnchoredRunAt(timezone, cadenceHours, base?)` — returns the next 9 AM in the user's tz (and 9 PM too if cadence is 12h). Works isomorphically (client + server) using only `Intl.DateTimeFormat` — no library dep.
+- `formatNextRun(date, tz)` — "Today at 9:00 AM PST" / "Tomorrow at 9:00 AM PST" / "Tue Mar 5 at 9:00 AM PST".
+- `formatTimeInTz(date, tz)` — just the time + abbreviation.
+
+**Wiring:**
+- `CreateAlertModal` detects the browser timezone via `Intl.DateTimeFormat().resolvedOptions().timeZone`, computes the first anchored run, displays it in the confirm step alongside the timezone name, and sends both `notify_timezone` + `next_run_at` to the server. Also dispatches `crawli:search-started` on confirm so the nav search counter decrements immediately (was previously only decrementing on a full search through `SearchForm`).
+- `POST /api/saved-searches` accepts the two new fields. The row is still inserted with `next_run_at = now()` so the first silent baseline run fires immediately — the client-supplied `next_run_at` is informational for now; the first scheduled run is set by `alertRunner` after the baseline completes.
+- `lib/alertRunner.ts` post-run scheduling now calls `nextAnchoredRunAt(tz, cadence)` instead of `now + cadence`, so the wall-clock-anchored schedule actually holds. Falls back to old behavior if `notify_timezone` is null (back-compat for any pre-migration rows).
+- `SavedSearchCard` shows "Daily at 9 AM" / "Twice daily (9 AM & 9 PM)" + "Next check Tomorrow at 9:00 AM PST (America/Los_Angeles)".
+
+**UI tightening:**
+- **Alerts tabs** now span the full container width — each tab is `flex-1` (50/50 split). Description text below is centered with `max-w-2xl mx-auto`.
+- **SavedSearchCard initializing state:** progress bar is now grey (`var(--text-dim)` + 50% opacity), not accent-colored. Setting-up pill uses neutral surface tones.
+- **SavedSearchCard live state:** when an alert is past its first run and not paused, the card gets a faint green-tinted border, the bell icon is filled green, and a "● Live" pill appears next to the query.
+- **"+ New alert" quota gate:** clicking the button now checks both search quota (used ≥ cap) and alert quota (count ≥ max). Either triggers a toast with an Upgrade action (same UX as the search-form quota toast). The CreateAlertModal never opens when blocked.
+- **Refresh summary panel:** "Refresh summary" → "Refresh Summary". The "All refreshed!" green progress bar now stays visible for 2.5s after completion (was 0.5s) so users actually see it alongside the diff summary.
+- **Toast punctuation pass** (on the alerts/tracked-listings surface — not a full codebase sweep): success messages get `!` (`Added to Tracked Listings!`, `Alert created!`). Deletes/removals get `.` (`Removed from Tracked Listings.`, `Alert deleted.`). Errors get `.`.
+
+**Files touched:**
+- New: `lib/alertSchedule.ts`
+- `app/components/alerts/CreateAlertModal.tsx` — timezone detection, confirm-step display, dispatch event, send tz+next_run_at, unified email message
+- `app/components/alerts/SearchAlertsTab.tsx` — billing fetch, "+ New alert" quota gate, used-counter bump on creation, deleted-alert toast
+- `app/components/alerts/SavedSearchCard.tsx` — schedule label, next-check line, grey progress, green live state
+- `app/components/alerts/AlertsTabsClient.tsx` — full-width tabs + centered description
+- `app/api/saved-searches/route.ts` — accept new fields, store notify_timezone
+- `lib/alertRunner.ts` — anchored next-run computation + SavedSearch.notify_timezone in interface
+- `app/components/profile/WatchlistTab.tsx` — "Refresh Summary" caps, 2.5s linger, toast period
+- `app/components/WatchlistProvider.tsx` — toast punctuation
+
+**Key gotchas:**
+- The first silent baseline run fires *immediately* on creation (`runAlert(newRow)` is dispatched right after insert). The client-supplied `next_run_at` (e.g. tomorrow 9 AM) is overwritten by `alertRunner` to the anchored value once that first run completes. So no matter when the user creates the alert, run 2 lands at the next 9 AM local — that's the whole point of this change.
+- **DST behavior:** because the schedule is anchored fresh on every cron tick via `nextAnchoredRunAt`, DST transitions are handled correctly — the user always gets 9 AM local regardless of UTC offset shifts.
+- **Cron interval matters.** Hetzner cron runs every 15 min. If `next_run_at = 9:00 AM`, the alert fires at the *next tick after 9:00*, which can be up to 14 min late (e.g. 9:14 AM). Tighten the interval if precision matters.
+- **Schedule pre-migration rows:** any rows created before this migration will have `notify_timezone = NULL`. The fallback path (`now + cadence_hours`) kicks in, so they keep working — just without the anchor. Either backfill in SQL or let them re-create alerts.
+
+**Open follow-ups (deferred to backlog):**
+- User-configurable notification time (let users pick something other than 9 AM in settings).
+- Backfill `notify_timezone` for existing rows from a sensible default (e.g. `America/Los_Angeles`).
+- HTML email template (current is plain text — same template is used by `/api/saved-searches/test-email`; improving one improves both).
+
+---
+
+**Previous change (2026-05-26 — Phase 4 polish #1: UI fixes, Realtime bug fix, email for free users):**
+
+Follow-up pass on Phase 4. Major bug fix + UI tightening based on first-use feedback.
+
+**Bug fixes:**
+- **Realtime subscription crash in `SearchAlertsTab`** — switching between tabs threw `cannot add postgres_changes callbacks after subscribe()`. Root cause: cleanup function was returned from inside `.then()` of `getUser()`, so React never received it. In StrictMode dev double-mount, the channel got reused after `subscribe()`. Fix: rewrote the effect with an async IIFE + sync cleanup using a `cancelled` flag and a channel ref, and gave each mount a unique channel name (`search-alerts-tab-${uid}-${ts}`). This also resolves the "initial search runs forever in frontend" bug — Realtime now properly fires the UPDATE event when the cron's first run sets `last_run_at`, flipping the card out of the initializing state.
+
+**UI / copy fixes:**
+- Eye icon on listing cards (in search results) → bell icon, matching the nav bell + the "Alerts" page brand. aria-label is now "Add to tracked listings" / "Remove from tracked listings".
+- Eye icon on the WatchlistTab cards also swapped to a bell for consistency.
+- Toasts: `Added to Watchlist` → `Added to Tracked Listings`. `Removed from Watchlist` → `Removed from Tracked Listings`. Capital `L` in both.
+- Refresh summary panel: replaced bottom "Dismiss" button with an X close icon in the top-right corner.
+
+**Confirm alert modal:**
+- Notification info now applies to all users (free + pro): "You'll get a badge on the bell icon and an email to **your@email.com** when new matches appear (every Nh, approximately)." Email is fetched live from Supabase `auth.getUser()`.
+- Earlier text differentiated free vs pro — that was wrong. Both tiers now get badge + email.
+- Removed the broken "Upgrade to Pro" inline `<span>` (wasn't clickable).
+
+**Alert delivery change (server side):**
+- `lib/alertRunner.ts` no longer skips email for free users. All tiers receive per-alert emails via Resend. Free users are still capped to 1 alert via `max_saved_searches`, so volume stays bounded.
+
+**Removed:**
+- "Send test email" button from `SearchAlertsTab` header — was for one-time verification. API endpoint at `app/api/saved-searches/test-email/route.ts` is kept (callable manually via curl) but no UI surface. **Future polish:** the test email template is plain text — should be redone with proper HTML styling (logo, listing cards with images, branded button) before launch. Same template is used by `sendAlertEmail` in real alerts, so improving one improves both.
+
+**Layout (`AlertsTabsClient.tsx`):**
+- Replaced pill tabs with underline tabs (active tab gets an accent-colored bottom border + emoji label).
+- Tab description sits in its own row between the tab bar and content, separated by a border.
+- Page `<header>` in `alerts/layout.tsx` got a bottom border + larger title (3xl) so the page hierarchy reads cleanly.
+
+**`SavedSearchCard.tsx`:**
+- Initializing state (when `last_run_at === null`): accent-tinted border, spinner icon in the bell slot, pulsing progress bar, "Setting up…" pill. Realtime flips it to the normal state once the cron completes the first run.
+- Hover colors: Pause hover → surface-hover. Delete hover → red.
+- Delete now has an inline "Delete? Yes / No" confirm step instead of firing immediately.
+
+**Optimistic search counter:**
+- `SearchForm` dispatches `window.event('crawli:search-started')` the moment a search fires. `SubscriptionBadge` listens and decrements its local `used` count by 1 immediately. Matches the backend's behavior (which charges 1 quota as soon as the search is queued, not on completion — so canceling doesn't refund).
+
+**Refresh = direct listing scrape, NOT platform search:**
+- For the record, asked during this session: `POST /api/watchlist/refresh` hits the sidecar's `/refresh-price` endpoint per listing, which uses a plain `httpx` GET against the listing URL itself (`crawl4ai-service/main.py:1042`). It does NOT go through the platform's search JSON or the `runSearchJob` fan-out. Two completely different code paths. Same goes for alerts — alerts use `runSearchJob` (same as user-initiated search). Refresh is per-URL direct scrape.
+
+**Files touched this session:**
+- `app/components/profile/WatchlistTab.tsx` — bell icon, capital L toast, X close on refresh summary, summary panel itself
+- `app/components/WatchlistProvider.tsx` — toast strings updated
+- `app/components/ListingCard.tsx` — eye → bell SVG, aria-label
+- `app/components/alerts/SearchAlertsTab.tsx` — Realtime fix, removed test email button
+- `app/components/alerts/SavedSearchCard.tsx` — initializing state, hover colors, delete confirm
+- `app/components/alerts/CreateAlertModal.tsx` — unified email message, removed broken Upgrade link
+- `app/components/alerts/AlertsTabsClient.tsx` — underline tabs, layout
+- `app/(protected)/alerts/layout.tsx` — header styling
+- `app/components/SubscriptionBadge.tsx` — listens for `crawli:search-started` event
+- `app/components/SearchForm.tsx` — dispatches `crawli:search-started`
+- `app/(protected)/settings/page.tsx` — "watchlist" → "tracked listings" in delete account modal
+- `lib/alertRunner.ts` — removed `if (!isPro) return;` so free users get emails
+- New: `app/api/saved-searches/test-email/route.ts` (kept, no UI)
+
+**Key gotchas (learned this session):**
+- Supabase Realtime channel names must be unique per `subscribe()` lifecycle. Using a static name (`'search-alerts-tab'`) breaks under StrictMode double-mount because the channel gets reused, and `.on()` after `.subscribe()` throws. Always do `channel-${id}-${Date.now()}` or include a cleanup that fully removes the channel synchronously.
+- Returning a cleanup from `useEffect` inside `.then()` is a no-op — React only uses what useEffect *directly* returns. If your effect is async, use an IIFE inside and return a sync cleanup that flips a `cancelled` flag + cleans up captured refs.
+- Resend per-alert email volume for free users: capped naturally by `max_saved_searches=1`. If we add more aggressive cadences later, revisit this.
+
+---
+
+**Previous change (2026-05-25 — Phase 3 + Phase 4: background worker + /alerts page):**
 
 Phase 3 (worker extraction) and Phase 4 (alerts) shipped together.
 

@@ -3,6 +3,7 @@ import { runSearchJob } from '@/lib/searchWorker';
 import type { FilterState } from '@/lib/filterOptions';
 import { Resend } from 'resend';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
+import { nextAnchoredRunAt } from '@/lib/alertSchedule';
 
 export { ALERT_EXCLUDED_PLATFORMS };
 
@@ -17,6 +18,7 @@ export interface SavedSearch {
   unread_match_count: number;
   paused: boolean;
   next_run_at: string;
+  notify_timezone: string | null;
 }
 
 // Called by /api/cron/run-alerts for each due saved search.
@@ -51,7 +53,12 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   ].slice(-500);
 
   const now = new Date();
-  const nextRun = new Date(now.getTime() + savedSearch.cadence_hours * 60 * 60 * 1000);
+  // Anchor next run to 9 AM (and 9 PM for 12h cadence) in the user's timezone,
+  // so emails always land at a sensible local time. Falls back to "+ cadence hours"
+  // if no timezone is stored.
+  const nextRun = savedSearch.notify_timezone
+    ? nextAnchoredRunAt(savedSearch.notify_timezone, savedSearch.cadence_hours, now)
+    : new Date(now.getTime() + savedSearch.cadence_hours * 60 * 60 * 1000);
 
   await admin
     .from('saved_searches')
@@ -87,23 +94,14 @@ async function sendAlertEmail(
   if (!resendKey) return;
 
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('subscription_status, email:id')
-    .eq('id', savedSearch.user_id)
-    .single();
 
   // Get user email from auth
   const { data: authUser } = await admin.auth.admin.getUserById(savedSearch.user_id);
   const email = authUser?.user?.email;
   if (!email) return;
 
-  const isPro = profile?.subscription_status === 'active' || profile?.subscription_status === 'past_due';
-
-  // Free users: daily digest handled separately — skip per-alert email
-  // Pro users: send immediately
-  if (!isPro) return;
-
+  // All users (free + pro) receive per-alert emails. Free is capped to 1 alert
+  // by max_saved_searches, so per-alert email volume stays bounded.
   const resend = new Resend(resendKey);
 
   const listingLines = newListings.slice(0, 5).map((l) =>

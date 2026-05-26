@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const patchSchema = z.object({
   query: z.string().min(1).max(200),
@@ -27,6 +28,33 @@ export async function PATCH(
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid request', details: parsed.error.issues }, { status: 400 });
+  }
+
+  // Block unpause if it would push the user over their active-alert cap.
+  if (parsed.data.paused === false) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('max_saved_searches')
+      .eq('id', user.id)
+      .single();
+    const maxAlerts = profile?.max_saved_searches ?? 1;
+
+    const { count } = await supabase
+      .from('saved_searches')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('paused', false);
+
+    if ((count ?? 0) >= maxAlerts) {
+      return NextResponse.json(
+        {
+          error: 'quota_exceeded',
+          message: `You've reached your limit of ${maxAlerts} active alert${maxAlerts === 1 ? '' : 's'}. Pause or delete another alert first.`,
+        },
+        { status: 402 },
+      );
+    }
   }
 
   const { data, error } = await supabase

@@ -27,8 +27,15 @@ export default function SubscriptionBadge() {
       .catch(() => {
         if (!cancelled) setLoading(false);
       });
+
+    const onSearchStarted = () => {
+      setData((prev) => prev ? { ...prev, used: Math.min(prev.used + 1, prev.cap) } : prev);
+    };
+    window.addEventListener('crawli:search-started', onSearchStarted);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('crawli:search-started', onSearchStarted);
     };
   }, []);
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PLATFORM_NAMES } from '@/lib/types';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
+import { createClient } from '@/lib/supabase/client';
+import { nextAnchoredRunAt, formatNextRun } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
 
 const ALERT_PLATFORMS = Object.entries(PLATFORM_NAMES)
@@ -29,6 +31,13 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
   const [isPro, setIsPro] = useState(false);
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [timezone] = useState<string>(
+    () => (typeof window !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+      : 'UTC'),
+  );
+  const nextRunDate = nextAnchoredRunAt(timezone, cadence);
 
   useEffect(() => {
     fetch('/api/billing/status')
@@ -38,6 +47,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
         setSearchesRemaining(Math.max(0, (d.cap ?? 10) - (d.used ?? 0)));
       })
       .catch(() => {});
+
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
   }, []);
 
   function togglePlatform(key: string) {
@@ -48,22 +61,30 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
 
   async function handleConfirm() {
     setSubmitting(true);
+    // Optimistically decrement nav search counter — the first run is charged 1 search.
+    window.dispatchEvent(new CustomEvent('crawli:search-started'));
     try {
       const res = await fetch('/api/saved-searches', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ query, platforms, cadence_hours: cadence }),
+        body: JSON.stringify({
+          query,
+          platforms,
+          cadence_hours: cadence,
+          notify_timezone: timezone,
+          next_run_at: nextRunDate.toISOString(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.message ?? 'Failed to create alert');
+        toast.error(data.message ?? 'Failed to create alert.');
         setSubmitting(false);
         return;
       }
       toast.success('Alert created! First search is running in the background.');
       onCreated(data as SavedSearch);
     } catch {
-      toast.error('Something went wrong');
+      toast.error('Something went wrong.');
       setSubmitting(false);
     }
   }
@@ -204,7 +225,17 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
               </div>
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
-                <span style={{ color: 'var(--text)' }}>Every {cadence}h</span>
+                <span style={{ color: 'var(--text)' }}>
+                  {cadence === 12 ? 'Twice daily (9 AM & 9 PM)' : 'Daily at 9 AM'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>First check</span>
+                <span style={{ color: 'var(--text)' }}>{formatNextRun(nextRunDate, timezone)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>Timezone</span>
+                <span className="text-xs" style={{ color: 'var(--text)' }}>{timezone}</span>
               </div>
             </div>
 
@@ -225,6 +256,14 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
                 The first run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
               </p>
             </div>
+
+            {/* Notification delivery info */}
+            {userEmail && (
+              <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>
+                You&apos;ll get a badge on the bell icon and an email to{' '}
+                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear (every {cadence}h, approximately).
+              </p>
+            )}
 
             <div className="flex gap-3">
               <button

@@ -101,6 +101,8 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     const q = suffix ? `${baseQ} ${suffix}` : baseQ;
 
     setIsLoading(true);
+    // Optimistically decrement the nav counter immediately so quota feels instant
+    window.dispatchEvent(new CustomEvent('crawli:search-started'));
 
     const controller = new AbortController();
     abortControllerRef.current = controller;

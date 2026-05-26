@@ -110,7 +110,7 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
             method: 'DELETE',
           });
           if (!res.ok) throw new Error('delete failed');
-          toast.success('Removed from Watchlist');
+          toast.success('Removed from Tracked Listings.');
         } else {
           const res = await fetch('/api/watchlist', {
             method: 'POST',
@@ -125,7 +125,7 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
             }),
           });
           if (!res.ok) throw new Error('watch failed');
-          toast.success('Added to Watchlist');
+          toast.success('Added to Tracked Listings!');
         }
       } catch {
         setWatchedUrls((prev) => {

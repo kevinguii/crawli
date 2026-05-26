@@ -39,6 +39,7 @@ export default function WatchlistTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<{ completed: number; total: number } | null>(null);
   const [refreshDone, setRefreshDone] = useState(false);
+  const [refreshSummary, setRefreshSummary] = useState<{ changed: { title: string; from: number | null; to: number | null; currency: string }[]; sold: string[]; failed: number } | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Watchlist | null>(null);
@@ -67,7 +68,7 @@ export default function WatchlistTab() {
         hydrateUrls(urls);
         hydrateSaveUrls(urls);
       } catch {
-        if (!cancelled) toast.error('Could not load watchlist');
+        if (!cancelled) toast.error('Could not load tracked listings');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -82,7 +83,7 @@ export default function WatchlistTab() {
     try {
       const res = await fetch(`/api/watchlist/${row.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('delete failed');
-      toast.success('Removed from Watchlist');
+      toast.success('Removed from Tracked Listings.');
     } catch {
       setRows(prev);
       toast.error('Could not remove. Try again.');
@@ -93,7 +94,12 @@ export default function WatchlistTab() {
     if (refreshing) return;
     setRefreshing(true);
     setRefreshDone(false);
+    setRefreshSummary(null);
     setRefreshProgress({ completed: 0, total: rows.length });
+
+    // Snapshot prices before refresh so we can diff after
+    const pricesBefore = new Map(rows.map((r) => [r.id, { price: r.price_current, sold: r.is_sold, title: r.title, currency: r.currency }]));
+
     try {
       const res = await fetch('/api/watchlist/refresh', { method: 'POST' });
       if (!res.ok || !res.body) throw new Error('refresh failed');
@@ -101,7 +107,6 @@ export default function WatchlistTab() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let updated = 0;
       let failed = 0;
       let finalRows: Watchlist[] | null = null;
 
@@ -127,30 +132,40 @@ export default function WatchlistTab() {
               prev ? { ...prev, completed: event.completed as number } : prev
             );
           } else if (event.type === 'done') {
-            updated = event.updated ?? 0;
             failed = event.failed ?? 0;
             finalRows = event.rows ?? [];
           }
         }
       }
 
-      if (finalRows) setRows(finalRows);
-      setRefreshDone(true);
-      if (failed > 0) {
-        toast.success(`Refreshed ${updated} listing${updated === 1 ? '' : 's'}`, {
-          description: `${failed} couldn't be checked`,
-        });
-      } else {
-        toast.success(`Refreshed ${updated} listing${updated === 1 ? '' : 's'}`);
+      if (finalRows) {
+        setRows(finalRows);
+
+        // Build diff summary
+        const changed: { title: string; from: number | null; to: number | null; currency: string }[] = [];
+        const sold: string[] = [];
+        for (const row of finalRows) {
+          const before = pricesBefore.get(row.id);
+          if (!before) continue;
+          if (row.is_sold && !before.sold) {
+            sold.push(row.title);
+          } else if (row.price_current !== before.price) {
+            changed.push({ title: row.title, from: before.price, to: row.price_current, currency: row.currency });
+          }
+        }
+        setRefreshSummary({ changed, sold, failed });
       }
+
+      setRefreshDone(true);
       setTimeout(() => {
         setRefreshProgress(null);
         setRefreshDone(false);
-      }, 2000);
+      }, 2500);
     } catch {
       toast.error('Refresh failed. Try again.');
       setRefreshProgress(null);
       setRefreshDone(false);
+      setRefreshSummary(null);
     } finally {
       setRefreshing(false);
     }
@@ -240,7 +255,7 @@ export default function WatchlistTab() {
                   refreshProgress.total > 0
                     ? `${(refreshProgress.completed / refreshProgress.total) * 100}%`
                     : '0%',
-                background: refreshDone ? 'var(--success)' : 'var(--accent)',
+                background: refreshDone ? 'var(--success, #22c55e)' : 'var(--accent)',
                 transition: 'width 250ms ease, background 250ms ease',
               }}
             />
@@ -248,13 +263,68 @@ export default function WatchlistTab() {
           <p
             className="mt-2 text-[11px] font-medium"
             style={{
-              color: refreshDone ? 'var(--success)' : 'var(--text-muted)',
+              color: refreshDone ? 'var(--success, #22c55e)' : 'var(--text-muted)',
             }}
           >
             {refreshDone
               ? 'All refreshed!'
               : `${refreshProgress.completed}/${refreshProgress.total} refreshed`}
           </p>
+        </div>
+      )}
+
+      {refreshSummary && (
+        <div
+          className="rounded-xl p-4 space-y-2 relative"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <button
+            type="button"
+            onClick={() => setRefreshSummary(null)}
+            aria-label="Close summary"
+            className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+            style={{ color: 'var(--text-dim)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--surface-hover)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-dim)';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <p className="text-xs font-semibold pr-6" style={{ color: 'var(--text)' }}>Refresh Summary</p>
+          {refreshSummary.changed.length === 0 && refreshSummary.sold.length === 0 && refreshSummary.failed === 0 && (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No changes — all prices are the same.</p>
+          )}
+          {refreshSummary.changed.map((c, i) => {
+            const sym = CURRENCY_SYMBOLS[c.currency] ?? c.currency + ' ';
+            const delta = c.to !== null && c.from !== null ? c.to - c.from : null;
+            const dropped = delta !== null && delta < 0;
+            return (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }} title={c.title}>{c.title}</span>
+                <span className="text-xs font-medium whitespace-nowrap" style={{ color: dropped ? 'var(--success, #22c55e)' : '#E24B4A' }}>
+                  {c.from !== null ? `${sym}${c.from.toLocaleString()}` : '—'} → {c.to !== null ? `${sym}${c.to.toLocaleString()}` : '—'}
+                  {delta !== null && ` (${dropped ? '' : '+'}${delta.toLocaleString()})`}
+                </span>
+              </div>
+            );
+          })}
+          {refreshSummary.sold.map((title, i) => (
+            <div key={i} className="flex items-center justify-between gap-2">
+              <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }} title={title}>{title}</span>
+              <span className="text-xs font-medium" style={{ color: '#E24B4A' }}>Sold</span>
+            </div>
+          ))}
+          {refreshSummary.failed > 0 && (
+            <p className="text-xs" style={{ color: 'var(--text-dim)' }}>{refreshSummary.failed} listing{refreshSummary.failed > 1 ? 's' : ''} couldn&apos;t be checked.</p>
+          )}
         </div>
       )}
 
@@ -266,7 +336,7 @@ export default function WatchlistTab() {
 
       {loading && rows.length === 0 ? (
         <div className="py-10 text-center text-sm" style={{ color: 'var(--text-dim)' }}>
-          Loading watchlist…
+          Loading tracked listings…
         </div>
       ) : empty ? (
         <div
@@ -275,7 +345,7 @@ export default function WatchlistTab() {
         >
           {debouncedSearch
             ? `No watched listings matching "${debouncedSearch}".`
-            : 'Nothing watched yet. Use the eye icon on a listing to start tracking'}
+            : 'Not tracking anything yet. Click the eye icon on any listing to start tracking it.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -431,7 +501,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
         <button
           type="button"
           onClick={handleEye}
-          aria-label="Remove from watchlist"
+          aria-label="Remove from tracked listings"
           className="absolute flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
           style={{ right: '0.5rem', top: '3rem', background: 'rgba(0, 0, 0, 0.55)' }}
         >
@@ -439,14 +509,14 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill="none"
+            fill="var(--accent)"
             stroke="var(--accent)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-            <circle cx="12" cy="12" r="3" fill="var(--accent)" />
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </button>
       </div>
@@ -497,7 +567,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
           </p>
         )}
         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
-          watching since {new Date(row.created_at).toLocaleDateString()}
+          tracking since {new Date(row.created_at).toLocaleDateString()}
           {row.last_checked_at && ` · last refreshed ${relativeTime(row.last_checked_at)}`}
         </p>
       </div>
@@ -524,7 +594,7 @@ function WatchDeleteModal({
     <ModalShell onClose={onClose}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-          Stop watching &quot;{row.title}&quot;?
+          Stop tracking &quot;{row.title}&quot;?
         </h2>
         <button
           type="button"
@@ -538,7 +608,7 @@ function WatchDeleteModal({
       </div>
 
       <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
-        This item will be removed from your watchlist and price history will be cleared.
+        This item will be removed from your tracked listings and price history will be cleared.
       </p>
 
       <div className="mt-5 flex justify-end gap-2">

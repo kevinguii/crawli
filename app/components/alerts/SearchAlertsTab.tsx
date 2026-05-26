@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
 import SavedSearchCard from './SavedSearchCard';
 import CreateAlertModal from './CreateAlertModal';
 
@@ -16,12 +17,20 @@ export interface SavedSearch {
   unread_match_count: number;
   paused: boolean;
   created_at: string;
+  notify_timezone: string | null;
+}
+
+interface BillingStatus {
+  plan: 'free' | 'pro';
+  used: number;
+  cap: number;
 }
 
 export default function SearchAlertsTab() {
   const [alerts, setAlerts] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
 
   async function load() {
     setLoading(true);
@@ -35,13 +44,90 @@ export default function SearchAlertsTab() {
 
   useEffect(() => { void load(); }, []);
 
+  // Pull billing so the "+ New alert" button can intercept quota-exceeded clicks.
+  useEffect(() => {
+    fetch('/api/billing/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setBilling({ plan: d.plan, used: d.used, cap: d.cap }); })
+      .catch(() => {});
+  }, []);
+
+  function handleNewAlertClick() {
+    const isPro = billing?.plan === 'pro';
+    const maxAlerts = isPro ? 5 : 1;
+    // Paused alerts don't count toward the limit — only active ones occupy a slot.
+    const activeAlerts = alerts.filter((a) => !a.paused).length;
+
+    // Check alert quota first — more specific reason than search quota.
+    if (activeAlerts >= maxAlerts) {
+      toast.error(
+        isPro
+          ? `You've reached your limit of ${maxAlerts} active alerts. Pause or delete one to create a new one.`
+          : 'Free plan allows 1 active search alert. Pause or delete it, or upgrade to Pro for up to 5.',
+        isPro
+          ? { duration: 6000 }
+          : {
+              action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
+              duration: 8000,
+            },
+      );
+      return;
+    }
+
+    // Then search quota (creation costs 1 search).
+    if (billing && billing.used >= billing.cap) {
+      toast.error(
+        isPro
+          ? 'You have used all 100 searches for this billing period.'
+          : 'You have used all 10 free searches this month.',
+        {
+          action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
+          duration: 8000,
+        },
+      );
+      return;
+    }
+
+    setShowCreate(true);
+  }
+
+  // Realtime: update cards when rows change (e.g. first run completes, unread count changes)
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      // Unique channel name per mount avoids StrictMode double-mount collisions
+      channel = supabase
+        .channel(`search-alerts-tab-${user.id}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'saved_searches', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            setAlerts((prev) =>
+              prev.map((a) => (a.id === payload.new.id ? (payload.new as SavedSearch) : a)),
+            );
+          },
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, []);
+
   async function handleDelete(id: string) {
     const res = await fetch(`/api/saved-searches/${id}`, { method: 'DELETE' });
     if (res.ok) {
       setAlerts((prev) => prev.filter((a) => a.id !== id));
-      toast.success('Alert deleted');
+      toast.success('Alert deleted.');
     } else {
-      toast.error('Failed to delete alert');
+      toast.error('Failed to delete alert.');
     }
   }
 
@@ -55,7 +141,8 @@ export default function SearchAlertsTab() {
       const updated = await res.json() as SavedSearch;
       setAlerts((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     } else {
-      toast.error('Failed to update alert');
+      const data = await res.json().catch(() => ({}));
+      toast.error(data?.message ?? 'Failed to update alert.');
     }
   }
 
@@ -90,7 +177,7 @@ export default function SearchAlertsTab() {
         </p>
         <button
           type="button"
-          onClick={() => setShowCreate(true)}
+          onClick={handleNewAlertClick}
           className="btn-primary px-4 py-2 rounded-lg text-sm font-medium"
         >
           + New alert
@@ -116,6 +203,7 @@ export default function SearchAlertsTab() {
           onClose={() => setShowCreate(false)}
           onCreated={(newAlert) => {
             setAlerts((prev) => [newAlert, ...prev]);
+            setBilling((b) => (b ? { ...b, used: b.used + 1 } : b));
             setShowCreate(false);
           }}
         />

@@ -9,7 +9,7 @@ type Tab = 'tracked' | 'search';
 const TABS: { id: Tab; label: string; description: string }[] = [
   {
     id: 'tracked',
-    label: 'Tracked items',
+    label: 'Tracked listings',
     description: 'Listings you\'re watching. Refresh anytime to see the latest price or sold status.',
   },
   {
@@ -22,39 +22,49 @@ const TABS: { id: Tab; label: string; description: string }[] = [
 export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
   const [active, setActive] = useState<Tab>(initialTab);
 
+  const activeTab = TABS.find((t) => t.id === active)!;
+
   return (
     <div>
+      {/* Full-width tab bar — each tab takes 50% */}
       <div
-        className="flex gap-1 mb-8 p-1 rounded-lg w-fit"
-        style={{ background: 'var(--surface)' }}
+        className="flex w-full"
+        style={{ borderBottom: '2px solid var(--border)' }}
       >
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setActive(t.id)}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-all"
-            style={
-              active === t.id
-                ? {
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--text)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-                  }
-                : { color: 'var(--text-muted)' }
-            }
+            className="flex-1 px-5 py-3 text-sm font-medium transition-all text-center"
+            style={{
+              color: active === t.id ? 'var(--text)' : 'var(--text-muted)',
+              background: 'none',
+              border: 'none',
+              borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+              marginBottom: '-2px',
+            }}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      <p className="mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-        {TABS.find((t) => t.id === active)?.description}
-      </p>
+      {/* Section header — description centered horizontally */}
+      <div
+        className="py-5 text-center"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        <p className="text-sm mx-auto max-w-2xl" style={{ color: 'var(--text-muted)' }}>
+          {activeTab.description}
+        </p>
+      </div>
 
-      {active === 'tracked' && <WatchlistTab />}
-      {active === 'search' && <SearchAlertsTab />}
+      {/* Content */}
+      <div className="pt-6">
+        {active === 'tracked' && <WatchlistTab />}
+        {active === 'search' && <SearchAlertsTab />}
+      </div>
     </div>
   );
 }

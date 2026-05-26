@@ -26,6 +26,8 @@ const createSchema = z.object({
     .nullable()
     .optional(),
   cadence_hours: z.union([z.literal(12), z.literal(24)]),
+  notify_timezone: z.string().max(64).optional(),
+  next_run_at: z.string().datetime().optional(),
 });
 
 export async function GET() {
@@ -79,10 +81,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // Paused alerts don't occupy a slot — only active ones count toward the cap.
   const { count } = await supabase
     .from('saved_searches')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .eq('paused', false);
 
   if ((count ?? 0) >= maxAlerts) {
     return NextResponse.json(
@@ -131,7 +135,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Insert the row — next_run_at is now so the first run fires immediately
+  // Insert the row — next_run_at is now so the first run fires immediately.
+  // The client-supplied next_run_at is the *anchored* next run (e.g. tomorrow 9 AM
+  // local) — alertRunner will overwrite next_run_at after the first run completes.
   const { data: newRow, error: insertErr } = await supabase
     .from('saved_searches')
     .insert({
@@ -140,6 +146,7 @@ export async function POST(request: Request) {
       platforms: parsed.data.platforms,
       filters: parsed.data.filters ?? null,
       cadence_hours: parsed.data.cadence_hours,
+      notify_timezone: parsed.data.notify_timezone ?? null,
       next_run_at: new Date().toISOString(),
     })
     .select()
