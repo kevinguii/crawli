@@ -27,8 +27,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
   const [platforms, setPlatforms] = useState<string[]>(
     prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p)) ?? ['grailed', 'depop', 'poshmark'],
   );
-  const [cadence, setCadence] = useState<12 | 24>(24);
-  const [isPro, setIsPro] = useState(false);
+  const [cadence] = useState<24>(24);
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -43,7 +42,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
     fetch('/api/billing/status')
       .then((r) => r.json())
       .then((d) => {
-        setIsPro(d.plan === 'pro');
         setSearchesRemaining(Math.max(0, (d.cap ?? 10) - (d.used ?? 0)));
       })
       .catch(() => {});
@@ -157,26 +155,13 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
                 Check frequency
               </label>
               <div className="flex gap-2">
-                {([24, ...(isPro ? [12] : [])] as (12 | 24)[]).map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    onClick={() => setCadence(h)}
-                    className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={
-                      cadence === h
-                        ? { background: 'var(--accent)', color: '#fff' }
-                        : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
-                    }
-                  >
-                    Every {h}h
-                  </button>
-                ))}
-                {!isPro && (
-                  <div className="flex-1 py-2 rounded-lg text-sm text-center" style={{ color: 'var(--text-dim)', border: '1px solid var(--border)' }}>
-                    Every 12h <span className="text-xs">(Pro)</span>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  Every 24h
+                </button>
               </div>
             </div>
 
@@ -226,7 +211,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
                 <span style={{ color: 'var(--text)' }}>
-                  {cadence === 12 ? 'Twice daily (9 AM & 9 PM)' : 'Daily at 9 AM'}
+                  Daily at 9 AM
                 </span>
               </div>
               <div className="flex justify-between">
@@ -261,7 +246,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
             {userEmail && (
               <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>
                 You&apos;ll get a badge on the bell icon and an email to{' '}
-                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear (every {cadence}h, approximately).
+                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear (daily, approximately).
               </p>
             )}
 

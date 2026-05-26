@@ -11,7 +11,7 @@ export interface SavedSearch {
   query: string;
   platforms: string[];
   filters: Record<string, unknown> | null;
-  cadence_hours: 12 | 24;
+  cadence_hours: 24;
   last_run_at: string | null;
   next_run_at: string;
   unread_match_count: number;

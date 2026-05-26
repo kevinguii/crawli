@@ -1,9 +1,8 @@
 // Timezone-aware scheduling for alerts.
-// All alerts anchor to 9 AM local time (and 9 PM local for 12h cadence) so we
-// never email users at 3 AM. Computation works from both client and server.
+// All alerts anchor to 9 AM local time so we never email users at 3 AM.
+// Computation works from both client and server.
 
-const ANCHOR_HOURS = (cadenceHours: number): number[] =>
-  cadenceHours === 12 ? [9, 21] : [9];
+const ANCHOR_HOURS = (_cadenceHours: number): number[] => [9];
 
 // Returns the next Date (UTC) when an alert with this cadence should fire in
 // the given IANA timezone, starting from `base`. Defaults to next 9 AM local.

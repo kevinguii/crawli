@@ -129,9 +129,8 @@ async function applySubscription(
     subscription_price_id: priceId,
     subscription_period_end: periodEnd,
     stripe_customer_id: customerId,
-    // Alert tier caps: pro gets 5 saved searches + 12hr min cadence
     max_saved_searches: isPro ? 5 : 1,
-    min_alert_cadence_hours: isPro ? 12 : 24,
+    min_alert_cadence_hours: 24,
   }).eq('id', userId).select();
   if (error) {
     console.error(`[stripe-webhook] supabase update failed for user=${userId}:`, error);

@@ -32,7 +32,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMark
     .join(', ');
 
   const scheduleLabel =
-    alert.cadence_hours === 12 ? 'Twice daily (9 AM & 9 PM)' : 'Daily at 9 AM';
+    'Daily at 9 AM';
 
   const tz = alert.notify_timezone;
   const nextRunLabel =

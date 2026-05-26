@@ -53,9 +53,8 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   ].slice(-500);
 
   const now = new Date();
-  // Anchor next run to 9 AM (and 9 PM for 12h cadence) in the user's timezone,
-  // so emails always land at a sensible local time. Falls back to "+ cadence hours"
-  // if no timezone is stored.
+  // Anchor next run to 9 AM in the user's timezone so emails land at a sensible
+  // local time. Falls back to "+ cadence hours" if no timezone is stored.
   const nextRun = savedSearch.notify_timezone
     ? nextAnchoredRunAt(savedSearch.notify_timezone, savedSearch.cadence_hours, now)
     : new Date(now.getTime() + savedSearch.cadence_hours * 60 * 60 * 1000);
