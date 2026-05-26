@@ -1,8 +1,22 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-26 (three-tier pricing: Free / Pro / Max)
+**Last updated:** 2026-05-26 (billing UX polish + plan switching)
 
-**Latest change (2026-05-26 — three-tier pricing shipped):**
+**Latest change (2026-05-26 — billing UX polish):**
+
+Polished billing UI after three-tier launch. All plan switching tested and working in prod.
+
+- Settings "Manage" button → links to `/pricing` instead of Stripe portal directly
+- Settings bars flipped to **remaining** (not used), green→amber→red (>40% / 10-40% / <10%)
+- "Search alerts remaining" bar added with same color scheme; shows full (e.g. 1/1) when unused
+- Pricing page: paid users on a different tier see **"Switch to X"** → opens portal (not checkout); avoids duplicate subscriptions and lets Stripe handle proration
+- Free plan icon: emoji `⚡` → SVG (inherits text color, consistent with ✦ ★)
+- Prod env typo fixed: `STRPE_PRICE_ID_MAX_MONTHLY` → `STRIPE_PRICE_ID_MAX_MONTHLY` (was breaking Max monthly checkout in prod)
+- Stripe Customer Portal: must have **"Allow customers to switch plans"** enabled with all 4 price IDs listed — required for upgrade/downgrade flow to work
+
+**Still to test:** search alert email delivery end-to-end (cron fires, results diff'd, email sent).
+
+**Previous change (2026-05-26 — three-tier pricing shipped):**
 
 Replaced the binary Free/Pro model with three tiers. All caps now live on
 the `profiles` table and the Stripe webhook switches on price ID.
