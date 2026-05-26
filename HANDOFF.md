@@ -92,8 +92,6 @@ $40/mo (Hetzner + Firecrawl Hobby).
 
 **Previous change (2026-05-26 — Phase 4 polish #3: pause-frees-slot + final touches):**
 
-Wrap-up session for Phase 4.
-
 **Pause now frees the alert slot:**
 - `POST /api/saved-searches` count query filters `eq('paused', false)` — only active alerts occupy a slot.
 - `PATCH /api/saved-searches/[id]` now guards unpause: if flipping `paused: false` would push the user over `max_saved_searches`, returns `402 quota_exceeded` with a message telling them to pause/delete another alert first. Client shows that message in a toast.
@@ -118,7 +116,7 @@ Wrap-up session for Phase 4.
 
 **Previous change (2026-05-26 — Phase 4 polish #2: timezone-anchored alerts + UI fixes):**
 
-Second polish pass on Phase 4. The big addition is **timezone-aware scheduling** — alerts now anchor to 9 AM local time in the user's timezone instead of running 24h after creation (which could land at 3 AM).
+The big addition is **timezone-aware scheduling** — alerts now anchor to 9 AM local time in the user's timezone instead of running 24h after creation (which could land at 3 AM).
 
 **⚠️ DB MIGRATION REQUIRED — run before deploy:**
 ```sql
@@ -169,8 +167,6 @@ ALTER TABLE saved_searches ADD COLUMN IF NOT EXISTS notify_timezone TEXT;
 ---
 
 **Previous change (2026-05-26 — Phase 4 polish #1: UI fixes, Realtime bug fix, email for free users):**
-
-Follow-up pass on Phase 4. Major bug fix + UI tightening based on first-use feedback.
 
 **Bug fixes:**
 - **Realtime subscription crash in `SearchAlertsTab`** — switching between tabs threw `cannot add postgres_changes callbacks after subscribe()`. Root cause: cleanup function was returned from inside `.then()` of `getUser()`, so React never received it. In StrictMode dev double-mount, the channel got reused after `subscribe()`. Fix: rewrote the effect with an async IIFE + sync cleanup using a `cancelled` flag and a channel ref, and gave each mount a unique channel name (`search-alerts-tab-${uid}-${ts}`). This also resolves the "initial search runs forever in frontend" bug — Realtime now properly fires the UPDATE event when the cron's first run sets `last_run_at`, flipping the card out of the initializing state.
@@ -231,8 +227,6 @@ Follow-up pass on Phase 4. Major bug fix + UI tightening based on first-use feed
 ---
 
 **Previous change (2026-05-25 — Phase 3 + Phase 4: background worker + /alerts page):**
-
-Phase 3 (worker extraction) and Phase 4 (alerts) shipped together.
 
 **Phase 3 — `lib/searchWorker.ts`**
 - Extracted `allSettledWithConcurrency`, `matchListingPrice`, `searchAndScrape`, and new `runSearchJob(query, platforms, filters, signal?)` into `lib/searchWorker.ts`
@@ -966,32 +960,6 @@ These were the exact open questions in §624 and §1666; both now closed.
 Once those three are done, **this is the first extra feature to ship.** Estimated ~1.5 days for the smallest viable cut (Phase 0 + Phase 1).
 
 The notes below were the original sketch and are now superseded by the plan doc — kept for context.
-
----
-
-User wants the ability to start a search, leave the tab/page, and be notified when results are ready (while preventing a second search from starting while one is in flight). Capturing the design space here so a future session can pick it up cleanly — **not implemented yet, not in scope for this PR.**
-
-**Current model (today):**
-- `app/api/search/route.ts` is a streaming NDJSON endpoint. The browser tab MUST stay on the search page to keep the stream alive — closing/navigating away aborts the fetch, kills the connection, and the user loses results. There's no server-side persistence of an in-flight search; it lives entirely in the browser's `ReadableStream`.
-
-**What it would take to make searches backgroundable:**
-
-1. **Server-side job state.** A new `search_jobs` table in Supabase: `id, user_id, query, filters jsonb, platforms text[], status ('pending'|'running'|'done'|'failed'), started_at, finished_at, result_rows jsonb` (or rows in a child table). The search endpoint becomes "create job + return job_id immediately" + a background worker that actually runs the platform fan-out and writes incremental progress back to the row.
-2. **Worker execution model.** Two options:
-   - **In-process background task** via Next.js `runtime: 'nodejs'` + `waitUntil`-style fire-and-forget. Simplest; works on a single-instance deploy. Breaks under horizontal scaling.
-   - **External worker** (small Python process or Node script polling `search_jobs WHERE status='pending'`) — the cleaner path if/when multi-instance (C2 in SCALING.md) lands. The sidecar already has all the load-management primitives; this is just a job queue in front of it.
-3. **"Only one in-flight search per user" guard.** Index on `(user_id) WHERE status IN ('pending','running')` + insert-with-conflict, or a simple `select count(*)` check before insert. UI surfaces this as "You already have a search running — wait for it to finish or cancel it" rather than silently letting them start a second one.
-4. **Notification delivery — three layers, pick by user effort:**
-   - **In-app realtime (cheapest, no infra):** Supabase Realtime subscription on `search_jobs` for the user_id. When status flips to `done`, show a toast + tab-favicon badge + (optional) browser `Notification.requestPermission()` desktop notif. Works only if the tab is still open somewhere.
-   - **Web Push (works when tab is closed but browser is open):** Service Worker + push subscription stored per user. Push notification fires from the worker when the job completes. ~1 day of setup; no third-party cost.
-   - **Email (works always, slowest, simplest):** SendGrid/Resend on job completion. Already needed for Phase 2D price alerts (HANDOFF §12) — same delivery infra.
-5. **Resumable UI.** `/search/[job_id]` page that the user can land on at any time (from notification click, from a "Recent searches" list, etc.) and see either "running, X/Y platforms done" or final results. The current streaming UI becomes a thin variant of this — same page, but if `status='running'` it subscribes to Realtime instead of doing the fetch.
-6. **Cancellation.** Necessary if we're enforcing "one search at a time" — user needs a way to abandon a stuck job. `status='cancelled'` + worker checks the flag between platforms. Cheap.
-7. **Cleanup.** TTL on completed jobs (e.g. 7 days), or move to a `search_history` table. Otherwise the table grows unbounded and the unique-in-flight check gets slow.
-
-**Smallest viable first cut (if user wants to ship something quickly):** in-process background task + Supabase Realtime subscription + in-app toast + favicon badge. No service worker, no email, no separate worker process. Gets "you can navigate away and a toast pops up when it's done" working with maybe 1.5 days of work; the more durable pieces (Web Push, external worker, email) layer in later without refactoring.
-
-**Interaction with this PR's load-management work:** background searches **must** still be guarded by `SEARCH_PLATFORM_CONCURRENCY` and the sidecar semaphore. Allowing background jobs doesn't mean unbounded parallelism — it means the server can fan out N users' searches in parallel up to the configured ceilings, queueing the rest. The "one-in-flight-per-user" guard is a separate concern (UX/fairness), not a load-management one.
 
 ---
 
