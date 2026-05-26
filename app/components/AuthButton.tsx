@@ -7,6 +7,48 @@ import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import SubscriptionBadge from './SubscriptionBadge';
 
+function useTotalUnreadAlerts(userId: string | undefined) {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    const supabase = createClient();
+
+    // Initial load
+    supabase
+      .from('saved_searches')
+      .select('unread_match_count')
+      .eq('user_id', userId)
+      .then(({ data }) => {
+        const total = (data ?? []).reduce((s, r) => s + (r.unread_match_count ?? 0), 0);
+        setUnread(total);
+      });
+
+    // Realtime: update badge whenever any saved_search row changes for this user
+    const channel = supabase
+      .channel('alert-badge')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'saved_searches', filter: `user_id=eq.${userId}` },
+        () => {
+          supabase
+            .from('saved_searches')
+            .select('unread_match_count')
+            .eq('user_id', userId)
+            .then(({ data }) => {
+              const total = (data ?? []).reduce((s, r) => s + (r.unread_match_count ?? 0), 0);
+              setUnread(total);
+            });
+        },
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [userId]);
+
+  return unread;
+}
+
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +96,8 @@ export default function AuthButton() {
     router.refresh();
   }
 
+  const unreadAlerts = useTotalUnreadAlerts(user?.id);
+
   if (loading) {
     return (
       <div
@@ -80,6 +124,35 @@ export default function AuthButton() {
   return (
     <div className="flex items-center gap-3">
       <SubscriptionBadge />
+      <Link
+        href="/alerts"
+        aria-label="Alerts"
+        title="Alerts"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unreadAlerts > 0 && (
+          <span
+            className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white"
+            style={{ background: '#E24B4A' }}
+          >
+            {unreadAlerts > 9 ? '9+' : unreadAlerts}
+          </span>
+        )}
+      </Link>
       <Link
         href="/saves"
         aria-label="Saves"

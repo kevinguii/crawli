@@ -1,8 +1,94 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (Saves/Watchlist restructure + sidecar cancel propagation)
+**Last updated:** 2026-05-25 (Phase 3 + Phase 4 — background worker + /alerts page)
 
-**Latest change (2026-05-25 — Saves/Watchlist restructure, Profile dashboard, sidecar cancel fix):**
+**Latest change (2026-05-25 — Phase 3 + Phase 4: background worker + /alerts page):**
+
+Phase 3 (worker extraction) and Phase 4 (alerts) shipped together.
+
+**Phase 3 — `lib/searchWorker.ts`**
+- Extracted `allSettledWithConcurrency`, `matchListingPrice`, `searchAndScrape`, and new `runSearchJob(query, platforms, filters, signal?)` into `lib/searchWorker.ts`
+- `app/api/search/route.ts` now imports these — streaming behavior identical, no user-facing change
+- `runSearchJob` is the shared function the alert runner calls — one implementation for both streaming search and scheduled alerts
+
+**Phase 4 — `/alerts` page + Search Alerts**
+- New route `/alerts` with two tabs: **Tracked items** (WatchlistTab moved here) + **Search alerts** (new)
+- `/watchlist` now redirects to `/alerts?tab=tracked`
+- Bell icon (🔔) added to top nav (alongside ♡ saves). Red badge shows total `unread_match_count` across all alerts, updated via Supabase Realtime
+- **Create alert flow:** "Save as alert" button appears after a successful search → `CreateAlertModal` (2-step: configure → confirm) warns "1 search will be used" before creating
+- **Alert execution:** `lib/alertRunner.ts` — runs `runSearchJob`, diffs URLs against `last_seen_urls`, updates `saved_searches` row, sends Resend email for Pro users on new matches. First run is always silent (no notification, just seeds `last_seen_urls`)
+- **Cron:** `GET /api/cron/run-alerts` — protected by `Authorization: Bearer <CRON_SECRET>` header. Queries up to 20 due alerts per tick, runs them sequentially. **⚠️ PROD TODO: add `CRON_SECRET` to Hetzner `.env` and set up systemd timer (see below)**
+- **Tier caps:** free = 1 alert / 24hr cadence, pro = 5 alerts / 12hr or 24hr selectable. Enforced by `max_saved_searches` + `min_alert_cadence_hours` columns on `profiles` (set by Stripe webhook on subscription events)
+- eBay excluded from alert-eligible platforms (Akamai + LLM cost on cron)
+- `resend` npm package installed
+
+**⚠️ DB migrations required (run in Supabase SQL editor before this goes live — see bottom of this entry)**
+
+**Prod deploy checklist for Phase 4:**
+1. Run the SQL migration below in Supabase SQL editor
+2. Add `CRON_SECRET=<random-secret>` to `/opt/crawli/.env` on Hetzner
+3. Add `RESEND_API_KEY=<key>` to `/opt/crawli/.env` (already in local `.env`)
+4. Create systemd timer on Hetzner (see systemd units below)
+5. `git pull && npm run build && systemctl restart crawli-next`
+6. Test: `curl -H "Authorization: Bearer <CRON_SECRET>" https://thecrawli.com/api/cron/run-alerts`
+
+**Systemd units for Hetzner (`/etc/systemd/system/`):**
+```
+# crawli-alerts.service
+[Unit]
+Description=Crawli alert cron tick
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -sf -H "Authorization: Bearer %CRON_SECRET%" http://localhost:3000/api/cron/run-alerts
+
+# crawli-alerts.timer
+[Unit]
+Description=Run Crawli alerts every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target
+```
+Enable with: `systemctl enable --now crawli-alerts.timer`
+
+**New files (Phase 3+4):**
+- `lib/searchWorker.ts` — shared fan-out function
+- `lib/alertRunner.ts` — diff engine + Resend email
+- `app/(protected)/alerts/layout.tsx`, `page.tsx`
+- `app/components/alerts/AlertsTabsClient.tsx`
+- `app/components/alerts/SearchAlertsTab.tsx`
+- `app/components/alerts/SavedSearchCard.tsx`
+- `app/components/alerts/CreateAlertModal.tsx`
+- `app/api/saved-searches/route.ts` — GET list, POST create (with quota check + first run)
+- `app/api/saved-searches/[id]/route.ts` — PATCH, DELETE
+- `app/api/saved-searches/[id]/mark-seen/route.ts` — POST reset unread count
+- `app/api/cron/run-alerts/route.ts` — cron endpoint
+
+**Significantly edited:**
+- `lib/alertRunner.ts` — new
+- `lib/alertConstants.ts` — new; `ALERT_EXCLUDED_PLATFORMS` lives here (not in alertRunner) so client components can import it without pulling in server-only Firecrawl code
+- `app/api/search/route.ts` — removed fan-out logic (now in searchWorker)
+- `app/api/webhooks/stripe/route.ts` — sets `max_saved_searches` + `min_alert_cadence_hours` on sub events
+- `app/components/AuthButton.tsx` — bell icon + unread badge via Realtime; `useTotalUnreadAlerts` hook must be called before early returns (Rules of Hooks)
+- `app/components/SearchSection.tsx` — "Save as alert" CTA + CreateAlertModal
+- `app/components/SearchForm.tsx` — `onResults` now passes `(data, query, platforms)`
+- `app/components/alerts/AlertsTabsClient.tsx` — tab descriptions shown under active tab
+- `app/(protected)/settings/page.tsx` — "Search alerts" usage row in Billing section (X/1 or X/5 with progress bar)
+- `app/(protected)/watchlist/page.tsx` — now redirects to `/alerts?tab=tracked`
+
+**Key gotchas (Phase 3+4):**
+- `lib/alertRunner.ts` is server-only (imports firecrawl → FirecrawlClient instantiates at module load). Never import it from a client component. Use `lib/alertConstants.ts` for any shared constants.
+- Bell badge hook (`useTotalUnreadAlerts`) must be called before any early returns in `AuthButton` — it uses `user?.id` (optional) and no-ops when undefined.
+- First alert run is always silent: `isFirstRun = !last_seen_urls`. Seeds the URL set, charges 1 quota, sends NO email. Notifications start from run #2.
+- Cron route is authenticated via `Authorization: Bearer <CRON_SECRET>` — not a query param. systemd `ExecStart` must pass the header with `-H`.
+- Alert emails only go to Pro users (per-alert, near-realtime). Free user daily digest is not yet implemented — deferred.
+- `resend` npm package installed 2026-05-25.
+
+**Previous change (2026-05-25 — Saves/Watchlist restructure, Profile dashboard, sidecar cancel fix):**
 
 Phases 1 + 2 of the Saves/Alerts restructure plan shipped. Key outcomes:
 

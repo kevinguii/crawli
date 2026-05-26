@@ -1,5 +1,5 @@
-import WatchlistTab from '@/app/components/profile/WatchlistTab';
+import { redirect } from 'next/navigation';
 
 export default function WatchlistPage() {
-  return <WatchlistTab />;
+  redirect('/alerts?tab=tracked');
 }

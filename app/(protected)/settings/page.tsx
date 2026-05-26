@@ -137,6 +137,7 @@ export default function SettingsPage() {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [alertsUsed, setAlertsUsed] = useState<number | null>(null);
 
   // Delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -174,6 +175,11 @@ export default function SettingsPage() {
         setBillingLoading(false);
       })
       .catch(() => setBillingLoading(false));
+
+    fetch('/api/saved-searches')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: unknown[]) => setAlertsUsed(d.length))
+      .catch(() => {});
   }, []);
 
   async function handleOpenPortal() {
@@ -364,6 +370,38 @@ export default function SettingsPage() {
                   </span>
                 </div>
               </Row>
+              <Row
+                label="Search alerts"
+                sublabel={
+                  billing.plan === 'pro'
+                    ? 'Up to 5 alerts, checks every 12h or 24h'
+                    : 'Up to 1 alert, checks every 24h — upgrade for more'
+                }
+              >
+                <div className="flex items-center gap-3 w-48">
+                  <div
+                    className="flex-1 h-2 rounded-full overflow-hidden"
+                    style={{ background: 'var(--surface-hover)' }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: alertsUsed === null
+                          ? '0%'
+                          : `${Math.min(100, Math.round(((alertsUsed) / (billing.plan === 'pro' ? 5 : 1)) * 100))}%`,
+                        background: 'var(--accent)',
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-xs tabular-nums font-medium"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {alertsUsed ?? '–'}/{billing.plan === 'pro' ? 5 : 1}
+                  </span>
+                </div>
+              </Row>
+
               {billing.plan === 'pro' && billing.periodEnd && (
                 <Row label="Next billing date" sublabel="When your next payment will be charged">
                   <span className="text-sm" style={{ color: 'var(--text-muted)' }}>

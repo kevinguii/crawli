@@ -82,15 +82,7 @@ export default function WatchlistTab() {
     try {
       const res = await fetch(`/api/watchlist/${row.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('delete failed');
-      toast('Removed from Watchlist', {
-        style: { color: '#E24B4A', borderColor: '#E24B4A' },
-        icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        ),
-      });
+      toast.success('Removed from Watchlist');
     } catch {
       setRows(prev);
       toast.error('Could not remove. Try again.');
@@ -283,7 +275,7 @@ export default function WatchlistTab() {
         >
           {debouncedSearch
             ? `No watched listings matching "${debouncedSearch}".`
-            : 'Nothing watched yet. Use the eye icon on a listing to start tracking 👁️'}
+            : 'Nothing watched yet. Use the eye icon on a listing to start tracking'}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

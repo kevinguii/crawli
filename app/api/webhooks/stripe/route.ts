@@ -64,6 +64,8 @@ export async function POST(req: NextRequest) {
           subscription_status: 'free',
           subscription_price_id: null,
           subscription_period_end: null,
+          max_saved_searches: 1,
+          min_alert_cadence_hours: 24,
         }).eq('id', userId);
         break;
       }
@@ -121,11 +123,15 @@ async function applySubscription(
   const status = sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status;
   const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
 
+  const isPro = status === 'active';
   const { error, data } = await admin.from('profiles').update({
     subscription_status: status,
     subscription_price_id: priceId,
     subscription_period_end: periodEnd,
     stripe_customer_id: customerId,
+    // Alert tier caps: pro gets 5 saved searches + 12hr min cadence
+    max_saved_searches: isPro ? 5 : 1,
+    min_alert_cadence_hours: isPro ? 12 : 24,
   }).eq('id', userId).select();
   if (error) {
     console.error(`[stripe-webhook] supabase update failed for user=${userId}:`, error);

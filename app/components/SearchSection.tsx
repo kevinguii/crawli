@@ -6,6 +6,7 @@ import SearchForm from './SearchForm';
 import SearchProgress, { CheckpointStatus } from './SearchProgress';
 import ResultsDisplay from './ResultsDisplay';
 import { FilterState, emptyFilterState } from './FilterPanel';
+import CreateAlertModal from './alerts/CreateAlertModal';
 
 interface ProgressState {
   platforms: string[];
@@ -21,15 +22,18 @@ export default function SearchSection() {
   const [filters, setFilters] = useState<FilterState>(emptyFilterState());
   const [searchFilters, setSearchFilters] = useState<FilterState | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [lastQuery, setLastQuery] = useState<{ query: string; platforms: string[] } | null>(null);
+  const [showAlertModal, setShowAlertModal] = useState(false);
 
   function handleCancel() {
     abortControllerRef.current?.abort();
   }
 
-  function handleResults(data: SearchResponse) {
+  function handleResults(data: SearchResponse, query: string, platforms: string[]) {
     setError(null);
     setResults(data);
     setSearchFilters(filters);
+    setLastQuery({ query, platforms });
   }
 
   function handleError(msg: string) {
@@ -111,7 +115,33 @@ export default function SearchSection() {
         </div>
       )}
 
-      {results && <ResultsDisplay data={results} minPrice={searchFilters?.minPrice} maxPrice={searchFilters?.maxPrice} />}
+      {results && (
+        <>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowAlertModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              Save as alert
+            </button>
+          </div>
+          <ResultsDisplay data={results} minPrice={searchFilters?.minPrice} maxPrice={searchFilters?.maxPrice} />
+        </>
+      )}
+
+      {showAlertModal && lastQuery && (
+        <CreateAlertModal
+          prefill={lastQuery}
+          onClose={() => setShowAlertModal(false)}
+          onCreated={() => setShowAlertModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { searchPlatform, scrapeListing, ScrapedListing } from '@/lib/firecrawl';
-import { SEARCH_PAGE_PLATFORMS, scrapeSearchPageViaSidecar } from '@/lib/scraper';
-import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
 import { PLATFORM_DOMAINS, Listing, SearchStreamEvent } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
-import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
-import { matchListingColor } from '@/lib/colorFilter';
 import { convertToUSD } from '@/lib/currency';
 import { buildCacheKey, getCachedEvents, setCachedEvents } from '@/lib/searchCache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { allSettledWithConcurrency, searchAndScrape } from '@/lib/searchWorker';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,92 +34,6 @@ const requestSchema = z.object({
   filters: filtersSchema,
 });
 
-// Run at most `limit` promises concurrently, returns results in input order.
-async function allSettledWithConcurrency<T>(
-  tasks: (() => Promise<T>)[],
-  limit: number
-): Promise<PromiseSettledResult<T>[]> {
-  const results: PromiseSettledResult<T>[] = new Array(tasks.length);
-  let index = 0;
-
-  async function worker() {
-    while (index < tasks.length) {
-      const i = index++;
-      try {
-        results[i] = { status: 'fulfilled', value: await tasks[i]() };
-      } catch (reason) {
-        results[i] = { status: 'rejected', reason };
-      }
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
-  return results;
-}
-
-function matchListingPrice(listing: Listing, filters: FilterState | undefined): boolean {
-  if (listing.price === null) return true;
-  if (filters?.minPrice != null && listing.price < filters.minPrice) return false;
-  if (filters?.maxPrice != null && listing.price > filters.maxPrice) return false;
-  return true;
-}
-
-async function searchAndScrape(
-  platform: string,
-  query: string,
-  filters: FilterState | undefined,
-  signal?: AbortSignal,
-): Promise<Listing[]> {
-  // ThredUp (and any other SEARCH_PAGE_PLATFORMS) skip Firecrawl entirely.
-  // Their individual listing URLs aren't surfaced by `site:` search, but the
-  // platform's own search page returns a grid with all the listing data we
-  // need in one render. Sidecar's /scrape-search handles the fetch + extract.
-  if (SEARCH_PAGE_PLATFORMS.has(platform)) {
-    // ThredUp returns ~119 products per page in a single JSON-LD blob; the
-    // limit just caps in-memory iteration of that array, not network cost.
-    // Pull 100 so the post-filter has plenty to find ~10 size-matching items
-    // for selective filters (uncommon sizes still get a full page of results).
-    const scraped = await scrapeSearchPageViaSidecar(platform, query, 100, 2, signal);
-    const listings = parseScrapedListings(scraped, platform, query);
-    // Prefer the explicit FilterState.size; otherwise scan the query text for
-    // a typed-in size word (handles "nike shoes large" with no panel filter).
-    const sizeKey = filters?.size ?? detectSizeFromQuery(query);
-    const sizeFiltered = sizeKey
-      ? listings.filter((l) => matchListingSize(l.title, sizeKey, l.size))
-      : listings;
-    const colorFiltered = sizeFiltered.filter((l) =>
-      matchListingColor(l.title, filters?.color, query),
-    );
-    return colorFiltered.filter((l) => matchListingPrice(l, filters)).slice(0, 10);
-  }
-
-  const raw = await searchPlatform(platform, query);
-
-  const filtered = filterListingUrls(raw, platform).filter(
-    (r, i, arr) => arr.findIndex((x) => x.url === r.url) === i
-  );
-  if (filtered.length === 0) return [];
-
-  const toScrape = filtered.slice(0, 10);
-
-  const scrapeSettled = await allSettledWithConcurrency(
-    toScrape.map((r) => () => scrapeListing(r.url, platform, signal)),
-    2
-  );
-
-  const scraped = scrapeSettled
-    .filter((s): s is PromiseFulfilledResult<ScrapedListing | null> => s.status === 'fulfilled')
-    .map((s) => s.value)
-    .filter((s): s is ScrapedListing => s !== null);
-
-  const parsed = parseScrapedListings(scraped, platform, query);
-  const sizeKey = filters?.size ?? detectSizeFromQuery(query);
-  const sizeFiltered = sizeKey
-    ? parsed.filter((l) => matchListingSize(l.title, sizeKey, l.size))
-    : parsed;
-  const colorFiltered = sizeFiltered.filter((l) => matchListingColor(l.title, filters?.color, query));
-  return colorFiltered.filter((l) => matchListingPrice(l, filters));
-}
 
 export async function POST(request: Request) {
   // Auth gate — Crawli is a hosted service for signed-in users. Anonymous

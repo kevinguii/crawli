@@ -23,7 +23,7 @@ const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
 
 interface Props {
-  onResults: (data: SearchResponse) => void;
+  onResults: (data: SearchResponse, query: string, platforms: string[]) => void;
   onError: (msg: string) => void;
   onProgress: (event: SearchStreamEvent) => void;
   filters: FilterState;
@@ -205,7 +205,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         results,
         priceRange,
         averagePrice,
-      });
+      }, baseQ, platformsForRun);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         onError('Search cancelled.');
