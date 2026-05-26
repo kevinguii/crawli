@@ -15,7 +15,8 @@ export async function scrapeSearchPageViaSidecar(
   platform: string,
   query: string,
   limit = 10,
-  maxAttempts = 2
+  maxAttempts = 2,
+  signal?: AbortSignal,
 ): Promise<ScrapedListing[]> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -23,7 +24,9 @@ export async function scrapeSearchPageViaSidecar(
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ platform, query, limit }),
-        signal: AbortSignal.timeout(60_000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(60_000)])
+          : AbortSignal.timeout(60_000),
       });
       if (!res.ok) {
         if (attempt < maxAttempts - 1 && isRetryable(res.status)) {
@@ -103,7 +106,8 @@ export async function refreshListingViaSidecar(
 export async function scrapeViaSidecar(
   url: string,
   platform: string,
-  maxAttempts = 3
+  maxAttempts = 3,
+  signal?: AbortSignal,
 ): Promise<ScrapedListing | null> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -111,7 +115,9 @@ export async function scrapeViaSidecar(
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url, platform }),
-        signal: AbortSignal.timeout(60_000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(60_000)])
+          : AbortSignal.timeout(60_000),
       });
 
       if (!res.ok) {

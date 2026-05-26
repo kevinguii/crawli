@@ -72,6 +72,7 @@ async function searchAndScrape(
   platform: string,
   query: string,
   filters: FilterState | undefined,
+  signal?: AbortSignal,
 ): Promise<Listing[]> {
   // ThredUp (and any other SEARCH_PAGE_PLATFORMS) skip Firecrawl entirely.
   // Their individual listing URLs aren't surfaced by `site:` search, but the
@@ -82,7 +83,7 @@ async function searchAndScrape(
     // limit just caps in-memory iteration of that array, not network cost.
     // Pull 100 so the post-filter has plenty to find ~10 size-matching items
     // for selective filters (uncommon sizes still get a full page of results).
-    const scraped = await scrapeSearchPageViaSidecar(platform, query, 100);
+    const scraped = await scrapeSearchPageViaSidecar(platform, query, 100, 2, signal);
     const listings = parseScrapedListings(scraped, platform, query);
     // Prefer the explicit FilterState.size; otherwise scan the query text for
     // a typed-in size word (handles "nike shoes large" with no panel filter).
@@ -106,7 +107,7 @@ async function searchAndScrape(
   const toScrape = filtered.slice(0, 10);
 
   const scrapeSettled = await allSettledWithConcurrency(
-    toScrape.map((r) => () => scrapeListing(r.url, platform)),
+    toScrape.map((r) => () => scrapeListing(r.url, platform, signal)),
     2
   );
 
@@ -204,11 +205,17 @@ export async function POST(request: Request) {
   const { query, platforms, filters } = parsed.data;
   const encoder = new TextEncoder();
   const cacheKey = buildCacheKey(query, platforms, filters as FilterState | undefined);
+  const { signal } = request;
 
   const stream = new ReadableStream({
     async start(controller) {
       const write = (event: SearchStreamEvent) => {
-        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+        try {
+          controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+        } catch {
+          // Client disconnected (ERR_INVALID_STATE). In-flight sidecar work
+          // completes naturally — no signal to abort it from here.
+        }
       };
 
       const cached = await getCachedEvents(cacheKey);
@@ -247,7 +254,7 @@ export async function POST(request: Request) {
       await allSettledWithConcurrency(
         platforms.map((platform) => async () => {
           try {
-            const listings = await searchAndScrape(platform, query, filters as FilterState | undefined);
+            const listings = await searchAndScrape(platform, query, filters as FilterState | undefined, signal);
             allListings.push(...listings);
             writeAndRecord({
               type: 'platform_done',
@@ -300,6 +307,15 @@ export async function POST(request: Request) {
         // burn a search slot. Cache hits never reach this code path (early
         // return above), so they're also free to the user — correct UX since
         // they cost us nothing.
+        //
+        // KNOWN ABUSE VECTOR (route.ts:303): a user can cancel the browser
+        // fetch after the Firecrawl/Brave URL-discovery calls fire but before
+        // results stream back. The signal aborts sidecar HTTP calls (scraper.ts)
+        // but Firecrawl credits are already burned. Since allListings is empty
+        // at the cancel point, this block is skipped → 0 quota charged.
+        // Fix: charge immediately after the platform fan-out starts (before
+        // results are streamed) so cancel-after-start still costs 1 quota.
+        // Deferred: low-frequency enough at launch; add to Phase 3 checklist.
         void admin
           .from('profiles')
           .update({ searches_used_this_period: used + 1 })

@@ -1,8 +1,43 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-25 (API credit monitoring added)
+**Last updated:** 2026-05-25 (Saves/Watchlist restructure + sidecar cancel propagation)
 
-**Latest change (2026-05-25 — API credit monitoring cron):**
+**Latest change (2026-05-25 — Saves/Watchlist restructure, Profile dashboard, sidecar cancel fix):**
+
+Phases 1 + 2 of the Saves/Alerts restructure plan shipped. Key outcomes:
+
+- **`/saves`** — dedicated page for all saved items; URL-driven folder routing (`/saves/[folderId]`); ♡ icon added to top-nav. Old `SavesTab.tsx` deleted; replaced by `app/components/saves/SavesPageClient.tsx` (takes `folderIdFromUrl` prop). `/profile?tab=saves` redirects to `/saves`.
+- **`/watchlist`** — dedicated page (temporary; will become `/alerts?tab=tracked` in Phase 4). `/profile?tab=watchlist` redirects to `/watchlist`.
+- **Profile page** — replaced tabs entirely with a stats dashboard: searches-this-month, items saved, listings watched; recent searches widget (click → prefills search, does NOT auto-run); top platforms by save count; mini saves + watchlist cards. `ProfileTabsClient.tsx` deleted entirely. New `ProfileDashboard.tsx` + `/api/profile/stats` route.
+- **ThemeToggle** removed from all navbars; `ThemeSelector` (Light/System/Dark) moved to Settings → Appearance section (user's own change).
+- **Cancel-search `ERR_INVALID_STATE` log noise** suppressed — `controller.enqueue()` in route.ts already wrapped in try/catch.
+- **Sidecar cancel propagation** — `req.signal` now threaded from route.ts → `searchAndScrape` → `scrapeSearchPageViaSidecar` and `scrapeViaSidecar` in scraper.ts → combined with the existing 60s timeout via `AbortSignal.any()`. Cancelling the browser fetch now aborts in-flight sidecar HTTP calls. (Note: this kills the sidecar-to-Next.js call; it does NOT cancel work already dispatched inside the Python sidecar itself — that would require a sidecar-level cancellation API.)
+- **Quota abuse comment** — added comment at the `searches_used_this_period` increment site in route.ts documenting the known "cancel after Firecrawl fires" abuse vector.
+
+**Key gotchas:**
+- `PREFILL_SEARCH_KEY` vs `PENDING_SEARCH_KEY` — prefill = fill the SearchForm but user must press Search. Pending = fill + auto-run. Dashboard uses PREFILL; search history page still uses PENDING (unchanged).
+- `/watchlist` is **temporary**. When Phase 4 (`/alerts`) ships, it becomes `/alerts?tab=tracked`. Do NOT wire anything permanent to `/watchlist`.
+- `docs/PLAN_SAVES_ALERTS.md` and `docs/SESSION_HANDOFF_SAVES_ALERTS.md` should be deleted after all 4 phases ship (see cleanup checklist at bottom of PLAN_SAVES_ALERTS.md).
+
+**New files (Phase 1+2):**
+- `app/(protected)/saves/layout.tsx`, `page.tsx`, `[folderId]/page.tsx`
+- `app/(protected)/watchlist/layout.tsx`, `page.tsx`
+- `app/components/saves/SavesPageClient.tsx`
+- `app/components/profile/ProfileDashboard.tsx`
+- `app/api/profile/stats/route.ts`
+
+**Deleted files:**
+- `app/components/profile/SavesTab.tsx` → replaced by `SavesPageClient.tsx`
+- `app/components/profile/ProfileTabsClient.tsx` → no more tabs on profile
+
+**Significantly edited:**
+- `app/(protected)/profile/page.tsx` — removed tabs, added dashboard, added ?tab= redirects
+- `app/components/AuthButton.tsx` — ♡ icon linking to `/saves`
+- `app/api/search/route.ts` — `req.signal` threading + quota abuse comment
+- `app/components/SearchForm.tsx` — `PREFILL_SEARCH_KEY` effect (dashboard → prefill)
+- `lib/scraper.ts` — `signal` param on `scrapeSearchPageViaSidecar` + `scrapeViaSidecar`
+
+**Previous change (2026-05-25 — API credit monitoring cron):**
 
 Added `scripts/check-credits.mjs` — runs daily at 9am PST (5pm UTC) via crontab, checks Firecrawl credits, emails owner@example.com when below 20%/10%/5%. Server crontab entry: `0 17 * * * cd /opt/crawli && /usr/bin/node scripts/check-credits.mjs >> /var/log/crawli-credits.log 2>&1`. Test with `node scripts/check-credits.mjs --dry-run`.
 
@@ -1905,15 +1940,16 @@ POST /api/search ─────────────────────
 - `GET /health` includes `crawler_alive`, `pool_size`, `pool_alive`, `in_flight`, and `max_concurrent_renders` for monitoring.
 - **All scaling guidance — env-var tuning, hosting tier choices, when to enable pool>1 — lives in [SCALING.md](SCALING.md).**
 
-**Saves + Watchlist + Profile editing layer (Phase 2B + 2C, complete as of 2026-05-18):**
+**Saves + Watchlist + Profile layer (Phases 1+2 complete as of 2026-05-25):**
 - `(protected)/layout.tsx` mounts `<SavesProvider>` wrapping `<WatchlistProvider>` (both React Contexts) and sonner `<Toaster>` once for the whole protected subtree
 - `SavesProvider` exposes `{ savedUrls, isSaved, toggleSave, hydrateUrls, refresh, openMoveModal }`. State hydrated via `POST /api/saves/check` (batched), optimistic on toggle, cleared on sign-out. Renders `<MoveToFolderModal>` globally; toggleSave's success toast offers a "Move to folder…" action that opens the modal pre-targeted at the new save_id.
 - `WatchlistProvider` exposes `{ watchedUrls, isWatched, toggleWatch, hydrateUrls, refresh }` — same shape; hits `/api/watchlist/check`
 - Heart + Eye buttons on `ListingCard` call `toggleSave` / `toggleWatch`. Both hidden when signed out; both follow the same hover-visibility rule. Independent features.
-- `/profile` server component fetches the `profiles` row, renders `ProfileHeader` + tabs (Saves | Watchlist)
-- `WatchlistTab` has a **"Refresh prices"** button → `POST /api/watchlist/refresh` → re-scrapes all rows via `scrapeViaSidecar` at concurrency 4, updates `price_current` / `is_sold` / `last_checked_at`. Auto-refresh-on-login is deferred to Phase 2D.
-- "Edit profile" → `EditProfileModal` (avatar upload via browser Supabase client → public bucket → PATCH `/api/profile` with new `avatar_url`)
-- `/settings` is a standalone page (not a tab)
+- `/saves` — dedicated saves page. URL-driven folder routing via `app/(protected)/saves/[folderId]/page.tsx`. `SavesPageClient.tsx` replaces old `SavesTab.tsx`. `/saves` = all-items view; `/saves/<uuid>` = folder-scoped view. ♡ icon in top-nav links here.
+- `/watchlist` — dedicated watchlist page (TEMPORARY — becomes `/alerts?tab=tracked` when Phase 4 ships). `WatchlistTab` component mounted directly.
+- `/profile` — **dashboard** (no more tabs). `ProfileDashboard.tsx` renders stats strip, recent searches widget (prefill-only), top platforms widget, mini saves + watchlist cards. Stats from `/api/profile/stats`. "Edit profile" → `EditProfileModal` (avatar upload via browser Supabase client → public bucket → PATCH `/api/profile`).
+- `/settings` is a standalone page; ThemeSelector (Light/System/Dark) lives under Settings → Appearance.
+- `WatchlistTab` has a **"Refresh prices"** button → `POST /api/watchlist/refresh` → re-scrapes all rows via `scrapeViaSidecar` at concurrency 4, updates `price_current` / `is_sold` / `last_checked_at`. Auto-refresh-on-login is deferred.
 
 **Auth layer (new in Phase 2A, complete as of 2026-05-17):**
 - `proxy.ts` (Next 16 convention) runs on every request to refresh the Supabase session cookie before route handlers see it
@@ -1951,12 +1987,20 @@ fashion-crawler-crawl4ai/
 │   │   │   ├── check/route.ts        ← POST batch URL check { urls } → { watched_urls }
 │   │   │   └── refresh/route.ts      ← POST re-scrape all rows via sidecar (concurrency 4)
 │   │   ├── profile/route.ts          ← PATCH display_name / bio / avatar_url
+│   │   ├── profile/stats/route.ts    ← GET aggregate stats for dashboard (searches this month, saves count, watchlist count, top platforms)
 │   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
 │   ├── (protected)/                  ← auth-protected route group
 │   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> → <WatchlistProvider> + <Toaster>
 │   │   ├── page.tsx                  ← search page (requires auth)
-│   │   ├── profile/page.tsx          ← profile page (server: fetches profiles row → renders header + tabs)
-│   │   └── settings/page.tsx        ← standalone settings page (placeholder)
+│   │   ├── profile/page.tsx          ← profile page (server: fetches profiles row → renders ProfileHeader + ProfileDashboard; ?tab=saves→/saves, ?tab=watchlist→/watchlist)
+│   │   ├── saves/
+│   │   │   ├── layout.tsx            ← nav + page header for /saves
+│   │   │   ├── page.tsx              ← all-items view (default folder)
+│   │   │   └── [folderId]/page.tsx   ← folder-scoped view
+│   │   ├── watchlist/
+│   │   │   ├── layout.tsx            ← nav + page header for /watchlist
+│   │   │   └── page.tsx              ← renders WatchlistTab (TEMPORARY — becomes /alerts?tab=tracked in Phase 4)
+│   │   └── settings/page.tsx        ← standalone settings page (ThemeSelector under Appearance section)
 │   ├── auth/
 │   │   ├── reset-password/page.tsx   ← password reset form (via email link)
 │   │   └── callback/route.ts         ← OAuth/password reset callback
@@ -1976,9 +2020,10 @@ fashion-crawler-crawl4ai/
 │   │   └── profile/
 │   │       ├── ProfileHeader.tsx     ← client: avatar + name + email + joined + bio + Edit button
 │   │       ├── EditProfileModal.tsx  ← modal: avatar upload → Supabase Storage; PATCH /api/profile
-│   │       ├── ProfileTabsClient.tsx ← Saves | Watchlist tabs (URL-driven via ?tab=)
-│   │       ├── SavesTab.tsx          ← "Collection" tab: folder pill row + cards-view skeleton + view-mode toggle (localStorage.collectionViewMode), 3-dot card menu (Move/Remove), branched empty states; price stripped from cards
+│   │       ├── ProfileDashboard.tsx  ← client component with StatsStrip, RecentSearches, TopPlatforms, MiniSavesCard, MiniWatchlistCard
 │   │       └── WatchlistTab.tsx      ← grid + Refresh prices button + price delta chip + Sold badge
+│   │   ├── saves/
+│   │   │   └── SavesPageClient.tsx   ← URL-driven saves page (replaces old SavesTab.tsx); takes folderIdFromUrl prop
 │   ├── layout.tsx                    ← root layout (suppressHydrationWarning for Grammarly)
 │   └── globals.css                   ← Tailwind v4 + CSS vars + theme tokens
 │

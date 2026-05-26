@@ -36,8 +36,9 @@ type FolderEditMode =
   | { kind: 'create' }
   | { kind: 'edit'; folder: CollectionFolder };
 
-function folderHref(folderId: string, defaultFolderId: string | null): string {
-  return folderId === defaultFolderId ? '/saves' : `/saves/${folderId}`;
+function folderHref(folderId: string, defaultFolderId: string | null, forceId = false): string {
+  if (!forceId && folderId === defaultFolderId) return '/saves';
+  return `/saves/${folderId}`;
 }
 
 export default function SavesPageClient({ folderIdFromUrl }: { folderIdFromUrl: string | null }) {
@@ -142,9 +143,12 @@ export default function SavesPageClient({ folderIdFromUrl }: { folderIdFromUrl: 
 
   const handleSelectFolder = useCallback(
     (id: string) => {
-      router.push(folderHref(id, defaultFolderId));
+      // In card view, always navigate to /saves/<id> so we enter the detail view,
+      // even for the default folder (which would otherwise resolve to /saves and
+      // stay on the grid — making My Collection appear unclickable).
+      router.push(folderHref(id, defaultFolderId, viewMode === 'cards'));
     },
-    [router, defaultFolderId]
+    [router, defaultFolderId, viewMode]
   );
 
   const submitRemoveSave = async (save: Save) => {

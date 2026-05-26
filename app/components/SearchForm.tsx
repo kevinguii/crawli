@@ -17,6 +17,8 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 const PENDING_SEARCH_KEY = 'crawli_pending_search';
+// Prefill only (no auto-run) — used by profile dashboard recent searches
+const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
 
@@ -47,7 +49,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     });
   }, []);
 
-  // Re-run a search that was queued from /search-history.
+  // Re-run a search queued from /search-history — fills form AND auto-submits.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const raw = sessionStorage.getItem(PENDING_SEARCH_KEY);
@@ -60,6 +62,23 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
       onFiltersChange({ ...emptyFilterState(), ...item.filters });
       // Defer submit so child state effects flush first.
       setTimeout(() => formRef.current?.requestSubmit(), 0);
+    } catch {
+      // ignore malformed payload
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Prefill a search from the profile dashboard — fills form only, no auto-run.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = sessionStorage.getItem(PREFILL_SEARCH_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(PREFILL_SEARCH_KEY);
+    try {
+      const item = JSON.parse(raw) as SearchHistoryItem;
+      setQuery(item.query);
+      setSelected(item.platforms);
+      onFiltersChange({ ...emptyFilterState(), ...item.filters });
     } catch {
       // ignore malformed payload
     }

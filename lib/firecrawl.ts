@@ -187,7 +187,8 @@ export interface ScrapedListing {
 
 export async function scrapeListing(
   url: string,
-  platform: string
+  platform: string,
+  signal?: AbortSignal,
 ): Promise<ScrapedListing | null> {
-  return scrapeViaSidecar(url, platform);
+  return scrapeViaSidecar(url, platform, 3, signal);
 }

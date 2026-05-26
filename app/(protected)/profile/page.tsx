@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AuthButton from '@/app/components/AuthButton';
 import ProfileHeader from '@/app/components/profile/ProfileHeader';
-import ProfileTabsClient from '@/app/components/profile/ProfileTabsClient';
+import ProfileDashboard from '@/app/components/profile/ProfileDashboard';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function ProfilePage({
@@ -12,6 +12,7 @@ export default async function ProfilePage({
 }) {
   const { tab } = await searchParams;
   if (tab === 'saves') redirect('/saves');
+  if (tab === 'watchlist') redirect('/watchlist');
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -70,7 +71,7 @@ export default async function ProfilePage({
           }}
         />
         <div className="mt-8">
-          <ProfileTabsClient />
+          <ProfileDashboard />
         </div>
       </div>
     </main>
