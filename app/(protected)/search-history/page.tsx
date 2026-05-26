@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { useSearchHistory } from '@/app/components/SearchHistoryProvider';
 import { platformColor } from '@/app/components/platformColors';
 import { PLATFORM_NAMES, type SearchHistoryItem } from '@/lib/types';
-import ThemeToggle from '@/app/components/ThemeToggle';
 import AuthButton from '@/app/components/AuthButton';
 
 const PENDING_SEARCH_KEY = 'crawli_pending_search';
@@ -52,7 +51,6 @@ export default function SearchHistoryPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <AuthButton />
           </div>
         </div>

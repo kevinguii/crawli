@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import ThemeToggle from '@/app/components/ThemeToggle';
 import Link from 'next/link';
 import { PricingCards } from './PricingCards';
 
@@ -25,7 +24,6 @@ export default async function PricingPage() {
   return (
     <main className="min-h-screen px-4 py-16" style={{ background: 'var(--bg)' }}>
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <ThemeToggle />
         <Link
           href="/"
           aria-label="Close"

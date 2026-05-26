@@ -1,12 +1,18 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import ThemeToggle from '@/app/components/ThemeToggle';
 import AuthButton from '@/app/components/AuthButton';
 import ProfileHeader from '@/app/components/profile/ProfileHeader';
 import ProfileTabsClient from '@/app/components/profile/ProfileTabsClient';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  if (tab === 'saves') redirect('/saves');
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -46,7 +52,6 @@ export default async function ProfilePage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <AuthButton />
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Save, CollectionFolder } from '@/lib/types';
 import { PLATFORM_NAMES } from '@/lib/types';
@@ -35,9 +36,13 @@ type FolderEditMode =
   | { kind: 'create' }
   | { kind: 'edit'; folder: CollectionFolder };
 
-export default function SavesTab() {
+function folderHref(folderId: string, defaultFolderId: string | null): string {
+  return folderId === defaultFolderId ? '/saves' : `/saves/${folderId}`;
+}
+
+export default function SavesPageClient({ folderIdFromUrl }: { folderIdFromUrl: string | null }) {
+  const router = useRouter();
   const [folders, setFolders] = useState<CollectionFolder[]>([]);
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [saves, setSaves] = useState<Save[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -50,26 +55,21 @@ export default function SavesTab() {
   const [editMode, setEditMode] = useState<FolderEditMode | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CollectionFolder | null>(null);
   const [deleteSaveTarget, setDeleteSaveTarget] = useState<Save | null>(null);
-  const [cardViewFolderId, setCardViewFolderId] = useState<string | null>(null);
   const { hydrateUrls, openMoveModal } = useSaves();
 
-  const toggleViewMode = () => {
-    setViewModeStored(viewMode === 'pills' ? 'cards' : 'pills');
-  };
+  const defaultFolderId = useMemo(
+    () => folders.find((f) => f.is_default)?.id ?? null,
+    [folders]
+  );
+  const activeFolderId = folderIdFromUrl ?? defaultFolderId;
 
-  const reloadFolders = useCallback(async (selectDefaultIfNone = false) => {
+  const reloadFolders = useCallback(async (): Promise<CollectionFolder[]> => {
     try {
       const res = await fetch('/api/collection-folders');
       if (!res.ok) throw new Error('failed');
       const data = await res.json();
       const next: CollectionFolder[] = data.folders ?? [];
       setFolders(next);
-      if (selectDefaultIfNone) {
-        setActiveFolderId((curr) => {
-          if (curr && next.some((f) => f.id === curr)) return curr;
-          return next.find((f) => f.is_default)?.id ?? next[0]?.id ?? null;
-        });
-      }
       return next;
     } catch {
       toast.error('Could not load folders');
@@ -77,11 +77,17 @@ export default function SavesTab() {
     }
   }, []);
 
-  // reloadFolders is a useCallback that fetches over the network and only calls
-  // setState after `await`, so the setState is not synchronous in the effect body.
-  // The lint rule can't see through the useCallback indirection.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { reloadFolders(true); }, [reloadFolders]);
+  useEffect(() => { reloadFolders(); }, [reloadFolders]);
+
+  // If the URL refers to a folder that doesn't exist (deleted in another tab,
+  // or stale link), redirect to the all-items view once folders have loaded.
+  useEffect(() => {
+    if (!folderIdFromUrl) return;
+    if (folders.length === 0) return;
+    if (!folders.some((f) => f.id === folderIdFromUrl)) {
+      router.replace('/saves');
+    }
+  }, [folderIdFromUrl, folders, router]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
@@ -90,12 +96,19 @@ export default function SavesTab() {
 
   useEffect(() => {
     let cancelled = false;
+    // Don't fetch until we know the effective folder (folders loaded). The default
+    // folder UUID is needed for the "all items" view.
+    if (!activeFolderId) {
+      setSaves([]);
+      setLoading(folders.length === 0);
+      return;
+    }
     const load = async () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
         if (debouncedSearch) params.set('search', debouncedSearch);
-        if (activeFolderId) params.set('folder_id', activeFolderId);
+        params.set('folder_id', activeFolderId);
         const res = await fetch(`/api/saves${params.toString() ? `?${params}` : ''}`);
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
@@ -111,7 +124,7 @@ export default function SavesTab() {
     };
     load();
     return () => { cancelled = true; };
-  }, [debouncedSearch, activeFolderId, hydrateUrls]);
+  }, [debouncedSearch, activeFolderId, folders.length, hydrateUrls]);
 
   const activeFolder = useMemo(
     () => folders.find((f) => f.id === activeFolderId) ?? null,
@@ -121,6 +134,17 @@ export default function SavesTab() {
   const totalItems = useMemo(
     () => folders.find((f) => f.is_default)?.item_count ?? 0,
     [folders]
+  );
+
+  const toggleViewMode = () => {
+    setViewModeStored(viewMode === 'pills' ? 'cards' : 'pills');
+  };
+
+  const handleSelectFolder = useCallback(
+    (id: string) => {
+      router.push(folderHref(id, defaultFolderId));
+    },
+    [router, defaultFolderId]
   );
 
   const submitRemoveSave = async (save: Save) => {
@@ -175,9 +199,8 @@ export default function SavesTab() {
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
         toast.success(`Created "${data.folder.name}"`);
-        const next = await reloadFolders();
-        const created = next.find((f) => f.id === data.folder.id);
-        if (created) setActiveFolderId(created.id);
+        await reloadFolders();
+        router.push(`/saves/${data.folder.id}`);
       } catch {
         toast.error('Could not create folder');
       }
@@ -206,9 +229,9 @@ export default function SavesTab() {
       toast(cascade ? `Deleted "${folder.name}" and its items` : `Deleted "${folder.name}"`, {
         style: { color: '#E24B4A', borderColor: '#E24B4A' },
       });
-      const next = await reloadFolders();
-      if (activeFolderId === folder.id) {
-        setActiveFolderId(next.find((f) => f.is_default)?.id ?? null);
+      await reloadFolders();
+      if (folderIdFromUrl === folder.id) {
+        router.push('/saves');
       }
     } catch {
       toast.error('Could not delete folder');
@@ -216,6 +239,7 @@ export default function SavesTab() {
   };
 
   const empty = !loading && saves.length === 0;
+  const inCardDetail = viewMode === 'cards' && folderIdFromUrl !== null;
 
   return (
     <div className="space-y-5">
@@ -248,7 +272,7 @@ export default function SavesTab() {
           <FolderPillRow
             folders={folders}
             activeId={activeFolderId}
-            onSelect={setActiveFolderId}
+            onSelect={handleSelectFolder}
             onEdit={(f) => setEditMode({ kind: 'edit', folder: f })}
             onDelete={(f) => setDeleteTarget(f)}
           />
@@ -281,11 +305,11 @@ export default function SavesTab() {
             </div>
           )}
         </>
-      ) : cardViewFolderId ? (
+      ) : inCardDetail ? (
         <>
           <button
             type="button"
-            onClick={() => setCardViewFolderId(null)}
+            onClick={() => router.push('/saves')}
             className="mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
             style={{
               background: 'var(--surface)',
@@ -342,10 +366,7 @@ export default function SavesTab() {
       ) : (
         <FolderCardGrid
           folders={folders}
-          onSelect={(folderId) => {
-            setCardViewFolderId(folderId);
-            setActiveFolderId(folderId);
-          }}
+          onSelect={handleSelectFolder}
           onEdit={(f) => setEditMode({ kind: 'edit', folder: f })}
           onDelete={(f) => setDeleteTarget(f)}
         />

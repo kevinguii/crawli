@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import SearchSection from '@/app/components/SearchSection';
-import ThemeToggle from '@/app/components/ThemeToggle';
 import AuthButton from '@/app/components/AuthButton';
 
 export default function Home() {
@@ -35,7 +34,6 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <AuthButton />
           </div>
         </div>

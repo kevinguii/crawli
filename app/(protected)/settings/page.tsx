@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import ThemeToggle from '@/app/components/ThemeToggle';
+import { ThemeSelector } from '@/app/components/ThemeToggle';
 import AuthButton from '@/app/components/AuthButton';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
@@ -273,7 +273,6 @@ export default function SettingsPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <AuthButton />
           </div>
         </div>
@@ -295,30 +294,6 @@ export default function SettingsPage() {
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
               {email ?? '—'}
             </span>
-          </Row>
-          <Row label="Sign out" sublabel="Sign out of this device">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-active)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
-            >
-              Sign out
-            </button>
-          </Row>
-          <Row label="Delete account" sublabel="Permanently delete your account and all data">
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity"
-              style={{ background: '#E24B4A' }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-            >
-              Delete account
-            </button>
           </Row>
         </Section>
 
@@ -434,6 +409,13 @@ export default function SettingsPage() {
               </Row>
             </>
           )}
+        </Section>
+
+        {/* ── Appearance ── */}
+        <Section title="Appearance" description="Choose how Crawli looks on this device.">
+          <Row label="Theme" sublabel="Light, dark, or match your system setting">
+            <ThemeSelector />
+          </Row>
         </Section>
 
         {/* ── Preferences ── */}
@@ -566,6 +548,34 @@ export default function SettingsPage() {
               aria-disabled
             />
           </div>
+        </Section>
+
+        {/* ── Sign out / Delete ── */}
+        <Section title="Session & account">
+          <Row label="Sign out" sublabel="Sign out of this device">
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-active)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
+            >
+              Sign out
+            </button>
+          </Row>
+          <Row label="Delete account" sublabel="Permanently delete your account and all data">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity"
+              style={{ background: '#E24B4A' }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+            >
+              Delete account
+            </button>
+          </Row>
         </Section>
       </div>
     </main>

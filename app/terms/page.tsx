@@ -1,4 +1,3 @@
-import ThemeToggle from '@/app/components/ThemeToggle';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -10,9 +9,8 @@ export default function TermsPage() {
   return (
     <main className="min-h-screen px-4 py-16" style={{ background: 'var(--bg)' }}>
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <ThemeToggle />
         <Link
-          href="/"
+          href="/settings"
           aria-label="Close"
           className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
           style={{ color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)' }}
