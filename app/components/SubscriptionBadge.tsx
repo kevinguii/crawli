@@ -45,9 +45,13 @@ export default function SubscriptionBadge() {
   const ratio = data.used / data.cap;
   const isFree = data.plan === 'free';
 
-  // Color the counter as the user approaches the cap.
-  const counterColor =
-    ratio >= 1 ? 'var(--error, #dc2626)' : ratio >= 0.7 ? '#d97706' : 'var(--text-muted)';
+  // Only show counter once the user is in the red zone (≥90% used) or fully exhausted.
+  const showCounter = ratio >= 0.9;
+
+  if (!showCounter) return null;
+
+  // Color: red when exhausted, amber when approaching.
+  const counterColor = ratio >= 1 ? 'var(--error, #dc2626)' : '#d97706';
 
   return (
     <div className="flex items-center gap-2">
