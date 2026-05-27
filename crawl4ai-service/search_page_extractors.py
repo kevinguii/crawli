@@ -403,9 +403,116 @@ def extract_grailed_grid(html: str, *, limit: int = 24) -> list[dict]:
     return results
 
 
+# ── Mercari ─────────────────────────────────────────────────────────────────
+
+MERCARI_BASE = "https://www.mercari.com"
+
+_MERCARI_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+
+
+def mercari_search_url(query: str) -> str:
+    """Build the Mercari US onsite search URL.
+
+    Verified 2026-05-27 via probe: `/search/?keyword=<urlencoded>` returns 200
+    with the listing grid hydrated into the DOM (the page is client-side
+    rendered — __NEXT_DATA__ is essentially empty here, unlike item-detail
+    pages). Each card is a `div[data-testid='ItemContainer']`.
+    """
+    return f"{MERCARI_BASE}/search/?keyword={quote(query.strip())}"
+
+
+def extract_mercari_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Mercari `/search/?keyword=...` results page.
+
+    Source: DOM cards under `div[data-testid='ItemContainer']`. The card root
+    carries clean data attributes (`data-productid`, `data-size`, `data-brand`,
+    `data-is-on-sale`); inner testids carry the title and price text:
+
+        div[data-testid='ItemContainer']
+          @data-productid                              → item id (URL is
+                                                          /us/item/<id>/)
+          @data-size                                   → size (e.g. "S (34-36)")
+          @data-brand                                  → brand (informational)
+          @data-is-on-sale                             → "true" / "false"
+          [data-testid='ItemName']                     → title
+          [data-testid='ProductThumbItemPrice']        → price text. When on
+                                                          sale, reads "$X$Y"
+                                                          (current $X, original
+                                                          $Y) — take the first
+                                                          $ amount as current.
+          img                                          → imageUrl (cdn host
+                                                          u-mercari-images.mercdn.net)
+
+    Mercari's search default excludes sold listings (verified 2026-05-27
+    against a typical query — all 35 cards had data-is-on-sale="true" and no
+    SOLD badge). We set isSold=False; if Mercari surfaces sold cards here
+    later, look for a `SOLD` text badge inside the card.
+
+    URL is constructed from data-productid: there is no anchor inside the
+    card itself (Mercari wraps the grid with a click handler), so we rebuild
+    `/us/item/<productid>/`.
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    cards = soup.select("[data-testid='ItemContainer']")
+    if not cards:
+        log.warning("[mercari-grid] no ItemContainer cards found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    for card in cards:
+        product_id = card.get("data-productid")
+        if not isinstance(product_id, str) or not product_id:
+            continue
+        url = f"{MERCARI_BASE}/us/item/{product_id}/"
+
+        title_el = card.select_one("[data-testid='ItemName']")
+        title = title_el.get_text(strip=True) if title_el else None
+        if isinstance(title, str):
+            title = html_module.unescape(title)
+
+        price_el = card.select_one("[data-testid='ProductThumbItemPrice']")
+        price: Optional[float] = None
+        if price_el:
+            m = _MERCARI_PRICE_RE.search(price_el.get_text(strip=True))
+            if m:
+                try:
+                    price = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    price = None
+
+        size = card.get("data-size") if isinstance(card.get("data-size"), str) else None
+
+        img_el = card.find("img")
+        image = img_el.get("src") if img_el else None
+        # Skip SVG-only placeholders (e.g. lazy-load shells) — real Mercari
+        # photos are on the mercdn.net CDN.
+        if isinstance(image, str) and image.startswith("data:"):
+            image = None
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",  # mercari.com/us is USD-only
+            "isSold": False,
+            "condition": None,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[mercari-grid] extracted %d listings (out of %d cards)", len(results), len(cards))
+    return results
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────────
 
-SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed"}
+SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed", "mercari"}
 
 
 def search_url_for(platform: str, query: str) -> Optional[str]:
@@ -415,6 +522,8 @@ def search_url_for(platform: str, query: str) -> Optional[str]:
         return therealreal_search_url(query)
     if platform == "grailed":
         return grailed_search_url(query)
+    if platform == "mercari":
+        return mercari_search_url(query)
     return None
 
 
@@ -425,4 +534,6 @@ def extract_search_grid(platform: str, html: str, *, limit: int = 24) -> list[di
         return extract_therealreal_grid(html, limit=limit)
     if platform == "grailed":
         return extract_grailed_grid(html, limit=limit)
+    if platform == "mercari":
+        return extract_mercari_grid(html, limit=limit)
     return []

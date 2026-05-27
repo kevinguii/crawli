@@ -105,7 +105,7 @@ export async function POST(request: Request) {
         error: 'quota_exceeded',
         message: isPro
           ? `You have used all ${cap} searches for this billing period.`
-          : `You have used all ${cap} free searches for this month. Upgrade to Crawli for more.`,
+          : `You have used all ${cap} free searches for this month. Upgrade for more.`,
         used,
         cap,
         plan: tier,

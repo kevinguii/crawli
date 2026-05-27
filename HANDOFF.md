@@ -1,8 +1,94 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-26 (landing polish round 3 — curated search chips)
+**Last updated:** 2026-05-27 (Billing toggle styling fix)
 
-**Latest change (2026-05-26 — landing polish round 3):**
+**Latest change (2026-05-27 — Fixed billing yearly/monthly toggle button styling):**
+
+The `billed yearly` toggle on `/pricing` had inconsistent border-radius styling between localhost and production due to reliance on Tailwind's `rounded-lg` class, which wasn't being applied consistently between dev and prod builds. 
+
+**Fix:** Moved `border-radius` from the Tailwind class to an explicit inline style (`borderRadius: '0.5rem'`) on the button element in [app/pricing/PricingCards.tsx:128-130](app/pricing/PricingCards.tsx#L128-L130). This ensures the toggle has rounded corners consistently in both environments. The inner span's border-radius (already using inline style) remains at `5px` for the white slider dot.
+
+---
+
+**Previous change (2026-05-27 — Mercari native search-page extractor; Phase 3 of search-speed plan, first migration done):**
+
+Mercari is now a `SEARCH_PAGE_PLATFORMS` member. The old `firecrawl-only` URL-discovery + per-listing `/scrape` fan-out (1 FC call + up to 10 renders) is replaced by a single `/scrape-search` render that pulls the entire grid in one shot. Per the user's "accuracy first" framing, this is primarily a **coverage win** (cap-limited result count comes from the user's tier — `nativeResultsCap` 10/30/60 for free/pro/max — instead of the old hardcoded `slice(0, 10)` on the firecrawl branch). Latency win is a secondary benefit.
+
+**Survey** (one-off probe at [crawl4ai-service/scripts/mercari_survey.py](crawl4ai-service/scripts/mercari_survey.py), kept for reproducibility per the Grailed precedent): rendered `https://www.mercari.com/search/?keyword=<q>` and inspected. Findings:
+- `__NEXT_DATA__` is essentially empty on the search page (554 bytes, just Sentry tracing) — unlike Mercari item-detail pages which embed the full `ItemDetail:<id>` block. The search page is **client-side rendered**.
+- No JSON-LD on the search page.
+- 35–51 listing cards present in the DOM after JS hydration (varies by query / Mercari A/B), each as `div[data-testid='ItemContainer']` with clean data attributes: `data-productid` (item id), `data-size` (e.g. `"S (34-36)"`), `data-brand`, `data-is-on-sale`.
+- Inner testids: `[data-testid='ItemName']` (title), `[data-testid='ProductThumbItemPrice']` (price text — when discounted reads `"$X$Y"` with current $X first).
+- The card root has **no anchor child** — Mercari wraps clicks on the grid container itself, so we rebuild the URL from `data-productid` → `/us/item/<productid>/`.
+- "reCAPTCHA / blocked / captcha" string hits in the HTML are **false positives** — they come from Mercari's reCAPTCHA Enterprise widget (passive bot-score), not an active challenge. The page renders 200 with full data.
+- Mercari's search default excludes sold items (all 51 cards on a typical query have `data-is-on-sale="true"`, no SOLD badges). We set `isSold=False` and don't try to detect sold-state on the grid.
+
+**Files touched:**
+
+- [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py) — added `mercari_search_url(query)`, `extract_mercari_grid(html, limit)`, and dispatch entries (`SEARCH_PAGE_PLATFORMS`, `search_url_for`, `extract_search_grid`).
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) — added a Mercari case to `_build_run_cfg(search_page=True)`: `wait_for="css:[data-testid='ItemContainer']"`, `page_timeout=60_000`. Keeps the existing default `delay_before_return_html=5.0` (no speed tuning yet — that's Phase 2a probe work).
+- [lib/scraper.ts](lib/scraper.ts) — `SEARCH_PAGE_PLATFORMS` set gains `'mercari'`. The Next route already routes `SEARCH_PAGE_PLATFORMS.has(platform)` through `/scrape-search`, no other route changes needed.
+- [crawl4ai-service/scripts/mercari_survey.py](crawl4ai-service/scripts/mercari_survey.py) — new one-off probe script (not wired into the app; kept for reproducibility).
+
+**Deliberately left in place** as inert fallback (Grailed precedent): `PLATFORM_STRATEGY['mercari'] = 'firecrawl-only'` in [lib/firecrawl.ts:78](lib/firecrawl.ts#L78). The route now checks `SEARCH_PAGE_PLATFORMS` first, so this entry only kicks in if someone removes Mercari from that set later.
+
+**Verified live (2026-05-27, sidecar booted locally):**
+
+| Test | Result |
+|---|---|
+| `./venv/bin/python scripts/mercari_survey.py "fear of god essentials hoodie"` | HTTP 200, 338KB HTML, 35 `ItemContainer` cards, ~8.7s |
+| Dry-run `extract_mercari_grid()` against the dumped HTML | 35/35 listings extracted, 0 missing url/title/price/image, 1/35 missing size |
+| `curl /scrape-search platform=mercari query="fear of god essentials hoodie" limit=100` | HTTP 200, **51 listings**, 12.6s end-to-end (5s delay + ~7s render+hydrate), prices $17–$128.6, median $42.50, 0 missing prices/titles/URLs, 1 missing size |
+| `npx tsc --noEmit` | Clean |
+| `matchRawSize("S (34-36)", "s")` (size filter regression) | Strips parenthetical via `\s*\([^)]*\)`, matches `"s"` token — works without changes |
+
+**Wins vs old `firecrawl-only` Mercari path (confirmed live):**
+
+- **Result count: ~13 → 51 listings** for the same query (Phase 1 verification showed Mercari at 20→13 post-filter; new native path returns 51 unfiltered, with the tier cap then biting at 10/30/60).
+- **1 Firecrawl URL-discovery call eliminated per Mercari search** — small cost saving ($0.016 Hobby / $0.00396 Standard).
+- **Up to 10 per-listing `/scrape` calls eliminated per Mercari search** — each was 10–25s + possible LLM fallback. Replaced by one search-page render. Estimated ~70–90% per-search latency drop for Mercari (matches the Grailed migration outcome).
+- **Tier 1 hit rate goes to 100% on Mercari grid** — extractor reads the DOM directly, no LLM fallback path on the search-page branch.
+
+**Gotchas (write these down before touching the extractor next):**
+
+- The card root has **no anchor** — building the URL from `data-productid` is the only way. If Mercari rewires the grid to make each card a real `<a>`, the existing extractor still works (we don't depend on the absence of an anchor).
+- `ProductThumbItemPrice` text is `"$X$Y"` when on sale (two prices concatenated). The first `$N.NN` is the current price; the regex `\$([\d,]+(?:\.\d+)?)` with `.search()` (not `.findall()`) ensures we always take the first.
+- `data-size` includes a numeric range parenthetical (`"S (34-36)"`); `matchRawSize` already strips parentheticals, so we pass it through unchanged.
+- CSS-Modules-style class names (`Container-sc-beaovl`, `caxKGN`, etc.) change every Mercari deploy. We **only** key off `data-testid` and `data-*` attributes, never the hashed class names.
+- Mercari's reCAPTCHA Enterprise widget always loads — the substring `"captcha"` / `"blocked"` will always match in raw HTML. Don't write extractor logic that branches on those strings.
+
+**Phase 3 next:** eBay migration (same pattern: survey → probe → extractor → verify). Akamai is the risk — Mercari was a clean win because there's no active bot challenge on the search page; eBay may behave differently. Plan stays at [docs/SEARCH_SPEED_PLAN.md](docs/SEARCH_SPEED_PLAN.md) (Phase 3 list).
+
+---
+
+**Previous change (2026-05-27 — search-speed plan parked at [docs/SEARCH_SPEED_PLAN.md](docs/SEARCH_SPEED_PLAN.md); Phase 1 shipped):**
+
+Investigated two faults from a live `fear of god essentials hoodie` search (size M, gray): (1) too few results (Grailed → 1 listing in some runs), (2) too slow (~3 min 15s end-to-end on local M1).
+
+**Phase 1 (shipped, 2026-05-24):**
+
+- [lib/filterOptions.ts](lib/filterOptions.ts) — removed `condition` from `filtersToQuerySuffix()`. The condition filter never had a server-side post-filter; it was only ever stuffed into the upstream search-engine query, narrowing recall for marginal benefit on resale (every listing is second-hand anyway).
+- [app/components/FilterPanel.tsx](app/components/FilterPanel.tsx) — removed the Condition `FilterDropdown` from the UI; removed the now-unused `CONDITION_OPTIONS` import + re-export.
+
+**Deliberately left in place (backwards compat):** `CONDITION_OPTIONS` constant in `lib/filterOptions.ts`, `FilterState.condition` field on the type, and `filtersSchema.condition` in `app/api/search/route.ts`. This keeps cached searches + in-flight serialized FilterState payloads parsing cleanly. Full purge is a follow-up if anyone wants it.
+
+**Result of Phase 1, verified live (same FOG hoodie search, 2026-05-24):** Grailed 40 listings (search-page extraction), Depop 20→10, Poshmark 20→15, Mercari 20→13, Vinted 20→16, eBay 20→19, Vestiaire 20→5, ThredUp 100. The "too few results" problem is resolved.
+
+**Speed work parked at [docs/SEARCH_SPEED_PLAN.md](docs/SEARCH_SPEED_PLAN.md).** Root causes identified from live logs (in priority order):
+
+1. `delay_before_return_html=5.0s` baked into every per-listing render ([crawl4ai-service/main.py:643](crawl4ai-service/main.py#L643)). ~50 renders × 5s = ~250s of pure wait, parallelized across 6 slots = ~42s per search.
+2. Render semaphore (`SIDECAR_MAX_CONCURRENT_RENDERS=6` local / `8` prod) saturated the entire search — `in_flight=6 pool=1/1` constantly in logs.
+3. Per-platform scrape concurrency hardcoded to `2` at [app/api/search/route.ts:111](app/api/search/route.ts#L111); only useful to bump after the global render semaphore is raised.
+4. Tail-latency outliers (Vinted 48s; eBay Akamai blocks → retry round → LLM fallback ≈ 23s/url).
+
+**Plan for next session — Phase 2a is the entry point.** Probe `delay_before_return_html` floor per platform via a one-off script; don't change `main.py` until data is in hand. User explicitly said: don't change anything based on assumptions. The continuation-prompt template + rules + reference env table are in `docs/SEARCH_SPEED_PLAN.md`.
+
+**Critical fact for the next agent — already-shipped wins it shouldn't re-investigate:**
+- `SEARCH_PAGE_PLATFORMS = {thredup, realreal, grailed}` already collapses those three platforms to one render each. Grailed runs at `delay_before_return_html=2.0` with `wait_for` ([main.py:664-667](crawl4ai-service/main.py#L664-L667)) — this is the existence proof that 2.0s is achievable. Next migration targets are Mercari and eBay (both `firecrawl-only` so they pay the most for URL discovery today). Follow the Grailed precedent (2026-05-22 HANDOFF entry §M): survey → probe → write extractor → verify.
+
+---
+
+**Previous change (2026-05-26 — landing polish round 3):**
 
 - `HowItWorks` steps were left-aligned at `sm:` breakpoint and looked
   off-center under the centered headline. Switched to `flex flex-col
@@ -803,6 +889,24 @@ Pay with `4242 4242 4242 4242` / any future expiry / any CVC. Verify the webhook
 3. RealReal / ThredUp platform expansion.
 4. Help forum.
 
+**⚠️ Deadline: October 30, 2026 — Supabase public schema GRANT requirement**
+Supabase is enforcing explicit `GRANT` statements for all tables in the `public` schema. After Oct 30, any new table you create won't be accessible via PostgREST/GraphQL/supabase-js without one. Existing tables stop working too unless grants are added.
+
+Tables that need grants (all currently accessed via supabase-js):
+- `profiles`, `saves`, `search_history`, `saved_searches`, `collection_folders`, `watchlist`, `search_cache`
+
+SQL to run in Supabase SQL editor (adjust roles as needed):
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saves TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.search_history TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_searches TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.collection_folders TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.watchlist TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.search_cache TO authenticated;
+```
+Use the Supabase Security Advisor dashboard tool to audit exposure before running. Add this as a migration in `docs/migrations/` once done.
+
 ---
 
 **Previous change (2026-05-22 — Stripe billing frontend wired up; UX polish):**
@@ -954,7 +1058,7 @@ Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid
 | depop | 83% (Brave usually wins) | HYBRID (Brave-first, FC fallback if <N listings) |
 | grailed | 61% | HYBRID |
 | vestiaire | 46% | HYBRID |
-| mercari | 38% | FIRECRAWL_ONLY (Brave too lossy) |
+| mercari | 38% (firecrawl path) → 51 / tier-cap (native, 2026-05-27) | SEARCH_PAGE — Brave/FC bypassed; FIRECRAWL_ONLY kept inert in PLATFORM_STRATEGY |
 | ebay | 30% | FIRECRAWL_ONLY |
 
 `PLATFORM_STRATEGY` map lives at the top of [lib/firecrawl.ts](lib/firecrawl.ts) — tunable in one place.
@@ -1004,8 +1108,13 @@ Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid
 SEARCH_PROVIDER=hybrid + this platform → which engine runs
 
 vinted, stockx, poshmark   → brave (1 call)
-depop, grailed, vestiaire  → brave first; if listings < BRAVE_HYBRID_THRESHOLD → firecrawl fallback
-mercari, ebay              → firecrawl (1 call, brave skipped)
+depop, vestiaire           → brave first; if listings < BRAVE_HYBRID_THRESHOLD → firecrawl fallback
+ebay                       → firecrawl (1 call, brave skipped)
+
+NOTE: grailed (2026-05-22) and mercari (2026-05-27) bypass this router
+entirely — they're in SEARCH_PAGE_PLATFORMS now, so the route uses
+/scrape-search instead of Brave/Firecrawl URL discovery. The
+PLATFORM_STRATEGY entries are kept as inert fallbacks.
 ```
 
 **Out-of-scope this PR (worth tracking):** ranged backfill if a query hits 0 listings on a hybrid platform, structured-color extraction, brand-aware query tokenization, Grailed-native search-page extractor. All listed in §7 below.
@@ -2372,7 +2481,7 @@ POST /api/search ─────────────────────
 
 **Two search avenues (mental model — added 2026-05-22):** every platform takes one of two paths from `/api/search`.
 - **Avenue A — search-page native** (zero search credits, zero LLM, one render per query): route checks `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts) first. If present → `POST /scrape-search` → sidecar renders the platform's own search URL once → grid extractor in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py) pulls cards from DOM → returns `ScrapedListing[]`. Current members: **thredup, realreal (deferred — PerimeterX), grailed**.
-- **Avenue B — URL discovery + per-listing fan-out**: route falls through to `searchPlatform` in [lib/firecrawl.ts](lib/firecrawl.ts), which routes URL discovery via `PLATFORM_STRATEGY` (BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY — see bake-off table in the hybrid latest-change at the top). Returned URLs fan out to `POST /scrape` (capped at 10 per platform, 2 concurrent). Sidecar runs tier-1 structured extractors → tier-2 LLM fallback. Current members: **vinted, stockx, poshmark, depop, vestiaire, mercari, ebay**.
+- **Avenue B — URL discovery + per-listing fan-out**: route falls through to `searchPlatform` in [lib/firecrawl.ts](lib/firecrawl.ts), which routes URL discovery via `PLATFORM_STRATEGY` (BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY — see bake-off table in the hybrid latest-change at the top). Returned URLs fan out to `POST /scrape` (capped at 10 per platform, 2 concurrent). Sidecar runs tier-1 structured extractors → tier-2 LLM fallback. Current members: **vinted, stockx, poshmark, depop, vestiaire, ebay**. (Grailed migrated to Avenue A 2026-05-22; Mercari migrated 2026-05-27.)
 - Per-platform extraction-signal table + Avenue A survey playbook live in [§7 M](#m-search-engine-site-index-sparsity-caps-per-platform-results-especially-grailed--resolved-2026-05-22-grailed).
 
 **Load-management invariants (PR 1 + PR 2 of `1-3-4-sound-like-a-prancy-waterfall`):**
@@ -2909,7 +3018,9 @@ Grailed now uses native search-page extraction via `/scrape-search` (`SEARCH_PAG
 | mercari | B (per-listing) | `__NEXT_DATA__.props.pageProps.serverState['ItemDetail:<id>']` |
 | ebay | B (per-listing) | JSON-LD `Product` |
 
-**Proven Avenue B → Avenue A migrations:**
+**Proven Avenue B → Avenue A migrations:** Grailed (2026-05-22), Mercari (2026-05-27). See latest-change blocks at top.
+
+**Older migration prose (kept for context):**
 - **ThredUp** moved A on 2026-05-18 (`site:thredup.com` returned 0 URLs — Firecrawl couldn't index the JS-heavy SPA).
 - **Grailed** moved A on 2026-05-22 (`site:grailed.com` capped at ~5; native `/shop?query=` gives ~40 active-only listings).
 

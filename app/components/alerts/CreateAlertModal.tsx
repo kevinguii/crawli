@@ -25,7 +25,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
   const [step, setStep] = useState<Step>('configure');
   const [query, setQuery] = useState(prefill?.query ?? '');
   const [platforms, setPlatforms] = useState<string[]>(
-    prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p)) ?? ['grailed', 'depop', 'poshmark'],
+    prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p)) ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence] = useState<24>(24);
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);

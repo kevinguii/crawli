@@ -20,7 +20,7 @@ const PENDING_SEARCH_KEY = 'crawli_pending_search';
 // Prefill only (no auto-run) — used by profile dashboard recent searches
 const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
-const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
+const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
 
 interface Props {
   onResults: (data: SearchResponse, query: string, platforms: string[]) => void;

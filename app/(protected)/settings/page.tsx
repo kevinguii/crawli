@@ -10,8 +10,15 @@ import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
 import { createClient } from '@/lib/supabase/client';
 
-const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS);
-const DEFAULT_PLATFORMS = ['grailed', 'depop', 'poshmark'];
+const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
+const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS).sort((a, b) => {
+  const aIdx = DEFAULT_PLATFORMS.indexOf(a);
+  const bIdx = DEFAULT_PLATFORMS.indexOf(b);
+  if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+  if (aIdx !== -1) return -1;
+  if (bIdx !== -1) return 1;
+  return a.localeCompare(b);
+});
 
 // ── Section wrapper ────────────────────────────────────────────────────────
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {

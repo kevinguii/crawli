@@ -665,6 +665,14 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
         cfg_kwargs["wait_for"] = "css:a[href*='/listings/']"
         cfg_kwargs["page_timeout"] = 60_000
         cfg_kwargs["delay_before_return_html"] = 2.0
+    # Mercari's /search/?keyword= page is client-side rendered: the SSR HTML
+    # ships a near-empty __NEXT_DATA__ and the listing grid hydrates after JS
+    # runs (~5s). Wait explicitly for an ItemContainer card so the extractor
+    # doesn't see an empty grid. Verified 2026-05-27 via probe — once cards
+    # appear, 35 are present and complete.
+    if search_page and platform == "mercari":
+        cfg_kwargs["wait_for"] = "css:[data-testid='ItemContainer']"
+        cfg_kwargs["page_timeout"] = 60_000
 
     # On retry, be more patient regardless of platform.
     if attempt > 1:

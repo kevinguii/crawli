@@ -125,8 +125,11 @@ export function PricingCards({
         <button
           type="button"
           onClick={() => setCycle(cycle === 'monthly' ? 'yearly' : 'monthly')}
-          className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-lg transition-all duration-200"
-          style={{ background: cycle === 'yearly' ? 'var(--accent)' : 'var(--border)' }}
+          className="relative inline-flex h-7 w-12 shrink-0 items-center transition-all duration-200"
+          style={{
+            background: cycle === 'yearly' ? 'var(--accent)' : 'var(--border)',
+            borderRadius: '0.5rem',
+          }}
           aria-label="Toggle billing cycle"
           role="switch"
           aria-checked={cycle === 'yearly'}
