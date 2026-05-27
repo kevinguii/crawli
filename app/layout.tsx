@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crawli — Resale Price Search",
+  title: "Crawli - Resale Price Search",
   description:
     "Search live prices across Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire in one query.",
 };
