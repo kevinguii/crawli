@@ -7,8 +7,6 @@ export const MOCK_SEARCH_EVENT = 'crawli-mock-search';
 
 export type MockSearchEventDetail = {
   query: string;
-  // When true, caller is requesting curated data (chip click).
-  // When false, free-form input — caller picks best match or falls back.
   fromChip: boolean;
 };
 
@@ -19,18 +17,17 @@ function dispatchMockSearch(detail: MockSearchEventDetail) {
 }
 
 export default function Hero() {
-  const [query, setQuery] = useState('');
+  const [activeChipId, setActiveChipId] = useState<string | null>(null);
+
+  const activeChip = activeChipId
+    ? POPULAR_SEARCHES.find((s) => s.id === activeChipId) ?? null
+    : null;
+  const displayValue = activeChip?.chipLabel ?? '';
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    dispatchMockSearch({ query: trimmed, fromChip: false });
-  }
-
-  function handleChip(label: string, fullQuery: string) {
-    setQuery(label);
-    dispatchMockSearch({ query: fullQuery, fromChip: true });
+    if (!activeChip) return;
+    dispatchMockSearch({ query: activeChip.query, fromChip: true });
   }
 
   return (
@@ -86,7 +83,7 @@ export default function Hero() {
             simultaneously — so you never overpay again.
           </p>
 
-          <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl">
+          <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-3xl">
             <div
               className="flex items-center gap-2 rounded-2xl p-2 text-left shadow-lg"
               style={{
@@ -107,55 +104,59 @@ export default function Hero() {
               </div>
               <input
                 type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Try: Stussy hoodie, Margiela Tabi, Nike basketball shorts…"
-                className="flex-1 bg-transparent text-sm outline-none sm:text-base"
+                value={displayValue}
+                readOnly
+                placeholder="Pick a sample search below ↓"
+                aria-label="Sample search query"
+                className="flex-1 cursor-default bg-transparent text-sm outline-none sm:text-base"
                 style={{ color: 'var(--text)' }}
+                onMouseDown={(e) => e.preventDefault()}
               />
               <button
                 type="submit"
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-white sm:px-5"
+                disabled={!activeChip}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity sm:px-5"
                 style={{
                   background:
                     'linear-gradient(to right, #E24B4A, #E84D1D, #D85A30, #EF9F27)',
+                  opacity: activeChip ? 1 : 0.45,
+                  cursor: activeChip ? 'pointer' : 'not-allowed',
                 }}
               >
                 Search
               </button>
             </div>
 
-            {/* Popular-search chips */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <span
-                className="text-xs font-medium"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                Try:
-              </span>
-              {POPULAR_SEARCHES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleChip(s.chipLabel, s.query)}
-                  className="rounded-full px-3 py-1 text-xs font-medium transition-colors"
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent)';
-                    e.currentTarget.style.background = 'var(--accent-soft)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)';
-                    e.currentTarget.style.background = 'var(--surface)';
-                  }}
-                >
-                  {s.chipLabel}
-                </button>
-              ))}
+            {/* Popular-search chips — single row, scrollable on overflow */}
+            <div
+              className="mt-4 flex items-center gap-2 overflow-x-auto px-1 hide-scrollbar sm:justify-center"
+            >
+              {POPULAR_SEARCHES.map((s) => {
+                const active = s.id === activeChipId;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setActiveChipId(s.id)}
+                    className="flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                    style={
+                      active
+                        ? {
+                            background: 'var(--accent)',
+                            border: '1px solid var(--accent)',
+                            color: '#fff',
+                          }
+                        : {
+                            background: 'var(--surface)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text)',
+                          }
+                    }
+                  >
+                    {s.chipLabel}
+                  </button>
+                );
+              })}
             </div>
 
             <p

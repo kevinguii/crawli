@@ -55,7 +55,10 @@ export default function ListingCard({ listing, isLowest }: Props) {
       className="group flex flex-col overflow-hidden rounded-2xl transition-all cursor-pointer hover:opacity-90 hover:scale-[1.02]"
       style={{
         background: 'var(--surface)',
-        border: `1px solid ${hovered ? 'var(--accent)' : 'var(--border)'}`,
+        border: `1px solid ${
+          isLowest ? 'var(--success)' : hovered ? 'var(--accent)' : 'var(--border)'
+        }`,
+        boxShadow: isLowest ? '0 0 0 3px var(--success-soft)' : 'none',
       }}
     >
       <div

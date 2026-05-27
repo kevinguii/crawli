@@ -115,10 +115,10 @@ export default function SearchMock() {
                       style={{
                         background: 'var(--surface)',
                         border: l.lowest
-                          ? '1px solid var(--accent)'
+                          ? '1px solid var(--success)'
                           : '1px solid var(--border)',
                         boxShadow: l.lowest
-                          ? '0 0 0 3px var(--accent-soft)'
+                          ? '0 0 0 3px var(--success-soft)'
                           : 'none',
                         filter: blurred ? 'blur(6px)' : 'none',
                         opacity: blurred ? 0.7 : 1,
@@ -134,17 +134,17 @@ export default function SearchMock() {
                             'linear-gradient(135deg, var(--surface-hover), var(--track))',
                         }}
                       >
-                        <div className="absolute left-2 top-2">
+                        {l.lowest && (
+                          <span
+                            className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                            style={{ background: 'var(--success)' }}
+                          >
+                            Lowest price
+                          </span>
+                        )}
+                        <div className="absolute right-2 top-2">
                           <PlatformBadge platform={l.platform} />
                         </div>
-                        {l.lowest && (
-                          <div
-                            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
-                            style={{ background: 'var(--accent)' }}
-                          >
-                            Lowest
-                          </div>
-                        )}
                       </div>
                       <div className="p-3">
                         <p
@@ -194,7 +194,7 @@ export default function SearchMock() {
                     className="mt-1 text-xs"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    Free forever · 10 searches a month, no card required
+                    Free · 10 searches a month, no card required
                   </p>
                   <Link
                     href="/login?tab=signup"
