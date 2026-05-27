@@ -20,7 +20,7 @@ export default function SearchHistoryPage() {
 
   function rerun(item: SearchHistoryItem) {
     sessionStorage.setItem(PENDING_SEARCH_KEY, JSON.stringify(item));
-    router.push('/');
+    router.push('/search');
   }
 
   return (
@@ -33,7 +33,7 @@ export default function SearchHistoryPage() {
         }}
       >
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center">
+          <Link href="/search" className="flex items-center">
             <span
               style={{
                 fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif",

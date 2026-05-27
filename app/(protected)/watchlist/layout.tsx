@@ -12,7 +12,7 @@ export default function WatchlistLayout({ children }: { children: React.ReactNod
         }}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center">
+          <Link href="/search" className="flex items-center">
             <span
               style={{
                 fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif",

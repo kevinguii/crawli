@@ -205,3 +205,35 @@ body {
 .menu-item:hover {
   background: var(--surface-hover);
 }
+
+/* ---------- Landing page ---------- */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee {
+  animation: marquee-scroll 22s linear infinite;
+}
+
+.bento-card {
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+.bento-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.25);
+}
+
+.mock-frame {
+  perspective: 1400px;
+}
+@media (min-width: 768px) {
+  .mock-frame > div {
+    transform: rotateX(2deg);
+    transform-origin: center top;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}

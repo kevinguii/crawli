@@ -48,7 +48,7 @@ function LoginContent() {
         setError(error.message);
         return;
       }
-      router.push('/');
+      router.push('/search');
       router.refresh();
     } else {
       const { data, error } = await supabase.auth.signUp({

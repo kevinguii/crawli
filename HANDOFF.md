@@ -1,8 +1,169 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-26 (billing UX polish + plan switching)
+**Last updated:** 2026-05-26 (landing polish round 3 — curated search chips)
 
-**Latest change (2026-05-26 — billing UX polish):**
+**Latest change (2026-05-26 — landing polish round 3):**
+
+- `HowItWorks` steps were left-aligned at `sm:` breakpoint and looked
+  off-center under the centered headline. Switched to `flex flex-col
+  items-center text-center` so all three columns hang from the same
+  vertical axis.
+- **Curated popular-search chips** under the hero search bar (6 chips, 3
+  hype + 3 mainstream: Stussy hoodie, Margiela Tabi, FOG Essentials, Nike
+  basketball shorts, Levi's 501, Patagonia fleece). New data file
+  [app/components/landing/mockSearches.ts](app/components/landing/mockSearches.ts)
+  holds 6 curated MockSearch records, each with 6 realistic listings
+  (platform, title, price, size, lowest flag). Clicking a chip OR
+  submitting any query dispatches `MOCK_SEARCH_EVENT` with
+  `{ query, fromChip }`. `SearchMock` calls `findMockMatch(query)` —
+  token-overlap match against curated queries — and either swaps in the
+  curated dataset (header reads "Results for") or falls back to
+  default sample data with the user's query echoed (header reads
+  "Sample results · sign up to search live"). **Still zero backend
+  calls** — chips and free-form input both work entirely off the bundled
+  JSON; no Firecrawl, no sidecar, no Supabase.
+- Hero placeholder updated to advertise the chip vocabulary:
+  "Try: Stussy hoodie, Margiela Tabi, Nike basketball shorts…"
+
+**Previous change (2026-05-26 — landing page polish round 2):**
+
+Round-2 polish on the public landing based on first-look feedback. Layout
+unchanged at the top level; mocks and copy refined.
+
+- **Hero**: removed the duplicate "Start searching free" CTA. Search bar is
+  now interactive (`Hero.tsx` is a client component with `useState` query).
+  On submit it dispatches a `crawli-mock-search` `CustomEvent`, then
+  smooth-scrolls to `#search-preview`. Cost: zero — there is no fetch, the
+  query just echoes into the gated mock below.
+- **`SearchMock`** (replaces `MockResults`): listens for the custom event and
+  echoes the user's query in the results header. Shows 6 fake listing cards
+  in a 3-col grid — top 2 sharp, bottom 4 blurred (`filter: blur(6px)`,
+  `pointer-events: none`) with a floating "Sign up to see all results"
+  card overlaying the blurred area. URL bar reads `thecrawli.com/search?q=…`
+  (previously had a wrong `crawli.app` placeholder).
+- **`AlertsMock`** (new): browser-chrome wrapper at `thecrawli.com/alerts`
+  showing 3 saved-search rows with unread-count badges, last-checked time,
+  and a "+ New alert" footer. Plus tier copy referenced ("Pro: 3 · Max: 10").
+- **`SavesMock`** (new): browser-chrome wrapper at `thecrawli.com/saves`
+  showing folder tabs (All / Outerwear / Footwear / Bags) and a 4-card grid
+  with solid red hearts.
+- **`MockFrame`** (new): shared browser-chrome wrapper used by all three
+  mock sections (3 traffic-light dots + URL bar).
+- **`BentoFeatures`**: added a **Search alerts** card to the top row
+  alongside Multi-platform search. Removed the Dark/Light mode card
+  (redundant — theme follows system by default now). 5 cards total in
+  a 3+3 / 2+2+2 grid.
+- **`AboutSection`** (new): short "Why Crawli" mission paragraph plus a
+  stat strip (8 platforms · 1 search · ~7s to best price) in a small
+  bordered card. Sits between SavesMock and CTASection.
+- **`CTASection`** tightened: dropped the heavy gradient backdrop, removed
+  the "See pricing" secondary button, shrunk padding. Now a centered
+  3-line block with a single primary CTA.
+- **`LandingNav`**: removed `ThemeSelector` (theme follows system by
+  default); changed "Sign in" → "Log in" to match the login page tab
+  label.
+- **`Footer`**: removed `ThemeSelector` and the Pricing link (both
+  surfaced elsewhere). Now just wordmark + © + Privacy + Terms.
+- **Root layout** (`app/layout.tsx`): added `data-scroll-behavior="smooth"`
+  on `<html>` to silence the Next 16 warning about smooth-scroll during
+  route transitions.
+
+**Final landing section order:**
+
+`LandingNav → Hero → SearchMock → PlatformLogos → HowItWorks →
+BentoFeatures → AlertsMock → SavesMock → AboutSection → CTASection → Footer`
+
+**Cost guarantee:** The interactive hero search runs zero backend calls.
+Submit only dispatches a `CustomEvent` and smooth-scrolls. No Firecrawl
+credits, no sidecar hits, no Supabase queries.
+
+**Verified:** `npx tsc --noEmit` clean. Curl of `/` returns 200 with all
+new copy strings present (Search alerts, Save a search, Heart what you
+love, Why Crawli, Create free account, thecrawli.com, Log in, "Sign up to
+see all results").
+
+**Still to eyeball in browser:**
+- Hero search → submit → smooth scroll + query echoes in SearchMock header
+- Blur + gate overlay looks polished, not muddy
+- AlertsMock and SavesMock visually match SearchMock's frame style
+- Bento grid still balances at the 6→2 column flip
+
+---
+
+**Previous change (2026-05-26 — public landing page at `/`):**
+
+Shipped a public marketing landing page. `/` used to send unauthenticated
+visitors straight to `/login` (the search dashboard at `app/(protected)/page.tsx`
+resolved to `/` via the route group). New routing:
+
+- `/` — **public landing page**. Server component at `app/page.tsx` calls
+  `supabase.auth.getUser()`; if signed in → `redirect('/search')`, else renders
+  the landing.
+- `/search` — search dashboard (moved from `app/(protected)/page.tsx` →
+  `app/(protected)/search/page.tsx`). Still inside the protected route group,
+  so the existing auth gate at `app/(protected)/layout.tsx` covers it
+  unchanged.
+- Post-login redirect (`app/login/page.tsx:51`) and password-reset success
+  (`app/auth/reset-password/page.tsx:47`) now go to `/search`, not `/`.
+- All in-app wordmark `Link href="/"` in protected pages (alerts, watchlist,
+  saves, settings, profile, search-history layouts) repointed to `/search`.
+  Wordmarks on public pages (`pricing`, `AuthCard` on login) still link to
+  `/` (the landing).
+- Recent-searches "rerun" actions also push to `/search` instead of `/`.
+
+**New components** under `app/components/landing/` (isolated, no impact on
+existing app components):
+
+- `LandingNav.tsx` — sticky, blur-on-scroll, has Pricing · ThemeSelector ·
+  Sign in · Get started CTA. Reuses `ThemeSelector` named export from
+  `app/components/ThemeToggle.tsx`.
+- `Hero.tsx` — gradient H1, decorative non-functional search bar mock.
+- `PlatformLogos.tsx` — static row on desktop, CSS marquee on mobile.
+  Reuses `PlatformBadge` and the 8 platform keys from `PLATFORM_NAMES`
+  in `lib/types.ts`.
+- `HowItWorks.tsx` — 3-step grid, anchor id `#how-it-works`.
+- `BentoFeatures.tsx` — 5-card bento grid (6-col grid, 3+3 / 2+2+2).
+- `MockResults.tsx` — browser-chrome wrapper around 4 fake listing cards
+  built fresh (does **not** import the real `ListingCard` — that requires a
+  full `Listing` type and DB-backed save/watch buttons).
+- `CTASection.tsx` — bottom signup band with brand-gradient overlay.
+- `Footer.tsx` — minimal: wordmark · © · pricing/privacy/terms · theme.
+- `Wordmark.tsx` — shared gradient wordmark, size-configurable.
+- `useInView.ts` — tiny IntersectionObserver hook (currently unused but
+  exposed for future scroll-fade animations).
+
+**`globals.css` additions:**
+
+- `@keyframes marquee-scroll` + `.marquee` utility
+- `.bento-card:hover` lift + shadow
+- `.mock-frame` perspective wrapper (desktop only)
+- `html { scroll-behavior: smooth }` for the "See how it works" anchor
+
+**Decisions (locked):**
+
+- Logged-in users hitting `/` are auto-redirected to `/search` (server-side).
+- No testimonials / reviews section — placeholder quotes would be dishonest.
+- Pricing link surfaced in both nav and footer.
+- No new runtime dependencies (no framer-motion, no shadcn, no Aceternity).
+
+**Verified:**
+
+- `npx tsc --noEmit` clean.
+- `npm run build` succeeds; `/` shows as `ƒ /` (dynamic, server-rendered).
+- `curl http://localhost:3000/` → 200, all section copy present.
+- `curl http://localhost:3000/search` (unauth) → 307 to `/login`.
+- `curl http://localhost:3000/login?tab=signup` → 200, signup tab loads.
+
+**Not yet verified (requires manual browser):**
+
+- Dark↔light toggle on landing across all sections.
+- Mobile breakpoint at 375px (no horizontal scroll, marquee works).
+- "See how it works" smooth-scroll behavior.
+- End-to-end auth flow: signup → email confirm → land on `/search`.
+
+---
+
+**Previous change (2026-05-26 — billing UX polish):**
 
 Polished billing UI after three-tier launch. All plan switching tested and working in prod.
 
@@ -2239,7 +2400,7 @@ POST /api/search ─────────────────────
 - Server-side auth check in `app/(protected)/layout.tsx`: calls `auth.getUser()` and redirects to `/login` if no session
 - Client-side hooks: `useAuth()` returns `{ user, loading }` for conditional rendering; `useProtectedRoute()` triggers a redirect if not authenticated
 - Sign-up flow: email → confirm email → auto-creates `public.profiles` row via Supabase trigger
-- Protected search page: moved from `/app/page.tsx` to `/app/(protected)/page.tsx`; users who sign out are immediately redirected to `/login` if they try to access it
+- Protected search page: lives at `/app/(protected)/search/page.tsx` (resolves to `/search`); auth gate at `/app/(protected)/layout.tsx` redirects to `/login` if unauthenticated. (`/` is now the public landing page at `/app/page.tsx` which server-redirects authenticated users to `/search`.)
 
 **Key change vs. the original Firecrawl-only design:** the **scrape** step used to cost 9–10 Firecrawl credits per page. It now goes through a local Playwright + LLM pipeline, costing ~$0.0005–$0.002 per page in OpenAI tokens. Firecrawl is retained only for the **search** step (2 credits per platform per query), where it's still the cheapest option.
 
@@ -2272,9 +2433,11 @@ fashion-crawler-crawl4ai/
 │   │   ├── profile/route.ts          ← PATCH display_name / bio / avatar_url
 │   │   ├── profile/stats/route.ts    ← GET aggregate stats for dashboard (searches this month, saves count, watchlist count, top platforms)
 │   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
+│   ├── page.tsx                      ← public landing page (server: redirects to /search if authenticated)
+│   ├── components/landing/           ← landing-only components (LandingNav, Hero, PlatformLogos, HowItWorks, BentoFeatures, MockResults, CTASection, Footer, Wordmark, useInView)
 │   ├── (protected)/                  ← auth-protected route group
 │   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> → <WatchlistProvider> + <Toaster>
-│   │   ├── page.tsx                  ← search page (requires auth)
+│   │   ├── search/page.tsx           ← search dashboard at /search (moved here 2026-05-26)
 │   │   ├── profile/page.tsx          ← profile page (server: fetches profiles row → renders ProfileHeader + ProfileDashboard; ?tab=saves→/saves, ?tab=watchlist→/watchlist)
 │   │   ├── saves/
 │   │   │   ├── layout.tsx            ← nav + page header for /saves

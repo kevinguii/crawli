@@ -65,7 +65,7 @@ function RecentSearches() {
 
   function rerun(item: SearchHistoryItem) {
     sessionStorage.setItem(PREFILL_SEARCH_KEY, JSON.stringify(item));
-    router.push('/');
+    router.push('/search');
   }
 
   return (
