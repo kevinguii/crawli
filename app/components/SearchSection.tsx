@@ -138,7 +138,6 @@ export default function SearchSection() {
             data={results}
             minPrice={searchFilters?.minPrice}
             maxPrice={searchFilters?.maxPrice}
-            nativeResultsCap={nativeResultsCap}
           />
         </>
       )}

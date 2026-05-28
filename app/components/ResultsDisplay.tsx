@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { SearchResponse, PLATFORM_NAMES, Listing, isNativePlatform } from '@/lib/types';
+import { SearchResponse, PLATFORM_NAMES, Listing } from '@/lib/types';
 import ListingCard from './ListingCard';
 import PriceSummary, { pickPriceSources } from './PriceSummary';
 import { useSaves } from './SavesProvider';
@@ -12,12 +12,10 @@ interface Props {
   data: SearchResponse;
   minPrice?: number | null;
   maxPrice?: number | null;
-  nativeResultsCap?: number | null;
 }
 
-const NON_NATIVE_CAP = 10; // hardcoded in searchWorker.ts for the firecrawl branch
 
-export default function ResultsDisplay({ data, minPrice, maxPrice, nativeResultsCap }: Props) {
+export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   const { results, priceRange: dataPriceRange, averagePrice } = data;
 
   const platformKeys = Object.keys(results);
@@ -87,11 +85,6 @@ export default function ResultsDisplay({ data, minPrice, maxPrice, nativeResults
     if (tab === 'all') return `All (${totalCount})`;
     const count = results[tab]?.count ?? 0;
     const name = PLATFORM_NAMES[tab] ?? tab;
-    const native = isNativePlatform(tab);
-    const cap = native ? nativeResultsCap : NON_NATIVE_CAP;
-    // Only show the cap chip when we know it (cap !== null) and the cap is
-    // meaningful (skip for native platforms when cap is unknown).
-    if (cap != null) return `${name} (${count} / ${cap})`;
     return `${name} (${count})`;
   };
 

@@ -46,7 +46,9 @@ export default function SearchProgress({ platforms, statuses, errors, counts, na
     >
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          {settled === total ? 'Search complete' : 'Searching platforms…'}
+          {settled === total
+            ? 'Search complete'
+            : `Searching platforms… (up to ${nativeResultsCap ?? 10} per native platform)`}
         </p>
         <div className="flex items-center gap-3">
           {isSearching && onCancel && (
@@ -147,9 +149,7 @@ function PlatformRow({
   let label: string;
   if (status === 'done') {
     if (typeof count === 'number') {
-      // "Found X / Y" frames Y as the ceiling, not the target — so a precise
-      // query that legitimately has fewer results doesn't read as a shortfall.
-      label = typeof cap === 'number' ? `Found ${count} / ${cap}` : `Found ${count}`;
+      label = `Found ${count} result${count !== 1 ? 's' : ''}`;
     } else {
       label = 'Done';
     }
