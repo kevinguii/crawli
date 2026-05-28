@@ -93,7 +93,7 @@ export default function AuthButton() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setMenuOpen(false);
-    router.refresh();
+    router.push('/');
   }
 
   const unreadAlerts = useTotalUnreadAlerts(user?.id);
