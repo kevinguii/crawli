@@ -568,6 +568,19 @@ export default function SettingsPage() {
           </Row>
         </Section>
 
+        {/* ── Support ── */}
+        <Section title="Support" description="Questions, feedback, or bugs? We'd love to hear from you.">
+          <Row label="Contact us" sublabel="Send feedback or get help">
+            <Link
+              href="/contact"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+            >
+              Get in touch
+            </Link>
+          </Row>
+        </Section>
+
         {/* ── Notifications ── */}
         <Section title="Notifications">
           <div

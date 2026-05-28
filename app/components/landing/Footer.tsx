@@ -30,6 +30,13 @@ export default function Footer() {
           >
             Terms
           </Link>
+          <Link
+            href="/contact"
+            className="transition-opacity hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Contact
+          </Link>
         </nav>
       </div>
     </footer>
