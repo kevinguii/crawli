@@ -159,13 +159,14 @@ The *value bump* is what needs verification, and it's gated on 2b:
 
 ### Phase 3 — Migrate Mercari & eBay to search-page extraction
 
-**Current `SEARCH_PAGE_PLATFORMS`:** `{thredup, realreal, grailed, mercari}` (Mercari added 2026-05-27 — see HANDOFF latest-change). Source in both [crawl4ai-service/search_page_extractors.py](../crawl4ai-service/search_page_extractors.py) and [lib/scraper.ts:12](../lib/scraper.ts#L12).
+**Current `SEARCH_PAGE_PLATFORMS`:** `{thredup, realreal, grailed, mercari, depop}` (Mercari + Depop added 2026-05-27 — see HANDOFF latest-change blocks). Source in both [crawl4ai-service/search_page_extractors.py](../crawl4ai-service/search_page_extractors.py) and [lib/scraper.ts:12](../lib/scraper.ts#L12).
 
 **Priority order by ROI** (per user's instruction — start with most expensive on URL discovery):
 
-1. ~~**Mercari**~~ — **DONE 2026-05-27.** 51 listings per search (vs ~13 on old firecrawl path), 1 FC call eliminated, ~70–90% latency drop estimated. See HANDOFF top latest-change block for survey notes + gotchas.
-2. **eBay** (next) — `firecrawl-only` ([lib/firecrawl.ts:79](../lib/firecrawl.ts#L79)). Akamai-hostile so the search page itself may be guarded. Probe before committing — start with `https://www.ebay.com/sch/i.html?_nkw=<query>` (or whatever the canonical search URL is) and verify the render comes back clean.
-3. Depop, Poshmark, Vinted, Vestiaire — lower priority (already Brave-cheap on URL discovery; the win is latency only).
+1. ~~**Mercari**~~ — **DONE 2026-05-27.** 51 listings per search (vs ~13 on old firecrawl path), 1 FC call eliminated, ~70–90% latency drop estimated.
+2. ~~**Depop**~~ — **DONE 2026-05-27.** 24 listings per search (Depop page natural max; vs ~10 post-filter on the hybrid path), ~70% latency drop estimated. Per-card has no title text — synthesised from URL slug.
+3. **eBay** (next) — `firecrawl-only` ([lib/firecrawl.ts:79](../lib/firecrawl.ts#L79)). Akamai-hostile so the search page itself may be guarded. Probe before committing — start with `https://www.ebay.com/sch/i.html?_nkw=<query>` (or whatever the canonical search URL is) and verify the render comes back clean.
+4. Poshmark, Vinted, Vestiaire — lower priority (already Brave-cheap on URL discovery; the win is latency only).
 
 **For each platform, follow the C1/Grailed precedent (HANDOFF 2026-05-22 §M):**
 1. **Survey first.** Hit the platform's search URL in a real browser. Open DevTools → check whether listing data is in:

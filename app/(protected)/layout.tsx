@@ -14,7 +14,7 @@ export default async function ProtectedLayout({
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
-    redirect('/login');
+    redirect('/login?error=session_expired');
   }
 
   return (

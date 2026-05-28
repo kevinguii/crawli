@@ -22,6 +22,23 @@ export const PLATFORM_NAMES: Record<string, string> = {
   stockx: 'StockX',
 };
 
+// Platforms whose listings we extract directly from the platform's own search
+// page (one render → full grid) rather than via Brave/Firecrawl URL discovery
+// + per-listing fan-out. These scale with the user's tier `nativeResultsCap`
+// (10 / 30 / 60 for free / pro / max); non-native platforms are always capped
+// at 10 per search regardless of tier.
+//
+// MUST stay in sync with SEARCH_PAGE_PLATFORMS in:
+//   - lib/scraper.ts (re-exports from here)
+//   - crawl4ai-service/search_page_extractors.py (Python side)
+export const NATIVE_PLATFORMS = new Set<string>([
+  'grailed', 'depop', 'mercari', 'thredup', 'realreal',
+]);
+
+export function isNativePlatform(platform: string): boolean {
+  return NATIVE_PLATFORMS.has(platform);
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -121,7 +138,7 @@ export interface SearchRequest {
 export type PlatformKey = keyof typeof PLATFORM_DOMAINS;
 
 export type SearchStreamEvent =
-  | { type: 'start'; query: string; platforms: string[] }
+  | { type: 'start'; query: string; platforms: string[]; nativeResultsCap: number }
   | {
       type: 'platform_done';
       platform: string;

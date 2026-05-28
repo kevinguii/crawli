@@ -1,10 +1,60 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-27 (Billing toggle styling fix)
+**Last updated:** 2026-05-27 (Depop migrated to native search-page extraction; Mercari done earlier same day)
 
-**Latest change (2026-05-27 — Fixed billing yearly/monthly toggle button styling):**
+**Latest change (2026-05-27 — Depop native search-page extractor; Phase 3 second migration done):**
 
-The `billed yearly` toggle on `/pricing` had inconsistent border-radius styling between localhost and production due to reliance on Tailwind's `rounded-lg` class, which wasn't being applied consistently between dev and prod builds. 
+Depop is now a `SEARCH_PAGE_PLATFORMS` member alongside Grailed, ThredUp, RealReal, Mercari. The old `hybrid` (Brave-first → Firecrawl-fallback) URL-discovery + per-listing `/scrape` fan-out is replaced by a single `/scrape-search` render. Per the user's accuracy-first framing, this is primarily a **coverage win** — the old path was capped by `site:depop.com` index sparsity (Phase 1 baseline: 20 raw → 10 post-filter on a typical query), the new path returns 24 cards (Depop's natural page limit) which is then tier-capped at 10/30/60 by `nativeResultsCap` instead.
+
+**Survey** ([crawl4ai-service/scripts/depop_survey.py](crawl4ai-service/scripts/depop_survey.py)): rendered `https://www.depop.com/search/?q=<q>` and inspected. Findings:
+- **No `__NEXT_DATA__`** — Depop's site isn't Next.js (unlike Mercari/Vinted/Grailed). The search page is a plain SSR + client-hydrated DOM.
+- **No JSON-LD** on the search page.
+- **No `data-testid` attributes anywhere.** Card identification relies entirely on CSS-Modules class-name prefixes (`styles_productCardRoot__*`, `styles_brandName__*`, `styles_sizeAttributeText__*`, `styles_price__*`).
+- 24 listing cards per query (Depop's natural page limit — there's a "load more" interaction but a single render gives 24).
+- **Cards have no title field.** Brand + size + price are the only rendered values; img alt and anchor aria-label are both empty. We synthesise a title from the URL slug — see `_depop_title_from_slug` in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py).
+- **Discount detection via stable `aria-description` attribute** (not class names): `<p aria-description="Discounted price">` is the current/sale price, `<p aria-description="Full price">` is the strikethrough original, `<p aria-description="Price">` is used when there's no sale. Extractor prefers Discounted → Price, ignores Full.
+- No sold badges observed on 24 cards — Depop search excludes sold by default. Set `isSold=False`.
+
+**Files touched:**
+
+- [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py) — added `depop_search_url(query)`, `_depop_title_from_slug(href)`, `extract_depop_grid(html, limit)`, dispatch entries.
+- [crawl4ai-service/main.py](crawl4ai-service/main.py) `_build_run_cfg` — Depop case for `search_page=True`: `wait_for="css:a[href*='/products/']"`, `page_timeout=60_000`. Keeps default `delay_before_return_html=5.0`.
+- [lib/scraper.ts:12](lib/scraper.ts#L12) — `SEARCH_PAGE_PLATFORMS` gains `'depop'`.
+- [crawl4ai-service/scripts/depop_survey.py](crawl4ai-service/scripts/depop_survey.py) — new one-off probe.
+
+**Deliberately left in place** (Grailed precedent): `PLATFORM_STRATEGY['depop'] = 'hybrid'` in [lib/firecrawl.ts](lib/firecrawl.ts). The route checks `SEARCH_PAGE_PLATFORMS` first; this entry only kicks in if someone removes depop from that set.
+
+**Verified live (2026-05-27, sidecar locally):**
+
+| Test | Result |
+|---|---|
+| `./venv/bin/python scripts/depop_survey.py "fear of god essentials hoodie"` | HTTP 200, 504KB HTML, 24 productCardRoot cards, ~8.9s |
+| Dry-run `extract_depop_grid()` against dumped HTML | 24/24 extracted, 0 missing url/title/price/size/imageUrl, 8 discounted cards correctly resolved to sale price (not strikethrough) |
+| `curl /scrape-search platform=depop query="fear of god essentials hoodie"` | HTTP 200, **24 listings, 9.5s end-to-end**, prices $11.20–$40.60 median $21.70, 0 missing fields |
+| `npx tsc --noEmit` | Clean |
+
+**Wins vs old `hybrid` Depop path:**
+
+- **Result count: ~10 → 24** post-filter for free tier; on Pro/Max with `nativeResultsCap=30/60` the user still gets 24 (Depop's page natural max), versus 10 hardcap on the old firecrawl branch.
+- **Cost saving small** (Depop usually hit Brave first; FC fallback only for sparse queries). The win is coverage + latency.
+- **Up to 10 per-listing `/scrape` calls eliminated per Depop search** — each was ~10s + possible LLM fallback. Replaced by 1 search-page render. Estimated ~70% per-search latency drop for Depop (matches Mercari/Grailed precedent).
+- **No LLM fallback path on the search-page branch** — extractor reads the DOM directly; Tier 1 hit rate goes to 100% on the Depop grid.
+
+**Gotchas to remember:**
+
+- **Depop's CSS-Modules class hash suffixes change every deploy.** Extractor uses prefix-match (`[class*='styles_productCardRoot']`, etc.). If Depop renames the *root* class (not the suffix), the selector breaks silently — `extract_depop_grid` logs `no productCardRoot cards found` and returns empty.
+- **Use `aria-description` for price disambiguation, NOT class names.** `styles_price__*` and `styles_discountedFullPrice__*` both have hash suffixes; `aria-description="Discounted price"|"Full price"|"Price"` is the stable contract.
+- **Title is URL-derived.** Slug shape is `/products/<seller>-<descriptor>-<3-6charhash>/`. `_depop_title_from_slug` drops the first hyphen-token (seller) and the trailing hash. If a seller's username contains a hyphen (haven't seen one in the wild yet), the leading word of the title gets eaten — non-fatal, brand text still carries the canonical brand.
+- **Depop is 403-sensitive** (HANDOFF §7 F per-domain pacing config). Per-domain pacing is currently 400ms; one render per search is below that threshold so we're fine. If Depop starts 403'ing the search URL specifically, the pacing bucket may need to be tightened separately.
+- **No native title text on cards.** Don't waste time looking for one — they really aren't there. Future change: if Depop ships a title element, prefer it over the URL-derived one.
+
+**Phase 3 next:** eBay migration (Akamai risk — eBay's search page may have an active challenge unlike Depop/Mercari's passive bot-scoring).
+
+---
+
+**Previous change (2026-05-27 — Fixed billing yearly/monthly toggle button styling):**
+
+The `billed yearly` toggle on `/pricing` had inconsistent border-radius styling between localhost and production due to reliance on Tailwind's `rounded-lg` class, which wasn't being applied consistently between dev and prod builds.
 
 **Fix:** Moved `border-radius` from the Tailwind class to an explicit inline style (`borderRadius: '0.5rem'`) on the button element in [app/pricing/PricingCards.tsx:128-130](app/pricing/PricingCards.tsx#L128-L130). This ensures the toggle has rounded corners consistently in both environments. The inner span's border-radius (already using inline style) remains at `5px` for the white slider dot.
 
@@ -1055,7 +1105,7 @@ Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid
 | vinted | 126% (Brave wins) | BRAVE_ONLY |
 | stockx | 102% (tie) | BRAVE_ONLY |
 | poshmark | 71% but 100% reliability ≥5 listings | BRAVE_ONLY |
-| depop | 83% (Brave usually wins) | HYBRID (Brave-first, FC fallback if <N listings) |
+| depop | 83% (Brave path) → 24 / tier-cap (native, 2026-05-27) | SEARCH_PAGE — Brave/FC bypassed; HYBRID kept inert in PLATFORM_STRATEGY |
 | grailed | 61% | HYBRID |
 | vestiaire | 46% | HYBRID |
 | mercari | 38% (firecrawl path) → 51 / tier-cap (native, 2026-05-27) | SEARCH_PAGE — Brave/FC bypassed; FIRECRAWL_ONLY kept inert in PLATFORM_STRATEGY |
@@ -1108,13 +1158,13 @@ Replaces the previous "Firecrawl-only" URL discovery with an **env-driven hybrid
 SEARCH_PROVIDER=hybrid + this platform → which engine runs
 
 vinted, stockx, poshmark   → brave (1 call)
-depop, vestiaire           → brave first; if listings < BRAVE_HYBRID_THRESHOLD → firecrawl fallback
+vestiaire                  → brave first; if listings < BRAVE_HYBRID_THRESHOLD → firecrawl fallback
 ebay                       → firecrawl (1 call, brave skipped)
 
-NOTE: grailed (2026-05-22) and mercari (2026-05-27) bypass this router
-entirely — they're in SEARCH_PAGE_PLATFORMS now, so the route uses
-/scrape-search instead of Brave/Firecrawl URL discovery. The
-PLATFORM_STRATEGY entries are kept as inert fallbacks.
+NOTE: grailed (2026-05-22), mercari (2026-05-27), and depop (2026-05-27)
+bypass this router entirely — they're in SEARCH_PAGE_PLATFORMS now, so the
+route uses /scrape-search instead of Brave/Firecrawl URL discovery. The
+PLATFORM_STRATEGY entries for those three are kept as inert fallbacks.
 ```
 
 **Out-of-scope this PR (worth tracking):** ranged backfill if a query hits 0 listings on a hybrid platform, structured-color extraction, brand-aware query tokenization, Grailed-native search-page extractor. All listed in §7 below.
@@ -2481,7 +2531,7 @@ POST /api/search ─────────────────────
 
 **Two search avenues (mental model — added 2026-05-22):** every platform takes one of two paths from `/api/search`.
 - **Avenue A — search-page native** (zero search credits, zero LLM, one render per query): route checks `SEARCH_PAGE_PLATFORMS` in [lib/scraper.ts](lib/scraper.ts) first. If present → `POST /scrape-search` → sidecar renders the platform's own search URL once → grid extractor in [search_page_extractors.py](crawl4ai-service/search_page_extractors.py) pulls cards from DOM → returns `ScrapedListing[]`. Current members: **thredup, realreal (deferred — PerimeterX), grailed**.
-- **Avenue B — URL discovery + per-listing fan-out**: route falls through to `searchPlatform` in [lib/firecrawl.ts](lib/firecrawl.ts), which routes URL discovery via `PLATFORM_STRATEGY` (BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY — see bake-off table in the hybrid latest-change at the top). Returned URLs fan out to `POST /scrape` (capped at 10 per platform, 2 concurrent). Sidecar runs tier-1 structured extractors → tier-2 LLM fallback. Current members: **vinted, stockx, poshmark, depop, vestiaire, ebay**. (Grailed migrated to Avenue A 2026-05-22; Mercari migrated 2026-05-27.)
+- **Avenue B — URL discovery + per-listing fan-out**: route falls through to `searchPlatform` in [lib/firecrawl.ts](lib/firecrawl.ts), which routes URL discovery via `PLATFORM_STRATEGY` (BRAVE_ONLY / HYBRID / FIRECRAWL_ONLY — see bake-off table in the hybrid latest-change at the top). Returned URLs fan out to `POST /scrape` (capped at 10 per platform, 2 concurrent). Sidecar runs tier-1 structured extractors → tier-2 LLM fallback. Current members: **vinted, stockx, poshmark, vestiaire, ebay**. (Grailed migrated to Avenue A 2026-05-22; Mercari and Depop migrated 2026-05-27.)
 - Per-platform extraction-signal table + Avenue A survey playbook live in [§7 M](#m-search-engine-site-index-sparsity-caps-per-platform-results-especially-grailed--resolved-2026-05-22-grailed).
 
 **Load-management invariants (PR 1 + PR 2 of `1-3-4-sound-like-a-prancy-waterfall`):**
@@ -3018,7 +3068,7 @@ Grailed now uses native search-page extraction via `/scrape-search` (`SEARCH_PAG
 | mercari | B (per-listing) | `__NEXT_DATA__.props.pageProps.serverState['ItemDetail:<id>']` |
 | ebay | B (per-listing) | JSON-LD `Product` |
 
-**Proven Avenue B → Avenue A migrations:** Grailed (2026-05-22), Mercari (2026-05-27). See latest-change blocks at top.
+**Proven Avenue B → Avenue A migrations:** Grailed (2026-05-22), Mercari (2026-05-27), Depop (2026-05-27). See latest-change blocks at top.
 
 **Older migration prose (kept for context):**
 - **ThredUp** moved A on 2026-05-18 (`site:thredup.com` returned 0 URLs — Firecrawl couldn't index the JS-heavy SPA).

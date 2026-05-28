@@ -3,14 +3,18 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { platformColor } from './platformColors';
 import PlatformBadge from './PlatformBadge';
+import { isNativePlatform } from '@/lib/types';
 
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
+
+const NON_NATIVE_CAP = 10;
 
 interface Props {
   platforms: string[];
   statuses: Record<string, CheckpointStatus>;
   errors: Record<string, string>;
   counts?: Record<string, number>;
+  nativeResultsCap?: number | null;
   onCancel?: () => void;
 }
 
@@ -28,7 +32,7 @@ function nextStageDelay() {
   return STAGE_INTERVAL_MIN_MS + Math.random() * (STAGE_INTERVAL_MAX_MS - STAGE_INTERVAL_MIN_MS);
 }
 
-export default function SearchProgress({ platforms, statuses, errors, counts, onCancel }: Props) {
+export default function SearchProgress({ platforms, statuses, errors, counts, nativeResultsCap, onCancel }: Props) {
   const total = platforms.length;
   const settled = platforms.filter(
     (p) => statuses[p] === 'done' || statuses[p] === 'failed'
@@ -62,15 +66,21 @@ export default function SearchProgress({ platforms, statuses, errors, counts, on
       </div>
 
       <div className="space-y-2">
-        {platforms.map((platform) => (
-          <PlatformRow
-            key={platform}
-            platform={platform}
-            status={statuses[platform] ?? 'loading'}
-            error={errors[platform]}
-            count={counts?.[platform]}
-          />
-        ))}
+        {platforms.map((platform) => {
+          const cap = isNativePlatform(platform)
+            ? (nativeResultsCap ?? null)
+            : NON_NATIVE_CAP;
+          return (
+            <PlatformRow
+              key={platform}
+              platform={platform}
+              status={statuses[platform] ?? 'loading'}
+              error={errors[platform]}
+              count={counts?.[platform]}
+              cap={cap}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -81,11 +91,13 @@ function PlatformRow({
   status,
   error,
   count,
+  cap,
 }: {
   platform: string;
   status: CheckpointStatus;
   error?: string;
   count?: number;
+  cap?: number | null;
 }) {
   const [stageIdx, setStageIdx] = useState(0);
   const [open, setOpen] = useState(false);
@@ -134,11 +146,17 @@ function PlatformRow({
 
   let label: string;
   if (status === 'done') {
-    label = typeof count === 'number' ? `Done — ${count} result${count === 1 ? '' : 's'}` : 'Done';
+    if (typeof count === 'number') {
+      // "Found X / Y" frames Y as the ceiling, not the target — so a precise
+      // query that legitimately has fewer results doesn't read as a shortfall.
+      label = typeof cap === 'number' ? `Found ${count} / ${cap}` : `Found ${count}`;
+    } else {
+      label = 'Done';
+    }
   } else if (status === 'failed') {
     label = error ? `Failed — ${error}` : 'Failed';
   } else {
-    label = STAGES[stageIdx];
+    label = typeof cap === 'number' ? `${STAGES[stageIdx]} (up to ${cap})` : STAGES[stageIdx];
   }
 
   const visibleStages = status === 'loading' ? STAGES.slice(0, stageIdx + 1) : STAGES;

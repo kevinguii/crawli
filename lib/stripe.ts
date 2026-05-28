@@ -25,8 +25,8 @@ export interface TierCaps {
 
 export const TIER_CAPS: Record<Tier, TierCaps> = {
   free: { maxSearchesPerPeriod: 10,  maxSavedSearches: 1,  maxTrackedListings: 50,   nativeResultsCap: 10 },
-  pro:  { maxSearchesPerPeriod: 75,  maxSavedSearches: 3,  maxTrackedListings: 200,  nativeResultsCap: 30 },
-  max:  { maxSearchesPerPeriod: 300, maxSavedSearches: 10, maxTrackedListings: 1000, nativeResultsCap: 60 },
+  pro:  { maxSearchesPerPeriod: 75,  maxSavedSearches: 3,  maxTrackedListings: 200,  nativeResultsCap: 40 },
+  max:  { maxSearchesPerPeriod: 300, maxSavedSearches: 10, maxTrackedListings: 1000, nativeResultsCap: 80 },
 };
 
 export function tierFromPriceId(priceId: string | null | undefined): Tier {

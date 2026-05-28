@@ -24,6 +24,7 @@ export default function SearchSection() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [lastQuery, setLastQuery] = useState<{ query: string; platforms: string[] } | null>(null);
   const [showAlertModal, setShowAlertModal] = useState(false);
+  const [nativeResultsCap, setNativeResultsCap] = useState<number | null>(null);
 
   function handleCancel() {
     abortControllerRef.current?.abort();
@@ -47,6 +48,7 @@ export default function SearchSection() {
       setResults(null);
       setError(null);
       setSearchFilters(null);
+      setNativeResultsCap(event.nativeResultsCap);
       const statuses: Record<string, CheckpointStatus> = {};
       for (const p of event.platforms) statuses[p] = 'loading';
       setProgress({ platforms: event.platforms, statuses, errors: {}, counts: {} });
@@ -98,6 +100,7 @@ export default function SearchSection() {
           statuses={progress.statuses}
           errors={progress.errors}
           counts={progress.counts}
+          nativeResultsCap={nativeResultsCap}
           onCancel={handleCancel}
         />
       )}
@@ -131,7 +134,12 @@ export default function SearchSection() {
               Save as alert
             </button>
           </div>
-          <ResultsDisplay data={results} minPrice={searchFilters?.minPrice} maxPrice={searchFilters?.maxPrice} />
+          <ResultsDisplay
+            data={results}
+            minPrice={searchFilters?.minPrice}
+            maxPrice={searchFilters?.maxPrice}
+            nativeResultsCap={nativeResultsCap}
+          />
         </>
       )}
 

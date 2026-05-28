@@ -510,9 +510,166 @@ def extract_mercari_grid(html: str, *, limit: int = 24) -> list[dict]:
     return results
 
 
+# ── Depop ───────────────────────────────────────────────────────────────────
+
+DEPOP_BASE = "https://www.depop.com"
+
+_DEPOP_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+# Depop product slugs end in a short alphanumeric id, e.g. .../<seller>-<words>-2963/
+# We treat that trailing token as the hash and the FIRST token as the seller
+# username (Depop usernames may contain underscores/digits but generally not
+# hyphens — see comment in _depop_title_from_slug).
+_DEPOP_SLUG_TAIL = re.compile(r"-[a-z0-9]{3,6}/?$", re.IGNORECASE)
+
+
+def depop_search_url(query: str) -> str:
+    """Build the Depop onsite search URL.
+
+    Verified 2026-05-27 via probe: `/search/?q=<urlencoded>` returns 200 with
+    the listing grid rendered into the DOM (no __NEXT_DATA__, no JSON-LD —
+    pure DOM cards). 24 cards per page on a typical query.
+    """
+    return f"{DEPOP_BASE}/search/?q={quote(query.strip())}"
+
+
+def _depop_title_from_slug(href: str) -> Optional[str]:
+    """Synthesise a title from a Depop product URL slug.
+
+    Depop search cards carry no title text — only brand + size + price are
+    rendered (verified 2026-05-27: img alt is empty, anchor aria-label is
+    empty, no title <p>). The URL slug shape is:
+
+        /products/<seller>-<descriptor-words>-<3-6charhash>/
+
+    Strategy: strip the trailing 3-6 char alphanumeric hash and the leading
+    seller username token, then dehyphenate. Depop usernames may contain
+    underscores and digits (e.g. `zaydh_156`) but as of 2026-05-27 we have
+    not seen one with a hyphen on a search results page. If a hyphenated
+    username appears, the leading word of the resulting title gets eaten —
+    not ideal but the brand field still carries the canonical brand text.
+
+    Examples:
+        /products/dpantsu-fear-of-god-essentials-black-2963/
+            → "fear of god essentials black"
+        /products/zaydh_156-fear-of-god-essentials-black-a5e3/
+            → "fear of god essentials black"
+    """
+    if not isinstance(href, str) or "/products/" not in href:
+        return None
+    slug = href.split("/products/", 1)[1].rstrip("/")
+    if not slug:
+        return None
+    # Drop trailing hash.
+    slug = _DEPOP_SLUG_TAIL.sub("", slug)
+    parts = slug.split("-")
+    # Drop the seller token (first one).
+    if len(parts) > 1:
+        parts = parts[1:]
+    title = " ".join(parts).strip()
+    return title or None
+
+
+def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Depop `/search/?q=...` results page.
+
+    Source: DOM cards under `div[class*='styles_productCardRoot']`. Depop uses
+    CSS Modules — class names get hash suffixes that change every deploy —
+    so we match on the prefix and use `aria-description` on price elements
+    (stable accessibility attribute) to disambiguate sale prices.
+
+    Verified card structure (2026-05-27, dump in debug_dumps/):
+        div[class*='styles_productCardRoot']
+          a[href*='/products/']                              → URL (relative)
+          img[class*='_mainImage']                           → imageUrl (src)
+          div[class*='styles_productAttributes']
+            p[class*='styles_brandName']                     → brand (e.g. "Fear of God")
+            p[class*='styles_sizeAttributeText']             → size (e.g. "S", "XL")
+            p[aria-description='Price']                      → current price (no sale)
+            p[aria-description='Discounted price']           → current price (sale)
+            p[aria-description='Full price']                 → original price (strikethrough; ignore)
+
+    Title: Depop search cards genuinely have no title field — img alt is
+    empty, anchor aria-label is empty, no title <p>. We synthesise from the
+    URL slug (see _depop_title_from_slug). The brand text is also captured
+    separately for callers that need it.
+
+    Sold: not observed on the search-results page (Depop search default
+    excludes sold items, verified across 24 cards). Set isSold=False.
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    cards = soup.select("div[class*='styles_productCardRoot']")
+    if not cards:
+        log.warning("[depop-grid] no productCardRoot cards found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    for card in cards:
+        a = card.find("a", href=True)
+        if not a:
+            continue
+        href = a.get("href")
+        if not isinstance(href, str) or "/products/" not in href:
+            continue
+        url = urljoin(DEPOP_BASE, href)
+
+        # Price — prefer Discounted (current) over Price (no-sale); skip Full price.
+        price_el = (
+            card.select_one("p[aria-description='Discounted price']")
+            or card.select_one("p[aria-description='Price']")
+        )
+        price: Optional[float] = None
+        if price_el:
+            m = _DEPOP_PRICE_RE.search(price_el.get_text(strip=True))
+            if m:
+                try:
+                    price = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    price = None
+
+        brand_el = card.select_one("p[class*='styles_brandName']")
+        brand = brand_el.get_text(strip=True) if brand_el else None
+
+        size_el = card.select_one("p[class*='styles_sizeAttributeText']")
+        size = size_el.get_text(strip=True) if size_el else None
+
+        img_el = card.select_one("img[class*='_mainImage']") or card.find("img")
+        image = img_el.get("src") if img_el else None
+        if isinstance(image, str) and image.startswith("data:"):
+            image = None
+
+        title = _depop_title_from_slug(href)
+        # Prepend brand if we have one and it's not already in the title.
+        if brand and title and brand.lower() not in title.lower():
+            title = f"{brand} {title}"
+        elif brand and not title:
+            title = brand
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",  # depop.com is multi-region; US site is USD. Depop ships USD
+                                 # when the geo-detected region is US — same assumption the
+                                 # existing per-listing extractor makes.
+            "isSold": False,
+            "condition": None,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[depop-grid] extracted %d listings (out of %d cards)", len(results), len(cards))
+    return results
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────────
 
-SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed", "mercari"}
+SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed", "mercari", "depop"}
 
 
 def search_url_for(platform: str, query: str) -> Optional[str]:
@@ -524,6 +681,8 @@ def search_url_for(platform: str, query: str) -> Optional[str]:
         return grailed_search_url(query)
     if platform == "mercari":
         return mercari_search_url(query)
+    if platform == "depop":
+        return depop_search_url(query)
     return None
 
 
@@ -536,4 +695,6 @@ def extract_search_grid(platform: str, html: str, *, limit: int = 24) -> list[di
         return extract_grailed_grid(html, limit=limit)
     if platform == "mercari":
         return extract_mercari_grid(html, limit=limit)
+    if platform == "depop":
+        return extract_depop_grid(html, limit=limit)
     return []

@@ -67,7 +67,9 @@ export async function GET() {
     searches: profile.max_searches_per_period ?? defaults.maxSearchesPerPeriod,
     alerts: profile.max_saved_searches ?? defaults.maxSavedSearches,
     tracked: profile.max_tracked_listings ?? defaults.maxTrackedListings,
-    nativeResults: profile.native_results_cap ?? defaults.nativeResultsCap,
+    // Native results cap is the single source of truth — always derive from
+    // tier so a TIER_CAPS bump auto-applies (no DB backfill needed).
+    nativeResults: defaults.nativeResultsCap,
   };
 
   return NextResponse.json({

@@ -673,6 +673,13 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if search_page and platform == "mercari":
         cfg_kwargs["wait_for"] = "css:[data-testid='ItemContainer']"
         cfg_kwargs["page_timeout"] = 60_000
+    # Depop's /search/?q= page is also client-side rendered: no __NEXT_DATA__,
+    # no JSON-LD, just DOM cards under div[class*='styles_productCardRoot'].
+    # Wait for at least one product anchor before returning so we don't see
+    # an empty grid. Verified 2026-05-27 — 24 cards on a typical query.
+    if search_page and platform == "depop":
+        cfg_kwargs["wait_for"] = "css:a[href*='/products/']"
+        cfg_kwargs["page_timeout"] = 60_000
 
     # On retry, be more patient regardless of platform.
     if attempt > 1:

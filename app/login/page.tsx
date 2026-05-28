@@ -22,6 +22,7 @@ function LoginContent() {
   const callbackFailed = params.get('error') === 'callback_failed';
   const resetExpired = params.get('error') === 'reset_expired';
   const linkExpired = params.get('error') === 'link_expired';
+  const sessionExpired = params.get('error') === 'session_expired';
 
   function switchTab(next: Tab) {
     if (next === tab) return;
@@ -100,6 +101,7 @@ function LoginContent() {
 
   const banner =
     error ??
+    (sessionExpired && 'Your session expired. Please sign in again.') ??
     (linkExpired && 'Your confirmation link expired. Sign up again with the same email to get a new one.') ??
     (callbackFailed && "We couldn't complete sign-in. Please try again.") ??
     (resetExpired && 'Your password-reset link expired. Please request a new one.') ??

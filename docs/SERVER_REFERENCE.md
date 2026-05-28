@@ -64,7 +64,7 @@ STRIPE_WEBHOOK_SECRET=whsec_live_...
 
 ### Step 4 — Rebuild
 ```bash
-cd /opt/crawli && npm run build && systemctl restart crawli-next
+cd /opt/crawli && git pull && npm run build && systemctl restart crawli-next
 ```
 
 ---

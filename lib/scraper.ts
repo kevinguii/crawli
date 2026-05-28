@@ -9,7 +9,9 @@ function isRetryable(status: number): boolean {
 // Platforms whose individual listings aren't discoverable via Firecrawl's
 // `site:` search. For these, the orchestrator calls `scrapeSearchPageViaSidecar`
 // instead of the Firecrawl-then-/scrape flow used for everything else.
-export const SEARCH_PAGE_PLATFORMS = new Set<string>(['thredup', 'realreal', 'grailed', 'mercari']);
+// Re-exported from lib/types.ts (NATIVE_PLATFORMS) so client + server share a
+// single source of truth.
+export { NATIVE_PLATFORMS as SEARCH_PAGE_PLATFORMS } from '@/lib/types';
 
 export async function scrapeSearchPageViaSidecar(
   platform: string,

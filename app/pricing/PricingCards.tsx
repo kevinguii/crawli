@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Tier } from '@/lib/stripe';
+import InfoTooltip from '@/app/components/InfoTooltip';
 
 type Cycle = 'monthly' | 'yearly';
 type PaidTier = Exclude<Tier, 'free'>;
@@ -19,6 +20,22 @@ interface TierConfig {
   highlight?: boolean;
 }
 
+const NATIVE_TOOLTIP = (
+  <>
+    <strong style={{ color: 'var(--text)' }}>Native platforms</strong> support
+    higher result counts on Pro and Max plans. Other platforms return up to 10
+    per search on every plan.
+    <div style={{ marginTop: '6px' }}>
+      <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
+      Grailed, Depop, Mercari, ThredUp, RealReal
+    </div>
+    <div style={{ marginTop: '4px' }}>
+      <span style={{ color: 'var(--text-muted)' }}>Other:</span>{' '}
+      Poshmark, Vinted, eBay, Vestiaire, StockX
+    </div>
+  </>
+);
+
 const PAID_TIERS: TierConfig[] = [
   {
     tier: 'pro',
@@ -31,7 +48,7 @@ const PAID_TIERS: TierConfig[] = [
       '75 searches per month',
       '3 search alerts',
       '200 tracked listings',
-      'Up to 30 results per native platform',
+      'Up to 40 results per native platform',
       'Email + in-app alert notifications',
     ],
     highlight: true,
@@ -47,14 +64,14 @@ const PAID_TIERS: TierConfig[] = [
       '300 searches per month',
       '10 search alerts',
       '1,000 tracked listings',
-      'Up to 60 results per native platform',
+      'Up to 80 results per native platform',
       'Email + in-app alert notifications',
       'Alert health sparkline',
     ],
   },
 ];
 
-const FREE_FEATURES = [
+const FREE_FEATURES: string[] = [
   '10 searches per month',
   '1 search alert',
   '50 tracked listings',
@@ -207,6 +224,17 @@ export function PricingCards({
             />
           );
         })}
+      </div>
+
+      {/* Shared footnote — single tooltip explaining "native platform". */}
+      <div className="mt-6 flex justify-center">
+        <span
+          className="inline-flex items-center gap-1.5 text-xs"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          What's a native platform?
+          <InfoTooltip content={NATIVE_TOOLTIP} label="What is a native platform?" />
+        </span>
       </div>
     </>
   );

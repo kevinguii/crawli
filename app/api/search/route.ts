@@ -7,12 +7,12 @@ import { buildCacheKey, getCachedEvents, setCachedEvents } from '@/lib/searchCac
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { allSettledWithConcurrency, searchAndScrape } from '@/lib/searchWorker';
+import { TIER_CAPS } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
 const FREE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_FREE_CAP = 10;        // fallback if profile column null (pre-migration)
-const DEFAULT_NATIVE_CAP = 10;
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
 
@@ -79,7 +79,10 @@ export async function POST(request: Request) {
   const isPro = status === 'active' || status === 'past_due';
   const tier = (profile.subscription_tier as 'free' | 'pro' | 'max' | null) ?? (isPro ? 'pro' : 'free');
   const cap = profile.max_searches_per_period ?? DEFAULT_FREE_CAP;
-  const nativeCap = profile.native_results_cap ?? DEFAULT_NATIVE_CAP;
+  // Native results cap derives from the user's tier via TIER_CAPS (single
+  // source of truth). The profiles.native_results_cap column is no longer
+  // read here so a TIER_CAPS bump auto-applies without a DB backfill.
+  const nativeCap = TIER_CAPS[tier].nativeResultsCap;
 
   let used = profile.searches_used_this_period ?? 0;
   if (!isPro) {
@@ -138,9 +141,9 @@ export async function POST(request: Request) {
         return;
       }
 
-      write({ type: 'start', query, platforms });
+      write({ type: 'start', query, platforms, nativeResultsCap: nativeCap });
 
-      const recordedEvents: SearchStreamEvent[] = [{ type: 'start', query, platforms }];
+      const recordedEvents: SearchStreamEvent[] = [{ type: 'start', query, platforms, nativeResultsCap: nativeCap }];
       const allListings: Listing[] = [];
 
       // A5: cap how many platforms enter the scrape phase at once. The

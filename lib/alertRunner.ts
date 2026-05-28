@@ -4,6 +4,7 @@ import type { FilterState } from '@/lib/filterOptions';
 import { Resend } from 'resend';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
 import { nextAnchoredRunAt } from '@/lib/alertSchedule';
+import { TIER_CAPS, type Tier } from '@/lib/stripe';
 
 export { ALERT_EXCLUDED_PLATFORMS };
 
@@ -32,12 +33,20 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   );
 
   // Owner's tier dictates the native-platform results cap on this run.
+  // Derived from TIER_CAPS (single source of truth) so a tier-cap bump
+  // auto-applies without a DB backfill — see /api/search route for the same
+  // pattern. subscription_status drives whether a profile-without-tier-set
+  // counts as paid.
   const { data: ownerProfile } = await admin
     .from('profiles')
-    .select('native_results_cap')
+    .select('subscription_status, subscription_tier')
     .eq('id', savedSearch.user_id)
     .single();
-  const nativeCap = ownerProfile?.native_results_cap ?? 10;
+  const isPaid = ownerProfile?.subscription_status === 'active'
+    || ownerProfile?.subscription_status === 'past_due';
+  const tier: Tier = (ownerProfile?.subscription_tier as Tier | null)
+    ?? (isPaid ? 'pro' : 'free');
+  const nativeCap = TIER_CAPS[tier].nativeResultsCap;
 
   let listings: Awaited<ReturnType<typeof runSearchJob>> = [];
   try {
