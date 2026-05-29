@@ -2,7 +2,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Crawli',
+  title: 'Privacy Policy',
+  description: 'How Crawli collects, uses and protects your personal data.',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

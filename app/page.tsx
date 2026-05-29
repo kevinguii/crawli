@@ -9,8 +9,10 @@ import BentoFeatures from '@/app/components/landing/BentoFeatures';
 import AlertsMock from '@/app/components/landing/AlertsMock';
 import SavesMock from '@/app/components/landing/SavesMock';
 import AboutSection from '@/app/components/landing/AboutSection';
+import FAQ from '@/app/components/landing/FAQ';
 import CTASection from '@/app/components/landing/CTASection';
 import Footer from '@/app/components/landing/Footer';
+import StructuredData from '@/app/components/StructuredData';
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -21,6 +23,7 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <StructuredData />
       <LandingNav />
       <Hero />
       <SearchMock />
@@ -30,6 +33,7 @@ export default async function LandingPage() {
       <AlertsMock />
       <SavesMock />
       <AboutSection />
+      <FAQ />
       <CTASection />
       <Footer />
     </main>

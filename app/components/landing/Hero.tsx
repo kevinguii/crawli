@@ -80,7 +80,8 @@ export default function Hero() {
             style={{ color: 'var(--text-muted)' }}
           >
             Crawli searches Grailed, Depop, Poshmark, StockX, and more —
-            simultaneously — so you never overpay again.
+            simultaneously — so you can compare secondhand prices and never
+            overpay again.
           </p>
 
           <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-3xl">

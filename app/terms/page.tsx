@@ -2,7 +2,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — Crawli',
+  title: 'Terms of Service',
+  description: 'The terms of service governing your use of Crawli.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

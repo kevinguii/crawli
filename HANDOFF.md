@@ -1,8 +1,39 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-27 (Depop migrated to native search-page extraction; Mercari done earlier same day)
+**Last updated:** 2026-05-29 (landing-page + site-wide SEO foundation shipped)
 
-**Latest change (2026-05-27 — Depop native search-page extractor; Phase 3 second migration done):**
+**Latest change (2026-05-29 — SEO foundation: metadata, OG image, JSON-LD, sitemap/robots, FAQ, GA4/GSC hooks):**
+
+The landing-page *copy* was already strong, but the site had **zero SEO infrastructure** underneath it. This change adds the full "Stage 0" foundation. All frontend-only — no API/sidecar/scraping changes.
+
+**What was done (all verified locally via `npm run dev`, `tsc` clean):**
+
+- **Root metadata overhaul** ([app/layout.tsx](app/layout.tsx)) — `metadataBase` (off `NEXT_PUBLIC_SITE_URL`, defaults `https://thecrawli.com`), keyword-led `title` + `template: '%s · Crawli'`, 150–160-char description, `keywords`, `alternates.canonical`, full `openGraph` + `twitter` (summary_large_image), `robots` (max-image-preview:large), env-gated `verification.google`, and `themeColor` via a `viewport` export.
+- **Open Graph image** ([app/opengraph-image.tsx](app/opengraph-image.tsx)) — 1200×630 `next/og` `ImageResponse`, brand gradient. **Node runtime (not edge)** — we're self-hosted on Node (Hetzner). Verified `200 image/png`.
+- **`app/robots.ts`** — allows `/`, disallows `/api`, `/auth`, all `(protected)` app routes (`/search`,`/watchlist`,`/saves`,`/alerts`,`/search-history`,`/profile`,`/settings`), `/monitoring`, and `?sort=`/`?view=`/`?q=` param traps. Points at `/sitemap.xml`.
+- **`app/sitemap.ts`** — only public canonical URLs (`/`,`/pricing`,`/contact`,`/privacy`,`/terms`). Built off `NEXT_PUBLIC_SITE_URL`. Easy to extend when programmatic pages land.
+- **`app/manifest.ts`** — PWA manifest (name/short_name, `#111110` theme, icon.svg + favicon).
+- **JSON-LD** ([app/components/StructuredData.tsx](app/components/StructuredData.tsx), rendered in [app/page.tsx](app/page.tsx)) — `@graph` of `Organization`, `WebSite` (+`SearchAction` for sitelinks search box → `/search?q={search_term_string}`), `SoftwareApplication` (free ShoppingApplication), and `FAQPage`. **No `Product` schema** (multi-result page — would be invalid). Server-rendered so AI engines read it without JS.
+- **FAQ section** ([app/components/landing/FAQ.tsx](app/components/landing/FAQ.tsx) + shared [faqData.ts](app/components/landing/faqData.ts)) — server-rendered native `<details>` accordion before the footer. Stat-dense, attributed answers (ThredUp resale figures) for AEO. `faqData.ts` is the single source for both the visible FAQ and the `FAQPage` JSON-LD so they can't drift.
+- **Per-page metadata** — added to [pricing](app/pricing/page.tsx), [terms](app/terms/page.tsx), [privacy](app/privacy/page.tsx) (each with canonical), and [contact](app/contact/layout.tsx) via a new route `layout.tsx` (contact page is a client component, so metadata can't live in it). Bare titles now (template appends `· Crawli`) — fixed the prior double-branding on terms/privacy.
+- **Surgical keyword copy** — wove *secondhand / compare prices / preloved / vintage / price-comparison* into the Hero subhead, PlatformLogos label, and AboutSection body. **Headlines/H1 untouched.**
+- **`next.config.ts`** — added `images: { formats: ['image/avif','image/webp'] }`. Sentry wrapper + `tunnelRoute` untouched.
+- **GA4** — env-gated `next/script` (afterInteractive) in layout, behind `NEXT_PUBLIC_GA_ID`. Vercel Analytics deliberately not used (self-hosted Node).
+
+**New env vars** (documented in [.env.example](.env.example), see §8): `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_GSC_VERIFICATION`. `NEXT_PUBLIC_SITE_URL` already existed.
+
+**Post-deploy TODO (manual, not code):** set `NEXT_PUBLIC_GA_ID` + `NEXT_PUBLIC_GSC_VERIFICATION` in prod `.env`; verify the property in Google Search Console + Bing Webmaster; submit `https://thecrawli.com/sitemap.xml`; validate `/` at Google Rich Results Test; check OG/Twitter card previews.
+
+**Out of scope (next SEO phase):** programmatic anchor landing pages (brand/category/attribute), comparison articles ("Depop vs Vinted"), `ItemList`/`Product`+`Offer` schema on result pages, Google Merchant Center feed. Gated on per-page unique value to avoid Helpful-Content thin-content penalties.
+
+**Gotchas to remember:**
+- The landing page **redirects authenticated users to `/search`** ([app/page.tsx:18](app/page.tsx#L18)) — Googlebot is unauthenticated so it sees the real page, but if you ever test indexing while logged in you'll get redirected.
+- `metadataBase` / robots `host` / sitemap URLs all derive from `NEXT_PUBLIC_SITE_URL`. In dev they read `localhost:3000` (correct); prod **must** have it set to `https://thecrawli.com` (already required for Stripe/auth — see §8).
+- FAQ visible content and `FAQPage` JSON-LD **must stay identical** (Google requirement) — both pull from `faqData.ts`, so only edit that file.
+
+---
+
+**Previous change (2026-05-27 — Depop native search-page extractor; Phase 3 second migration done):**
 
 Depop is now a `SEARCH_PAGE_PLATFORMS` member alongside Grailed, ThredUp, RealReal, Mercari. The old `hybrid` (Brave-first → Firecrawl-fallback) URL-discovery + per-listing `/scrape` fan-out is replaced by a single `/scrape-search` render. Per the user's accuracy-first framing, this is primarily a **coverage win** — the old path was capped by `site:depop.com` index sparsity (Phase 1 baseline: 20 raw → 10 post-filter on a typical query), the new path returns 24 cards (Depop's natural page limit) which is then tier-capped at 10/30/60 by `nativeResultsCap` instead.
 
@@ -2453,6 +2484,8 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - Client-side auth hooks: `useAuth()` and `useProtectedRoute()` for component-level access control
 - Client-side state via React hooks; Zod for API request validation; nanoid for listing IDs
 - `sonner` for toast notifications (mounted in `(protected)/layout.tsx`)
+- **SEO foundation (added 2026-05-29):** root `metadata` + `viewport` in `app/layout.tsx`; per-page metadata on public routes; `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts`, `app/opengraph-image.tsx` (Node runtime); server-rendered JSON-LD via `app/components/StructuredData.tsx` (Organization/WebSite+SearchAction/SoftwareApplication/FAQPage); landing FAQ from `app/components/landing/faqData.ts`. All URLs derive from `NEXT_PUBLIC_SITE_URL`.
+- **Analytics:** GA4 via env-gated `next/script` (`NEXT_PUBLIC_GA_ID`); GSC verification via `NEXT_PUBLIC_GSC_VERIFICATION`. Sentry for errors (unchanged). No Vercel Analytics (self-hosted Node).
 
 **Backend services**
 - Next.js API routes (`/api/search`) orchestrate the pipeline
@@ -2592,8 +2625,14 @@ fashion-crawler-crawl4ai/
 │   │   ├── profile/route.ts          ← PATCH display_name / bio / avatar_url
 │   │   ├── profile/stats/route.ts    ← GET aggregate stats for dashboard (searches this month, saves count, watchlist count, top platforms)
 │   │   └── auth/callback/route.ts    ← Supabase OAuth/password-reset callback handler
-│   ├── page.tsx                      ← public landing page (server: redirects to /search if authenticated)
-│   ├── components/landing/           ← landing-only components (LandingNav, Hero, PlatformLogos, HowItWorks, BentoFeatures, MockResults, CTASection, Footer, Wordmark, useInView)
+│   ├── page.tsx                      ← public landing page (server: redirects to /search if authenticated; renders <StructuredData/> + <FAQ/>)
+│   ├── layout.tsx                    ← root metadata (SEO/OG/twitter/robots/canonical) + viewport themeColor + env-gated GA4
+│   ├── robots.ts                     ← MetadataRoute.Robots (allow /, disallow app/api/param-traps) [SEO 2026-05-29]
+│   ├── sitemap.ts                    ← MetadataRoute.Sitemap (public canonical URLs only) [SEO 2026-05-29]
+│   ├── manifest.ts                   ← PWA manifest [SEO 2026-05-29]
+│   ├── opengraph-image.tsx           ← 1200×630 next/og OG image, Node runtime [SEO 2026-05-29]
+│   ├── components/StructuredData.tsx ← server-rendered JSON-LD @graph (Org/WebSite+SearchAction/SoftwareApplication/FAQPage) [SEO 2026-05-29]
+│   ├── components/landing/           ← landing-only components (LandingNav, Hero, SearchMock, PlatformLogos, HowItWorks, BentoFeatures, AlertsMock, SavesMock, AboutSection, FAQ, CTASection, Footer, Wordmark, useInView); faqData.ts = single source for FAQ + FAQPage JSON-LD
 │   ├── (protected)/                  ← auth-protected route group
 │   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> → <WatchlistProvider> + <Toaster>
 │   │   ├── search/page.tsx           ← search dashboard at /search (moved here 2026-05-26)
@@ -3211,6 +3250,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_PRICE_ID_MONTHLY=price_...              # test-mode and live-mode have different IDs
 STRIPE_PRICE_ID_YEARLY=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...                # from `stripe listen` locally; from Dashboard for prod
+
+# SEO / Analytics (added 2026-05-29) — all optional; absent = feature off
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX                  # GA4 measurement ID; unset = no analytics script
+NEXT_PUBLIC_GSC_VERIFICATION=                   # Google Search Console HTML-tag token; unset = no meta tag (or verify via DNS)
 ```
 
 **Provider rules:**

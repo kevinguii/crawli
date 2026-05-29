@@ -22,7 +22,7 @@ export default function PlatformLogos() {
           className="mb-6 text-center text-xs font-medium uppercase tracking-wider"
           style={{ color: 'var(--text-dim)' }}
         >
-          Search across all the platforms you already use
+          Compare secondhand prices across every resale platform you already use
         </p>
 
         {/* Desktop: static row */}

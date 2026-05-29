@@ -1,10 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { PricingCards } from './PricingCards';
 import type { Tier } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Pricing',
+  description:
+    'Crawli pricing. Start free with no credit card, or upgrade for more monthly searches, daily search alerts and higher result limits across all 8 resale marketplaces.',
+  alternates: { canonical: '/pricing' },
+};
 
 export default async function PricingPage() {
   const supabase = await createClient();

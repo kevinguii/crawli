@@ -19,9 +19,10 @@ export default function AboutSection() {
           style={{ color: 'var(--text-muted)' }}
         >
           Buying secondhand should mean better prices, not more work. Crawli
-          exists because the deal you want is almost always on a platform you
-          forgot to check. One search bar, every marketplace, ranked by price —
-          the tool every resale shopper already wishes they had.
+          exists because the preloved or vintage piece you want is almost always
+          on a platform you forgot to check. One search bar, every resale
+          marketplace, ranked by price — the price-comparison tool every resale
+          shopper already wishes they had.
         </p>
 
         <div
