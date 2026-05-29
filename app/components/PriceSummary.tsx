@@ -31,7 +31,7 @@ export default function PriceSummary({
       <Metric label="Low" value={fmt.format(priceRange.min)} source={lowSource} accent />
       <Metric
         label="Average"
-        value={averagePrice !== null ? fmt.format(averagePrice) : '—'}
+        value={averagePrice !== null ? fmt.format(averagePrice) : '-'}
         source={`${totalCount} listing${totalCount !== 1 ? 's' : ''}`}
       />
       <Metric label="High" value={fmt.format(priceRange.max)} source={highSource} />

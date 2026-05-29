@@ -20,12 +20,12 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "How does Crawli compare resale prices across platforms?",
     answer:
-      "You type what you're looking for once. Crawli searches every supported marketplace at the same time, normalizes sizes and conditions, and shows the low, average and high price across all results — so you can see whether a listing is actually a good deal before you click through to buy.",
+      "You type what you're looking for once. Crawli searches every supported marketplace at the same time, normalizes sizes and conditions, and shows the low, average and high price across all results so you can see whether a listing is actually a good deal before you click through to buy.",
   },
   {
     question: "Which resale marketplaces does Crawli search?",
     answer:
-      "Crawli currently searches eight platforms: Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire Collective — covering streetwear, sneakers, designer, vintage and everyday secondhand fashion.",
+      "Crawli currently searches eight platforms: Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire Collective, covering streetwear, sneakers, designer, vintage and everyday secondhand fashion.",
   },
   {
     question: "Is Crawli free to use?",
@@ -35,11 +35,11 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Is buying secondhand fashion worth it?",
     answer:
-      "Increasingly, yes. The U.S. secondhand apparel market grew about 14% in 2024 — its strongest growth since 2021 — and 58% of U.S. consumers shopped secondhand that year, according to ThredUp's 2025 Resale Report. Buying preloved is cheaper and more sustainable; Crawli makes it easier by surfacing the lowest price across every major resale platform at once.",
+      "Increasingly, yes. The U.S. secondhand apparel market grew about 14% in 2024 (its strongest growth since 2021), and 58% of U.S. consumers shopped secondhand that year, according to ThredUp's 2025 Resale Report. Buying preloved is cheaper and more sustainable, and Crawli makes it easier by surfacing the lowest price across every major resale platform at once.",
   },
   {
     question: "Can Crawli alert me when a new listing appears?",
     answer:
-      "Yes. Save any search and Crawli rechecks it every day across all eight platforms, notifying you the moment a new matching listing is posted — useful for tracking a specific grail, size or price drop.",
+      "Yes. Save any search to set up daily alerts. You choose which platforms to monitor from any combination of the eight, and Crawli notifies you when a new matching listing appears. This is useful for tracking a specific grail, size, or price drop.",
   },
 ];

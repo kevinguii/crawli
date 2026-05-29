@@ -27,7 +27,7 @@ export async function POST() {
   ];
 
   const listingLines = sampleListings.map((l) =>
-    `• ${l.title} — $${l.price}\n  ${l.url}`,
+    `• ${l.title}: $${l.price}\n  ${l.url}`,
   ).join('\n\n');
 
   await resend.emails.send({
@@ -45,7 +45,7 @@ export async function POST() {
       ``,
       `View all results: https://thecrawli.com/alerts`,
       ``,
-      `— Crawli`,
+      `Crawli`,
     ].join('\n'),
   });
 

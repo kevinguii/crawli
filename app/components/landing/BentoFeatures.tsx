@@ -72,7 +72,7 @@ export default function BentoFeatures() {
           <Card
             className="sm:col-span-3"
             title="Multi-platform search"
-            body="Grailed, Depop, Poshmark, Mercari, Vinted, StockX, eBay, and Vestiaire — searched simultaneously. One query, 8 platforms, seconds."
+            body="Grailed, Depop, Poshmark, Mercari, Vinted, StockX, eBay, and Vestiaire searched simultaneously. One query, 8 platforms, seconds."
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" {...stroke}>
                 <circle cx="11" cy="11" r="7" />

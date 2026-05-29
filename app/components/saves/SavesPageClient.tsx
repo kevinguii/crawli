@@ -1121,7 +1121,7 @@ function FolderDeleteModal({
       <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
         {itemCount > 0
           ? `This folder has ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. What should happen to them?`
-          : 'This folder is empty — nothing else will change.'}
+          : 'This folder is empty. Nothing else will change.'}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -1140,7 +1140,7 @@ function FolderDeleteModal({
           subtitle={
             itemCount > 0
               ? `Removes ${itemCount} ${itemCount === 1 ? 'item' : 'items'} from your collection.`
-              : 'Nothing to remove — folder is empty.'
+              : 'Nothing to remove. Folder is empty.'
           }
           onSelect={() => setChoice('cascade')}
           disabled={submitting || itemCount === 0}

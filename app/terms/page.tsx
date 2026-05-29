@@ -37,7 +37,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-medium mb-2" style={{ color: 'var(--text)' }}>Your account</h2>
-            <p>You are responsible for keeping your account credentials secure. You must be at least 13 years old to use Crawli. One account per person — don't share or transfer accounts.</p>
+            <p>You are responsible for keeping your account credentials secure. You must be at least 13 years old to use Crawli. One account per person; don't share or transfer accounts.</p>
           </section>
 
           <section>

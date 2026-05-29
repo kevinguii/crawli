@@ -92,7 +92,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMark
                 ? 'color-mix(in srgb, #22c55e 18%, transparent)'
                 : 'var(--border)',
             }}
-            title={isLive ? 'Live — checking on schedule' : 'Paused'}
+            title={isLive ? 'Live, checking on schedule' : 'Paused'}
           >
             <svg
               width="14"

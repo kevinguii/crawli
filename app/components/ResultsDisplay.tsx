@@ -145,7 +145,7 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
           }}
         >
           {activeTab === 'all'
-            ? 'No listings found — try a different search.'
+            ? 'No listings found. Try a different search.'
             : `No listings found on ${PLATFORM_NAMES[activeTab] ?? activeTab}.`}
         </div>
       )}

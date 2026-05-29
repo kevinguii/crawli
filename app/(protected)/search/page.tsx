@@ -49,7 +49,7 @@ export default function Home() {
               Find the best resale price.
             </h1>
             <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-              One search — live pricing across Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire.
+              One search for live pricing across Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire.
             </p>
           </div>
           <Link

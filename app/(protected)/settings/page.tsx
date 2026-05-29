@@ -75,7 +75,7 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
       >
         <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Delete account</h3>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          This permanently deletes your account and all data — tracked listings, saves, and search history. This cannot be undone.
+          This permanently deletes your account and all data: tracked listings, saves, and search history. This cannot be undone.
         </p>
         <p className="mt-4 text-sm font-medium" style={{ color: 'var(--text)' }}>
           Type <span style={{ color: '#E24B4A' }}>DELETE</span> to confirm
@@ -310,7 +310,7 @@ export default function SettingsPage() {
         <Section title="Account">
           <Row label="Email" sublabel="Your sign-in address">
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {email ?? '—'}
+              {email ?? '-'}
             </span>
           </Row>
         </Section>
@@ -337,7 +337,7 @@ export default function SettingsPage() {
                       label="Plan"
                       sublabel={
                         billing.status === 'past_due'
-                          ? 'Payment failed — update your card to keep your subscription active'
+                          ? 'Payment failed: update your card to keep your subscription active'
                           : `Crawli ${tierLabel}`
                       }
                     >

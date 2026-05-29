@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 // Node runtime (default) — the app is self-hosted on Node (Hetzner), not edge.
 export const alt =
-  "Crawli — compare resale prices across 8 marketplaces in one search";
+  "Crawli: compare resale prices across 8 marketplaces in one search";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

@@ -300,7 +300,7 @@ export default function WatchlistTab() {
           </button>
           <p className="text-xs font-semibold pr-6" style={{ color: 'var(--text)' }}>Refresh Summary</p>
           {refreshSummary.changed.length === 0 && refreshSummary.sold.length === 0 && refreshSummary.failed === 0 && (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No changes — all prices are the same.</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No changes. All prices are the same.</p>
           )}
           {refreshSummary.changed.map((c, i) => {
             const sym = CURRENCY_SYMBOLS[c.currency] ?? c.currency + ' ';
@@ -310,7 +310,7 @@ export default function WatchlistTab() {
               <div key={i} className="flex items-center justify-between gap-2">
                 <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }} title={c.title}>{c.title}</span>
                 <span className="text-xs font-medium whitespace-nowrap" style={{ color: dropped ? 'var(--success, #22c55e)' : '#E24B4A' }}>
-                  {c.from !== null ? `${sym}${c.from.toLocaleString()}` : '—'} → {c.to !== null ? `${sym}${c.to.toLocaleString()}` : '—'}
+                  {c.from !== null ? `${sym}${c.from.toLocaleString()}` : '-'} → {c.to !== null ? `${sym}${c.to.toLocaleString()}` : '-'}
                   {delta !== null && ` (${dropped ? '' : '+'}${delta.toLocaleString()})`}
                 </span>
               </div>

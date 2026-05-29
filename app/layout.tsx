@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default:
-      "Crawli — Compare Resale Prices Across 8 Marketplaces in One Search",
+      "Crawli: Compare Resale Prices Across 8 Marketplaces in One Search",
     template: "%s · Crawli",
   },
   description:
@@ -49,14 +49,14 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "Crawli",
-    title: "Crawli — Compare Resale Prices Across 8 Marketplaces in One Search",
+    title: "Crawli: Compare Resale Prices Across 8 Marketplaces in One Search",
     description:
       "One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay & Vestiaire. Compare secondhand fashion prices and find the best deal instantly.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Crawli — Compare Resale Prices Across 8 Marketplaces",
+    title: "Crawli: Compare Resale Prices Across 8 Marketplaces",
     description:
       "One search across 8 resale marketplaces. Compare secondhand fashion prices and find the best deal instantly.",
   },

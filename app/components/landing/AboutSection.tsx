@@ -21,7 +21,7 @@ export default function AboutSection() {
           Buying secondhand should mean better prices, not more work. Crawli
           exists because the preloved or vintage piece you want is almost always
           on a platform you forgot to check. One search bar, every resale
-          marketplace, ranked by price — the price-comparison tool every resale
+          marketplace, ranked by price. The price-comparison tool every resale
           shopper already wishes they had.
         </p>
 

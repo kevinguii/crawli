@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <div className="space-y-8 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           <section>
             <h2 className="text-base font-medium mb-2" style={{ color: 'var(--text)' }}>What we collect</h2>
-            <p>When you sign in, we store your email address and a user profile in our database. If you save searches or listings, that data is stored and associated with your account. We do not collect payment card details — payments are processed by Stripe.</p>
+            <p>When you sign in, we store your email address and a user profile in our database. If you save searches or listings, that data is stored and associated with your account. We do not collect payment card details; payments are processed by Stripe.</p>
           </section>
 
           <section>
@@ -44,9 +44,9 @@ export default function PrivacyPage() {
             <h2 className="text-base font-medium mb-2" style={{ color: 'var(--text)' }}>Third-party services</h2>
             <p>Crawli uses the following third-party services, each with their own privacy policies:</p>
             <ul className="mt-2 space-y-1 list-disc list-inside">
-              <li>Supabase — authentication and database</li>
-              <li>Stripe — payment processing</li>
-              <li>Google — sign-in via Google OAuth</li>
+              <li>Supabase: authentication and database</li>
+              <li>Stripe: payment processing</li>
+              <li>Google: sign-in via Google OAuth</li>
             </ul>
           </section>
 

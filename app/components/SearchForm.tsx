@@ -227,7 +227,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for a product — e.g. Nike Air Jordan 1 Chicago size 10"
+          placeholder="Search for a product (e.g. Nike Air Jordan 1 Chicago size 10)"
           className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
           style={{
             background: 'var(--surface)',

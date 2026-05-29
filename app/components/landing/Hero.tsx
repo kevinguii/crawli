@@ -79,8 +79,8 @@ export default function Hero() {
             className="mx-auto mt-5 max-w-2xl text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Crawli searches Grailed, Depop, Poshmark, StockX, and more —
-            simultaneously — so you can compare secondhand prices and never
+            Crawli searches Grailed, Depop, Poshmark, StockX, and more
+            simultaneously, so you can compare secondhand prices and never
             overpay again.
           </p>
 

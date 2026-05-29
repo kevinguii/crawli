@@ -154,7 +154,7 @@ function PlatformRow({
       label = 'Done';
     }
   } else if (status === 'failed') {
-    label = error ? `Failed — ${error}` : 'Failed';
+    label = error ? `Failed: ${error}` : 'Failed';
   } else {
     label = typeof cap === 'number' ? `${STAGES[stageIdx]} (up to ${cap})` : STAGES[stageIdx];
   }

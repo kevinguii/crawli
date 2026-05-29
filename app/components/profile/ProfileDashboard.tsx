@@ -235,7 +235,7 @@ function MiniSavesCard() {
                   <img src={s.image_url} alt={s.title} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[10px]" style={{ color: 'var(--text-dim)' }}>
-                    —
+                    -
                   </div>
                 )}
               </a>
