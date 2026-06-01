@@ -25,6 +25,7 @@ export default function robots(): MetadataRoute.Robots {
           "/profile",
           "/settings",
           "/monitoring",
+          "/watchlist-demo",
           // Query-param traps (sort/view/filter states + raw search queries).
           "/*?*sort=",
           "/*?*view=",

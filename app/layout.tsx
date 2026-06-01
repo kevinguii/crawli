@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: SITE_URL,
+    url: `${SITE_URL}/`,
     siteName: "Crawli",
     title: "Crawli: Compare Resale Prices Across 8 Marketplaces in One Search",
     description:
