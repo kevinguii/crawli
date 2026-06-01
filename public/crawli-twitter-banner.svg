@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" width="1500" height="500">
+  <defs>
+    <linearGradient id="crawli-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#E24B4A"/>
+      <stop offset="25%"  stop-color="#E84D1D"/>
+      <stop offset="50%"  stop-color="#D85A30"/>
+      <stop offset="75%"  stop-color="#EF9F27"/>
+      <stop offset="100%" stop-color="#FAC775"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1500" height="500" fill="#0F172A"/>
+
+  <!-- Crawli text centered -->
+  <text
+    x="750"
+    y="220"
+    font-family="'Trebuchet MS', 'Segoe UI', sans-serif"
+    font-size="140"
+    font-weight="700"
+    text-anchor="middle"
+    fill="url(#crawli-gradient)"
+  >Crawli</text>
+
+  <!-- Subtitle -->
+  <text
+    x="750"
+    y="330"
+    font-family="'Trebuchet MS', 'Segoe UI', sans-serif"
+    font-size="40"
+    font-weight="400"
+    text-anchor="middle"
+    fill="#94A3B8"
+  >Search secondhand fashion across all platforms</text>
+</svg>
