@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Footer from '@/app/components/landing/Footer';
 import { getAllSlugs, getPost } from '@/lib/blog';
@@ -57,6 +58,10 @@ export default async function BlogPost({ params }: Props) {
   const post = getPost(slug);
   if (!post) notFound();
 
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  const isAuthenticated = !error && !!data.user;
+
   // Article structured data so the post is eligible for rich results.
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -66,7 +71,7 @@ export default async function BlogPost({ params }: Props) {
     datePublished: post.date || undefined,
     image: post.cover ? `${SITE_URL}${post.cover}` : undefined,
     url: `${SITE_URL}/blog/${slug}`,
-    author: { '@type': 'Organization', name: 'Crawli' },
+    author: { '@type': 'Person', name: 'Kevin Gui' },
     publisher: {
       '@type': 'Organization',
       name: 'Crawli',
@@ -81,7 +86,7 @@ export default async function BlogPost({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <LandingNav />
+      <LandingNav isAuthenticated={isAuthenticated} />
 
       <article className="mx-auto w-full max-w-2xl flex-1 px-5 py-14 sm:px-8">
         <Link
@@ -92,20 +97,50 @@ export default async function BlogPost({ params }: Props) {
           ← All posts
         </Link>
 
+        {/* Title */}
         <header className="mt-6 mb-8">
-          <p
-            className="text-xs font-medium uppercase tracking-wide"
-            style={{ color: 'var(--text-dim)' }}
-          >
-            {formatDate(post.date)}
-          </p>
           <h1
-            className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
+            className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
             style={{ color: 'var(--text)' }}
           >
             {post.title}
           </h1>
+
+          {/* Author / date */}
+          <div className="mt-5 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon.svg"
+              alt="Kevin Gui"
+              className="h-8 w-8 rounded-full"
+              style={{ background: 'var(--border)', padding: '3px' }}
+            />
+            <div className="flex flex-col leading-none">
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                Kevin Gui
+              </span>
+              <span className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
+                {formatDate(post.date)}
+              </span>
+            </div>
+          </div>
         </header>
+
+        {/* Cover image */}
+        {post.cover && (
+          <div
+            className="mb-10 flex items-center justify-center overflow-hidden rounded-xl"
+            style={{ background: '#ffffff', minHeight: '260px' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={post.cover}
+              alt=""
+              className="w-full object-contain p-8"
+              style={{ maxHeight: '380px' }}
+            />
+          </div>
+        )}
 
         <div
           className="blog-content"

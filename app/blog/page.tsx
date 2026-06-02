@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { createClient } from '@/lib/supabase/server';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Footer from '@/app/components/landing/Footer';
 import { getAllPosts } from '@/lib/blog';
@@ -20,14 +21,18 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function BlogIndex() {
+export default async function BlogIndex() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  const isAuthenticated = !error && !!data.user;
+
   const posts = getAllPosts();
 
   return (
     <main className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
-      <LandingNav />
+      <LandingNav isAuthenticated={isAuthenticated} />
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-5 py-14 sm:px-8">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-5 py-14 sm:px-8">
         <header className="mb-10">
           <h1
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
@@ -45,7 +50,7 @@ export default function BlogIndex() {
             No posts yet — check back soon.
           </p>
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-6">
             {posts.map((post) => (
               <li key={post.slug}>
                 <Link
@@ -56,36 +61,61 @@ export default function BlogIndex() {
                     border: '1px solid var(--border)',
                   }}
                 >
-                  {post.cover && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={post.cover}
-                      alt=""
-                      className="h-44 w-full object-cover"
-                      loading="lazy"
-                    />
-                  )}
-                  <div className="p-5">
-                    <p
-                      className="text-xs font-medium uppercase tracking-wide"
-                      style={{ color: 'var(--text-dim)' }}
+                  <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr]">
+                    {/* Image column */}
+                    <div
+                      className="flex items-center justify-center"
+                      style={{ background: '#ffffff', minHeight: '200px' }}
                     >
-                      {formatDate(post.date)}
-                    </p>
-                    <h2
-                      className="mt-1.5 text-lg font-semibold tracking-tight"
-                      style={{ color: 'var(--text)' }}
-                    >
-                      {post.title}
-                    </h2>
-                    {post.description && (
-                      <p
-                        className="mt-2 text-sm leading-relaxed"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {post.description}
-                      </p>
-                    )}
+                      {post.cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={post.cover}
+                          alt=""
+                          className="h-full w-full object-contain p-6"
+                          style={{ maxHeight: '200px' }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src="/icon.svg" alt="" className="h-12 w-12 opacity-20" />
+                      )}
+                    </div>
+
+                    {/* Content column */}
+                    <div className="flex flex-col justify-between gap-4 p-6 sm:p-8">
+                      <div className="flex flex-col gap-3">
+                        <h2
+                          className="leading-snug tracking-tight"
+                          style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 600 }}
+                        >
+                          {post.title}
+                        </h2>
+                        {post.description && (
+                          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: '1.6' }}>
+                            {post.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/icon.svg"
+                          alt="Crawli"
+                          className="h-7 w-7 rounded-full"
+                          style={{ background: 'var(--border)', padding: '3px' }}
+                        />
+                        <div className="flex flex-col leading-none">
+                          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                            Kevin Gui
+                          </span>
+                          <span className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
+                            {formatDate(post.date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </Link>
               </li>
