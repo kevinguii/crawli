@@ -3,11 +3,7 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { platformColor } from './platformColors';
 import PlatformBadge from './PlatformBadge';
-import { isNativePlatform } from '@/lib/types';
-
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
-
-const NON_NATIVE_CAP = 10;
 
 interface Props {
   platforms: string[];
@@ -68,21 +64,15 @@ export default function SearchProgress({ platforms, statuses, errors, counts, na
       </div>
 
       <div className="space-y-2">
-        {platforms.map((platform) => {
-          const cap = isNativePlatform(platform)
-            ? (nativeResultsCap ?? null)
-            : NON_NATIVE_CAP;
-          return (
-            <PlatformRow
-              key={platform}
-              platform={platform}
-              status={statuses[platform] ?? 'loading'}
-              error={errors[platform]}
-              count={counts?.[platform]}
-              cap={cap}
-            />
-          );
-        })}
+        {platforms.map((platform) => (
+          <PlatformRow
+            key={platform}
+            platform={platform}
+            status={statuses[platform] ?? 'loading'}
+            error={errors[platform]}
+            count={counts?.[platform]}
+          />
+        ))}
       </div>
     </div>
   );
@@ -93,13 +83,11 @@ function PlatformRow({
   status,
   error,
   count,
-  cap,
 }: {
   platform: string;
   status: CheckpointStatus;
   error?: string;
   count?: number;
-  cap?: number | null;
 }) {
   const [stageIdx, setStageIdx] = useState(0);
   const [open, setOpen] = useState(false);
@@ -156,7 +144,7 @@ function PlatformRow({
   } else if (status === 'failed') {
     label = error ? `Failed: ${error}` : 'Failed';
   } else {
-    label = typeof cap === 'number' ? `${STAGES[stageIdx]} (up to ${cap})` : STAGES[stageIdx];
+    label = STAGES[stageIdx];
   }
 
   const visibleStages = status === 'loading' ? STAGES.slice(0, stageIdx + 1) : STAGES;
