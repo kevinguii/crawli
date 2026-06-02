@@ -17,6 +17,13 @@ export default function Footer() {
 
         <nav className="flex items-center gap-5 text-sm">
           <Link
+            href="/blog"
+            className="transition-opacity hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Blog
+          </Link>
+          <Link
             href="/privacy"
             className="transition-opacity hover:opacity-80"
             style={{ color: 'var(--text-muted)' }}

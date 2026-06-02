@@ -237,3 +237,93 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* ---------- Blog post content (rendered from markdown) ---------- */
+.blog-content {
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.blog-content > * + * {
+  margin-top: 1.25em;
+}
+.blog-content h2 {
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+}
+.blog-content h3 {
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+}
+.blog-content p {
+  color: var(--text-muted);
+}
+.blog-content a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.blog-content a:hover {
+  opacity: 0.85;
+}
+.blog-content strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.blog-content ul,
+.blog-content ol {
+  padding-left: 1.4em;
+}
+.blog-content ul { list-style: disc; }
+.blog-content ol { list-style: decimal; }
+.blog-content li + li {
+  margin-top: 0.4em;
+}
+.blog-content li::marker {
+  color: var(--text-dim);
+}
+.blog-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+.blog-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  color: var(--text);
+  font-style: italic;
+}
+.blog-content code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  padding: 0.1em 0.35em;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.9em;
+}
+.blog-content pre {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 1em 1.2em;
+  overflow-x: auto;
+}
+.blog-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.blog-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}

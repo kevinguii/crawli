@@ -1,14 +1,28 @@
 import type { MetadataRoute } from "next";
+import { getAllPosts } from "@/lib/blog";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thecrawli.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
+  const blogPosts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+    url: `${SITE_URL}/blog/${post.slug}`,
+    lastModified: post.date ? new Date(post.date) : lastModified,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   // Only public, indexable, canonical URLs. Protected app routes and API
   // endpoints are intentionally excluded (and disallowed in robots.ts).
-  // Extend this list when programmatic landing/comparison pages ship.
   return [
+    {
+      url: `${SITE_URL}/blog`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...blogPosts,
     {
       url: `${SITE_URL}/`,
       lastModified,

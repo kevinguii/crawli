@@ -1,8 +1,28 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-05-29 (landing-page + site-wide SEO foundation shipped)
+**Last updated:** 2026-06-02 (markdown blog added for SEO/content marketing)
 
-**Latest change (2026-05-29 — SEO foundation: metadata, OG image, JSON-LD, sitemap/robots, FAQ, GA4/GSC hooks):**
+**Latest change (2026-06-02 — `/blog`: lightweight markdown-in-git blog for SEO):**
+
+Added a content/SEO blog so we can publish guides and pull natural search traffic into the site. **Lightest possible stack** — two small deps, fully static, never touches the search/scraping request path.
+
+**What was done (verified locally via `npm run dev` + `tsc` clean; not yet deployed — stays in dev until content is ready):**
+
+- **Deps:** `gray-matter` (4.0.3, frontmatter) + `marked` (18.0.4, markdown→HTML). Chosen over react-markdown/MDX to stay minimal. Posts are author-trusted (git-committed), so HTML renders via `dangerouslySetInnerHTML` without a sanitizer.
+- **Content lives in git:** markdown files in [content/blog/](content/blog/), images in [public/blog/images/](public/blog/images/). One sample post shipped: `how-to-find-the-best-resale-deals.md` + an SVG cover.
+- **Content lib** ([lib/blog.ts](lib/blog.ts)) — `getAllPosts()`, `getPost(slug)`, `getAllSlugs()`. Pure filesystem, build-time only. Frontmatter: `title`, `description`, `date`, `cover`, `tags`.
+- **Pages:** [app/blog/page.tsx](app/blog/page.tsx) (listing, cards w/ cover) + `app/blog/[slug]/page.tsx` (post, fully static via `generateStaticParams`). Per-post `generateMetadata` (canonical, OG `type:article`, OG image from `cover`) + `BlogPosting` JSON-LD for rich results. Both reuse public `LandingNav` + `Footer`.
+- **Styling:** `.blog-content` block in [app/globals.css](app/globals.css) — themed entirely with CSS vars, works in light + dark. **Post H1 comes from frontmatter title; do NOT repeat an `# H1` in the markdown body** (avoids double-H1).
+- **Nav:** "Blog" tab added to [LandingNav](app/components/landing/LandingNav.tsx) (public nav) + [Footer](app/components/landing/Footer.tsx). Not added to the logged-in in-app nav (kept minimal; revisit if wanted).
+- **SEO wiring:** [app/sitemap.ts](app/sitemap.ts) now loops over `getAllPosts()` — every new `.md` auto-appears in the sitemap. robots.ts already allows `/` so `/blog` is crawlable with no change.
+
+**To publish a post:** drop a `.md` in `content/blog/` (frontmatter + body, no body H1), put images in `public/blog/images/`, reference as `/blog/images/foo.jpg`, commit, deploy. Appears in listing + sitemap automatically.
+
+**Verified:** `/blog` 200, `/blog/<slug>` 200, cover SVG 200, sitemap includes `/blog` + post URL, JSON-LD/canonical/markdown (h2, blockquote, img) all render.
+
+---
+
+**Earlier — 2026-05-29 (SEO foundation: metadata, OG image, JSON-LD, sitemap/robots, FAQ, GA4/GSC hooks):**
 
 The landing-page *copy* was already strong, but the site had **zero SEO infrastructure** underneath it. This change adds the full "Stage 0" foundation. All frontend-only — no API/sidecar/scraping changes.
 
@@ -2486,6 +2506,7 @@ A personal-use web app that searches multiple fashion resale platforms simultane
 - `sonner` for toast notifications (mounted in `(protected)/layout.tsx`)
 - **SEO foundation (added 2026-05-29):** root `metadata` + `viewport` in `app/layout.tsx`; per-page metadata on public routes; `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts`, `app/opengraph-image.tsx` (Node runtime); server-rendered JSON-LD via `app/components/StructuredData.tsx` (Organization/WebSite+SearchAction/SoftwareApplication/FAQPage); landing FAQ from `app/components/landing/faqData.ts`. All URLs derive from `NEXT_PUBLIC_SITE_URL`.
 - **Analytics:** GA4 via env-gated `next/script` (`NEXT_PUBLIC_GA_ID`); GSC verification via `NEXT_PUBLIC_GSC_VERIFICATION`. Sentry for errors (unchanged). No Vercel Analytics (self-hosted Node).
+- **Blog (added 2026-06-02):** markdown-in-git at `content/blog/*.md`, images in `public/blog/images/`. Deps `gray-matter` + `marked`. `lib/blog.ts` parses at build time; routes `app/blog/page.tsx` (listing) + `app/blog/[slug]/page.tsx` (static, per-post metadata + `BlogPosting` JSON-LD). Posts auto-feed `sitemap.ts`.
 
 **Backend services**
 - Next.js API routes (`/api/search`) orchestrate the pipeline
@@ -2628,11 +2649,12 @@ fashion-crawler-crawl4ai/
 │   ├── page.tsx                      ← public landing page (server: redirects to /search if authenticated; renders <StructuredData/> + <FAQ/>)
 │   ├── layout.tsx                    ← root metadata (SEO/OG/twitter/robots/canonical) + viewport themeColor + env-gated GA4
 │   ├── robots.ts                     ← MetadataRoute.Robots (allow /, disallow app/api/param-traps) [SEO 2026-05-29]
-│   ├── sitemap.ts                    ← MetadataRoute.Sitemap (public canonical URLs only) [SEO 2026-05-29]
+│   ├── sitemap.ts                    ← MetadataRoute.Sitemap (public canonical URLs + blog posts via lib/blog) [SEO 2026-05-29, blog 2026-06-02]
 │   ├── manifest.ts                   ← PWA manifest [SEO 2026-05-29]
 │   ├── opengraph-image.tsx           ← 1200×630 next/og OG image, Node runtime [SEO 2026-05-29]
 │   ├── components/StructuredData.tsx ← server-rendered JSON-LD @graph (Org/WebSite+SearchAction/SoftwareApplication/FAQPage) [SEO 2026-05-29]
-│   ├── components/landing/           ← landing-only components (LandingNav, Hero, SearchMock, PlatformLogos, HowItWorks, BentoFeatures, AlertsMock, SavesMock, AboutSection, FAQ, CTASection, Footer, Wordmark, useInView); faqData.ts = single source for FAQ + FAQPage JSON-LD
+│   ├── blog/                         ← public SEO blog [2026-06-02]: page.tsx (listing) + [slug]/page.tsx (static post, generateMetadata + BlogPosting JSON-LD); content from content/blog/*.md via lib/blog.ts; reuses LandingNav + Footer
+│   ├── components/landing/           ← landing-only components (LandingNav [+Blog tab], Hero, SearchMock, PlatformLogos, HowItWorks, BentoFeatures, AlertsMock, SavesMock, AboutSection, FAQ, CTASection, Footer [+Blog link], Wordmark, useInView); faqData.ts = single source for FAQ + FAQPage JSON-LD
 │   ├── (protected)/                  ← auth-protected route group
 │   │   ├── layout.tsx                ← auth guard + mounts <SavesProvider> → <WatchlistProvider> + <Toaster>
 │   │   ├── search/page.tsx           ← search dashboard at /search (moved here 2026-05-26)

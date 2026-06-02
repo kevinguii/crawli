@@ -29,6 +29,13 @@ export default function LandingNav() {
         </Link>
         <div className="flex items-center gap-3 sm:gap-5">
           <Link
+            href="/blog"
+            className="hidden text-sm font-medium transition-opacity hover:opacity-80 sm:inline-block"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Blog
+          </Link>
+          <Link
             href="/pricing"
             className="hidden text-sm font-medium transition-opacity hover:opacity-80 sm:inline-block"
             style={{ color: 'var(--text-muted)' }}
