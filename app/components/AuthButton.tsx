@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import SubscriptionBadge from './SubscriptionBadge';
 
@@ -49,6 +50,11 @@ function useTotalUnreadAlerts(userId: string | undefined) {
   return unread;
 }
 
+// Module-level flag so the settings page sign-out (a separate component) can
+// also suppress the "session expired" toast when it calls supabase.auth.signOut().
+export function markIntentionalSignOut() { _intentionalSignOut = true; }
+let _intentionalSignOut = false;
+
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +69,10 @@ export default function AuthButton() {
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'SIGNED_OUT' && !_intentionalSignOut) {
+          toast.error('Your session expired. Please sign in again.');
+        }
         setUser(session?.user ?? null);
         setLoading(false);
       }
@@ -90,6 +99,7 @@ export default function AuthButton() {
   }, [menuOpen]);
 
   async function handleSignOut() {
+    markIntentionalSignOut();
     const supabase = createClient();
     await supabase.auth.signOut();
     setMenuOpen(false);
@@ -130,6 +140,8 @@ export default function AuthButton() {
         title="Alerts"
         className="relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.opacity = '0.8'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.opacity = '1'; }}
       >
         <svg
           width="18"
@@ -159,6 +171,8 @@ export default function AuthButton() {
         title="Saves"
         className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.opacity = '0.8'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.opacity = '1'; }}
       >
         <svg
           width="18"
@@ -184,6 +198,8 @@ export default function AuthButton() {
           background: menuOpen ? 'var(--surface-hover)' : 'var(--surface)',
           border: '1px solid var(--border)',
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.opacity = '0.8'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.opacity = '1'; }}
       >
         <span
           className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"

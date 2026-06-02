@@ -174,8 +174,19 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     image = _first_image(product)
     size = _extract_size_from_product(product)
 
-    # Reject the node if it has NO price — caller should fall back.
-    if price is None:
+    # Reject the node if it has NO price — caller should fall back to LLM.
+    #
+    # EXCEPTION: a confirmed-sold listing (availability=OutOfStock/SoldOut/
+    # Discontinued) is a VALID result even without a price. Some marketplaces
+    # drop offers.price once an item sells; without this carve-out the price-gate
+    # would discard the whole node → None → LLM, silently losing the sold signal
+    # that the watchlist relies on to flip an item to "Sold" (and that search
+    # uses to filter sold items out). The LLM can't recover a price that isn't on
+    # the page anyway, and might hallucinate one. price=None + isSold=True is the
+    # honest answer. Mirrors the StockX "price=None is a valid no-Ask result"
+    # precedent. is_sold is only True when availability explicitly says sold, so
+    # a partially-rendered page (no availability) still correctly falls through.
+    if price is None and not is_sold:
         return None
 
     return {
@@ -277,20 +288,45 @@ def extract_stockx(html: str) -> Optional[dict]:
 
 
 def extract_poshmark(html: str) -> Optional[dict]:
-    """Poshmark doesn't emit JSON-LD on listing pages, but:
+    """Poshmark listing extractor — hybrid, JSON-LD primary.
+
+    As of 2026-05-31 Poshmark DOES emit Schema.org Product JSON-LD on every
+    listing page (this was NOT true on 2026-05-15, when the original og:meta +
+    <p class="h1"> parser below was written). Surveyed 12/12 listings
+    (6 available + 6 sold) via scripts/poshmark_jsonld_probe.py:
+      - offers.price = listing price (not the strikethrough MSRP)
+      - offers.availability = InStock | OutOfStock  -> isSold (12/12 correct)
+      - offers.itemCondition = New/Used  (the legacy parser left condition=None)
+      - sold listings KEEP their price, so the JSON-LD price-gate doesn't drop
+        the sold signal.
+
+    Strategy (each tier only runs if the previous misses):
+      1. JSON-LD Product node  -> deterministic + condition (the common path)
+      2. Legacy og:meta + <p class="h1"> parser  -> safety net for a real
+         product page that somehow shipped without JSON-LD (partial render,
+         A/B variant, older listing) so we don't punt straight to the LLM
+      3. (caller) None -> LLM fallback  (block walls / login redirects land here)
+    """
+    if not html:
+        return None
+    soup = BeautifulSoup(html, "lxml")
+
+    jsonld = _extract_from_jsonld(soup)
+    if jsonld is not None:
+        return jsonld
+
+    return _extract_poshmark_legacy(soup, html)
+
+
+def _extract_poshmark_legacy(soup: BeautifulSoup, html: str) -> Optional[dict]:
+    """Pre-JSON-LD Poshmark parser (verified 2026-05-15). Kept as a fallback:
       - <meta property="og:title"> / <meta property="og:image"> give us title + image
       - The main listing's price is in <p class="h1"><span>$68</span><span>$180</span></p>
         where $68 is the listing price and $180 is the original/MSRP.
       - data-et-prop-listing_price="68" is also present (clean number) but appears
         only on tracking-tile elements — using the h1 is safer.
       - data-et-prop-inventory_status="available"|"sold" gates isSold.
-
-    Verified against Fear-of-God-State-Black-Hoodie listing (2026-05-15).
     """
-    if not html:
-        return None
-    soup = BeautifulSoup(html, "lxml")
-
     og_title = soup.find("meta", property="og:title")
     og_image = soup.find("meta", property="og:image")
     og_type = soup.find("meta", property="og:type")

@@ -771,7 +771,7 @@ function SaveCard({
     onRemove();
   };
 
-  const handleEye = (e: React.MouseEvent) => {
+  const handleBell = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const asListing = {
@@ -846,7 +846,7 @@ function SaveCard({
 
         <button
           type="button"
-          onClick={handleEye}
+          onClick={handleBell}
           aria-label={watched ? 'Remove from watchlist' : 'Add to watchlist'}
           className="absolute flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-110"
           style={{ right: '0.5rem', top: '3rem', background: 'rgba(0, 0, 0, 0.55)' }}
@@ -855,14 +855,14 @@ function SaveCard({
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill="none"
+            fill={watched ? 'var(--accent)' : 'none'}
             stroke={watched ? 'var(--accent)' : '#ffffff'}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-            <circle cx="12" cy="12" r="3" fill={watched ? 'var(--accent)' : 'none'} />
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </button>
 

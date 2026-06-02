@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeSelector } from '@/app/components/ThemeToggle';
-import AuthButton from '@/app/components/AuthButton';
+import AuthButton, { markIntentionalSignOut } from '@/app/components/AuthButton';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
 import { createClient } from '@/lib/supabase/client';
@@ -232,6 +232,7 @@ export default function SettingsPage() {
   }
 
   async function handleSignOut() {
+    markIntentionalSignOut();
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/');
@@ -246,6 +247,7 @@ export default function SettingsPage() {
         alert(error ?? 'Failed to delete account.');
         return;
       }
+      markIntentionalSignOut();
       const supabase = createClient();
       await supabase.auth.signOut();
       router.push('/login');
