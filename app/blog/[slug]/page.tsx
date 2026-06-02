@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function formatDate(iso: string): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-US', {
+  return new Date(iso.includes('T') ? iso : iso + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -136,8 +136,8 @@ export default async function BlogPost({ params }: Props) {
             <img
               src={post.cover}
               alt=""
-              className="w-full object-contain p-8"
-              style={{ maxHeight: '380px' }}
+              className="object-contain p-8"
+              style={{ maxHeight: '380px', maxWidth: '100%' }}
             />
           </div>
         )}

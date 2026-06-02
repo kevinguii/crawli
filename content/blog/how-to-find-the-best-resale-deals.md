@@ -22,7 +22,7 @@ Here's why resale prices vary so wildly:
 
 1. **Search the exact model name**, not just the brand. A search like "Raf Simons bomber" returns noise; the specific season or style code does not.
 2. **Compare total cost**, including shipping and any buyer protection fees.
-3. **Check sold listings** where you can — they tell you what the market actually pays.
+3. **Check sold listings** where you can, they tell you what the market actually pays.
 4. **The cheapest listing almost never shows up first.** You have to dig across platforms to find it.
 
 > The goal isn't to find *a* price. It's to find the *distribution* of prices, then buy near the bottom of it.
