@@ -223,7 +223,7 @@ export default function SavesPageClient({ folderIdFromUrl }: { folderIdFromUrl: 
       const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error('failed');
       toast(cascade ? `Deleted "${folder.name}" and its items` : `Deleted "${folder.name}"`, {
-        style: { color: '#E24B4A', borderColor: '#E24B4A' },
+        style: { color: '#22c55e', borderColor: '#22c55e' },
       });
       await reloadFolders();
       if (folderIdFromUrl === folder.id) {
