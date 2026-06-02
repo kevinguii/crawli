@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Hero from '@/app/components/landing/Hero';
@@ -17,14 +16,12 @@ import StructuredData from '@/app/components/StructuredData';
 export default async function LandingPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-  if (!error && data.user) {
-    redirect('/search');
-  }
+  const isAuthenticated = !error && !!data.user;
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <StructuredData />
-      <LandingNav />
+      <LandingNav isAuthenticated={isAuthenticated} />
       <Hero />
       <SearchMock />
       <PlatformLogos />

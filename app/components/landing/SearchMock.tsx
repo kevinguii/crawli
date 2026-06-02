@@ -200,7 +200,7 @@ export default function SearchMock() {
                     href="/login?tab=signup"
                     className="btn-primary mt-3 inline-block rounded-lg px-5 py-2 text-sm font-semibold"
                   >
-                    Create free account
+                    Try search now
                   </Link>
                 </div>
               </div>

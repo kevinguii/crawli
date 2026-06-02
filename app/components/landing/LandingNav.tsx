@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Wordmark from './Wordmark';
 
-export default function LandingNav() {
+export default function LandingNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -42,19 +42,30 @@ export default function LandingNav() {
           >
             Pricing
           </Link>
-          <Link
-            href="/login"
-            className="text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ color: 'var(--text)' }}
-          >
-            Log in
-          </Link>
-          <Link
-            href="/login?tab=signup"
-            className="btn-primary rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
-          >
-            Get started
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href="/search"
+              className="btn-filled-grey rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
+            >
+              Go to app
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ color: 'var(--text)' }}
+              >
+                Log in
+              </Link>
+              <Link
+                href="/login?tab=signup"
+                className="btn-primary rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

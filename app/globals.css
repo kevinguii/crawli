@@ -180,6 +180,24 @@ body {
   cursor: not-allowed;
 }
 
+/* Filled grey variant — nav "Go to app" button */
+.btn-filled-grey {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  transition: background-color 200ms ease, opacity 200ms ease;
+}
+.btn-filled-grey:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+[data-theme="light"] .btn-filled-grey {
+  background: #e2e2e0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .btn-filled-grey:hover:not(:disabled) {
+  background: #d6d6d4;
+}
+
 .input-base {
   background: var(--surface);
   border: 1px solid var(--border);

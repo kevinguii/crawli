@@ -1,8 +1,21 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-02 (markdown blog added for SEO/content marketing)
+**Last updated:** 2026-06-02 (landing page no longer redirects logged-in users; nav shows "Go to app"; /login auto-redirects signed-in users)
 
-**Latest change (2026-06-02 — `/blog`: lightweight markdown-in-git blog for SEO):**
+**Latest change (2026-06-02 — `/` no longer auto-redirects authenticated users; nav gets a "Go to app" button; `/login` bounces signed-in users):**
+
+Logged-in users hitting `https://thecrawli.com/` (or `/`) previously got a server-side `redirect('/search')`, so they could never see the public landing page (or reach `/blog` via the landing nav). Now the landing page renders for everyone; authenticated users just get a different nav button.
+
+**What was done (verified locally via `npm run dev` + `tsc` clean):**
+- [app/page.tsx](app/page.tsx) — removed the `redirect('/search')`. Still calls `supabase.auth.getUser()`, but now computes `isAuthenticated = !error && !!data.user` and passes it to `<LandingNav isAuthenticated={…} />`. No `redirect` import anymore.
+- [LandingNav](app/components/landing/LandingNav.tsx) — now takes an optional `isAuthenticated` prop (default `false`). When `true`, the "Log in" link + "Get started" button are replaced by a single **"Go to app"** button → `/search`, styled `btn-secondary` (light-gray `--surface` + border) so it reads as secondary, distinct from the primary "Get started". When `false` (default, incl. all blog-page usages which pass no prop), nav is unchanged.
+- [app/login/page.tsx](app/login/page.tsx) — added a mount-time `useEffect` that calls `supabase.auth.getSession()` and `router.replace('/search')` if a session exists. This is what makes the public **"Get started" / "Create free account" CTAs** behave correctly for already-logged-in users: they briefly hit `/login`, then auto-redirect into the app. The in-page CTAs were intentionally **left pointing at `/login?tab=signup`** (not made auth-aware) — the login redirect handles the signed-in case for all of them at once.
+
+**Verified:** unauthenticated `GET /` → 200 (no redirect), nav still shows "Log in" + "Get started", no "Go to app". `GET /login` → 200. `tsc --noEmit` clean. Authenticated branches ("Go to app" button + `/login` redirect) are straightforward and were not browser-verified with a live session.
+
+---
+
+**Earlier — 2026-06-02 (`/blog`: lightweight markdown-in-git blog for SEO):**
 
 Added a content/SEO blog so we can publish guides and pull natural search traffic into the site. **Lightest possible stack** — two small deps, fully static, never touches the search/scraping request path.
 
@@ -47,7 +60,7 @@ The landing-page *copy* was already strong, but the site had **zero SEO infrastr
 **Out of scope (next SEO phase):** programmatic anchor landing pages (brand/category/attribute), comparison articles ("Depop vs Vinted"), `ItemList`/`Product`+`Offer` schema on result pages, Google Merchant Center feed. Gated on per-page unique value to avoid Helpful-Content thin-content penalties.
 
 **Gotchas to remember:**
-- The landing page **redirects authenticated users to `/search`** ([app/page.tsx:18](app/page.tsx#L18)) — Googlebot is unauthenticated so it sees the real page, but if you ever test indexing while logged in you'll get redirected.
+- ~~The landing page **redirects authenticated users to `/search`**~~ — **No longer true as of 2026-06-02** (see top entry). The landing page now renders for everyone; authenticated users get a "Dashboard" nav button instead of being redirected. Googlebot (unauthenticated) still sees the full public page.
 - `metadataBase` / robots `host` / sitemap URLs all derive from `NEXT_PUBLIC_SITE_URL`. In dev they read `localhost:3000` (correct); prod **must** have it set to `https://thecrawli.com` (already required for Stripe/auth — see §8).
 - FAQ visible content and `FAQPage` JSON-LD **must stay identical** (Google requirement) — both pull from `faqData.ts`, so only edit that file.
 

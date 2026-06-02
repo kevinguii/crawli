@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -18,6 +18,16 @@ function LoginContent() {
   const [loading, setLoading] = useState<'submit' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Already signed in? Don't show the auth form — bounce to the app. This makes
+  // the public "Get started" / "Create free account" CTAs behave correctly for
+  // logged-in users (briefly land here, then auto-redirect to /search).
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.replace('/search');
+    });
+  }, [router]);
 
   const callbackFailed = params.get('error') === 'callback_failed';
   const resetExpired = params.get('error') === 'reset_expired';
