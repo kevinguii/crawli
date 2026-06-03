@@ -1,0 +1,36 @@
+import Link from 'next/link';
+
+export default function FounderNote() {
+  return (
+    <section className="px-5 pb-12 sm:px-8">
+      <div
+        className="mx-auto max-w-2xl rounded-2xl px-8 py-8 text-center"
+        style={{
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <p
+          className="text-base italic leading-relaxed sm:text-lg"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          &ldquo;I spent hours across six different tabs and still ended up returning a
+          $25 sweater. Crawli exists so you don&rsquo;t have to.&rdquo;
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+            - Kevin, Founder
+          </span>
+          <span style={{ color: 'var(--border)' }}>·</span>
+          <Link
+            href="/blog/why-we-started-crawli"
+            className="text-sm transition-opacity hover:opacity-80"
+            style={{ color: 'var(--accent-text)' }}
+          >
+            Read the full story →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}

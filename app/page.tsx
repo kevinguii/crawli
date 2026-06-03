@@ -10,6 +10,7 @@ import SavesMock from '@/app/components/landing/SavesMock';
 import AboutSection from '@/app/components/landing/AboutSection';
 import FAQ from '@/app/components/landing/FAQ';
 import CTASection from '@/app/components/landing/CTASection';
+import FounderNote from '@/app/components/landing/FounderNote';
 import Footer from '@/app/components/landing/Footer';
 import StructuredData from '@/app/components/StructuredData';
 
@@ -32,6 +33,7 @@ export default async function LandingPage() {
       <AboutSection />
       <FAQ />
       <CTASection />
+      <FounderNote />
       <Footer />
     </main>
   );

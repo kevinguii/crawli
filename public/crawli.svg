@@ -9,8 +9,9 @@
     </linearGradient>
   </defs>
   <text
-    x="4"
+    x="100"
     y="46"
+    text-anchor="middle"
     font-family="'Trebuchet MS', 'Segoe UI', sans-serif"
     font-size="52"
     font-weight="700"
