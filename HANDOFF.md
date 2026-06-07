@@ -1,8 +1,36 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-02 (landing page no longer redirects logged-in users; nav shows "Go to app"; /login auto-redirects signed-in users)
+**Last updated:** 2026-06-07 (watchlist "Sold" label → "Gone"; 404 detection + isGone field; identified ThredUp individual-page CF blocker)
 
-**Latest change (2026-06-02 — `/` no longer auto-redirects authenticated users; nav gets a "Go to app" button; `/login` bounces signed-in users):**
+**Latest change (2026-06-07 — watchlist sold/removed status UX + 404 detection):**
+
+Sold/delisted items now show **"Gone"** badge instead of "Sold" (covers both outcomes: sold items + removed listings). Added HTTP 404 detection in `/refresh-price` endpoint so platforms that properly 404 (not CF-blocked) set `isSold=true, isGone=true` immediately.
+
+**What was done (verified via sidecar HTTP 404 response + Depop sold URL test):**
+- **Label change** (`WatchlistTab.tsx`, `WatchlistDemo.tsx`) — two places where sold items render a badge/refresh-summary line now say "Gone" (red, `#E24B4A`). Covers both sold items + pagination/404 scenarios without semantic overload.
+- **`RefreshPriceResponse` model** (`crawl4ai-service/main.py:554-559`) — new `isGone: bool = False` field. Tier 1 (plain HTTP) now short-circuits on HTTP 404 with `isSold=true, isGone=true, fetched=true` (definitive signal).
+- **Watchlist refresh** (`app/api/watchlist/refresh/route.ts:67-79`) — treats `isGone=true` as a confirmed removal, flips `is_sold = result.isSold || isGone` so 404s translate to watchlist "Gone" badges.
+- **Type layer** (`lib/scraper.ts:53-59, 86-91`) — `RefreshPriceResult` + response type both include `isGone?: boolean`.
+
+**Verified:** Depop sold URL via `/refresh-price` returns `{price:9.1, isSold:true, fetched:true, tier:"playwright", isGone:false}` (worked, not a 404 case). Fake eBay URL falls through to LLM tier (eBay redirects 404→200 "item ended" page). TypeScript clean.
+
+**⚠️ ThredUp watchlist blocker (separate session — Firecrawl required):**
+
+ThredUp **individual product pages** (`/product/<slug>/<id>`) are hard-blocked by Cloudflare (403 "Just a moment..."). Affects:
+- Watchlist refresh (calls `/refresh-price` → HTTP tier hits CF 403 → falls through to LLM, often returns `price=None`)
+- Any direct scraping of ThredUp item pages via crawl4ai
+
+**Why search works but refresh doesn't:**
+- **ThredUp `/search/<query>` page** ✅ Server-side renders with JSON-LD pre-embedded → no CF challenge → works fine (used for search results)
+- **ThredUp `/product/` pages** ❌ Individually gated by CF JS challenge → all access methods blocked (plain HTTP, stealth, UndetectedAdapter, curl_cffi)
+
+**Fix needed:** Call **Firecrawl's `scrapeUrl` API** from Next.js `/api/watchlist/refresh` for ThredUp URLs. Firecrawl bypasses CF (has proper browser reputation). Fallback pattern: if `platform === 'thredup'`, call Firecrawl instead of sidecar's `/refresh-price`.
+
+**Until then:** ThredUp watchlist items show "couldn't be checked" (failed count) on each refresh. Search-page discovery still works; refresh checks just fail.
+
+---
+
+**Previous change (2026-06-02 — `/` no longer auto-redirects authenticated users; nav gets a "Go to app" button; `/login` bounces signed-in users):**
 
 Logged-in users hitting `https://thecrawli.com/` (or `/`) previously got a server-side `redirect('/search')`, so they could never see the public landing page (or reach `/blog` via the landing nav). Now the landing page renders for everyone; authenticated users just get a different nav button.
 

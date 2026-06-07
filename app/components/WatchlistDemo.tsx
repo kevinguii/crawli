@@ -125,7 +125,7 @@ function DemoWatchCard({ row }: { row: Watchlist }) {
                 className="rounded-full px-4 py-2 text-lg font-semibold uppercase tracking-wide"
                 style={{ background: '#1f1f1f', color: '#ffffff' }}
               >
-                Sold
+                Gone
               </span>
             </div>
           </>

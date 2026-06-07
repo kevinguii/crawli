@@ -556,6 +556,7 @@ class RefreshPriceResponse(BaseModel):
     isSold: bool = False
     fetched: bool = False
     tier: Optional[str] = None  # 'http' | 'playwright' | 'llm' | None
+    isGone: bool = False  # True when HTTP 404 confirms the page no longer exists
 
 
 # ── Coercion ─────────────────────────────────────────────────────────────────
@@ -1096,6 +1097,10 @@ async def refresh_price(req: RefreshPriceRequest):
                 headers=_REFRESH_HTTP_HEADERS,
             ) as client:
                 http_resp = await client.get(url)
+        if http_resp.status_code == 404:
+            # Page definitively gone — treat as sold/removed ("Gone" in UI).
+            log.info("[refresh-price] http 404 (gone) %s %s", req.platform, url)
+            return RefreshPriceResponse(price=None, isSold=True, fetched=True, tier="http", isGone=True)
         if http_resp.status_code == 200 and http_resp.text:
             best_html = http_resp.text
             extracted = _try_structured_extract(req.platform, best_html)

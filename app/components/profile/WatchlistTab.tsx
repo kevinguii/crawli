@@ -319,7 +319,7 @@ export default function WatchlistTab() {
           {refreshSummary.sold.map((title, i) => (
             <div key={i} className="flex items-center justify-between gap-2">
               <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }} title={title}>{title}</span>
-              <span className="text-xs font-medium" style={{ color: '#E24B4A' }}>Sold</span>
+              <span className="text-xs font-medium" style={{ color: '#E24B4A' }}>Gone</span>
             </div>
           ))}
           {refreshSummary.failed > 0 && (
@@ -470,7 +470,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
                 className="rounded-full px-4 py-2 text-lg font-semibold uppercase tracking-wide"
                 style={{ background: '#1f1f1f', color: '#ffffff' }}
               >
-                Sold
+                Gone
               </span>
             </div>
           </>

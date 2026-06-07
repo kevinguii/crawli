@@ -55,6 +55,7 @@ export interface RefreshPriceResult {
   isSold: boolean;
   fetched: boolean;
   tier: 'http' | 'playwright' | 'llm' | null;
+  isGone: boolean; // true when HTTP 404 confirms the page is gone (sold or delisted)
 }
 
 // Watchlist-refresh-only path. Hits /refresh-price which tries plain HTTP
@@ -87,12 +88,14 @@ export async function refreshListingViaSidecar(
         isSold: boolean;
         fetched: boolean;
         tier: 'http' | 'playwright' | 'llm' | null;
+        isGone?: boolean;
       };
       return {
         price: data.price ?? null,
         isSold: !!data.isSold,
         fetched: !!data.fetched,
         tier: data.tier ?? null,
+        isGone: !!data.isGone,
       };
     } catch {
       if (attempt < maxAttempts - 1) {

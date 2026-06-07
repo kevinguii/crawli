@@ -64,7 +64,10 @@ export async function POST(_req: NextRequest) {
           const row = targets[i];
           try {
             const result = await refreshListingViaSidecar(row.listing_url, row.platform);
-            if (!result || !result.fetched) {
+            // isGone: HTTP 404 confirmed the listing no longer exists (sold or delisted).
+            // Treat as gone even though fetched signals are ambiguous — the page is definitively absent.
+            const isGone = result?.isGone === true;
+            if (!result || (!result.fetched && !isGone)) {
               failed += 1;
               await supabase
                 .from('watchlist')
@@ -76,7 +79,7 @@ export async function POST(_req: NextRequest) {
                 .from('watchlist')
                 .update({
                   price_current: result.price ?? null,
-                  is_sold: result.isSold,
+                  is_sold: result.isSold || isGone,
                   last_checked_at: now,
                 })
                 .eq('id', row.id)
