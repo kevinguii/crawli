@@ -1,8 +1,15 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-08 (Pinterest auto-pin workflow live via n8n + Zernio)
+**Last updated:** 2026-06-08 (search relevance tightened + query filter hints)
 
-**Latest change (2026-06-08 — Pinterest auto-pin workflow):**
+**Latest change (2026-06-08 — search relevance + filter guidance):**
+
+Tightened result relevance for model-number queries (e.g. "jordan 1" no longer returns Jordan 4/6):
+- `lib/parse.ts` — `relevanceTokens` now keeps short numeric tokens (`"1"`, `"90"`, etc.). `titleMatchesQuery` adds a hard rule: if the query has any numeric tokens, the title must match at least one — text tokens still require at least one match too.
+- `app/components/SearchForm.tsx` — detects size/color/condition words in the query and shows a muted inline tip ("use the filter dropdowns below") to steer users away from putting filter criteria in the query (which was also causing false numeric matches, e.g. "jordan 1 size 10" introducing "10" as a required model-number token).
+- Same file — refactored two `useEffect` setState calls into a `readSessionInit()` lazy initializer to fix a lint error (`setState` in effect body).
+
+**Previous change (2026-06-08 — Pinterest auto-pin workflow):**
 
 Every item a user saves in Crawli now auto-pins to Pinterest via an n8n workflow. Trigger: Supabase `saves` table INSERT → DB webhook → n8n → OpenAI gpt-4o-mini generates description + hashtags → Zernio REST API publishes pin.
 
