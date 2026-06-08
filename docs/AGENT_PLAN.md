@@ -20,29 +20,14 @@ for a separate chat session to minimize token usage.
 
 ## Prerequisites
 
-### P1. n8n Self-Hosted Setup ← START HERE
-**Goal:** Get n8n running at `n8n.thecrawli.com` before any Phase 1 work
+### P1. n8n Self-Hosted Setup ✅ DONE
+**Summary:** n8n installed globally via npm, running as systemd service on port 5678. nginx configured to reverse proxy. SSL cert issued. DNS removed (kept private). Access via SSH tunnel: `ssh -L 5678:localhost:5678 root@5.78.187.97` then visit `http://localhost:5678`.
 
-**Context:**
-- Server: Hetzner VPS at `5.78.187.97`
-- Current setup: systemd services (NOT Docker) — `crawli-next` (port 3000), `crawli-sidecar` (port 8000)
-- nginx reverse proxy, Cloudflare handles HTTPS
-- App directory: `/opt/crawli/`
-
-**Approach:** n8n via npm + systemd (matches existing setup, no Docker needed)
-
-**Steps:**
-1. `npm install -g n8n` on server
-2. Create `/etc/systemd/system/crawli-n8n.service` (port 5678, sqlite DB, `N8N_EDITOR_BASE_URL=https://n8n.thecrawli.com`)
-3. Add nginx server block: `n8n.thecrawli.com` → `localhost:5678`
-4. Add Cloudflare DNS A record: `n8n` → `5.78.187.97` (proxied)
-5. `systemctl enable + start crawli-n8n`
-6. Verify at `https://n8n.thecrawli.com`
-
-**Chat prompt:**
-> "I'm setting up n8n self-hosted on my Hetzner VPS. I run systemd services (not Docker) — existing services are `crawli-next` (port 3000) and `crawli-sidecar` (port 8000), managed by systemd with nginx reverse proxy. I want to install n8n globally via npm, run it as a systemd service at `n8n.thecrawli.com`. Walk me through full setup including nginx config and Cloudflare DNS. Server IP: 5.78.187.97."
-
-- [ ] Complete
+**Access Method:**
+```bash
+ssh -L 5678:localhost:5678 root@5.78.187.97
+# Visit http://localhost:5678 in browser
+```
 
 ---
 
