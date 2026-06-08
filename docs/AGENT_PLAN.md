@@ -42,20 +42,24 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ### Phase 1 — Marketing (Start Here)
 
-#### 1A. Pinterest Auto-Pins ✅ Zernio free
-**Goal:** Every new Crawli listing → auto-generate Pinterest Product Pin
+#### 1A. Pinterest Auto-Pins ✅ DONE
 
-- Trigger: new item scraped into Crawli
-- Agent generates: pin title, description, hashtags, selects board
-- Schedules via Zernio at optimal posting time
-- Pulls weekly analytics (impressions, saves, click-throughs)
-- **Platform:** Pinterest via Zernio
-- **Complexity:** Low
-- **ROI:** Highest of all marketing tasks (fashion = Pinterest's top vertical)
-- **ToS risk:** None
+**What was built:** n8n workflow (published as v3, named "v1") — Supabase `saves` table INSERT → Supabase DB webhook → n8n webhook → OpenAI gpt-4o-mini generates pin description + hashtags → Zernio REST API creates Pinterest pin.
 
-**Chat prompt to start:**
-> "I want to set up an n8n workflow that takes a new Crawli listing (title, image URL, price, platform, link) and automatically creates a Pinterest pin via Zernio MCP. Here's my Zernio API key and Pinterest account is already connected. Walk me through building this."
+**Key details:**
+- Webhook URL: `https://n8n.thecrawli.com/webhook/16af4402-a997-4ad8-8ea0-286ea8ae6035`
+- Pinterest account ID: `6a2506e02b2567671a0b8721` (username: thecrawli)
+- Board: "Second Hand Fashion Finds" — ID `1089308297311595703`
+- Image fallback: `https://thecrawli.com/opengraph-image` (for saves with no image_url)
+- Pin link: always `https://thecrawli.com`
+- DNS: `n8n.thecrawli.com` A record → `5.78.187.97` (Cloudflare proxied) — must stay active for Supabase webhooks to reach n8n
+
+**n8n gotchas learned:**
+- OpenAI node output path: `output[0].content[0].text` (Responses API format, not `message.content`)
+- Use a Code node (not JSON template body) to build the Zernio payload — AI text contains newlines + quotes that break JSON templates
+- Zernio `POST /v1/posts` requires `accountId` inside the `platforms` array (not documented prominently)
+- Set node expression mode doesn't evaluate in JSON mode — use Code node instead
+- n8n Code nodes use `.first()` not `.item` to reference other nodes
 
 ---
 

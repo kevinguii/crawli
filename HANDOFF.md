@@ -1,8 +1,19 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-07 (watchlist "Sold" label → "Gone"; 404 detection + isGone field; identified ThredUp individual-page CF blocker)
+**Last updated:** 2026-06-08 (Pinterest auto-pin workflow live via n8n + Zernio)
 
-**Latest change (2026-06-07 — watchlist sold/removed status UX + 404 detection):**
+**Latest change (2026-06-08 — Pinterest auto-pin workflow):**
+
+Every item a user saves in Crawli now auto-pins to Pinterest via an n8n workflow. Trigger: Supabase `saves` table INSERT → DB webhook → n8n → OpenAI gpt-4o-mini generates description + hashtags → Zernio REST API publishes pin.
+
+- n8n workflow: `https://n8n.thecrawli.com` (SSH tunnel: `ssh -L 5678:localhost:5678 root@5.78.187.97` then `http://localhost:5678`)
+- Pinterest board: "Second Hand Fashion Finds" (ID `1089308297311595703`, account `6a2506e02b2567671a0b8721`)
+- Pin link: always `https://thecrawli.com`. Image fallback: `/opengraph-image` for saves missing `image_url`
+- DNS `n8n.thecrawli.com` must stay active — Supabase webhooks need it to reach n8n
+- Code node (not JSON template) builds the Zernio payload — AI text contains newlines/quotes that break n8n JSON templates
+- Prompt tone still being refined (see 1A in AGENT_PLAN.md)
+
+**Previous change (2026-06-07 — watchlist sold/removed status UX + 404 detection):**
 
 Sold/delisted items now show **"Gone"** badge instead of "Sold" (covers both outcomes: sold items + removed listings). Added HTTP 404 detection in `/refresh-price` endpoint so platforms that properly 404 (not CF-blocked) set `isSold=true, isGone=true` immediately.
 
