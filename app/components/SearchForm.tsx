@@ -22,6 +22,34 @@ const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
 
+// ── Query hint detection ──────────────────────────────────────────────────────
+// Detect when users type filter criteria (size, color, condition) into the
+// search query instead of using the filter dropdowns. Numeric model numbers
+// ("jordan 1", "air max 90") are fine; size numbers cause ambiguity.
+const FILTER_HINT_PATTERNS: Array<{ regex: RegExp; label: string }> = [
+  {
+    // "size 10", "size10", standalone US/EU/UK sizes, or clothing size words
+    regex: /\bsize\s*\d|\b(xs|xxs|xxl|xxxl|small|medium|large)\b|\b(us|eu|uk)\s*\d|\bsize\b/i,
+    label: 'size',
+  },
+  {
+    regex: /\b(black|white|grey|gray|red|blue|green|yellow|pink|purple|brown|tan|navy|olive|beige|cream|gold|silver)\b/i,
+    label: 'color',
+  },
+  {
+    regex: /\b(new with tags|nwt|deadstock|like new|pre.?owned|lightly used)\b/i,
+    label: 'condition',
+  },
+];
+
+function detectFilterHints(query: string): string[] {
+  const found: string[] = [];
+  for (const { regex, label } of FILTER_HINT_PATTERNS) {
+    if (regex.test(query)) found.push(label);
+  }
+  return found;
+}
+
 interface Props {
   onResults: (data: SearchResponse, query: string, platforms: string[]) => void;
   onError: (msg: string) => void;
@@ -220,6 +248,8 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     }
   }
 
+  const filterHints = detectFilterHints(query);
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -227,7 +257,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for a product (e.g. Nike Air Jordan 1 Chicago size 10)"
+          placeholder="Search for a product (e.g. Nike Air Jordan 1 Chicago)"
           className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
           style={{
             background: 'var(--surface)',
@@ -256,6 +286,12 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           {isLoading ? 'Searching…' : 'Search'}
         </button>
       </div>
+
+      {filterHints.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Tip: use the <span style={{ color: 'var(--text)' }}>filter dropdowns below</span> for {filterHints.join(', ')} — it improves result accuracy.
+        </p>
+      )}
 
       <FilterPanel
         platforms={selected}

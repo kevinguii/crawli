@@ -50,22 +50,31 @@ function relevanceTokens(text: string): Set<string> {
       .toLowerCase()
       .replace(/[^a-z0-9\s]+/g, ' ')
       .split(/\s+/)
-      .filter((t) => t.length >= 3 && !RELEVANCE_STOPWORDS.has(t))
+      // Keep numeric tokens of any length (model numbers: "1", "4", "350", "90")
+      // and regular text tokens of 3+ chars. Drop pure stopwords.
+      .filter((t) => (t.length >= 3 || /^\d+$/.test(t)) && !RELEVANCE_STOPWORDS.has(t))
   );
 }
 
-// Returns true if the scraped title shares at least one substantive token with
-// the original query. If the query has no substantive tokens after stopwording
-// (e.g. just "black hoodie size m"), we pass everything through rather than
-// drop all results.
+// Returns true if the scraped title is relevant to the query.
+// Rules:
+//   1. If the query has numeric tokens (model numbers like "1", "350"),
+//      the title must contain at least one of them — "jordan 4" must not
+//      slip through a "jordan 1" search.
+//   2. If the query has text tokens, the title must match at least one.
+// If the query has no substantive tokens at all we pass everything through.
 function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
   if (queryTokens.size === 0) return true;
   if (!title) return false;
   const titleTokens = relevanceTokens(title);
-  for (const t of queryTokens) {
-    if (titleTokens.has(t)) return true;
-  }
-  return false;
+
+  const queryNumerics = [...queryTokens].filter((t) => /^\d+$/.test(t));
+  const queryText = [...queryTokens].filter((t) => !/^\d+$/.test(t));
+
+  if (queryNumerics.length > 0 && !queryNumerics.some((t) => titleTokens.has(t))) return false;
+  if (queryText.length > 0 && !queryText.some((t) => titleTokens.has(t))) return false;
+
+  return true;
 }
 
 export function parseScrapedListings(
