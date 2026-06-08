@@ -59,12 +59,53 @@ interface Props {
   abortControllerRef: React.MutableRefObject<AbortController | null>;
 }
 
+// Read sessionStorage at init time so query/selected start with the right values
+// on the first render, avoiding setState-in-effect cascades.
+type SessionInit = {
+  query: string;
+  platforms: string[];
+  filtersOverride: Partial<FilterState> | null;
+  autoRun: boolean;
+};
+
+function readSessionInit(): SessionInit {
+  if (typeof window === 'undefined') {
+    return { query: '', platforms: DEFAULT_PLATFORMS, filtersOverride: null, autoRun: false };
+  }
+  const pendingRaw = sessionStorage.getItem(PENDING_SEARCH_KEY);
+  if (pendingRaw) {
+    sessionStorage.removeItem(PENDING_SEARCH_KEY);
+    try {
+      const item = JSON.parse(pendingRaw) as SearchHistoryItem;
+      return { query: item.query, platforms: item.platforms, filtersOverride: item.filters ?? null, autoRun: true };
+    } catch {}
+  }
+  const prefillRaw = sessionStorage.getItem(PREFILL_SEARCH_KEY);
+  if (prefillRaw) {
+    sessionStorage.removeItem(PREFILL_SEARCH_KEY);
+    try {
+      const item = JSON.parse(prefillRaw) as SearchHistoryItem;
+      return { query: item.query, platforms: item.platforms, filtersOverride: item.filters ?? null, autoRun: false };
+    } catch {}
+  }
+  return { query: '', platforms: DEFAULT_PLATFORMS, filtersOverride: null, autoRun: false };
+}
+
 export default function SearchForm({ onResults, onError, onProgress, filters, onFiltersChange, abortControllerRef }: Props) {
-  const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string[]>(DEFAULT_PLATFORMS);
+  const [{ query: initQuery, platforms: initPlatforms, filtersOverride, autoRun }] = useState(readSessionInit);
+  const [query, setQuery] = useState(initQuery);
+  const [selected, setSelected] = useState<string[]>(initPlatforms);
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { addSearch } = useSearchHistory();
+
+  // Apply the initial filters override (prop callback, not setState) and
+  // trigger auto-submit for searches replayed from history.
+  useEffect(() => {
+    if (filtersOverride) onFiltersChange({ ...emptyFilterState(), ...filtersOverride });
+    if (autoRun) setTimeout(() => formRef.current?.requestSubmit(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load user's saved default platforms from their account settings.
   useEffect(() => {
@@ -75,42 +116,6 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         setSelected(saved);
       }
     });
-  }, []);
-
-  // Re-run a search queued from /search-history — fills form AND auto-submits.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = sessionStorage.getItem(PENDING_SEARCH_KEY);
-    if (!raw) return;
-    sessionStorage.removeItem(PENDING_SEARCH_KEY);
-    try {
-      const item = JSON.parse(raw) as SearchHistoryItem;
-      setQuery(item.query);
-      setSelected(item.platforms);
-      onFiltersChange({ ...emptyFilterState(), ...item.filters });
-      // Defer submit so child state effects flush first.
-      setTimeout(() => formRef.current?.requestSubmit(), 0);
-    } catch {
-      // ignore malformed payload
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Prefill a search from the profile dashboard — fills form only, no auto-run.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = sessionStorage.getItem(PREFILL_SEARCH_KEY);
-    if (!raw) return;
-    sessionStorage.removeItem(PREFILL_SEARCH_KEY);
-    try {
-      const item = JSON.parse(raw) as SearchHistoryItem;
-      setQuery(item.query);
-      setSelected(item.platforms);
-      onFiltersChange({ ...emptyFilterState(), ...item.filters });
-    } catch {
-      // ignore malformed payload
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(e: FormEvent) {
@@ -289,7 +294,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
       {filterHints.length > 0 && (
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Tip: use the <span style={{ color: 'var(--text)' }}>filter dropdowns below</span> for {filterHints.join(', ')} — it improves result accuracy.
+          Tip: use the <span style={{ color: 'var(--text)' }}>filter dropdowns below</span> for {filterHints.join(', ')}, it improves result accuracy.
         </p>
       )}
 
