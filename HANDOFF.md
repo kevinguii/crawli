@@ -1,8 +1,18 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-08 (search relevance tightened + query filter hints)
+**Last updated:** 2026-06-08 (security audit + RLS hardening)
 
-**Latest change (2026-06-08 — search relevance + filter guidance):**
+**Latest change (2026-06-08 — security audit + RLS hardening):**
+
+OWASP-focused security audit completed. One real fix applied; everything else confirmed clean.
+
+- **RLS INSERT policies fixed** — all 5 user tables (`saves`, `saved_searches`, `collection_folders`, `search_history`, `watchlist`) had INSERT policies with no `WITH CHECK` clause. A malicious client calling Supabase directly could insert rows with a forged `user_id`. Fixed by dropping and recreating each policy with `WITH CHECK (auth.uid() = user_id)`. Run in Supabase SQL Editor.
+- **Supabase MCP connected** — `.mcp.json` now includes Supabase MCP at `https://mcp.supabase.com/mcp?project_ref=peyqxfijdrziqfjkxjsn`. Requires OAuth on each new session. File is `.gitignore`d.
+- **All 7 tables have RLS enabled** — confirmed via MCP. `search_cache` uses a restrictive `false` policy (no direct access at all). All other tables scope every operation to `auth.uid() = user_id`.
+- **Remaining minor items (low priority, pre-user):** (1) `avatar_url` accepts any string — no URL validation; rendered via raw `<img>` tag, not Next.js `<Image>`. Self-affecting only. (2) No rate limiting on POST endpoints. (3) Raw Supabase error messages returned to client on 500s.
+- **Not an issue:** No profiles INSERT policy is intentional — profile creation goes through admin client (service role), bypassing RLS by design. No trigger needed.
+
+**Previous change (2026-06-08 — search relevance + filter guidance):**
 
 Tightened result relevance for model-number queries (e.g. "jordan 1" no longer returns Jordan 4/6):
 - `lib/parse.ts` — `relevanceTokens` now keeps short numeric tokens (`"1"`, `"90"`, etc.). `titleMatchesQuery` adds a hard rule: if the query has any numeric tokens, the title must match at least one — text tokens still require at least one match too.
