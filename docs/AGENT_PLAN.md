@@ -18,6 +18,19 @@ for a separate chat session to minimize token usage.
 
 ---
 
+## Prerequisites
+
+### P1. n8n Self-Hosted Setup ✅ DONE
+**Summary:** n8n installed globally via npm, running as systemd service on port 5678. nginx configured to reverse proxy. SSL cert issued. DNS removed (kept private). Access via SSH tunnel: `ssh -L 5678:localhost:5678 root@5.78.187.97` then visit `http://localhost:5678`.
+
+**Access Method:**
+```bash
+ssh -L 5678:localhost:5678 root@5.78.187.97
+# Visit http://localhost:5678 in browser
+```
+
+---
+
 ## Connected Accounts (Zernio — Free Tier)
 
 - [x] **Reddit** — connected. Permissions: posts, comments, votes, DMs, flair, inbox
