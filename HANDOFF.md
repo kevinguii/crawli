@@ -1,8 +1,16 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-08 (security audit + RLS hardening)
+**Last updated:** 2026-06-09 (Reddit monitoring workflow — AGENT_PLAN 1B)
 
-**Latest change (2026-06-08 — security audit + RLS hardening):**
+**Latest change (2026-06-09 — Reddit monitoring + draft workflow, AGENT_PLAN 1B):**
+
+Built and verified the daily Reddit monitoring workflow (marketing automation, not app code). n8n workflow "reddit monitor crawli" (ID `URiVWju6wMJcrQiW`) searches 5 fashion subreddits via Zernio, scores relevance + drafts replies with gpt-4o-mini, and emails a digest to owner@example.com for manual posting. Verified end-to-end (execution #22: 17 posts → 2 drafts → email delivered). Full details, run-on-demand commands, and schedule-change steps in `docs/AGENT_PLAN.md` §1B; definition in `docs/workflows/reddit-monitor.json`.
+
+- Reddit Zernio account `6a2507082b2567671a0b890c`; reuses Zernio + OpenAI creds; new Gmail SMTP cred `m3Zfuf10aGoLQhov`.
+- **Hetzner blocks outbound SMTP 465 + 25; only 587 (STARTTLS) is open** — relevant for any future email-sending from the VPS. (The app itself sends transactional email via Resend's HTTP API, see 2026-05-23 entry — an alternative if 587 is ever unavailable.)
+- n8n 2.x gotchas: public-API-created workflows can't register webhooks (#21614) → on-demand uses an Execute-Workflow trigger; `n8n execute` needs `N8N_RUNNERS_BROKER_PORT` override to avoid the live service's broker on 5679.
+
+**Previous change (2026-06-08 — security audit + RLS hardening):**
 
 OWASP-focused security audit completed. One real fix applied; everything else confirmed clean.
 

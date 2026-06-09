@@ -63,20 +63,33 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1B. Reddit Monitoring + Draft Workflow ✅ Zernio free
-**Goal:** Monitor target subreddits, surface relevant threads, draft replies for human approval
+#### 1B. Reddit Monitoring + Draft Workflow ✅ DONE (2026-06-09)
 
-- Agent monitors daily: r/femalefashionadvice, r/frugalfemalefashion, r/streetwear, r/ThriftStoreHauls, r/malefashionadvice
-- Flags threads where Crawli is genuinely relevant (secondhand, price, specific brands)
-- Drafts contextual reply (value-first, Crawli mention only if natural)
-- Surfaces draft to you (Slack/email/Telegram) for approve/edit/reject
-- **You post manually** — agent never posts autonomously on Reddit (ban risk)
-- Also: agent can upvote relevant posts + leave occasional non-promotional comments autonomously (low-risk)
-- **Platform:** Reddit via Zernio
-- **Complexity:** Low-Medium
-- **ToS risk:** Low if human approves all promotional comments
+**What was built:** n8n workflow "reddit monitor crawli" (ID `URiVWju6wMJcrQiW`) — Schedule (daily 14:00 UTC) OR on-demand trigger → Code builds one OR-keyword query per subreddit → Zernio `GET /v1/reddit/search` (one call per subreddit, 5s apart) → Code dedupes + filters to last 24h → OpenAI gpt-4o-mini scores relevance 0-10 and drafts a reply (strict JSON) → Code keeps score ≥7 and builds an HTML digest → Email digest to owner@example.com. **You post manually** — workflow never posts to Reddit.
 
-**Chat prompt to start:**
+**Verified end-to-end 2026-06-09** (execution #22): 17 posts collected → 2 drafts kept → email accepted by Gmail.
+
+**Key details:**
+- Reddit Zernio account ID: `6a2507082b2567671a0b890c` (username `Majestic_Crawli6792`) — found via `GET https://zernio.com/api/v1/accounts`, `_id` field
+- Subreddits: femalefashionadvice, frugalfemalefashion, streetwear, ThriftStoreHauls, malefashionadvice
+- LLM: **gpt-4o-mini** (not DeepSeek — no DeepSeek key, and reuses existing OpenAI cred; matches provider preference)
+- Reuses creds: Zernio header auth `fJu32HkmtmjvrZhX`, OpenAI `eQUItcjo7Td6T6Ui`
+- Email cred: Gmail SMTP `m3Zfuf10aGoLQhov` — **port 587 STARTTLS** (Hetzner blocks 465 + 25; only 587 is open). Uses a Gmail app password.
+- Definition checked into repo: `docs/workflows/reddit-monitor.json`
+
+**Run on demand:**
+- n8n UI: open the workflow → **Execute Workflow** button
+- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id URiVWju6wMJcrQiW'` (broker-port override needed because the live service holds default 5679)
+
+**Change schedule:** edit the "Daily 14:00 UTC" Schedule Trigger node in the UI (or PATCH the workflow via API). Currently daily at 14:00 UTC.
+
+**n8n 2.x gotchas learned:**
+- **Webhooks created via the public REST API never register** ([n8n #21614](https://github.com/n8n-io/n8n/issues/21614)) — registration is a frontend-only internal call. Schedule triggers DO activate via API. So on-demand uses an Execute-Workflow Trigger node, not a webhook.
+- `n8n execute --id` requires an **Execute Workflow Trigger** node in the workflow, and conflicts with the running service on broker port 5679 unless `N8N_RUNNERS_BROKER_PORT` is overridden.
+- n8n 2.x smtp credential schema **requires `disableStartTls`**; public API has no credential-update (PUT 405) — delete + recreate to change.
+- Zernio reddit search passes through to Reddit's search API: **no full-feed endpoint** (empty `q` returns 0; `q=*` only matches stickies) and it **429s under burst** — HTTP node has 5s batching + 3× retry. Daily use (5 spaced calls) stays well under the limit.
+
+**Chat prompt to start:** *(complete — kept for reference)*
 > "I want an n8n workflow that monitors specific subreddits (r/femalefashionadvice, r/frugalfemalefashion, r/streetwear, r/ThriftStoreHauls, r/malefashionadvice) daily via Zernio, uses DeepSeek to draft replies where Crawli is relevant, and sends drafts to me for approval before posting. Reddit account is connected via Zernio."
 
 ---
@@ -233,7 +246,7 @@ UptimeRobot: X incidents (if any)
 
 ## Notes
 
-- **Model choice:** DeepSeek V4 for high-volume drafting tasks (99% cheaper). Claude Sonnet for reasoning-heavy tasks (bug triage, architecture decisions).
+- **Model choice:** Plan originally specced DeepSeek V4, but **1A and 1B both use OpenAI gpt-4o-mini** (no DeepSeek key provisioned; gpt-4o-mini is cheap enough for drafting and matches the OpenAI-default / Gemini-backup provider preference). Revisit DeepSeek only if drafting volume/cost becomes a real concern. Claude Sonnet still intended for reasoning-heavy tasks (bug triage, architecture).
 - **Hosting:** n8n self-hosted on existing Hetzner VPS alongside Crawli sidecar. No new server needed.
 - **Zernio accounts used:** Reddit (free slot 1), Pinterest (free slot 2). X/Twitter would be first paid account ($6/mo) if Zernio chosen over Playwright.
 - **Human-in-the-loop:** Reddit promotional comments always need approval before posting. Instagram + TikTok = agent drafts only, manual execution. Pinterest = fully automated.

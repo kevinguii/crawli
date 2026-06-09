@@ -1,0 +1,135 @@
+{
+  "name": "reddit monitor crawli",
+  "settings": { "executionOrder": "v1" },
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [ { "field": "days", "triggerAtHour": 14 } ] }
+      },
+      "id": "node-schedule",
+      "name": "Daily 14:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [ -400, 160 ]
+    },
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "id": "node-ondemand",
+      "name": "Run on demand (CLI/UI)",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [ -400, 460 ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const subs = [\n  'femalefashionadvice',\n  'frugalfemalefashion',\n  'streetwear',\n  'ThriftStoreHauls',\n  'malefashionadvice'\n];\nconst q = 'secondhand OR thrift OR thrifted OR poshmark OR depop OR vestiaire OR thredup OR \"the real real\" OR \"where to buy\" OR \"looking for\" OR dupe OR authentic OR consignment';\nreturn subs.map(s => ({ json: { subreddit: s, q } }));"
+      },
+      "id": "node-queries",
+      "name": "Build queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [ -180, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://zernio.com/api/v1/reddit/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            { "name": "accountId", "value": "6a2507082b2567671a0b890c" },
+            { "name": "subreddit", "value": "={{ $json.subreddit }}" },
+            { "name": "q", "value": "={{ $json.q }}" },
+            { "name": "restrict_sr", "value": "1" },
+            { "name": "sort", "value": "new" },
+            { "name": "limit", "value": "50" }
+          ]
+        },
+        "options": { "batching": { "batch": { "batchSize": 1, "batchInterval": 5000 } } }
+      },
+      "id": "node-search",
+      "name": "Zernio Reddit search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [ 40, 300 ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": { "id": "fJu32HkmtmjvrZhX", "name": "Header Auth account" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = Math.floor(Date.now()/1000);\nconst cutoff = now - 24*3600;\nconst seen = new Set();\nconst out = [];\nfor (const resp of $input.all()) {\n  const items = (resp.json.items || []);\n  for (const p of items) {\n    if (!p || !p.id) continue;\n    if (seen.has(p.id)) continue;\n    seen.add(p.id);\n    if ((p.createdUtc || 0) < cutoff) continue;\n    if (p.over18) continue;\n    if (p.stickied) continue;\n    out.push({ json: {\n      id: p.id,\n      title: p.title || '',\n      subreddit: p.subreddit || '',\n      author: p.author || '',\n      url: p.permalink || p.url || '',\n      score: p.score || 0,\n      numComments: p.numComments || 0,\n      createdUtc: p.createdUtc || 0,\n      selftext: (p.selftext || '').slice(0, 1200)\n    }});\n  }\n}\nreturn out;"
+      },
+      "id": "node-collect",
+      "name": "Collect posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [ 260, 300 ]
+    },
+    {
+      "parameters": {
+        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list", "cachedResultName": "GPT-4O-MINI" },
+        "responses": {
+          "values": [
+            {
+              "content": "=You evaluate Reddit threads for relevance to Crawli, a free secondhand-fashion search engine that finds and price-compares listings across Poshmark, Depop, Vestiaire, eBay, ThredUp and The RealReal.\n\nScore 0-10 how genuinely relevant this thread is for a helpful, non-spammy reply that could naturally mention Crawli. High scores: someone hunting for a specific item or brand secondhand, asking where to buy, comparing prices, frustrated finding deals or sizes. Low scores: outfit feedback, body image, fit checks, off-topic, already solved, meta or mod posts, giveaways.\n\nReturn ONLY strict JSON, no markdown fences, with exactly these keys:\n{\"score\": <integer 0-10>, \"reason\": \"<one sentence>\", \"draft\": \"<a value-first reply written like a real redditor; lead with genuinely useful help; mention Crawli only if it actually helps and never with marketing language; no em dashes, no exclamation marks; empty string if score is below 7>\"}\n\nSubreddit: r/{{ $json.subreddit }}\nTitle: {{ $json.title }}\nBody: {{ $json.selftext }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "node-ai",
+      "name": "Score and draft",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [ 480, 300 ],
+      "credentials": {
+        "openAiApi": { "id": "eQUItcjo7Td6T6Ui", "name": "OpenAi account" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiOut = $input.all();\nconst posts = $('Collect posts').all();\nconst kept = [];\nfor (let i = 0; i < aiOut.length; i++) {\n  let parsed;\n  try {\n    let txt = aiOut[i].json.output[0].content[0].text.trim();\n    txt = txt.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();\n    parsed = JSON.parse(txt);\n  } catch (e) { continue; }\n  if ((parsed.score || 0) < 7) continue;\n  const p = posts[i] ? posts[i].json : {};\n  kept.push({\n    score: parsed.score,\n    reason: parsed.reason || '',\n    draft: parsed.draft || '',\n    title: p.title || '',\n    subreddit: p.subreddit || '',\n    url: p.url || '',\n    numComments: p.numComments || 0,\n    postScore: p.score || 0\n  });\n}\nkept.sort((a, b) => b.score - a.score);\nconst esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nlet html;\nif (kept.length === 0) {\n  html = '<p>No Crawli-relevant Reddit threads in the last 24h.</p>';\n} else {\n  html = `<h2>Crawli Reddit drafts — ${kept.length} thread(s)</h2>` + kept.map(k => `\n  <div style=\"margin-bottom:24px;padding:12px;border:1px solid #ddd;border-radius:8px\">\n    <p><strong>r/${esc(k.subreddit)}</strong> · relevance ${k.score}/10 · ${k.numComments} comments · post score ${k.postScore}</p>\n    <p><a href=\"${esc(k.url)}\">${esc(k.title)}</a></p>\n    <p><em>${esc(k.reason)}</em></p>\n    <p style=\"white-space:pre-wrap;background:#f6f6f6;padding:8px;border-radius:6px\">${esc(k.draft)}</p>\n  </div>`).join('');\n}\nconst today = new Date().toISOString().slice(0, 10);\nreturn [{ json: { count: kept.length, html, subject: `Crawli Reddit drafts (${kept.length}) — ${today}` } }];"
+      },
+      "id": "node-digest",
+      "name": "Build digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [ 700, 300 ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "owner@example.com",
+        "toEmail": "owner@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "node-email",
+      "name": "Send digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [ 920, 300 ],
+      "credentials": {
+        "smtp": { "id": "m3Zfuf10aGoLQhov", "name": "Gmail SMTP" }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 14:00 UTC": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
+    "Run on demand (CLI/UI)": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
+    "Build queries": { "main": [ [ { "node": "Zernio Reddit search", "type": "main", "index": 0 } ] ] },
+    "Zernio Reddit search": { "main": [ [ { "node": "Collect posts", "type": "main", "index": 0 } ] ] },
+    "Collect posts": { "main": [ [ { "node": "Score and draft", "type": "main", "index": 0 } ] ] },
+    "Score and draft": { "main": [ [ { "node": "Build digest", "type": "main", "index": 0 } ] ] },
+    "Build digest": { "main": [ [ { "node": "Send digest", "type": "main", "index": 0 } ] ] }
+  }
+}
