@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const subs = [\n  'femalefashionadvice',\n  'frugalfemalefashion',\n  'streetwear',\n  'ThriftStoreHauls',\n  'malefashionadvice'\n];\nconst q = 'secondhand OR thrift OR thrifted OR poshmark OR depop OR vestiaire OR thredup OR \"the real real\" OR \"where to buy\" OR \"looking for\" OR dupe OR authentic OR consignment';\nreturn subs.map(s => ({ json: { subreddit: s, q } }));"
+        "jsCode": "const subs = [\n  'femalefashionadvice',\n  'frugalfemalefashion',\n  'streetwear',\n  'ThriftStoreHauls',\n  'malefashionadvice',\n  'poshmark',\n  'Depop',\n  'Mercari',\n  'vinted',\n  'Grailed',\n  'reselling',\n  'Flipping',\n  'Thrift',\n  'SecondHandFinds',\n  'frugalmalefashion'\n];\nconst q = 'secondhand OR thrift OR thrifted OR poshmark OR depop OR vestiaire OR thredup OR \"the real real\" OR \"where to buy\" OR \"looking for\" OR dupe OR authentic OR consignment';\nreturn subs.map(s => ({ json: { subreddit: s, q } }));"
       },
       "id": "node-queries",
       "name": "Build queries",

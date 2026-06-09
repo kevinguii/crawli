@@ -55,6 +55,7 @@ Before declaring done:
 - **Platform colors are specific** — verify exact hex codes, not approximations
 - **eBay is broken** — known issue, don't debug; document unexpected behavior
 - **Vestiaire URL discovery broken** — search + scraping work; URL-finding is blocked. Don't fix.
+- **ThredUp brand queries return garbage (§7 L)** — ThredUp's catalog is mass-market basics; luxury/streetwear brands like BAPE are absent. ThredUp's fuzzy search falls back to matching on descriptor words ("shirt", "hoodie") when the brand isn't in inventory. Combined with `titleMatchesQuery` requiring only 1 of N tokens, irrelevant results slip through. Fix: use ThredUp's `brand` JSON-LD field (already extracted) to require brand match. See §7 L in HANDOFF.md. Do NOT fix without user approval — it's a multi-file change touching the extractor + parse step.
 
 ## Before Starting
 

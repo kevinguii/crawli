@@ -1,8 +1,40 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-09 (Reddit monitoring workflow — AGENT_PLAN 1B)
+**Last updated:** 2026-06-09 (§7 L fix shipped — clothing item stopwords + ThredUp brand extraction)
 
-**Latest change (2026-06-09 — Reddit monitoring + draft workflow, AGENT_PLAN 1B):**
+**Latest change (2026-06-09 — §7 L fix: clothing item type stopwords + ThredUp brand field extraction):**
+
+Fixed the long-standing §7 L issue where ThredUp (and any platform) returns generic junk for brand-driven queries like "bape japan t shirt". Two changes shipped:
+
+**1. ThredUp brand field extracted and prepended to title — [crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py)**
+- ThredUp JSON-LD has `brand: {"@type": "Brand", "name": "A Bathing Ape"}` per product
+- Extractor now reads `brand.name` and prepends to `title` when the brand name isn't already in the title (mirrors the Depop extractor pattern at line 644–648)
+- In practice ThredUp already includes brand in every title, so this is a defensive fix — but it means the pipeline is now brand-aware for ThredUp going forward
+
+**2. Clothing item types added to RELEVANCE_STOPWORDS — [lib/parse.ts](lib/parse.ts)**
+- Added: `shirt, tee, hoodie, hoody, sweatshirt, crewneck, shorts, pants, jeans, denim, leggings, jacket, coat, blazer, vest, sweater, cardigan, pullover, dress, skirt, blouse, top, sneaker, sneakers, shoe, shoes, boot, boots, sandal, sandals, hat, beanie, sock, socks, bag, handbag, purse, backpack, tote`
+- **Why:** On a fashion resale platform, item-type words appear in virtually every listing and are too generic to discriminate between brands. "bape japan t shirt" → tokens `{"bape", "japan"}` (shirt removed) → only items with "bape" or "japan" pass. Junk like "UT for Uniqlo T-Shirt" (only had "shirt") now filtered out.
+- **Generic queries still work:** "t shirt" → tokens `{}` (empty) → all results pass. "basketball shorts" → tokens `{"basketball"}` → only basketball-specific shorts pass.
+
+**Verified (Node.js simulation, 21 test cases):**
+- `"bape japan t shirt"` — all 9 Uniqlo/LRG/Madewell junk items FAIL; "BAPE Japan Souvenir Tee" PASSES
+- `"fear of god essentials hoodie"` — Nike/Assorted hoodies FAIL; FOG Essentials items PASS
+- `"jordan 1 retro"` — Jordan 4 FAILS (numeric 1 required); Jordan 1 PASSES
+- `"t shirt"` → empty tokens → all pass ✓
+- `"basketball shorts"` → only basketball shorts pass ✓
+
+**Known limitation (§7 L alias problem, not yet fixed):**
+ThredUp stores BAPE as brand `"A Bathing Ape"`. A user searching `"bape"` gets tokens `{"bape"}` which doesn't match "bathing" or "ape". So ThredUp returns 0 results for "bape" queries. This is honest (ThredUp has almost no BAPE stock) and better than 9 junk items. Searching "a bathing ape t shirt" works correctly and returns ThredUp's actual A Bathing Ape items. A brand-alias database or LLM-based matching would be needed to resolve this fully (see §7 L option 3).
+
+**Previous change (2026-06-09 — PRAW evaluated, shelved; Reddit stays on Zernio):**
+
+Investigated replacing Zernio's Reddit search with a self-hosted PRAW (official Reddit Data API) sidecar to beat Zernio's burst-429 limit. **Decision: shelved, staying on Zernio.** Reason: Reddit's **Responsible Builder Policy (effective 2025-11-11)** killed self-service API keys — creating an app now requires an approval application (~7 days to 4 weeks) and the free tier is non-commercial-only (Crawli is commercial marketing use). Zernio already holds an approved Reddit relationship, so it absorbs that friction + ToS exposure. The "Social Media APIs" app by `Sensitive-Quality793` in the Reddit account's authorized-apps list IS Zernio.
+
+- **PRAW code kept, not deployed** (drop-in ready if Reddit ever approves an app): `reddit-service/` (FastAPI + PRAW, `127.0.0.1:8100`, read-only) + `docs/workflows/reddit-monitor-praw.json`. Setup steps in `reddit-service/README.md`. Original Zernio workflow `docs/workflows/reddit-monitor.json` remains the live one.
+- **Coverage levers within Zernio (confirmed from docs.zernio.com):** search supports `after` cursor pagination and `limit` up to **100** (default 25; workflow currently uses 50); response carries `after`/`before`; Reddit caps 1000 items/listing. BUT verified run #22 collected only 17 posts across 5 subreddits in the 24h window — nowhere near the 50/call cap, so **pagination alone won't help at 24h**. Real levers: **more subreddits** + **wider time window** (the latter needs cross-run dedup via Supabase to avoid repeating threads on a daily schedule). See AGENT_PLAN §1B.
+- n8n MCP connects to a different (empty) instance — it cannot see the Hetzner production workflow `URiVWju6wMJcrQiW`. Edit via the JSON file + import over SSH.
+
+**Previous change (2026-06-09 — Reddit monitoring + draft workflow, AGENT_PLAN 1B):**
 
 Built and verified the daily Reddit monitoring workflow (marketing automation, not app code). n8n workflow "reddit monitor crawli" (ID `URiVWju6wMJcrQiW`) searches 5 fashion subreddits via Zernio, scores relevance + drafts replies with gpt-4o-mini, and emails a digest to owner@example.com for manual posting. Verified end-to-end (execution #22: 17 posts → 2 drafts → email delivered). Full details, run-on-demand commands, and schedule-change steps in `docs/AGENT_PLAN.md` §1B; definition in `docs/workflows/reddit-monitor.json`.
 
@@ -3174,18 +3206,22 @@ Do NOT re-propose strict filters here without a specific bad-case bug to motivat
 
 **Carry-forward instruction:** do not implement (2) or (3) without revisiting §7 J — the user explicitly chose permissive once. Option (1) is the minimal-risk first move.
 
-### L. Brand-driven queries return generic results on platforms without that brand (surfaced 2026-05-22)
+### L. Brand-driven queries return generic results on platforms without that brand (surfaced 2026-05-22) — **PARTIALLY RESOLVED 2026-06-09**
 
-**Symptom:** "fear of god essentials hoodie white" on ThredUp returned 10 generic white hoodies, none Fear of God Essentials.
+**Symptom:** "fear of god essentials hoodie white" on ThredUp returned 10 generic white hoodies, none Fear of God Essentials. Re-confirmed 2026-06-09 with "bape japan t shirt" (9/10 results were Uniqlo, LRG, Madewell, Assorted Brands).
 
-**Root cause:** ThredUp's `/search/<slug>` is a fuzzy keyword match against ThredUp's own inventory (Gap/Madewell/basics — designer rare). When the brand isn't in inventory, ThredUp falls back to keyword match on "hoodie" + "white". Then [parseScrapedListings](lib/parse.ts#L61-L69) compounds the looseness: `titleMatchesQuery` accepts a listing if **any one** substantive query token appears in the title. "Nike White Hoodie" passes because "hoodie" matched even though "fear/god/essentials" didn't.
+**Root cause:** ThredUp's `/search/<slug>` is a fuzzy keyword match against ThredUp's own inventory (Gap/Madewell/basics — designer rare). When the brand isn't in inventory, ThredUp falls back to keyword match on item-type words ("hoodie", "shirt"). Then `titleMatchesQuery` compounded the looseness: any one substantive query token matching the title was enough — so "hoodie" or "shirt" alone let generic items through.
 
-**Options to address (none chosen):**
-1. **Brand-tier token detection:** split query tokens into brand-ish (multi-word, capitalized, dictionary lookup against a brand list, or LLM-tagged) vs descriptor. When a brand-ish token is present, require ≥1 brand-tier token in the title.
-2. **Use platform-side `brand` field:** ThredUp's JSON-LD per-product object has a `brand` field. Match the query against `brand + name` instead of just `name`.
-3. **UX redesign:** add a brand-name field to the search form (separate from the descriptor query); platforms with a `brand` URL parameter use it natively. Suggested by user during the smoke test.
+**Fix shipped 2026-06-09 (Options 1+2 combined):**
+- **Clothing item types added to RELEVANCE_STOPWORDS** ([lib/parse.ts](lib/parse.ts)) — shirt, tee, hoodie, shorts, pants, jeans, jacket, coat, sneakers, shoes, boots, hat, bag, etc. are now stopwords. Generic clothing-type words no longer count as discriminating tokens. A query "bape japan t shirt" now tokenizes to just `{"bape", "japan"}` — items without those tokens are rejected.
+- **ThredUp brand field extracted** ([crawl4ai-service/search_page_extractors.py](crawl4ai-service/search_page_extractors.py)) — brand.name from JSON-LD is prepended to title (defensive; ThredUp already includes brand in all titles, but extraction is now explicit and brand-aware).
+- **Generic queries unaffected:** "t shirt" → tokens `{}` (empty) → all pass. "basketball shorts" → tokens `{"basketball"}` → only basketball-specific items pass.
 
-**Carry-forward instruction:** option 3 has the biggest payoff (also lets us use Grailed/Depop/Mercari's `brand` query parameters natively) but it's a UX change affecting the FilterPanel + SearchForm + route schema + parse step. Build a small PoC against ThredUp first to verify the JSON-LD `brand` field is populated on the search-grid response, then design the UX.
+**Remaining open items:**
+1. **Brand alias problem (not fixed):** ThredUp stores BAPE as brand `"A Bathing Ape"`. Searching "bape" → tokens `{"bape"}` → doesn't match "bathing"/"ape" → 0 ThredUp results. This is more honest than 9 junk items (ThredUp genuinely has minimal BAPE stock). Searching "a bathing ape" correctly returns A Bathing Ape items. Full fix would need a brand-alias database.
+2. **Option 3 (UX brand field):** still the highest-payoff long-term fix — separate brand input field, platforms use native `brand` URL params. Not yet implemented.
+
+**Brand field format (verified 2026-06-09):** `{"@type": "Brand", "name": "A Bathing Ape"}` — always an object, not a string.
 
 ### M. Search-engine `site:` index sparsity caps per-platform results (especially Grailed) — **RESOLVED 2026-05-22 (Grailed)**
 

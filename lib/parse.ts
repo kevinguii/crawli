@@ -42,6 +42,17 @@ const RELEVANCE_STOPWORDS = new Set([
   // condition / generic descriptors
   'new', 'used', 'mens', 'womens', 'men', 'women', 'kids', 'unisex',
   'authentic', 'genuine', 'rare', 'vintage', 'used',
+  // clothing item types — too generic on a fashion resale platform to distinguish
+  // one brand/query from another. A query like "bape t shirt" → tokens {"bape"},
+  // so generic-only queries ("t shirt", "basketball shorts") → empty tokens → all pass.
+  'shirt', 'tee', 'hoodie', 'hoody', 'sweatshirt', 'crewneck',
+  'shorts', 'pants', 'jeans', 'denim', 'leggings',
+  'jacket', 'coat', 'blazer', 'vest',
+  'sweater', 'cardigan', 'pullover',
+  'dress', 'skirt', 'blouse', 'top',
+  'sneaker', 'sneakers', 'shoe', 'shoes', 'boot', 'boots', 'sandal', 'sandals',
+  'hat', 'beanie', 'sock', 'socks',
+  'bag', 'handbag', 'purse', 'backpack', 'tote',
 ]);
 
 function relevanceTokens(text: string): Set<string> {

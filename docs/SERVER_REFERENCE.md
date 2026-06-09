@@ -176,3 +176,38 @@ curl https://thecrawli.com/api/smoke
 | Public port | `80` via nginx → Cloudflare handles HTTPS |
 | Logs (Next.js) | `journalctl -u crawli-next -f` |
 | Logs (sidecar) | `journalctl -u crawli-sidecar -f` |
+
+---
+
+## n8n on the server (marketing automation)
+
+**SSH works directly — Claude/future sessions can run `ssh root@5.78.187.97 '...'` from the Bash tool. No need to wait for the user or set up the `-L 5678` tunnel just to make changes** (the tunnel is only for opening the n8n editor UI in a browser).
+
+| Thing | Value |
+|-------|-------|
+| n8n version | 2.8.4 (global npm install) |
+| Service | `systemctl {status,restart} n8n` (unit `/etc/systemd/system/n8n.service`) |
+| Editor | `https://n8n.thecrawli.com/` (Cloudflare-proxied) |
+| Data dir | `/root/.n8n/` |
+| Database | **SQLite** at `/root/.n8n/database.sqlite` (WAL mode) |
+| Public REST API | **not enabled** — no `N8N_API_KEY` set; use the CLI instead |
+| n8n's node_modules | `/usr/lib/node_modules/n8n/node_modules` (bundles `sqlite3` + `flatted`) |
+
+**No `sqlite3` CLI on the box.** Query the DB via the bundled driver:
+```bash
+ssh root@5.78.187.97 'NODE_PATH=/usr/lib/node_modules/n8n/node_modules node /tmp/q.js'
+# in q.js: const db = new (require("sqlite3").Database)("/root/.n8n/database.sqlite", ...OPEN_READONLY)
+```
+Useful tables: `workflow_entity` (cols incl. `nodes`, `active`), `execution_entity` (`status`,`startedAt`), `execution_data` (`data` col = **flatted-encoded** JSON; parse with `require("flatted").parse(row.data)`, then `parsed.resultData.runData[nodeName][run].data.main[0]` = output items).
+
+**Edit a workflow safely (CLI, since no API key):**
+```bash
+n8n export:workflow --id=<ID> --output=/tmp/wf.json   # preserves node ids + creds
+# ...modify /tmp/wf.json with a node script...
+n8n import:workflow --input=/tmp/wf.json              # upserts by id
+n8n update:workflow --id=<ID> --active=true           # ⚠ import DEACTIVATES the workflow
+systemctl restart n8n                                 # ⚠ activation/schedule only registers after restart
+```
+**Gotchas:** (1) `import:workflow` always **deactivates** — re-activate after. (2) `update:workflow` and activation changes **only take effect after `systemctl restart n8n`**. (3) On-demand run conflicts with the live service's task-runner broker (5679) unless overridden: `N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id <ID>` (this runs the FULL workflow, incl. sending the digest email).
+
+Reddit monitor workflow id: `URiVWju6wMJcrQiW`. Repo source-of-truth: `docs/workflows/reddit-monitor.json`.

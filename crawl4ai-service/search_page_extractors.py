@@ -146,6 +146,20 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
         if isinstance(name, str):
             name = html_module.unescape(name)
 
+        # Extract brand.name from JSON-LD (format: {"@type": "Brand", "name": "..."}).
+        brand_raw = p.get("brand")
+        brand_name: Optional[str] = None
+        if isinstance(brand_raw, dict):
+            brand_name = brand_raw.get("name") if isinstance(brand_raw.get("name"), str) else None
+        elif isinstance(brand_raw, str):
+            brand_name = brand_raw
+        # Prepend brand to title so downstream token-matching sees the brand name.
+        # Mirrors the same pattern used by the Depop extractor.
+        if brand_name and name and brand_name.lower() not in name.lower():
+            name = f"{brand_name} {name}"
+        elif brand_name and not name:
+            name = brand_name
+
         image = None
         img_field = p.get("image")
         if isinstance(img_field, list) and img_field:
