@@ -1,13 +1,13 @@
 {
   "name": "reddit monitor crawli",
-  "settings": { "executionOrder": "v1" },
+  "settings": { "executionOrder": "v1", "timezone": "America/Los_Angeles" },
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [ { "field": "days", "triggerAtHour": 11 } ] }
+        "rule": { "interval": [ { "field": "days", "triggerAtHour": 4 } ] }
       },
       "id": "node-schedule",
-      "name": "Daily 11:00 UTC (4am PDT)",
+      "name": "Daily 4am PT",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [ -400, 160 ]
@@ -125,7 +125,7 @@
     }
   ],
   "connections": {
-    "Daily 11:00 UTC (4am PDT)": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
+    "Daily 4am PT": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
     "Run on demand (CLI/UI)": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
     "Build queries": { "main": [ [ { "node": "Zernio Reddit search", "type": "main", "index": 0 } ] ] },
     "Zernio Reddit search": { "main": [ [ { "node": "Collect posts", "type": "main", "index": 0 } ] ] },
