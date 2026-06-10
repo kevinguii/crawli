@@ -1,6 +1,9 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-10 (Reddit monitor — 8-sub coverage VERIFIED + casual/low-promo prompt rewrite)
+**Last updated:** 2026-06-10 (Reddit monitor PAUSED 7 days — user got a 7-day Reddit ban)
+
+**⏸ PAUSED (2026-06-10):** The Reddit monitor workflow is **deactivated** (`active:0`, won't run) — the user got a **7-day Reddit ban on ALL their accounts** (IP-level), **including the Zernio search account `Majestic_Crawli6792`** — so search is down too, not just posting. Cause: aggressive manual promo-comment posting from young accounts (the shadowban/ban risk flagged earlier). Resume target **~2026-06-17** (a one-time claude.ai routine `trig_01FyY9dccqnWCP8dvah23RjE` will fire a reminder 2026-06-17 16:00 UTC). Resume steps: **first verify the ban lifted** (log into `Majestic_Crawli6792`), then `ssh root@5.78.187.97`, `n8n update:workflow --id=URiVWju6wMJcrQiW --active=true`, `systemctl restart n8n`. Before resuming, revisit strategy (much lower posting velocity; the new name-only/no-link prompt helps) AND apply the agreed subreddit rebalance below.
+- **Agreed rebalance (NOT yet applied — workflow paused):** lean reseller. Drop platform-name subs (poshmark, Depop, Mercari, vinted) + Grailed; keep ThriftStoreHauls, reselling, malefashionadvice; add r/Flipping, r/findfashion, r/sidehustle, r/VintageClothing. (Caveat: the platform subs were the highest-yield — poshmark gave 18 — so this trades yield for receptiveness/safety. Re-confirm on resume.)
 
 **Latest change (2026-06-10 — Reddit monitor: 8-sub coverage verified + prompt voice & promo-discipline rewrite):**
 
