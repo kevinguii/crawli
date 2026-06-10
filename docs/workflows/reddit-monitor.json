@@ -4,10 +4,10 @@
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [ { "field": "days", "triggerAtHour": 14 } ] }
+        "rule": { "interval": [ { "field": "days", "triggerAtHour": 11 } ] }
       },
       "id": "node-schedule",
-      "name": "Daily 14:00 UTC",
+      "name": "Daily 11:00 UTC (4am PDT)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [ -400, 160 ]
@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const subs = [\n  'femalefashionadvice',\n  'frugalfemalefashion',\n  'streetwear',\n  'ThriftStoreHauls',\n  'malefashionadvice',\n  'poshmark',\n  'Depop',\n  'Mercari',\n  'vinted',\n  'Grailed',\n  'reselling',\n  'Flipping',\n  'Thrift',\n  'SecondHandFinds',\n  'frugalmalefashion'\n];\nconst q = 'secondhand OR thrift OR thrifted OR poshmark OR depop OR vestiaire OR thredup OR \"the real real\" OR \"where to buy\" OR \"looking for\" OR dupe OR authentic OR consignment';\nreturn subs.map(s => ({ json: { subreddit: s, q } }));"
+        "jsCode": "// 8 high-yield subs, ordered best-first. Zernio's free tier throttles ~6-8 Reddit\n// searches/run (shared OAuth account, Reddit-side limit), so any throttle sacrifices\n// the low-yield tail. Dead general-fashion subs (femalefashionadvice/FFA/streetwear =\n// 0 posts/day) were dropped. See AGENT_PLAN §1B + HANDOFF.\nconst subs = [\n  'poshmark',\n  'ThriftStoreHauls',\n  'Depop',\n  'malefashionadvice',\n  'Mercari',\n  'vinted',\n  'reselling',\n  'Grailed'\n];\nconst q = 'secondhand OR thrift OR thrifted OR poshmark OR depop OR vestiaire OR thredup OR \"the real real\" OR \"where to buy\" OR \"looking for\" OR dupe OR authentic OR consignment';\nreturn subs.map(s => ({ json: { subreddit: s, q } }));"
       },
       "id": "node-queries",
       "name": "Build queries",
@@ -48,7 +48,7 @@
             { "name": "limit", "value": "50" }
           ]
         },
-        "options": { "batching": { "batch": { "batchSize": 1, "batchInterval": 5000 } } }
+        "options": { "batching": { "batch": { "batchSize": 1, "batchInterval": 60000 } } }
       },
       "id": "node-search",
       "name": "Zernio Reddit search",
@@ -57,7 +57,8 @@
       "position": [ 40, 300 ],
       "retryOnFail": true,
       "maxTries": 3,
-      "waitBetweenTries": 5000,
+      "waitBetweenTries": 120000,
+      "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": { "id": "fJu32HkmtmjvrZhX", "name": "Header Auth account" }
       }
@@ -124,7 +125,7 @@
     }
   ],
   "connections": {
-    "Daily 14:00 UTC": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
+    "Daily 11:00 UTC (4am PDT)": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
     "Run on demand (CLI/UI)": { "main": [ [ { "node": "Build queries", "type": "main", "index": 0 } ] ] },
     "Build queries": { "main": [ [ { "node": "Zernio Reddit search", "type": "main", "index": 0 } ] ] },
     "Zernio Reddit search": { "main": [ [ { "node": "Collect posts", "type": "main", "index": 0 } ] ] },

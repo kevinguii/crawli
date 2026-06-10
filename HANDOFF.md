@@ -1,8 +1,19 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-09 (§7 L fix shipped — clothing item stopwords + ThredUp brand extraction)
+**Last updated:** 2026-06-09 (Reddit monitor — Zernio coverage expanded to 8 high-yield subreddits)
 
-**Latest change (2026-06-09 — §7 L fix: clothing item type stopwords + ThredUp brand field extraction):**
+**Latest change (2026-06-09 — Reddit monitor coverage: 5→8 high-yield subreddits + overnight schedule):**
+
+Expanded the Reddit-monitoring workflow's coverage after data-driven analysis of its executions (administered the live n8n directly over SSH — see SERVER_REFERENCE.md "n8n on the server"). **Config done + live; final clean verification deferred to the 4 AM PDT scheduled run** (reason below).
+
+- **Subreddit list (live, workflow `URiVWju6wMJcrQiW`, active):** poshmark, ThriftStoreHauls, Depop, malefashionadvice, Mercari, vinted, reselling, Grailed — **8, ordered best-first**. Schedule moved 14:00 → **11:00 UTC (4 AM PDT)** so the spaced run finishes before the user wakes. Search node: 60s spacing, `maxTries:3`, `onError:continueRegularOutput`.
+- **Why this shape (grounded in execution data, not guesses):** Execution 22 analysis showed 3 of the original 5 subs (femalefashionadvice, FrugalFemaleFashion, streetwear) yield **0 posts/day** — all yield came from ThriftStoreHauls + malefashionadvice. Adding resale subs proved huge: **poshmark alone returned 18 in-window posts** (vs 17 for the whole prior run). So dead general-fashion subs were dropped for high-yield resale subs.
+- **HARD CONSTRAINT discovered — Zernio's free tier can't do many Reddit searches per run.** The error "The service was not able to process your request" is Zernio's *upstream* call to Reddit being throttled (Reddit rate-limiting Zernio's one shared OAuth account), NOT Zernio's own 60/min limit. Tested: 15 subs @10s spacing → 9 failed; @90s spacing → 7 failed (9× spacing barely helped → it's a cumulative per-account quota, not a per-call rate). ~6–8 calls is the safe ceiling. Hence trimming to 8, ordered best-first so any throttle sacrifices the low-yield tail.
+- **Verification status:** Could not get a clean confirmation tonight — ~5 test runs in 2h **depleted Zernio's Reddit quota** (execution 38 at 21:35 got only 2/8 through purely from quota exhaustion). The clean **4 AM run (isolated, reset quota, via the main service not the flaky CLI runner)** is the real test. Check execution results in the morning: `ssh root@5.78.187.97` then query as in SERVER_REFERENCE.md.
+- **The real fix for >8 subs is PRAW** (own Reddit app = 100 QPM, sidesteps the shared-account throttle) — built and drop-in-ready but shelved on Reddit's Responsible Builder approval gate (see prior entry).
+- Repo source-of-truth `docs/workflows/reddit-monitor.json` still shows the 15-sub experiment; **live is the curated 8** — reconcile if editing again.
+
+**Previous change (2026-06-09 — §7 L fix: clothing item type stopwords + ThredUp brand field extraction):**
 
 Fixed the long-standing §7 L issue where ThredUp (and any platform) returns generic junk for brand-driven queries like "bape japan t shirt". Two changes shipped:
 
