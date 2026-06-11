@@ -8,6 +8,12 @@
 
 2. **Never hallucinate or assume** — read files before editing; verify paths and function names; state assumptions explicitly; ask rather than guess.
 
+   **For n8n workflows and API integrations specifically:** never assume field names, output paths, node parameter keys, or API response shapes. These change between versions and are wrong more often than not. Always:
+   - Search the web or fetch official docs to verify the real field name
+   - Use MCP tools (n8n MCP, Zernio docs, etc.) to inspect live data
+   - Reference the gotchas already documented in AGENT_PLAN.md (e.g. OpenAI node output is `output[0].content[0].text`, not `message.content`)
+   - If unsure about any variable name or API shape, say so and look it up — do not guess and move on
+
 3. **Test rigorously — every time**
    - `npm run dev:all` to start Next.js + Python sidecar
    - Verify in a real browser; check Network tab and console for errors

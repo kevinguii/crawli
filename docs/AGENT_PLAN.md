@@ -6,19 +6,73 @@ for a separate chat session to minimize token usage.
 
 ---
 
+## Workflow-Building Rules (read before starting any n8n session)
+
+**Never assume field names, output paths, or API shapes.** These are the most common source of broken workflows. Before writing any expression or mapping any field:
+
+1. **Look it up** — fetch the official docs page, search the web, or use the n8n MCP to inspect the live node output. Do not guess.
+2. **Check AGENT_PLAN.md gotchas first** — known landmines are documented under each completed section (1A, 1B). Read those before touching a related node.
+3. **Verify with a test execution** — run the workflow up to the relevant node and inspect the actual output JSON before wiring downstream nodes to it.
+4. **Use tools, not memory** — n8n node schemas change between versions. What was true in n8n 1.x may not be true in 2.x. Web search or MCP beats training data every time.
+
+Known gotchas (do not repeat these):
+- OpenAI Responses API node output: `output[0].content[0].text` (not `message.content`)
+- n8n Code nodes use `.first()` not `.item` to reference other nodes
+- Zernio `POST /v1/posts` requires `accountId` inside the `platforms` array
+- Webhooks created via n8n REST API never register — use Schedule or Execute Workflow Trigger instead
+- n8n SMTP credential requires `disableStartTls` field; Hetzner only allows port 587
+
+---
+
+## Tone Standard (applies to ALL content workflows)
+
+All AI-drafted content must sound like a real person wrote it, not a brand or a bot. The reference is the Reddit workflow prompt (1B):
+
+> "written like a real redditor; lead with genuinely useful help; mention Crawli only if it actually helps and never with marketing language; no em dashes, no exclamation marks"
+
+**Rules for every prompt in this plan:**
+- No em dashes (—), no exclamation marks
+- No marketing language ("game-changing", "ultimate", "discover the power of")
+- No preambles ("In today's fast-paced world…")
+- Lead with the most interesting or useful thing, not a setup
+- Sound like someone who actually uses secondhand fashion, not someone selling it
+- Crawli gets mentioned when it's genuinely useful, not as a CTA
+
+---
+
 ## Stack Decisions
 
 | Layer | Tool | Why |
 |-------|------|-----|
 | Orchestration | n8n (self-hosted on Hetzner) | Visual, no-code, 400+ connectors, AI nodes |
-| Social API | Zernio (MCP-ready, 15 platforms) | $6/account, 2 free, handles OAuth + maintenance |
-| LLM (drafting) | DeepSeek V4 | 99% cheaper than Claude, good enough for content tasks |
+| Social API | Zernio (MCP-ready, 15 platforms) | $6/account, 2 free, handles OAuth + maintenance. Covers Instagram, TikTok, X/Twitter, Pinterest, Reddit — no separate platform API keys needed |
+| LLM (drafting) | OpenAI gpt-4o-mini | Cheap, fast, good enough for content tasks. DeepSeek shelved (no key provisioned) |
 | LLM (reasoning) | Claude Sonnet 4.6 | For complex reasoning, bug triage, architecture decisions |
-| Agent framework | Hermes (if needed) | Persistent memory, self-learning, self-hosted |
+| SEO (interactive) | mcp-gsc (Google Search Console MCP) | ✅ Configured in VS Code. Ask Claude live questions about GSC data — queries, rankings, indexing issues |
+| SEO (automated) | n8n native GSC node | Powers weekly automated SEO brief. Reuses same Google Cloud OAuth credentials |
+| Agent framework | Hermes (if needed) | Persistent memory, self-learning, self-hosted. Not needed for Phase 1 |
 
 ---
 
 ## Prerequisites
+
+### P2. mcp-gsc (Google Search Console MCP) ✅ DONE (2026-06-11)
+**Summary:** mcp-gsc installed via `uvx`, configured in `.mcp.json`. Google Cloud OAuth credentials at `/Users/kevingui/Documents/gsc-client-secret.json` (outside repo — do not commit). OAuth app in Testing mode with `owner@example.com` as test user. Project: `fashion-crawler-c4ai`. Restart VS Code to activate; first run opens browser for Google auth, token saved permanently after.
+
+**Config added to `.mcp.json`:**
+```json
+"gsc": {
+  "command": "/opt/homebrew/bin/uvx",
+  "args": ["mcp-search-console"],
+  "env": {
+    "GSC_OAUTH_CLIENT_SECRETS_FILE": "/Users/kevingui/Documents/gsc-client-secret.json"
+  }
+}
+```
+
+**Usage:** In any Claude Code session, ask questions like "what queries am I ranking on page 2 for?" or "check indexing issues on thecrawli.com" — Claude pulls live GSC data.
+
+---
 
 ### P1. n8n Self-Hosted Setup ✅ DONE
 **Summary:** n8n installed globally via npm, running as systemd service on port 5678. nginx configured to reverse proxy. SSL cert issued. DNS removed (kept private). Access via SSH tunnel: `ssh -L 5678:localhost:5678 root@5.78.187.97` then visit `http://localhost:5678`.
@@ -101,52 +155,106 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1C. X/Twitter — Replies + Posts
-**Goal:** Selective quality posts + replies in fashion/thrift space
+#### 1C. X/Twitter — Blog Cross-Posts (Manual, No API)
+**Goal:** X gets the same content as the blog — informal, opinionated takes. No automation, no Zernio (free slots used by Pinterest + Reddit). You paste and post manually.
 
-- Decision needed: Zernio ($6/mo) vs lightweight local Playwright script
-- Lean toward Zernio for cleanliness (no script maintenance, ToS safer)
-- Agent drafts 2-3 posts/replies per week (not daily — quality over volume)
-- Surfaces to you for approval before posting
-- Note: posts with URLs cost $0.200 each via X API (expensive) — use sparingly
-- **Platform:** X/Twitter via Zernio (paid, $6/mo) or local script
-- **Complexity:** Low (Zernio) / Medium (Playwright)
+**Decided (2026-06-11):**
+- **No Zernio for X** — free plan is 2 accounts (Pinterest + Reddit already taken). X would be a paid slot ($6/mo) — not worth it yet.
+- No $100/mo X API either. Fully manual.
+- Format: short, opinionated post. Same idea as the blog but punchier. Written like a person, not a brand.
+- Volume: whenever you publish a blog post. Not on a separate schedule.
+- The daily email includes an X-ready version alongside each blog brief — you copy, paste, done.
+
+**Tone (same rule as Reddit prompt):** Written like a real person. No em dashes, no exclamation marks, no marketing language. Lead with the most interesting point, not a preamble.
 
 **Chat prompt to start:**
-> "I want an n8n workflow that uses DeepSeek to draft 2-3 X/Twitter posts and replies per week about fashion/thrift/sustainable style, surfaces them to me for approval, then posts via Zernio. My X account needs to be connected as a paid Zernio account."
+> "Add an X/Twitter version to each blog brief in the daily email. Format: 1-3 sentences, opinionated, written like a person not a brand, no em dashes, no exclamation marks, no hashtags unless they're genuinely relevant. Same idea as the blog post, just punchy. I'll copy-paste and post manually."
 
 ---
 
-#### 1D. Instagram — Agent as Research + Draft Assistant
-**Goal:** Agent handles research + content drafting; you execute manually
+#### 1D. Instagram — Daily Content Ideas + Slideshow Drafts
+**Goal:** Daily email with content ideas tailored for Instagram. You create + post manually.
 
-- Agent reads your Crawli Instagram analytics (reach, saves, best posts) via Instagram Graph API
-- Drafts caption copy + hashtag sets for posts
-- Drafts replies to comments → you review + send
-- Weekly insight report: "Tuesday Reels get 3x more saves than feed posts"
-- Recommends content ideas based on what's performing in fashion niche
-- **You post manually** — no automation (Meta bans aggressively)
-- **Platform:** Instagram Graph API (Business account required, no Zernio needed)
-- **Complexity:** Medium (need Meta Developer app + App Review)
+**Decided (2026-06-11):**
+- No Meta Graph API needed for this phase — ideas only, no analytics reading yet
+- Platform: Zernio for posting when ready (already handles Instagram OAuth)
+- Format: varies heavily — carousels, slideshows, single images, text posts, Reels ideas. NOT always 10 slides. Intentional format variety especially early on while testing what works.
+- Posting: **manual** — Meta bans aggressive automation
+
+**Crawli audience on Instagram (3 segments):**
+| Segment | Mindset | Tone | Keywords |
+|---------|---------|------|----------|
+| Fashionistas | Aspirational, brand-conscious, smart luxury | Polished, curated | discover, rare, investment, find |
+| Vintage community | Sustainability, the hunt, authenticity | Authentic, storytelling | thrift, vintage, secondhand, slow fashion |
+| Resellers | Profit, arbitrage, early access | Tactical, insider | flip, deals, source, resell |
+
+**Content mix starting weights (adjust as data comes in):**
+- ~40% discovery/deal hooks ("found this for $X" energy)
+- ~25% educational (how to spot fakes, what resellers know)
+- ~20% trend-riding (tie to current fashion moment)
+- ~15% POV/opinion ("buying new for luxury is mostly a scam")
+
+**Daily email includes:** 10 ideas ranked by estimated effectiveness, each with: format suggestion, target segment, caption angle, hashtag direction.
 
 **Chat prompt to start:**
-> "I want to set up Instagram Graph API access for my Crawli Business account, then build a workflow where an agent reads my analytics weekly and drafts caption + hashtag sets for upcoming posts, surfacing them to me for review."
+> "I want a daily 8am n8n workflow that emails me 10 Instagram content ideas for Crawli — a platform that searches secondhand marketplaces. Audience has 3 segments: fashionistas (aspirational, smart luxury), vintage community (sustainability, the hunt), and resellers (profit, arbitrage). Ideas should vary in format (carousels, slideshows, single images, Reels concepts), ranked by estimated effectiveness. Content mix: 40% discovery/deal hooks, 25% educational, 20% trend-riding, 15% opinion. Include: format, target segment, caption angle, hashtag direction for each. Send to owner@example.com."
 
 ---
 
-#### 1E. TikTok — Pure Recommendation Engine
-**Goal:** Agent researches trends, drafts scripts + ideas; you film + post manually
+#### 1E. TikTok — Daily Content Ideas (Same Email as Instagram)
+**Goal:** Daily ideas tailored for TikTok's audience and format. You film + post manually.
 
-- Agent monitors trending sounds, hashtags, content formats in fashion/thrift/sustainable niche
-- Monitors what Depop, ThredUp, Vestiaire post
-- Drafts TikTok scripts + captions based on trending formats
-- Weekly brief: "This week's TikTok ideas" with hooks, sounds, estimated reach
-- **You film + post manually** — organic posting API is gated (partner program required)
-- **Platform:** TikTok research via web scraping + trend APIs
-- **Complexity:** Low (research only, no API needed)
+**Decided (2026-06-11):**
+- Ideas delivered in the **same daily email as Instagram** (1D) — each idea has both an IG version and a TikTok version
+- No separate TikTok API needed — content only, no posting automation
+- Organic posting API is gated (TikTok partner program required) — manual posting is fine for now
+- Zernio has TikTok support for when automation is needed later
+
+**Crawli audience on TikTok (same 3 segments, different energy):**
+| Segment | Mindset | Tone | Keywords |
+|---------|---------|------|----------|
+| Fashionistas | Trend-chasing, FOMO, visual | Fast, exciting, "omg look at this" | haul, find, score, this is giving |
+| Vintage community | Discovery joy, aesthetic, character | Raw, enthusiastic, slightly chaotic | thrifted, vintage haul, thrift with me |
+| Resellers | Tips + tricks, hustle, inside knowledge | Educational but punchy | how I, reselling tips, profit, sold |
+
+**Key IG vs TikTok differences to enforce:**
+- TikTok: hook must land in first 2 seconds. Lead with the most interesting thing.
+- TikTok: entertainment > education. Even educational content needs to be entertaining first.
+- TikTok: trending sounds/formats matter. Ideas should note if they're tied to a current trend.
+- Instagram: more polished, aesthetic, carousels do well. Captions can be longer.
 
 **Chat prompt to start:**
-> "I want a weekly TikTok research brief delivered to me automatically. An agent should monitor trending sounds, hashtags, and content formats in the fashion/thrift/sustainable niche, check what competitors (Depop, ThredUp, Vestiaire) are posting, and draft 3-5 content ideas with hooks and captions for me to film manually."
+> "I want the daily n8n content email (from 1D) to include TikTok versions of each idea. For TikTok: hook lands in 2 seconds, entertainment-first even for educational content, note any trending formats or sounds to piggyback on. Same 3 audience segments as Instagram but different tone: faster, rawer, more 'omg I found this' energy. Include both IG and TikTok version for each of the 10 ideas."
+
+---
+
+#### 1G. SEO Brief + Blog Pipeline
+**Goal:** Weekly automated SEO brief + daily blog post ideas. You write the actual posts; agent handles all the research.
+
+**Two-layer setup (decided 2026-06-11):**
+
+**Layer 1 — mcp-gsc (interactive, already live ✅)**
+Ask Claude live questions during any session: "what's ranking page 2?", "what queries lost clicks this week?", "check indexing on thecrawli.com". No workflow — just talk to Claude.
+
+**Layer 2 — n8n GSC node (automated)**
+Weekly Monday morning email with:
+- Keyword gaps (ranking position 5–15, low-hanging fruit)
+- Writing calendar: 1-2 prioritized topics for the week
+- Brief per topic: target keyword, secondary keywords, who's it for, what angle to take, competing pages to beat
+
+**Daily blog ideas (included in the 8am email with 1D/1E):**
+- 3-5 blog post ideas per day
+- Format: bullet points only — angle, target audience, primary keyword, hook sentence, 3-4 supporting points
+- **You write the full post** — agent gives you everything except the prose
+- Posts live as `.md` files in the local codebase (`/app/blog/` or similar)
+- X/Twitter version: short informal take on the same topic, included alongside the brief
+
+**Crawli blog positioning:** Second-hand marketplace aggregator. Topics: resale tips, platform comparisons (Depop vs Poshmark etc), how to find deals, brand-specific resale value, sustainability angle, trend-driven ("best places to find Y2K right now").
+
+**n8n GSC node setup:** Same Google Cloud project as mcp-gsc. Authorize Google OAuth in n8n credential manager → add GSC node to SEO workflow → cron every Monday 8am.
+
+**Chat prompt to start:**
+> "I want two n8n workflows for Crawli's SEO and blog pipeline. (1) A weekly Monday 8am workflow that connects to Google Search Console via n8n's native GSC node, identifies keyword gaps (position 5-15), and emails me a prioritized writing calendar with 1-2 content briefs. Brief format: target keyword, secondary keywords, audience, angle, competing pages. (2) Add 3-5 daily blog post ideas to the existing morning email (same workflow as the social content ideas). Blog idea format: angle, audience, primary keyword, hook sentence, 3-4 bullet point supporting ideas — no full prose, just the brief. Send to owner@example.com. GSC property: https://thecrawli.com/"
 
 ---
 
@@ -253,8 +361,12 @@ UptimeRobot: X incidents (if any)
 
 ## Notes
 
-- **Model choice:** Plan originally specced DeepSeek V4, but **1A and 1B both use OpenAI gpt-4o-mini** (no DeepSeek key provisioned; gpt-4o-mini is cheap enough for drafting and matches the OpenAI-default / Gemini-backup provider preference). Revisit DeepSeek only if drafting volume/cost becomes a real concern. Claude Sonnet still intended for reasoning-heavy tasks (bug triage, architecture).
-- **Hosting:** n8n self-hosted on existing Hetzner VPS alongside Crawli sidecar. No new server needed.
-- **Zernio accounts used:** Reddit (free slot 1), Pinterest (free slot 2). X/Twitter would be first paid account ($6/mo) if Zernio chosen over Playwright.
-- **Human-in-the-loop:** Reddit promotional comments always need approval before posting. Instagram + TikTok = agent drafts only, manual execution. Pinterest = fully automated.
+- **Model choice:** All drafting workflows use **OpenAI gpt-4o-mini** (no DeepSeek key provisioned; cheap enough, matches OpenAI-default preference). Claude Sonnet 4.6 for reasoning-heavy tasks (bug triage, architecture, interactive sessions).
+- **Hosting:** n8n self-hosted on existing Hetzner VPS. No new server needed.
+- **Zernio accounts used:** Reddit (free slot 1), Pinterest (free slot 2). X/Twitter = first paid account ($6/mo) when ready to auto-post. Instagram/TikTok also available via Zernio when needed.
+- **X/Twitter:** No API, no Zernio (free slots taken). Blog cross-posts only, fully manual. X-ready version included in daily email alongside blog brief.
+- **Human-in-the-loop:** Reddit promotional comments always need approval. Instagram + TikTok = agent drafts only, manual execution. Pinterest = fully automated. Blog posts = you write from brief, manual publish.
+- **Daily email:** One email at 8am containing: 10 social content ideas (IG + TikTok versions), 3-5 blog post ideas (briefs only). All to owner@example.com.
+- **SEO:** Two layers — mcp-gsc for interactive Claude sessions (live ✅), n8n GSC node for weekly automated brief (to build). Same Google Cloud OAuth credentials for both.
+- **mcp-gsc config:** VS Code only (`.mcp.json`). Claude Desktop has separate config at `~/Library/Application Support/Claude/claude_desktop_config.json` — not configured there yet, not needed.
 - **Do not automate:** Instagram cold DMs, TikTok organic posting (both ToS violations with active enforcement).
