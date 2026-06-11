@@ -1,0 +1,152 @@
+{
+  "name": "crawli daily content email",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "node-schedule",
+      "name": "Daily 8am PT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {},
+      "id": "node-manual",
+      "name": "Run on demand",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 500]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You write content ideas for Crawli - a free tool that searches secondhand fashion marketplaces (Depop, Poshmark, Vestiaire Collective, eBay, ThredUp, The RealReal) simultaneously. The person behind the account genuinely uses secondhand fashion.\n\nGenerate 10 Instagram content ideas, ranked 1 (best) to 10. For each one also write a TikTok version.\n\nThree audience segments:\n- fashionistas: brand-conscious, into smart luxury buys, aspirational but not careless with money\n- vintage community: into the hunt, slow fashion, character over newness\n- resellers: profit-focused, want practical tips and edges on sourcing\n\nContent mix:\n- 4 ideas in the discovery/deal hook bucket (specific item scores, price finds, real haul energy)\n- 2-3 ideas in the educational bucket (platform quirks, authentication, things most buyers miss)\n- 2 ideas in the trend-riding bucket (tie to something real in fashion right now)\n- 1-2 ideas in the POV/opinion bucket (hot takes, contrarian views on buying new vs secondhand)\n\nTone rules - CRITICAL. These will be enforced. Read carefully:\n- NO exclamation marks anywhere. Not even on TikTok hooks. Period ends a sentence.\n- NO em dashes (the — character). Use a comma or just restructure.\n- NO marketing language: not \"game-changing\", not \"discover\", not \"curated\", not \"ultimate\", not \"amazing finds\"\n- NO hype opener words: not \"Check out\", not \"You won't believe\", not \"Omg\"\n- Sound like a person who actually buys secondhand, typing something real, not performing enthusiasm\n- Lead with the specific, interesting thing. Not a setup. Not context. The thing itself.\n\nWRONG ig_hook: \"You won't believe what I found for $20!\"\nRIGHT ig_hook: \"paid $20 for this 90s trench. condition is perfect.\"\n\nWRONG tiktok_hook: \"I found this designer coat for just $150!\"\nRIGHT tiktok_hook: \"this coat retails for $900. i paid $150.\"\n\nWRONG tiktok_hook: \"Here's how to spot fake handbags when thrifting!\"\nRIGHT tiktok_hook: \"the stitching on a real LV bag is always slightly uneven. here's what to look for.\"\n\nCrawli gets mentioned only when it genuinely fits the idea - not as a call to action, never as the main point.\n\nReturn only a JSON array of exactly 10 objects, no markdown, no explanation:\n[{\"rank\":1,\"format\":\"carousel|single image|reel concept|text post\",\"segment\":\"fashionistas|vintage community|resellers|all\",\"caption_angle\":\"1-2 sentences, the core angle - what is the actual point of this post\",\"hashtag_direction\":\"3-5 words describing the hashtag territory, not the actual hashtags\",\"ig_hook\":\"the opening line of the Instagram caption - no exclamation marks, no hype, specific and real\",\"tiktok_hook\":\"the very first thing said or shown on screen - must work in 2 seconds, no exclamation marks\",\"tiktok_format\":\"describe the video format and style in one sentence\"}]"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "node-social",
+      "name": "Generate social ideas",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [240, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "eQUItcjo7Td6T6Ui",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You write SEO content briefs for Crawli's blog. Crawli is a free tool that searches secondhand fashion marketplaces (Depop, Poshmark, Vestiaire Collective, eBay, ThredUp, The RealReal) simultaneously. Readers are people who shop or sell secondhand fashion: bargain hunters, resellers, luxury shoppers going preloved, vintage fans.\n\nGenerate 4 blog post briefs. Make them specific, opinionated, and grounded - not generic beginner guides. The best posts on this topic are written by someone who has actually used these platforms for years and has opinions.\n\nTone rules - CRITICAL:\n- NO exclamation marks\n- NO em dashes (the — character)\n- NO listicle titles (\"10 ways to...\", \"The ultimate guide to...\")\n- NO preamble hooks (not \"Navigating the world of X can be daunting...\", not \"In today's world...\", not \"Whether you're a beginner or expert...\")\n- Hook sentence opens with the specific, interesting thing. A fact, a take, a counterintuitive observation.\n- Angles should be opinionated or counterintuitive, not \"comprehensive\"\n\nWRONG title: \"How to effectively sell on Depop for beginners\"\nRIGHT title: \"Why your Depop listings aren't selling (and it's probably not the price)\"\n\nWRONG hook: \"Navigating the world of luxury secondhand fashion can be daunting without the right tools.\"\nRIGHT hook: \"Vestiaire Collective rejects about 30% of items submitted for authentication. Here's what actually gets flagged.\"\n\nWRONG angle: \"A comprehensive guide to pricing your items on Poshmark\"\nRIGHT angle: \"Most sellers on Poshmark price based on what they paid, which is why they never sell anything.\"\n\nWRONG x_post: \"Struggling with pricing on Poshmark? Learn how to boost your sales today.\"\nRIGHT x_post: \"the mistake most Poshmark sellers make is pricing based on what they paid. nobody cares what you paid.\"\n\nReturn only a JSON array of exactly 4 objects, no markdown, no explanation:\n[{\"title\":\"working title, direct, specific, not a how-to\",\"angle\":\"1 sentence - the opinionated or counterintuitive thing that makes this worth reading\",\"audience\":\"who specifically is this for\",\"primary_keyword\":\"the main search query to rank for\",\"secondary_keywords\":[\"3-4 related terms\"],\"hook_sentence\":\"opening sentence - a specific fact, observation, or take. no warmup.\",\"supporting_points\":[\"4 specific things the post must cover - concrete enough that a writer knows exactly what to say\"],\"x_post\":\"1-3 sentences - the same take but direct and personal, written like a person, no exclamation marks, no em dashes\"}]"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "node-blog",
+      "name": "Generate blog briefs",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [480, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "eQUItcjo7Td6T6Ui",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse social ideas\nlet socialText = $('Generate social ideas').first().json.output[0].content[0].text.trim();\nsocialText = socialText.replace(/^```json\\s*/i,'').replace(/^```\\s*/,'').replace(/\\s*```$/,'').trim();\nlet socialIdeas = [];\ntry { socialIdeas = JSON.parse(socialText); } catch(e) { socialIdeas = []; }\n\n// Parse blog briefs (direct input from Generate blog briefs)\nlet blogText = $input.first().json.output[0].content[0].text.trim();\nblogText = blogText.replace(/^```json\\s*/i,'').replace(/^```\\s*/,'').replace(/\\s*```$/,'').trim();\nlet blogBriefs = [];\ntry { blogBriefs = JSON.parse(blogText); } catch(e) { blogBriefs = []; }\n\n// Safety net: strip tone violations regardless of what the LLM produced.\n// Mirrors the Reddit workflow's URL scrub.\nconst sanitize = (s) => String(s||'')\n  .replace(/!+/g, '.')                  // exclamation marks -> period\n  .replace(/\\u2014/g, ',')              // em dash -> comma\n  .replace(/ — /g, ', ')               // em dash with spaces -> comma+space\n  .replace(/\\.{2,}/g, '.')             // collapse double-periods from above\n  .replace(/,\\s*,/g, ',')              // collapse double-commas\n  .trim();\n\nconst sanitizeObj = (obj) => {\n  if (!obj || typeof obj !== 'object') return obj;\n  const out = {};\n  for (const [k, v] of Object.entries(obj)) {\n    if (typeof v === 'string') out[k] = sanitize(v);\n    else if (Array.isArray(v)) out[k] = v.map(x => typeof x === 'string' ? sanitize(x) : x);\n    else out[k] = v;\n  }\n  return out;\n};\n\nsocialIdeas = socialIdeas.map(sanitizeObj);\nblogBriefs = blogBriefs.map(sanitizeObj);\n\nconst esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst today = new Date().toISOString().slice(0,10);\n\nconst fmtColor = (f) => ({\n  'carousel':'#5B6CF9','single image':'#059669','reel concept':'#DC2626','text post':'#D97706'\n})[f] || '#6B7280';\n\nconst segEmoji = (s) => ({\n  'fashionistas':'✨','vintage community':'🧶','resellers':'💰','all':'👥'\n})[s] || '';\n\n// Social section\nsocialIdeas.sort((a,b)=>a.rank-b.rank);\nlet socialHtml = `<h2 style=\"margin-bottom:6px;font-size:18px;color:#111\">Social content ideas</h2>\n<p style=\"color:#6B7280;margin-top:0;margin-bottom:20px;font-size:14px\">10 ideas — IG + TikTok versions. You post manually.</p>`;\n\nif (!socialIdeas.length) {\n  socialHtml += '<p>No ideas generated.</p>';\n} else {\n  socialHtml += socialIdeas.map(idea => {\n    const col = fmtColor(idea.format);\n    return `<div style=\"margin-bottom:18px;padding:14px;border:1px solid #e5e7eb;border-radius:8px\">\n  <p style=\"margin:0 0 8px\">\n    <span style=\"background:${col};color:#fff;padding:2px 8px;border-radius:4px;font-size:12px\">${esc(idea.format)}</span>\n    <span style=\"margin-left:8px;color:#6B7280;font-size:12px\">${segEmoji(idea.segment)} ${esc(idea.segment)}</span>\n  </p>\n  <p style=\"margin:0 0 5px\"><strong>Angle:</strong> ${esc(idea.caption_angle)}</p>\n  <p style=\"margin:0 0 5px\"><strong>IG opening line:</strong> ${esc(idea.ig_hook)}</p>\n  <p style=\"margin:0 0 8px\"><strong>Hashtag territory:</strong> ${esc(idea.hashtag_direction)}</p>\n  <div style=\"background:#fafafa;padding:10px;border-radius:6px\">\n    <p style=\"margin:0 0 4px;font-size:13px\"><strong style=\"color:#DC2626\">TikTok hook:</strong> ${esc(idea.tiktok_hook)}</p>\n    <p style=\"margin:0;font-size:13px;color:#6B7280\">${esc(idea.tiktok_format)}</p>\n  </div>\n</div>`;\n  }).join('');\n}\n\n// Blog section\nlet blogHtml = `<h2 style=\"margin-bottom:6px;font-size:18px;color:#111\">Blog briefs</h2>\n<p style=\"color:#6B7280;margin-top:0;margin-bottom:20px;font-size:14px\">4 briefs — angle, keyword, hook, outline, X post. You write the full post.</p>`;\n\nif (!blogBriefs.length) {\n  blogHtml += '<p>No briefs generated.</p>';\n} else {\n  blogHtml += blogBriefs.map((brief,i) => `<div style=\"margin-bottom:22px;padding:14px;border:1px solid #e5e7eb;border-radius:8px\">\n  <h3 style=\"margin:0 0 3px;font-size:15px\">${i+1}. ${esc(brief.title)}</h3>\n  <p style=\"margin:0 0 8px;color:#6B7280;font-size:13px\">${esc(brief.audience)}</p>\n  <p style=\"margin:0 0 5px\"><strong>Angle:</strong> ${esc(brief.angle)}</p>\n  <p style=\"margin:0 0 5px\"><strong>Primary keyword:</strong> <code style=\"background:#f3f4f6;padding:1px 5px;border-radius:3px\">${esc(brief.primary_keyword)}</code></p>\n  <p style=\"margin:0 0 5px\"><strong>Also target:</strong> ${(brief.secondary_keywords||[]).map(k=>`<code style=\"background:#f3f4f6;padding:1px 5px;border-radius:3px;margin-right:4px\">${esc(k)}</code>`).join(' ')}</p>\n  <p style=\"margin:0 0 5px\"><strong>Hook:</strong> ${esc(brief.hook_sentence)}</p>\n  <ul style=\"margin:0 0 10px;padding-left:18px\">${(brief.supporting_points||[]).map(p=>`<li style=\"margin-bottom:3px\">${esc(p)}</li>`).join('')}</ul>\n  <div style=\"background:#eff6ff;padding:10px;border-radius:6px;border-left:3px solid #3b82f6\">\n    <p style=\"margin:0;font-size:13px\"><strong>X post:</strong> ${esc(brief.x_post)}</p>\n  </div>\n</div>`).join('');\n}\n\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head>\n<body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;padding:24px;color:#111\">\n  <h1 style=\"font-size:20px;margin-bottom:4px\">Crawli content brief — ${today}</h1>\n  <p style=\"color:#6B7280;margin-top:0;margin-bottom:28px\">Daily ideas for Instagram, TikTok, and blog. Everything is a draft — post what feels right.</p>\n  ${socialHtml}\n  <hr style=\"border:none;border-top:1px solid #e5e7eb;margin:28px 0\">\n  ${blogHtml}\n</body></html>`;\n\nreturn [{ json: { html, subject: `Crawli content brief — ${today}` } }];"
+      },
+      "id": "node-build",
+      "name": "Build email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "owner@example.com",
+        "toEmail": "owner@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "node-email",
+      "name": "Send email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [960, 300],
+      "credentials": {
+        "smtp": {
+          "id": "m3Zfuf10aGoLQhov",
+          "name": "Gmail SMTP 587"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 8am PT": {
+      "main": [
+        [{"node": "Generate social ideas", "type": "main", "index": 0}]
+      ]
+    },
+    "Run on demand": {
+      "main": [
+        [{"node": "Generate social ideas", "type": "main", "index": 0}]
+      ]
+    },
+    "Generate social ideas": {
+      "main": [
+        [{"node": "Generate blog briefs", "type": "main", "index": 0}]
+      ]
+    },
+    "Generate blog briefs": {
+      "main": [
+        [{"node": "Build email", "type": "main", "index": 0}]
+      ]
+    },
+    "Build email": {
+      "main": [
+        [{"node": "Send email", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles"
+  }
+}

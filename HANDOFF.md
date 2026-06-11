@@ -1,6 +1,28 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-10 (Reddit monitor PAUSED 7 days — user got a 7-day Reddit ban)
+**Last updated:** 2026-06-11 (daily content email workflow live — AGENT_PLAN 1C/1D/1E done)
+
+**Latest change (2026-06-11 — daily content email: AGENT_PLAN 1C + 1D + 1E):**
+
+Built and verified the daily content email workflow (n8n workflow ID `FMf2nyTQIZNCRa2L`, active). Fires daily 8am Pacific. Single email to owner@example.com containing 10 Instagram + TikTok content ideas (ranked, with format/segment/angle/hooks) and 4 SEO blog post briefs (keyword, angle, hook sentence, supporting points, X-ready sentence).
+
+**Key details:**
+- Workflow: `FMf2nyTQIZNCRa2L` (`crawli daily content email`) — active, fires `Daily 8am PT` (America/Los_Angeles)
+- Definition: `docs/workflows/daily-content-email.json`
+- LLM: gpt-4o-mini, reuses OpenAI cred `eQUItcjo7Td6T6Ui` + Gmail SMTP cred `m3Zfuf10aGoLQhov`
+- No Zernio needed — this workflow is ideas-only; you post manually
+- Code node includes a **tone sanitizer** that strips `!` → `.` and `—` → `,` regardless of LLM output (same pattern as Reddit URL scrub)
+- X/Twitter version (1C) is included in each blog brief's `x_post` field — no separate workflow needed
+
+**Tone improvement journey (documented for future sessions):** First run had 9 exclamation mark violations (gpt-4o-mini defaults to hype). Fixed by: (1) adding explicit WRONG/RIGHT examples to the social ideas prompt; (2) strengthening the blog brief prompt with concrete counter-examples for generic hooks/titles; (3) adding the code-level sanitizer as safety net. Second run: 2 violations (both em dashes, caught by sanitizer). Content quality in second run was substantially better — specific hooks, no marketing language.
+
+**Run on demand:**
+- n8n UI: open `crawli daily content email` → Execute Workflow
+- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id FMf2nyTQIZNCRa2L'`
+
+**1C (X/Twitter) decision:** No separate workflow. X-ready sentence included in each blog brief in the daily email. Fully manual — you copy-paste and post. Reasoning: X API ($100/mo) and Zernio free slots (both taken by Pinterest + Reddit) not worth it yet.
+
+---
 
 **⏸ PAUSED (2026-06-10):** The Reddit monitor workflow is **deactivated** (`active:0`, won't run) — the user got a **7-day Reddit ban on ALL their accounts** (IP-level), **including the Zernio search account `Majestic_Crawli6792`** — so search is down too, not just posting. Cause: aggressive manual promo-comment posting from young accounts (the shadowban/ban risk flagged earlier). Resume target **~2026-06-17** (a one-time claude.ai routine `trig_01FyY9dccqnWCP8dvah23RjE` will fire a reminder 2026-06-17 16:00 UTC). Resume steps: **first verify the ban lifted** (log into `Majestic_Crawli6792`), then `ssh root@5.78.187.97`, `n8n update:workflow --id=URiVWju6wMJcrQiW --active=true`, `systemctl restart n8n`. Before resuming, revisit strategy (much lower posting velocity; the new name-only/no-link prompt helps) AND apply the agreed subreddit rebalance below.
 - **Agreed rebalance (NOT yet applied — workflow paused):** lean reseller. Drop platform-name subs (poshmark, Depop, Mercari, vinted) + Grailed; keep ThriftStoreHauls, reselling, malefashionadvice; add r/Flipping, r/findfashion, r/sidehustle, r/VintageClothing. (Caveat: the platform subs were the highest-yield — poshmark gave 18 — so this trades yield for receptiveness/safety. Re-confirm on resume.)

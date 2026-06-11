@@ -155,7 +155,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1C. X/Twitter — Blog Cross-Posts (Manual, No API)
+#### 1C. X/Twitter — Blog Cross-Posts ✅ DONE (2026-06-11, folded into daily email)
 **Goal:** X gets the same content as the blog — informal, opinionated takes. No automation, no Zernio (free slots used by Pinterest + Reddit). You paste and post manually.
 
 **Decided (2026-06-11):**
@@ -172,7 +172,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1D. Instagram — Daily Content Ideas + Slideshow Drafts
+#### 1D. Instagram — Daily Content Ideas + Slideshow Drafts ✅ DONE (2026-06-11)
 **Goal:** Daily email with content ideas tailored for Instagram. You create + post manually.
 
 **Decided (2026-06-11):**
@@ -201,7 +201,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1E. TikTok — Daily Content Ideas (Same Email as Instagram)
+#### 1E. TikTok — Daily Content Ideas ✅ DONE (2026-06-11, same email as 1D)
 **Goal:** Daily ideas tailored for TikTok's audience and format. You film + post manually.
 
 **Decided (2026-06-11):**
