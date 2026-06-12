@@ -98,8 +98,21 @@ SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_
 FIRECRAWL_FALLBACK_PLATFORMS = {
     p.strip() for p in os.environ.get("FIRECRAWL_FALLBACK_PLATFORMS", "mercari,depop").split(",") if p.strip()
 }
+# HARD-blocked subset: the datacenter IP is blocked even for the real-Chromium
+# fingerprint, so a fast raw-HTTP 403 probe reliably predicts a native failure
+# and we skip the ~20s render entirely. Mercari qualifies. Depop does NOT —
+# its block is fingerprint-based: raw HTTP always 403s but the browser often
+# passes, so probing it would force paid Firecrawl when the free native path
+# would have worked. Depop therefore stays on try-native-then-fallback.
+FIRECRAWL_PROBE_PLATFORMS = {
+    p.strip() for p in os.environ.get("FIRECRAWL_PROBE_PLATFORMS", "mercari").split(",") if p.strip()
+}
 SEARCH_FIRECRAWL_FALLBACK = os.environ.get("SEARCH_FIRECRAWL_FALLBACK", "1").strip().lower() not in ("0", "false", "no", "")
 FIRECRAWL_SCRAPE_ENDPOINT = "https://api.firecrawl.dev/v2/scrape"
+_PROBE_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
 
 # Semaphore + restart lock are initialised in lifespan() (asyncio primitives
 # must bind to the running loop).
@@ -997,6 +1010,42 @@ async def _firecrawl_search_fallback(platform: str, url: str, limit: int):
         return None
 
 
+async def _datacenter_block_probe(url: str) -> bool:
+    """Fast check whether the datacenter IP is hard-blocked for `url` right now.
+
+    A plain HTTP GET — Mercari/Depop return a 403 bot-wall in ~20ms — so we can
+    route a known-blocked platform straight to Firecrawl instead of paying the
+    ~20s browser selector-wait. Returns True ONLY on a definite block (403/429);
+    any other status or a probe error returns False, so the platform falls
+    through to the free native render and automatically reclaims it if the block
+    is ever lifted. Only valid for FIRECRAWL_PROBE_PLATFORMS — platforms whose
+    block also defeats the real-Chromium fingerprint. Others (ThredUp, Depop)
+    raw-403 but often render fine via the real browser, so they must NOT be
+    probed (it would force paid Firecrawl over the free native path).
+    """
+    import httpx  # local import mirrors the inline httpx use elsewhere in this module
+    try:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as cx:
+            r = await cx.get(url, headers={"User-Agent": _PROBE_UA})
+        return r.status_code in (403, 429)
+    except Exception:  # noqa: BLE001 — probe is best-effort; on error assume not blocked
+        return False
+
+
+async def _firecrawl_fallback_response(platform: str, url: str, limit: int, cache_key: str):
+    """Run the Firecrawl fallback and wrap it as a response, caching non-empty
+    results so repeat searches don't re-spend credits. Returns a
+    ScrapeSearchResponse, or None when no fallback is available (caller returns []).
+    """
+    fb = await _firecrawl_search_fallback(platform, url, limit)
+    if fb is None:
+        return None
+    if fb:  # only cache non-empty — empty may be a transient block
+        with _cache_lock:
+            _search_cache[cache_key] = fb
+    return ScrapeSearchResponse(results=fb)
+
+
 @app.post("/scrape-search", response_model=ScrapeSearchResponse)
 async def scrape_search(req: ScrapeSearchRequest):
     """Render a platform's onsite search page and pull a grid of listings.
@@ -1044,6 +1093,17 @@ async def scrape_search(req: ScrapeSearchRequest):
             return ScrapeSearchResponse(results=[])
         await _warmup_realreal(crawler_override)
 
+    # Fast-path: if a hard-blocked platform is blocking the datacenter IP right
+    # now, skip the ~20s native render and go straight to Firecrawl. A non-403
+    # probe means it's reachable (e.g. unblocked again) so we fall through to
+    # the free native render below. Only hard-blocked platforms are probed —
+    # intermittent ones (Depop) try native first to keep the free path.
+    if SEARCH_FIRECRAWL_FALLBACK and req.platform in FIRECRAWL_PROBE_PLATFORMS:
+        if await _datacenter_block_probe(target_url):
+            log.info("[scrape-search] %s hard-blocked (probe) — skipping native render, using Firecrawl", req.platform)
+            resp = await _firecrawl_fallback_response(req.platform, target_url, req.limit, cache_key)
+            return resp if resp is not None else ScrapeSearchResponse(results=[])
+
     try:
         result = await _arun_with_retry(target_url, req.platform, crawler_override=crawler_override, search_page=True)
 
@@ -1061,15 +1121,11 @@ async def scrape_search(req: ScrapeSearchRequest):
                 )
             else:
                 log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
-            # Native render failed (blocked / never hydrated). For platforms we
-            # know anti-bot the datacenter IP, retry via Firecrawl's proxy.
-            fb = await _firecrawl_search_fallback(req.platform, target_url, req.limit)
-            if fb is not None:
-                if fb:  # only cache non-empty — empty may be a transient block
-                    with _cache_lock:
-                        _search_cache[cache_key] = fb
-                return ScrapeSearchResponse(results=fb)
-            return ScrapeSearchResponse(results=[])
+            # Native render failed (blocked / never hydrated) and the upfront
+            # probe didn't already route us to Firecrawl (e.g. probe returned
+            # 200 but the browser render still got walled). Retry via Firecrawl.
+            resp = await _firecrawl_fallback_response(req.platform, target_url, req.limit, cache_key)
+            return resp if resp is not None else ScrapeSearchResponse(results=[])
 
         raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
         items = extract_search_grid(req.platform, raw_html, limit=req.limit)
