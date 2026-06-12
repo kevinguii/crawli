@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Price tag with checkmark">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Price tag shape -->
+  <path d="M 460 160 L 700 160 L 810 315 L 700 470 L 460 470 C 415 470 380 435 380 390 L 380 240 C 380 195 415 160 460 160 Z"
+        fill="#f0fdfa" stroke="#0d9488" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Hole -->
+  <circle cx="400" cy="315" r="26" fill="#ffffff" stroke="#0d9488" stroke-width="8"/>
+
+  <!-- String -->
+  <line x1="374" y1="315" x2="330" y2="315" stroke="#0d9488" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Checkmark -->
+  <polyline points="490,315 560,385 720,220" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

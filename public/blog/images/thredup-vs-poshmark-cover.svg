@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Balance scale">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Scale base -->
+  <rect x="560" y="510" width="80" height="30" rx="8" fill="#d97706"/>
+  <rect x="575" y="220" width="50" height="290" rx="8" fill="#d97706"/>
+
+  <!-- Top crossbar -->
+  <rect x="330" y="210" width="540" height="18" rx="9" fill="#d97706"/>
+  <circle cx="600" cy="219" r="18" fill="#b45309"/>
+
+  <!-- Left pan strings -->
+  <line x1="380" y1="228" x2="330" y2="360" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="380" y1="228" x2="430" y2="360" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Right pan strings -->
+  <line x1="820" y1="228" x2="770" y2="360" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="820" y1="228" x2="870" y2="360" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Left pan -->
+  <ellipse cx="380" cy="368" rx="100" ry="18" fill="#fde68a"/>
+  <rect x="280" y="352" width="200" height="30" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="5"/>
+
+  <!-- Box on left pan -->
+  <rect x="330" y="270" width="100" height="80" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="5"/>
+  <path d="M 355 270 C 355 240 405 240 405 270" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Right pan -->
+  <ellipse cx="820" cy="348" rx="100" ry="18" fill="#fde68a"/>
+  <rect x="720" y="332" width="200" height="30" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="5"/>
+
+  <!-- Phone on right pan -->
+  <rect x="785" y="245" width="70" height="110" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="5"/>
+  <rect x="797" y="258" width="46" height="68" rx="4" fill="#fffbeb"/>
+  <circle cx="820" cy="337" r="6" fill="#d97706"/>
+</svg>

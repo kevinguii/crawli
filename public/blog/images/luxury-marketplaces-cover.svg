@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Magnifying glass with diamond">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Magnifying glass -->
+  <circle cx="560" cy="290" r="200" fill="#f5f3ff"/>
+  <circle cx="560" cy="290" r="200" fill="none" stroke="#7c3aed" stroke-width="18"/>
+
+  <!-- Handle -->
+  <line x1="702" y1="432" x2="820" y2="550" stroke="#7c3aed" stroke-width="28" stroke-linecap="round"/>
+
+  <!-- Diamond inside lens -->
+  <polygon points="560,145 660,290 560,435 460,290" fill="none" stroke="#7c3aed" stroke-width="6" stroke-linejoin="round" opacity="0.25"/>
+  <polygon points="560,200 630,290 560,380 490,290" fill="#7c3aed" opacity="0.18"/>
+  <polygon points="560,230 610,290 560,350 510,290" fill="#7c3aed" opacity="0.35"/>
+</svg>

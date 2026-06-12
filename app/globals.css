@@ -345,3 +345,46 @@ html {
   border: none;
   border-top: 1px solid var(--border);
 }
+
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1.5rem 0;
+}
+
+.blog-content th {
+  text-align: left;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.blog-content td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.blog-content tr:last-child td {
+  border-bottom: none;
+}
+
+.blog-content tr:hover td {
+  background: var(--surface-hover, rgba(0,0,0,0.03));
+}
+
+[data-theme="dark"] .blog-content tr:hover td {
+  background: rgba(255,255,255,0.04);
+}
+
+.blog-content .table-wrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
