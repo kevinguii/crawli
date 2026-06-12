@@ -1,6 +1,19 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-12 (daily content brief overhauled — pillars, exec detail, GEO/AEO, PAA, Crawli CTA, topic dedup)
+**Last updated:** 2026-06-12 (prod search-speed fix: fail-fast on datacenter-IP blocks + diagnosed Mercari/Depop 403 walls)
+
+**Latest change (2026-06-12 — prod search slowness + Mercari 0-results diagnosed & mitigated):**
+
+User reported prod searches are slow and Mercari returns 0 (works fast locally). Root cause is **datacenter-IP anti-bot blocking**, not concurrency/session config.
+
+- **Diagnosis (definitive):** raw curl from the prod Hetzner IP (`5.78.187.97`) returns **HTTP 403** for Mercari (5.7KB bot-wall) and Depop, while Grailed returns 200 (394KB). Works locally because home IP is residential. Sidecar logs show `[ANTIBOT] ... Error: Proxy` for both. Mercari is a **hard 403 wall**; Depop is **intermittent** (returned 10 results at 22:47, blocked at 22:59).
+- **Why it was slow:** a blocked search page never renders its grid selector, so the render burned the full `page_timeout` (60s), then the client (`scrapeSearchPageViaSidecar`, maxAttempts=2, 60s each) retried for another ~60s = **~120s wasted per blocked platform**, holding a render/concurrency slot the whole time and queuing the platforms that *do* work behind it.
+- **Block map from prod IP (raw curl — note browser path differs):** 403 = mercari, depop, ebay, vestiaire, thredup; 200 = grailed, poshmark, vinted. **Caveat:** raw-curl 403 ≠ browser-path blocked. ThredUp curl-403s but works fine via real-Chromium (JSON-LD, 100 results); Vestiaire scraping works (only discovery is blocked, §7). **Confirmed browser-path blocked (from `[ANTIBOT]` markers + selector timeouts): Mercari (hard), Depop (intermittent).** eBay already known-broken (Akamai).
+- **Fix #1 shipped (zero-cost speed mitigation):** new `SEARCH_WAIT_FOR_TIMEOUT_MS` const (default **20000**, env-overridable) caps the `wait_for`-selector wait for search-page renders (grailed/mercari/depop) well below the 60s `page_timeout`. A legit grid hydrates in ~6s (Grailed) to ~9s (Depop); 20s leaves ~2x headroom even under 2-vCPU concurrent-render contention. A blocked page now fails at ~20s instead of 60s+retry. Also added a clear `[scrape-search] <platform> BLOCKED (HTTP 403/429)` log line (was a generic "Wait condition failed: Timeout"). Both edits in [crawl4ai-service/main.py](crawl4ai-service/main.py) (`SEARCH_WAIT_FOR_TIMEOUT_MS` const; `wait_for_timeout` applied in `_build_run_cfg`; block-status logging in `/scrape-search`).
+- **Verified on prod (2026-06-12):** Mercari `/scrape-search` now returns [] in **20.3s** (was ~120s); Grailed still returns **40 results in 5.8s** (not truncated by the cap). Search with Mercari selected drops from a ~2-3 min worst case to ~20s worst case.
+- **Fix #2 NOT done (un-block Mercari/Depop) — needs a decision:** the only real fix for a datacenter-IP block is a different egress IP. Options scoped for the user (cost-conscious): (a) residential/mobile proxy for the blocked platforms only (~$2-4/GB, e.g. lightweight pages keep this small — but a recurring cost); (b) route blocked platforms through Firecrawl's own proxy infra (per-request credit cost; old Mercari path was firecrawl/hybrid before the 2026-05-27 search-page migration); (c) accept Mercari/Depop as best-effort and rely on fail-fast (zero cost, what's live now). No paid service was signed up for. **Awaiting user choice.**
+
+
 
 **Latest change (2026-06-12 — daily content brief overhaul):**
 

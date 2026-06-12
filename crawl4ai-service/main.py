@@ -78,6 +78,16 @@ SIDECAR_MAX_CONCURRENT_RENDERS = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRE
 # 1000-item watchlist refresh can't open 1000 sockets at once.
 SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_HTTP", "12")))
 
+# Cap on how long a search-page render waits for its grid selector to appear,
+# kept well below page_timeout (60s). A legit grid hydrates fast (prod: Grailed
+# ~6s, Depop ~9s, Mercari ~5s when not blocked); 20s leaves ~2x headroom over
+# the slowest (Depop) even under concurrent-render CPU contention on 2 vCPU.
+# When a platform IP-blocks the datacenter (e.g. Mercari serves a 403 bot-wall
+# to the Hetzner IP), the grid selector never appears; without this cap the
+# render burns the full 60s page_timeout AND the client then retries for
+# another ~60s. Capping the selector wait fails a blocked page fast instead.
+SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_MS", "20000")))
+
 # Semaphore + restart lock are initialised in lifespan() (asyncio primitives
 # must bind to the running loop).
 _render_semaphore: Optional[asyncio.Semaphore] = None
@@ -682,6 +692,12 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
         cfg_kwargs["wait_for"] = "css:a[href*='/products/']"
         cfg_kwargs["page_timeout"] = 60_000
 
+    # Fail a blocked/anti-bot search page fast: cap the wait-for-selector wait
+    # well below page_timeout so a render that will never hydrate (e.g. Mercari
+    # 403 bot-wall on the datacenter IP) doesn't burn the full 60s + a retry.
+    if search_page and "wait_for" in cfg_kwargs:
+        cfg_kwargs["wait_for_timeout"] = SEARCH_WAIT_FOR_TIMEOUT_MS
+
     # On retry, be more patient regardless of platform.
     if attempt > 1:
         cfg_kwargs["page_timeout"] = 60_000
@@ -985,7 +1001,15 @@ async def scrape_search(req: ScrapeSearchRequest):
         # extractor's own log will warn if the page is actually a PX captcha
         # (no __NEXT_DATA__).
         if not result.success and req.platform != "realreal":
-            log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
+            status = getattr(result, "status_code", None)
+            if status in (403, 429):
+                log.warning(
+                    "[scrape-search] %s BLOCKED (HTTP %s) for %s — likely datacenter-IP anti-bot; "
+                    "needs a residential/proxy path, not a code fix",
+                    req.platform, status, target_url,
+                )
+            else:
+                log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
             return ScrapeSearchResponse(results=[])
 
         raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
