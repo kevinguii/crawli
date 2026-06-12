@@ -155,10 +155,18 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1C/1D/1E. Daily Content Email — X/Twitter, Instagram, TikTok ✅ DONE (2026-06-11)
+#### 1C/1D/1E. Daily Content Email — X/Twitter, Instagram, TikTok ✅ DONE (2026-06-11, overhauled 2026-06-12)
 
 **Workflow:** `crawli daily content email` — ID `FMf2nyTQIZNCRa2L`, active, fires daily 8am Pacific.
-**Definition:** `docs/workflows/daily-content-email.json`
+**Definition:** `docs/workflows/daily-content-email.json` · **Regenerate with:** `scripts/_build_daily_email.py [in] [out]`
+
+**Overhaul (2026-06-12) — driven by user review of the first live brief:**
+- **Social ideas are now broadly-useful content, not one-off finds.** Old prompt forced 4 "discovery/deal hook" ideas built around a specific item the creator supposedly bought — the user can't manufacture those. Replaced with content pillars: tips, how-to/workflow, myth-busting, story, item-hunt (find a *type* of thing, not one item), trend. Each idea now includes `slides[]` (slide-by-slide), `visual_direction`, and a `cta_slide` (soft Crawli bridge + one CTA line, like a "10 tips" post ending in an app plug).
+- **Blog briefs are now AEO/GEO-first.** Built to get cited by ChatGPT/Perplexity/AI Overviews (which now grow ~40%/yr vs Google's ~2%), not just to rank. Each brief carries: `direct_answer` (definition-style, sits at top of post for extraction), `key_stat` (real source named; ends with `(verify)` if uncertain — prompt bans inventing/attributing fake numbers, learned after 4o-mini fabricated a ThredUp stat), `structure_element` (required table/numbered list — 2.3× more likely to be cited), `people_also_ask` (4-6 PAA questions → on-page FAQ), `crawli_angle` (soft bridge + one explicit CTA sentence). Pillars: best-sites, reseller-workflow, item-guide, case-study, platform-deepdive, opinion.
+- **Crawli CTA rule clarified:** the "never a CTA, only when genuinely useful" rule is **Reddit-only** (1B). Blog + social get genuine value first, then one explicit CTA line at the end.
+- **Topic dedup memory:** Supabase `content_history` table (kind, title, created_at; service_role only — needs explicit GRANT, same as `seo_context`). Extract context fetches last 80 titles **inline via `this.helpers.httpRequest`** and injects "don't repeat these" into both prompts. `Save topics` HTTP node writes the run's titles after the email sends.
+- **n8n gotcha:** don't fetch recent topics in a separate upstream node — an empty table returns `[]` = 0 items, and n8n skips every downstream node (silent dead chain, status still "success"). Fetch inside the Code node so the always-present `seo_context` item keeps the chain alive.
+- **Still open (workstream 3):** blog `[slug]` pages need Article + FAQPage JSON-LD + a rendered PAA FAQ, and the sitemap submitted to Bing Webmaster Tools (ChatGPT uses Bing's index). On-page AEO half — separate Next.js task in the app repo.
 
 **Run on demand:**
 - n8n UI: open `crawli daily content email` → Execute Workflow

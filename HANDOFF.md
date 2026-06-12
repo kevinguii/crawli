@@ -1,6 +1,17 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-12 (weekly SEO brief rebuilt as keyword map + Supabase context feed — AGENT_PLAN 1G final)
+**Last updated:** 2026-06-12 (daily content brief overhauled — pillars, exec detail, GEO/AEO, PAA, Crawli CTA, topic dedup)
+
+**Latest change (2026-06-12 — daily content brief overhaul):**
+
+Reworked the daily content email (`FMf2nyTQIZNCRa2L`) prompts + added topic-dedup memory. Verified end-to-end (8 nodes ran, email sent, 14 dedup rows written). User feedback drove this: old briefs leaned on one-off personal finds ("I paid $20 for this trench") the user can't produce, blog briefs had no Crawli tie, no execution detail, no AI-answer-engine optimization, and repeated topics.
+
+- **Social prompt** — replaced the "discovery/deal hook" buckets with broadly-applicable content pillars (tips, how-to/workflow, myth-busting, story, item-hunt, trend). Every idea now ships with a slide-by-slide breakdown (`slides[]`), `visual_direction`, and a `cta_slide` (soft Crawli bridge + one CTA line, golf-listicle style). No more single-item showcases.
+- **Blog prompt** — now built for AEO/GEO (getting cited by ChatGPT/Perplexity/AI Overviews), not just Google. Each brief carries `direct_answer` (definition-style, top of post), `key_stat` (real source named, end with `(verify)` if uncertain — prompt explicitly bans fabricated/attributed numbers after gpt-4o-mini invented a fake ThredUp stat in testing), `structure_element` (required table/numbered list), `people_also_ask` (4-6 PAA questions → on-page FAQ), and `crawli_angle` (soft bridge + one CTA sentence). Content pillars seeded from user ideas: best-sites, reseller-workflow, item-guide, case-study, platform-deepdive, opinion.
+- **Topic dedup** — new Supabase `content_history` table logs every brief title (social angle + blog title). Extract context fetches the last 80 inline via `this.helpers.httpRequest` and injects "do not repeat these" into both prompts. Build email emits `newTopics`; new `Save topics` HTTP node writes them after the email sends.
+- **Gotcha (cost a debug cycle):** a separate "Fetch recent topics" HTTP node returned `[]` on an empty table → 0 items → n8n skips all downstream nodes (chain silently dies, status still "success"). Fix = fetch inside the Code node instead, so the always-present `seo_context` item keeps the chain alive. **Same `service_role` GRANT gotcha as `seo_context`:** tables created via the MCP don't get Supabase's default privileges — had to `GRANT ... ON content_history TO service_role` + the id sequence (applied).
+- **Still open (workstream 3, not done):** blog `[slug]` pages don't emit Article/FAQPage JSON-LD or render a PAA FAQ; sitemap not submitted to Bing Webmaster Tools (ChatGPT uses Bing's index). That's the on-page half of the AEO work — separate Next.js task.
+- Regeneration helper: `scripts/_build_daily_email.py` (rebuilds the workflow JSON; takes optional in/out paths so it can transform a live `n8n export:workflow` dump that carries id + credentials).
 
 **Latest change (2026-06-12 — SEO keyword map + Supabase context feed):**
 
