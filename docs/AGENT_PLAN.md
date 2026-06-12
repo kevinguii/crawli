@@ -155,6 +155,17 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
+#### 1C/1D/1E. Daily Content Email — X/Twitter, Instagram, TikTok ✅ DONE (2026-06-11)
+
+**Workflow:** `crawli daily content email` — ID `FMf2nyTQIZNCRa2L`, active, fires daily 8am Pacific.
+**Definition:** `docs/workflows/daily-content-email.json`
+
+**Run on demand:**
+- n8n UI: open `crawli daily content email` → Execute Workflow
+- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id FMf2nyTQIZNCRa2L'`
+
+---
+
 #### 1C. X/Twitter — Blog Cross-Posts ✅ DONE (2026-06-11, folded into daily email)
 **Goal:** X gets the same content as the blog — informal, opinionated takes. No automation, no Zernio (free slots used by Pinterest + Reddit). You paste and post manually.
 
@@ -228,33 +239,38 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 ---
 
-#### 1G. SEO Brief + Blog Pipeline
-**Goal:** Weekly automated SEO brief + daily blog post ideas. You write the actual posts; agent handles all the research.
+#### 1G. Weekly SEO Brief ✅ DONE (2026-06-11)
+**Goal:** Weekly automated SEO brief. You write the actual posts; agent handles all the research.
 
-**Two-layer setup (decided 2026-06-11):**
+**Note on daily blog ideas:** Already built in the daily content email (1C/1D/1E, workflow `FMf2nyTQIZNCRa2L`). Not duplicated here.
+
+**Two-layer setup:**
 
 **Layer 1 — mcp-gsc (interactive, already live ✅)**
 Ask Claude live questions during any session: "what's ranking page 2?", "what queries lost clicks this week?", "check indexing on thecrawli.com". No workflow — just talk to Claude.
 
-**Layer 2 — n8n GSC node (automated)**
-Weekly Monday morning email with:
-- Keyword gaps (ranking position 5–15, low-hanging fruit)
-- Writing calendar: 1-2 prioritized topics for the week
-- Brief per topic: target keyword, secondary keywords, who's it for, what angle to take, competing pages to beat
+**Layer 2 — n8n weekly SEO brief (automated ✅)**
+Workflow: `crawli weekly seo brief` — fires every Monday 8am Pacific.
+- Refreshes Google OAuth token using stored refresh token (no n8n OAuth credential needed)
+- Queries GSC `searchAnalytics` API: last 28 days, `dimensions: ["query","page"]`, up to 200 rows
+- Filters keyword gaps at positions 5–20 (early site — lenient range)
+- If sparse GSC data: brief pivots to LLM-generated niche topic research for secondhand fashion
+- OpenAI gpt-4o-mini generates: 2 prioritized content briefs with target keyword, secondary keywords, audience, angle, hook sentence, 4 supporting points, X-ready sentence
+- One HTML email to owner@example.com
 
-**Daily blog ideas (included in the 8am email with 1D/1E):**
-- 3-5 blog post ideas per day
-- Format: bullet points only — angle, target audience, primary keyword, hook sentence, 3-4 supporting points
-- **You write the full post** — agent gives you everything except the prose
-- Posts live as `.md` files in the local codebase (`/app/blog/` or similar)
-- X/Twitter version: short informal take on the same topic, included alongside the brief
+**Key details:**
+- Workflow ID: (set after deploy)
+- Definition: `docs/workflows/weekly-seo-brief.json`
+- GSC property: `https://thecrawli.com/` (URL-encoded: `https%3A%2F%2Fthecrawli.com%2F`)
+- Auth: refresh token flow using existing mcp-gsc credentials (same Google Cloud project `fashion-crawler-c4ai`, OAuth client `REDACTED.apps.googleusercontent.com`)
+- LLM: gpt-4o-mini, reuses OpenAI cred `eQUItcjo7Td6T6Ui`
+- Email: Gmail SMTP cred `m3Zfuf10aGoLQhov`
 
-**Crawli blog positioning:** Second-hand marketplace aggregator. Topics: resale tips, platform comparisons (Depop vs Poshmark etc), how to find deals, brand-specific resale value, sustainability angle, trend-driven ("best places to find Y2K right now").
+**Run on demand:**
+- n8n UI: open `crawli weekly seo brief` → Execute Workflow
+- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id 5CC5C89EEEE2417C'`
 
-**n8n GSC node setup:** Same Google Cloud project as mcp-gsc. Authorize Google OAuth in n8n credential manager → add GSC node to SEO workflow → cron every Monday 8am.
-
-**Chat prompt to start:**
-> "I want two n8n workflows for Crawli's SEO and blog pipeline. (1) A weekly Monday 8am workflow that connects to Google Search Console via n8n's native GSC node, identifies keyword gaps (position 5-15), and emails me a prioritized writing calendar with 1-2 content briefs. Brief format: target keyword, secondary keywords, audience, angle, competing pages. (2) Add 3-5 daily blog post ideas to the existing morning email (same workflow as the social content ideas). Blog idea format: angle, audience, primary keyword, hook sentence, 3-4 bullet point supporting ideas — no full prose, just the brief. Send to owner@example.com. GSC property: https://thecrawli.com/"
+**GSC data note (2026-06-11):** Site has only 2 rows of data currently ("crawli" at pos 8.0, "reachli pricing" at pos 64.0). Workflow handles this gracefully — when data is sparse, the brief is LLM-generated niche research. As the site grows, the GSC-data path activates automatically.
 
 ---
 

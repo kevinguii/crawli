@@ -1,0 +1,196 @@
+{
+  "name": "crawli weekly seo brief",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1],
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "node-schedule",
+      "name": "Every Monday 8am PT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {},
+      "id": "node-manual",
+      "name": "Run on demand",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst end = now.toISOString().slice(0, 10);\nconst start = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);\nconst weekLabel = now.toLocaleDateString('en-US', {\n  month: 'long', day: 'numeric', year: 'numeric',\n  timeZone: 'America/Los_Angeles'\n});\nconst weekOf = now.toLocaleDateString('en-US', {\n  month: 'short', day: 'numeric',\n  timeZone: 'America/Los_Angeles'\n});\nreturn [{ json: { startDate: start, endDate: end, weekLabel, weekOf } }];"
+      },
+      "id": "node-dates",
+      "name": "Date setup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oauth2.googleapis.com/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "client_id", "value": "REDACTED.apps.googleusercontent.com" },
+            { "name": "client_secret", "value": "REDACTED_GOOGLE_CLIENT_SECRET" },
+            { "name": "refresh_token", "value": "REDACTED_GOOGLE_REFRESH_TOKEN" },
+            { "name": "grant_type", "value": "refresh_token" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-token",
+      "name": "Refresh Google token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://searchconsole.googleapis.com/webmasters/v3/sites/https%3A%2F%2Fthecrawli.com%2F/searchAnalytics/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $json.access_token }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Date setup').first().json.startDate, endDate: $('Date setup').first().json.endDate, dimensions: ['query', 'page'], rowLimit: 200, searchType: 'web' }) }}",
+        "options": {}
+      },
+      "id": "node-gsc",
+      "name": "Query GSC analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.first().json.rows || [];\nconst startDate = $('Date setup').first().json.startDate;\nconst endDate = $('Date setup').first().json.endDate;\nconst weekLabel = $('Date setup').first().json.weekLabel;\nconst weekOf = $('Date setup').first().json.weekOf;\n\nconst parsed = rows.map(function(r) {\n  return {\n    query: r.keys[0],\n    page: r.keys[1],\n    position: Math.round(r.position * 10) / 10,\n    clicks: r.clicks,\n    impressions: r.impressions\n  };\n}).sort(function(a, b) { return b.impressions - a.impressions; });\n\nconst totalClicks = parsed.reduce(function(s, r) { return s + r.clicks; }, 0);\nconst totalImpressions = parsed.reduce(function(s, r) { return s + r.impressions; }, 0);\n\nconst ranked = parsed.filter(function(r) { return r.position < 5; });\nconst gaps = parsed.filter(function(r) { return r.position >= 5 && r.position <= 20; });\nconst weakRanking = parsed.filter(function(r) { return r.position > 20; });\n\nlet gscBlock = 'GSC DATA — https://thecrawli.com/ — last 28 days (' + startDate + ' to ' + endDate + ')\\n';\ngscBlock += 'Unique queries: ' + parsed.length + ' | Clicks: ' + totalClicks + ' | Impressions: ' + totalImpressions + '\\n\\n';\n\nif (ranked.length > 0) {\n  gscBlock += 'Ranking well (pos 1-4):\\n';\n  ranked.forEach(function(r) { gscBlock += '  \"' + r.query + '\" pos ' + r.position + ', ' + r.impressions + ' imp, ' + r.clicks + ' clicks\\n'; });\n  gscBlock += '\\n';\n}\nif (gaps.length > 0) {\n  gscBlock += 'Keyword gaps — low-hanging fruit (pos 5-20, sorted by impressions):\\n';\n  gaps.forEach(function(r) { gscBlock += '  \"' + r.query + '\" pos ' + r.position + ', ' + r.impressions + ' imp, ' + r.clicks + ' clicks\\n'; });\n  gscBlock += '\\n';\n}\nif (weakRanking.length > 0 && weakRanking.length <= 10) {\n  gscBlock += 'Weak rankings (pos 20+, worth knowing):\\n';\n  weakRanking.forEach(function(r) { gscBlock += '  \"' + r.query + '\" pos ' + r.position + ', ' + r.impressions + ' imp\\n'; });\n  gscBlock += '\\n';\n}\nif (parsed.length < 5) {\n  gscBlock += 'NOTE: Site has very little GSC data — generate keyword map based on niche knowledge.\\n';\n}\n\nreturn [{ json: { gscBlock, weekLabel, weekOf, startDate, endDate, totalRows: parsed.length, totalClicks, totalImpressions } }];"
+      },
+      "id": "node-process",
+      "name": "Process GSC data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{ $('Process GSC data').first().json.gscBlock }}\n\nYou are building a comprehensive weekly SEO keyword map for Crawli's blog. Crawli is a free tool that searches secondhand fashion marketplaces simultaneously (Depop, Poshmark, Vestiaire Collective, eBay, ThredUp, The RealReal). Readers: resellers, bargain hunters, luxury shoppers going preloved, vintage fans.\n\nThis map will be used two ways: (1) emailed to the site owner as a reference for the whole week, (2) stored and fed into daily content generation so every day's blog and social ideas stay keyword-aware. It only runs once a week, so give plenty of options.\n\nGenerate the following:\n- 10-12 keyword opportunities total. Use the GSC data if there are real gaps; fill in with niche knowledge when data is sparse. Focus on queries people actually search for when buying or selling secondhand fashion.\n- 4-5 topic clusters that group related keywords.\n- Top 3 priorities for this week — the highest-opportunity targets given current site state.\n- A short context note for the daily content generator (what to lean toward this week, any trend worth riding).\n\nFor each keyword:\n- The exact search query as someone would type it\n- GSC position if it appears in the data above, otherwise \"not ranking\"\n- Search intent: informational / commercial / navigational\n- Audience: resellers / fashionistas / vintage community / all\n- One-sentence angle — the specific or counterintuitive take that would beat what's currently ranking\n- Format fit: blog / social / both\n- Priority: high / medium / low\n\nTone rules — same rules apply to every word you output:\n- No exclamation marks\n- No em dashes (the — character). Use a comma or restructure.\n- No marketing language (not \"game-changing\", not \"ultimate\", not \"comprehensive guide\")\n- No preambles (not \"In today's world...\", not \"Whether you're...\")\n- Angles must be specific and opinionated, not generic\n\nWRONG angle: \"A helpful guide to selling on Poshmark for beginners\"\nRIGHT angle: \"Most Poshmark sellers price based on what they paid, not what buyers will pay, which is why most listings never move\"\n\nWRONG angle: \"Tips for finding great deals on Depop\"\nRIGHT angle: \"Depop's search is keyword-based, not algorithm-based, so sellers who understand search terms get all the visibility\"\n\nReturn only a JSON object, no markdown, no explanation:\n{\n  \"gscSummary\": \"2-3 sentences on what GSC shows this week. Be direct. If data is sparse, say so.\",\n  \"keywords\": [\n    {\n      \"query\": \"exact search query\",\n      \"gscPosition\": \"pos X.X or not ranking\",\n      \"intent\": \"informational|commercial|navigational\",\n      \"audience\": \"resellers|fashionistas|vintage community|all\",\n      \"angle\": \"one sentence — specific and opinionated\",\n      \"formatFit\": \"blog|social|both\",\n      \"priority\": \"high|medium|low\"\n    }\n  ],\n  \"clusters\": [\n    {\n      \"name\": \"cluster name\",\n      \"keywords\": [\"query 1\", \"query 2\", \"query 3\"],\n      \"angle\": \"one sentence on what makes this cluster worth owning\"\n    }\n  ],\n  \"topPriorities\": [\n    {\n      \"query\": \"the keyword\",\n      \"why\": \"1-2 sentences on why this is the highest-opportunity target right now\",\n      \"angle\": \"the specific take to use\"\n    }\n  ],\n  \"contextNote\": \"2-3 sentences for the daily content generator — what to lean toward this week, any trends to ride, what the site needs most right now\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "node-brief",
+      "name": "Generate keyword map",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [1200, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "eQUItcjo7Td6T6Ui",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $('Generate keyword map').first().json.output[0].content[0].text.trim()\n  .replace(/^```json\\s*/i, '').replace(/^```\\s*/, '').replace(/\\s*```$/, '').trim();\n\nlet map;\ntry { map = JSON.parse(rawText); } catch(e) { map = { gscSummary: 'Parse error: ' + e.message, keywords: [], clusters: [], topPriorities: [], contextNote: '' }; }\n\nconst weekLabel = $('Process GSC data').first().json.weekLabel;\nconst weekOf = $('Process GSC data').first().json.weekOf;\nconst totalClicks = $('Process GSC data').first().json.totalClicks;\nconst totalImpressions = $('Process GSC data').first().json.totalImpressions;\nconst totalRows = $('Process GSC data').first().json.totalRows;\n\n// Sanitize tone violations\nconst san = function(s) {\n  return String(s || '')\n    .replace(/!+/g, '.').replace(/\\u2014/g, ',').replace(/ \\u2013 /g, ', ')\n    .replace(/\\.{2,}/g, '.').replace(/,\\s*,/g, ',').trim();\n};\nconst sanObj = function(obj) {\n  if (!obj || typeof obj !== 'object') return obj;\n  const out = {};\n  for (const k of Object.keys(obj)) {\n    const v = obj[k];\n    if (typeof v === 'string') out[k] = san(v);\n    else if (Array.isArray(v)) out[k] = v.map(function(x) { return typeof x === 'string' ? san(x) : (typeof x === 'object' ? sanObj(x) : x); });\n    else if (typeof v === 'object') out[k] = sanObj(v);\n    else out[k] = v;\n  }\n  return out;\n};\n\nmap = sanObj(map);\n\n// Build the seo_context payload for Supabase — this feeds the daily email all week\nconst priorityQueries = (map.topPriorities || []).map(function(p) { return p.query; });\nconst highKeywords = (map.keywords || []).filter(function(k) { return k.priority === 'high'; });\nconst medKeywords = (map.keywords || []).filter(function(k) { return k.priority === 'medium'; });\nconst allKeywords = highKeywords.concat(medKeywords);\n\nconst dailyContext = [\n  'Week of ' + weekOf + '. ' + san(map.contextNote || ''),\n  '',\n  'Top priorities this week:',\n].concat((map.topPriorities || []).map(function(p, i) {\n  return (i + 1) + '. ' + p.query + ' — ' + san(p.angle || '');\n})).concat([\n  '',\n  'Full keyword list (high + medium priority):',\n]).concat(allKeywords.map(function(k) {\n  return '- \"' + k.query + '\" [' + k.intent + ', ' + k.audience + ', ' + k.formatFit + '] — ' + san(k.angle || '');\n})).join('\\n');\n\nconst keywords_json = {\n  week_of: weekOf,\n  priorities: priorityQueries,\n  keywords: (map.keywords || []).map(function(k) {\n    return { query: k.query, intent: k.intent, audience: k.audience, formatFit: k.formatFit, priority: k.priority, angle: san(k.angle || '') };\n  }),\n  clusters: (map.clusters || []).map(function(c) {\n    return { name: c.name, keywords: c.keywords || [], angle: san(c.angle || '') };\n  }),\n  contextNote: san(map.contextNote || ''),\n  dailyContext: dailyContext\n};\n\n// Build HTML email\nconst esc = function(s) {\n  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n};\n\nconst priorityColor = { high: '#dc2626', medium: '#d97706', low: '#6b7280' };\nconst intentColor = { informational: '#3b82f6', commercial: '#059669', navigational: '#7c3aed' };\nconst audienceEmoji = { resellers: '💰', fashionistas: '✨', 'vintage community': '🧶', all: '👥' };\n\n// GSC summary box\nlet html = '<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head>'\n  + '<body style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#111\">';\n\nhtml += '<h1 style=\"font-size:20px;margin-bottom:4px\">Crawli SEO keyword map — week of ' + esc(weekOf) + '</h1>';\nhtml += '<p style=\"color:#6b7280;margin-top:0;margin-bottom:20px\">Keyword research for the week. Saved to Supabase, feeds this week\\'s daily content ideas.</p>';\n\nhtml += '<div style=\"background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:24px\">';\nhtml += '<p style=\"margin:0 0 4px;font-size:13px;color:#6b7280\">GSC last 28 days: ' + totalRows + ' queries, ' + totalClicks + ' clicks, ' + totalImpressions + ' impressions</p>';\nhtml += '<p style=\"margin:0;font-size:14px\">' + esc(map.gscSummary || '') + '</p>';\nhtml += '</div>';\n\n// Top priorities\nhtml += '<h2 style=\"font-size:16px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:6px\">Top 3 priorities this week</h2>';\n(map.topPriorities || []).forEach(function(p, i) {\n  html += '<div style=\"margin-bottom:14px;padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px\">';\n  html += '<p style=\"margin:0 0 4px;font-weight:600\">' + (i + 1) + '. ' + esc(p.query) + '</p>';\n  html += '<p style=\"margin:0 0 3px;font-size:13px;color:#374151\">' + esc(p.why) + '</p>';\n  html += '<p style=\"margin:0;font-size:13px;color:#6b7280\"><em>Angle: ' + esc(p.angle) + '</em></p>';\n  html += '</div>';\n});\n\n// Full keyword list\nhtml += '<h2 style=\"font-size:16px;margin:24px 0 12px;border-bottom:2px solid #111;padding-bottom:6px\">Full keyword map (' + (map.keywords || []).length + ' keywords)</h2>';\n\n['high', 'medium', 'low'].forEach(function(pri) {\n  const group = (map.keywords || []).filter(function(k) { return k.priority === pri; });\n  if (!group.length) return;\n  html += '<p style=\"margin:12px 0 8px;font-weight:600;color:' + (priorityColor[pri] || '#6b7280') + '\">' + pri.charAt(0).toUpperCase() + pri.slice(1) + ' priority (' + group.length + ')</p>';\n  group.forEach(function(k) {\n    const iColor = intentColor[k.intent] || '#6b7280';\n    const aEmoji = audienceEmoji[k.audience] || '';\n    html += '<div style=\"margin-bottom:10px;padding:10px 12px;border:1px solid #e5e7eb;border-left:3px solid ' + (priorityColor[pri] || '#6b7280') + ';border-radius:4px\">';\n    html += '<p style=\"margin:0 0 4px\">';\n    html += '<strong>' + esc(k.query) + '</strong>';\n    html += ' <span style=\"background:' + iColor + ';color:#fff;font-size:11px;padding:1px 6px;border-radius:3px;margin-left:6px\">' + esc(k.intent) + '</span>';\n    html += ' <span style=\"font-size:12px;color:#6b7280;margin-left:4px\">' + aEmoji + ' ' + esc(k.audience) + '</span>';\n    html += ' <span style=\"font-size:12px;color:#6b7280;margin-left:4px\">' + esc(k.gscPosition || '') + '</span>';\n    html += ' <span style=\"font-size:11px;color:#6b7280;margin-left:4px\">' + esc(k.formatFit) + '</span>';\n    html += '</p>';\n    html += '<p style=\"margin:0;font-size:13px;color:#374151\">' + esc(k.angle) + '</p>';\n    html += '</div>';\n  });\n});\n\n// Topic clusters\nif ((map.clusters || []).length > 0) {\n  html += '<h2 style=\"font-size:16px;margin:24px 0 12px;border-bottom:2px solid #111;padding-bottom:6px\">Topic clusters (' + map.clusters.length + ')</h2>';\n  map.clusters.forEach(function(c) {\n    html += '<div style=\"margin-bottom:12px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px\">';\n    html += '<p style=\"margin:0 0 4px;font-weight:600\">' + esc(c.name) + '</p>';\n    html += '<p style=\"margin:0 0 4px;font-size:13px;color:#6b7280\">' + (c.keywords || []).map(function(q) {\n      return '<code style=\"background:#f3f4f6;padding:1px 5px;border-radius:3px;margin-right:3px\">' + esc(q) + '</code>';\n    }).join('') + '</p>';\n    html += '<p style=\"margin:0;font-size:13px;color:#374151\">' + esc(c.angle) + '</p>';\n    html += '</div>';\n  });\n}\n\n// Context note\nhtml += '<div style=\"margin-top:24px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px\">';\nhtml += '<p style=\"margin:0 0 4px;font-size:12px;font-weight:600;color:#1d4ed8\">DAILY CONTENT CONTEXT (saved to Supabase)</p>';\nhtml += '<p style=\"margin:0;font-size:13px\">' + esc(map.contextNote || '') + '</p>';\nhtml += '</div>';\n\nhtml += '</body></html>';\n\nreturn [{ json: { html, subject: 'Crawli SEO map — week of ' + weekOf, keywords_json } }];"
+      },
+      "id": "node-build",
+      "name": "Build email + context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/seo_context",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "REDACTED_JWT" },
+            { "name": "Authorization", "value": "Bearer REDACTED_JWT" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ id: 1, keywords_json: $json.keywords_json, updated_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "node-supabase",
+      "name": "Save context to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1680, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "owner@example.com",
+        "toEmail": "owner@example.com",
+        "subject": "={{ $('Build email + context').first().json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $('Build email + context').first().json.html }}",
+        "options": {}
+      },
+      "id": "node-send",
+      "name": "Send email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1920, 300],
+      "credentials": {
+        "smtp": {
+          "id": "m3Zfuf10aGoLQhov",
+          "name": "Gmail SMTP 587"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 8am PT": { "main": [[{"node": "Date setup", "type": "main", "index": 0}]] },
+    "Run on demand": { "main": [[{"node": "Date setup", "type": "main", "index": 0}]] },
+    "Date setup": { "main": [[{"node": "Refresh Google token", "type": "main", "index": 0}]] },
+    "Refresh Google token": { "main": [[{"node": "Query GSC analytics", "type": "main", "index": 0}]] },
+    "Query GSC analytics": { "main": [[{"node": "Process GSC data", "type": "main", "index": 0}]] },
+    "Process GSC data": { "main": [[{"node": "Generate keyword map", "type": "main", "index": 0}]] },
+    "Generate keyword map": { "main": [[{"node": "Build email + context", "type": "main", "index": 0}]] },
+    "Build email + context": { "main": [[{"node": "Save context to Supabase", "type": "main", "index": 0}]] },
+    "Save context to Supabase": { "main": [[{"node": "Send email", "type": "main", "index": 0}]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles"
+  }
+}

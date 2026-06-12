@@ -61,7 +61,7 @@ export default async function PricingPage() {
         <PricingCards isSignedIn={!!user} currentTier={currentTier} />
 
         <div className="mt-12 text-center text-sm" style={{ color: 'var(--text-dim)' }}>
-          <p>Cancel anytime. Searches reset at the start of each billing period.</p>
+          <p>Cancel anytime. Searches reset weekly.</p>
         </div>
       </div>
     </main>

@@ -58,9 +58,7 @@ export default function SubscriptionBadge() {
       <span
         className="hidden sm:inline text-xs font-medium tabular-nums"
         style={{ color: counterColor }}
-        title={`${data.used} of ${data.cap} searches used${
-          isFree ? ' this month' : ' this billing period'
-        }`}
+        title={`${data.used} of ${data.cap} searches used this week`}
       >
         {remaining}/{data.cap}
       </span>

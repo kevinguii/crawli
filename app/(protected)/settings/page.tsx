@@ -361,11 +361,9 @@ export default function SettingsPage() {
                     <Row
                       label="Searches remaining"
                       sublabel={
-                        isPaid
-                          ? 'Resets on your next billing date'
-                          : billing.searchResetDate
+                        billing.searchResetDate
                           ? `Resets ${new Date(billing.searchResetDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
-                          : 'Resets 30 days after your first search'
+                          : 'Resets weekly'
                       }
                     >
                       {(() => {

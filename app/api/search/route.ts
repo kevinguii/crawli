@@ -11,7 +11,7 @@ import { TIER_CAPS } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
-const FREE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;  // 7 days for weekly reset
 const DEFAULT_FREE_CAP = 10;        // fallback if profile column null (pre-migration)
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
@@ -59,10 +59,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Quota check. Pro/past_due users get PRO_SEARCH_CAP per billing period
-  // (reset by Stripe's invoice.payment_succeeded webhook). Free users get
-  // FREE_SEARCH_CAP per 30-day rolling window (reset lazily here on first
-  // search after the window expires).
+  // Quota check. All users get a weekly quota reset on a 7-day rolling window.
+  // Quotas reset lazily on first search after the 7-day window expires.
   const admin = createAdminClient();
   const { data: profile, error: profileErr } = await admin
     .from('profiles')
@@ -85,30 +83,26 @@ export async function POST(request: Request) {
   const nativeCap = TIER_CAPS[tier].nativeResultsCap;
 
   let used = profile.searches_used_this_period ?? 0;
-  if (!isPro) {
-    const periodStartMs = profile.searches_period_start
-      ? new Date(profile.searches_period_start).getTime()
-      : 0;
-    if (Date.now() - periodStartMs > FREE_PERIOD_MS) {
-      const { error: resetErr } = await admin
-        .from('profiles')
-        .update({
-          searches_used_this_period: 0,
-          searches_period_start: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-      if (resetErr) console.error(`[search] free-tier reset failed for user=${user.id}:`, resetErr);
-      else used = 0;
-    }
+  const periodStartMs = profile.searches_period_start
+    ? new Date(profile.searches_period_start).getTime()
+    : 0;
+  if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
+    const { error: resetErr } = await admin
+      .from('profiles')
+      .update({
+        searches_used_this_period: 0,
+        searches_period_start: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+    if (resetErr) console.error(`[search] weekly reset failed for user=${user.id}:`, resetErr);
+    else used = 0;
   }
 
   if (used >= cap) {
     return NextResponse.json(
       {
         error: 'quota_exceeded',
-        message: isPro
-          ? `You have used all ${cap} searches for this billing period.`
-          : `You have used all ${cap} free searches for this month. Upgrade for more.`,
+        message: `You have used all ${cap} searches for this week. Check back next week or upgrade.`,
         used,
         cap,
         plan: tier,

@@ -83,30 +83,15 @@ export async function POST(req: NextRequest) {
       }
       case 'invoice.payment_succeeded': {
         // Fires on every successful charge — initial subscription, renewals,
-        // and recovery after past_due. Only RENEWALS should reset the search
-        // quota; an upgrade or initial subscribe (billing_reason='subscription_create')
-        // would otherwise wipe out the count the user already accrued on the
-        // previous (or free) tier mid-period.
+        // and recovery after past_due. Quota resets are now handled by a 7-day
+        // rolling window in the search API, not by the billing cycle, so we
+        // don't need to reset on invoice.payment_succeeded anymore.
         const invoice = event.data.object as Stripe.Invoice;
-        const billingReason = invoice.billing_reason;
         const customerId = invoice.customer as string;
         const userId = await userIdFromCustomer(admin, customerId);
-        console.log(`[stripe-webhook] invoice.payment_succeeded customer=${customerId} userId=${userId} billing_reason=${billingReason}`);
+        console.log(`[stripe-webhook] invoice.payment_succeeded customer=${customerId} userId=${userId}`);
         if (!userId) break;
-        if (billingReason !== 'subscription_cycle') {
-          // Initial subscribe / upgrade / manual invoice — leave usage as-is.
-          console.log(`[stripe-webhook] skipping quota reset (billing_reason=${billingReason}) for user=${userId}`);
-          break;
-        }
-        const { error } = await admin.from('profiles').update({
-          searches_used_this_period: 0,
-          searches_period_start: new Date().toISOString(),
-        }).eq('id', userId);
-        if (error) {
-          console.error(`[stripe-webhook] quota reset failed for user=${userId}:`, error);
-        } else {
-          console.log(`[stripe-webhook] quota reset for user=${userId}`);
-        }
+        // No quota reset needed — weekly resets are handled in the search API
         break;
       }
       default:

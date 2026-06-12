@@ -1,6 +1,30 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-11 (daily content email workflow live — AGENT_PLAN 1C/1D/1E done)
+**Last updated:** 2026-06-12 (weekly SEO brief workflow live — AGENT_PLAN 1G done)
+
+**Latest change (2026-06-12 — weekly SEO brief: AGENT_PLAN 1G):**
+
+Built and verified the weekly SEO brief workflow (n8n workflow ID `5CC5C89EEEE2417C`, active). Fires every Monday 8am Pacific. Single email to owner@example.com containing: GSC 28-day snapshot + 2 prioritized blog post briefs (title, angle, keyword, hook, 4 supporting points, X-ready sentence).
+
+**Key details:**
+- Workflow: `5CC5C89EEEE2417C` (`crawli weekly seo brief`) — active, fires `Every Monday 8am PT` (America/Los_Angeles)
+- Definition: `docs/workflows/weekly-seo-brief.json`
+- Auth: refresh token flow using mcp-gsc OAuth credentials (no n8n OAuth credential needed). Client ID `993676212139-lb7l19jcnscqsujc94sefbdqo0h8dr76`, refresh token stored in workflow. Same Google Cloud project `fashion-crawler-c4ai` as mcp-gsc.
+- GSC property: `https://thecrawli.com/` — queries last 28 days, dimensions `["query","page"]`, up to 200 rows
+- LLM: gpt-4o-mini, reuses OpenAI cred `eQUItcjo7Td6T6Ui` + Gmail SMTP cred `m3Zfuf10aGoLQhov`
+- Handles sparse GSC data gracefully: when fewer than 2 keywords in positions 5-20, LLM generates niche topic research from its training data instead
+
+**Run on demand:**
+- n8n UI: open `crawli weekly seo brief` → Execute Workflow
+- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id 5CC5C89EEEE2417C'`
+
+**Verified (2026-06-12):** Full end-to-end run — token refresh ✅, GSC query ✅ (2 rows: "crawli" pos 8.0, "reachli pricing" pos 64.0), OpenAI brief generation ✅, email delivered to Gmail ✅.
+
+**GSC data note:** Site is very early-stage. Only 2 GSC rows currently. Briefs will improve as pages index and rankings develop. No manual intervention needed — the workflow handles the sparse-data case automatically.
+
+**n8n DB insert gotcha (documented for future sessions):** Inserting workflows directly into SQLite requires BOTH `workflow_entity` AND `shared_workflow` rows. Missing the `shared_workflow` row causes `Could not find any entity of type "SharedWorkflow"` error at execution time. Use `projectId=zgajejG551ATJTZn` and `role=workflow:owner`.
+
+---
 
 **Latest change (2026-06-11 — daily content email: AGENT_PLAN 1C + 1D + 1E):**
 

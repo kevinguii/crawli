@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { Tier } from '@/lib/stripe';
 import InfoTooltip from '@/app/components/InfoTooltip';
 
-type Cycle = 'monthly' | 'yearly';
+type Cycle = 'weekly' | 'monthly' | 'yearly';
 type PaidTier = Exclude<Tier, 'free'>;
 
 interface TierConfig {
@@ -14,6 +14,7 @@ interface TierConfig {
   name: string;
   icon: React.ReactNode;
   tagline: string;
+  weekly: number;
   monthly: number;
   yearly: number; // total billed yearly
   features: string[];
@@ -42,10 +43,11 @@ const PAID_TIERS: TierConfig[] = [
     name: 'Pro',
     icon: '✦',
     tagline: 'More searches, more alerts',
+    weekly: 5,
     monthly: 10,
     yearly: 100,
     features: [
-      '75 searches per month',
+      '20 searches per week',
       '3 search alerts',
       '200 tracked listings',
       'Up to 40 results per native platform',
@@ -58,10 +60,11 @@ const PAID_TIERS: TierConfig[] = [
     name: 'Max',
     icon: '★',
     tagline: 'For power users',
+    weekly: 12,
     monthly: 30,
     yearly: 300,
     features: [
-      '300 searches per month',
+      '70 searches per week',
       '10 search alerts',
       '1,000 tracked listings',
       'Up to 80 results per native platform',
@@ -86,7 +89,7 @@ export function PricingCards({
   isSignedIn: boolean;
   currentTier: Tier;
 }) {
-  const [cycle, setCycle] = useState<Cycle>('yearly');
+  const [cycle, setCycle] = useState<Cycle>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
 
@@ -137,38 +140,35 @@ export function PricingCards({
 
   return (
     <>
-      {/* Billing cycle toggle — shared across paid cards */}
-      <div className="flex items-center justify-center gap-3 mb-8">
-        <button
-          type="button"
-          onClick={() => setCycle(cycle === 'monthly' ? 'yearly' : 'monthly')}
-          className="relative inline-flex h-7 w-12 shrink-0 items-center transition-all duration-200"
-          style={{
-            background: cycle === 'yearly' ? 'var(--accent)' : 'var(--border)',
-            borderRadius: '0.5rem',
-          }}
-          aria-label="Toggle billing cycle"
-          role="switch"
-          aria-checked={cycle === 'yearly'}
+      {/* Billing cycle selector */}
+      <div className="flex items-center justify-center mb-8">
+        <div
+          className="inline-flex rounded-xl p-1 gap-1"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <span
-            className="inline-block h-5 w-5 bg-white transition-transform duration-200"
-            style={{
-              transform: cycle === 'yearly' ? 'translateX(1.5rem)' : 'translateX(0.25rem)',
-              borderRadius: '5px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-            }}
-          />
-        </button>
-        <span className="text-sm" style={{ color: 'var(--text)' }}>
-          {cycle === 'yearly' ? 'Billed yearly' : 'Billed monthly'}
-        </span>
-        <span
-          className="text-xs font-semibold"
-          style={{ color: cycle === 'yearly' ? 'var(--accent)' : 'transparent', userSelect: 'none' }}
-        >
-          Save 17%
-        </span>
+          {(['weekly', 'monthly', 'yearly'] as Cycle[]).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCycle(c)}
+              className="relative rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150"
+              style={{
+                background: cycle === c ? 'var(--accent)' : 'transparent',
+                color: cycle === c ? '#fff' : 'var(--text-muted)',
+              }}
+            >
+              {c.charAt(0).toUpperCase() + c.slice(1)}
+              {c === 'yearly' && (
+                <span
+                  className="ml-1.5 text-xs font-semibold"
+                  style={{ color: cycle === 'yearly' ? 'rgba(255,255,255,0.8)' : 'var(--accent)' }}
+                >
+                  −17%
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -202,8 +202,9 @@ export function PricingCards({
             : isOnOtherPaidPlan
             ? (loading === 'portal' ? 'Opening…' : `Switch to ${t.name}`)
             : (loading === loadingKey ? 'Loading…' : 'Subscribe');
-          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : t.monthly;
+          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : cycle === 'weekly' ? t.weekly : t.monthly;
           const priceLabel = `$${displayPriceNum % 1 === 0 ? displayPriceNum : displayPriceNum.toFixed(2)}`;
+          const priceSubLabel = cycle === 'weekly' ? '/wk' : '/mo';
           const yearlyHint = cycle === 'yearly' ? `$${t.yearly} billed yearly` : null;
 
           return (
@@ -213,7 +214,7 @@ export function PricingCards({
               name={t.name}
               tagline={t.tagline}
               priceLabel={priceLabel}
-              priceSubLabel="/mo"
+              priceSubLabel={priceSubLabel}
               priceHint={yearlyHint}
               highlight={t.highlight}
               isCurrent={isCurrent}

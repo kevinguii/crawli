@@ -46,11 +46,11 @@ export async function GET() {
   const tier: Tier = profile.subscription_tier ?? (isPro ? 'pro' : 'free');
   const defaults = TIER_CAPS[tier];
 
-  // For free users, calculate when searches reset (30 days after period start)
+  // Calculate when searches reset (7 days after period start)
   let searchResetDate: string | null = null;
-  if (!isPro && profile.searches_period_start) {
+  if (profile.searches_period_start) {
     const periodStartMs = new Date(profile.searches_period_start).getTime();
-    const resetMs = periodStartMs + (30 * 24 * 60 * 60 * 1000);
+    const resetMs = periodStartMs + (7 * 24 * 60 * 60 * 1000);
     searchResetDate = new Date(resetMs).toISOString();
   }
 
