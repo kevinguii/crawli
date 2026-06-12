@@ -9,13 +9,24 @@ import { marked } from 'marked';
 
 const BLOG_DIR = path.join(process.cwd(), 'content', 'blog');
 
+/** One FAQ entry, rendered on-page and mirrored into FAQPage JSON-LD. Populate
+ * from a post's `faq:` frontmatter (the People Also Ask questions from the
+ * content brief). Question + answer must match the visible text exactly —
+ * Google requires the structured data to mirror what's on the page. */
+export interface BlogFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface PostMeta {
   slug: string;
   title: string;
   description: string;
-  date: string; // ISO yyyy-mm-dd
+  date: string; // ISO yyyy-mm-dd — first published
+  updated?: string; // ISO yyyy-mm-dd — last meaningful edit, drives dateModified
   cover?: string;
   tags: string[];
+  faq: BlogFaqItem[];
 }
 
 export interface Post extends PostMeta {
@@ -36,13 +47,31 @@ function parse(slug: string): Post | null {
   const raw = fs.readFileSync(file, 'utf8');
   const { data, content } = matter(raw);
   const html = marked.parse(content, { async: false }) as string;
+
+  // Keep only well-formed { question, answer } pairs; both must be non-empty so
+  // the on-page FAQ and the FAQPage JSON-LD never carry blank entries.
+  const faq: BlogFaqItem[] = Array.isArray(data.faq)
+    ? data.faq
+        .filter(
+          (f: unknown): f is BlogFaqItem =>
+            !!f &&
+            typeof (f as BlogFaqItem).question === 'string' &&
+            typeof (f as BlogFaqItem).answer === 'string' &&
+            (f as BlogFaqItem).question.trim().length > 0 &&
+            (f as BlogFaqItem).answer.trim().length > 0,
+        )
+        .map((f: BlogFaqItem) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+    : [];
+
   return {
     slug,
     title: data.title ?? slug,
     description: data.description ?? '',
     date: data.date ? String(data.date).slice(0, 10) : '',
+    updated: data.updated ? String(data.updated).slice(0, 10) : undefined,
     cover: data.cover ?? undefined,
     tags: Array.isArray(data.tags) ? data.tags : [],
+    faq,
     html,
   };
 }

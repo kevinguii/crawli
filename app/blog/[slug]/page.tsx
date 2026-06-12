@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Footer from '@/app/components/landing/Footer';
+import CollapsibleFAQ from '@/app/components/blog/CollapsibleFAQ';
 import { getAllSlugs, getPost } from '@/lib/blog';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
@@ -62,13 +63,16 @@ export default async function BlogPost({ params }: Props) {
   const { data, error } = await supabase.auth.getUser();
   const isAuthenticated = !error && !!data.user;
 
-  // Article structured data so the post is eligible for rich results.
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  // Structured data: BlogPosting always, plus FAQPage when the post defines an
+  // FAQ. Both go in one @graph so a single script tag covers the page. AI answer
+  // engines (ChatGPT, Perplexity, Google AI Overviews) read this from the HTML
+  // without running JS, and favour recently-updated, FAQ-backed pages.
+  const blogPosting = {
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
     datePublished: post.date || undefined,
+    dateModified: post.updated || post.date || undefined,
     image: post.cover ? `${SITE_URL}${post.cover}` : undefined,
     url: `${SITE_URL}/blog/${slug}`,
     author: { '@type': 'Person', name: 'Kevin Gui' },
@@ -78,6 +82,24 @@ export default async function BlogPost({ params }: Props) {
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon.svg` },
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${slug}` },
+  };
+
+  // FAQPage must mirror the visible on-page FAQ exactly (Google requirement).
+  const faqPage =
+    post.faq.length > 0
+      ? {
+          '@type': 'FAQPage',
+          mainEntity: post.faq.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: { '@type': 'Answer', text: item.answer },
+          })),
+        }
+      : null;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': faqPage ? [blogPosting, faqPage] : [blogPosting],
   };
 
   return (
@@ -146,6 +168,10 @@ export default async function BlogPost({ params }: Props) {
           className="blog-content"
           dangerouslySetInnerHTML={{ __html: post.html }}
         />
+
+        {/* On-page FAQ — collapsible accordion. Mirrors the FAQPage JSON-LD above.
+            Drives Google's People Also Ask and gives AI answer engines clean Q&A. */}
+        {post.faq.length > 0 && <CollapsibleFAQ items={post.faq} />}
       </article>
 
       <Footer />
