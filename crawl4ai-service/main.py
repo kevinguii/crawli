@@ -88,6 +88,19 @@ SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_
 # another ~60s. Capping the selector wait fails a blocked page fast instead.
 SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_MS", "20000")))
 
+# Platforms that anti-bot the datacenter IP (verified 2026-06-12: Mercari hard
+# 403 wall, Depop intermittent). When their NATIVE render fails (blocked), fall
+# back to Firecrawl — whose proxy infra isn't datacenter-IP blocked — to scrape
+# the search-page HTML, then run the same grid extractor on it. Costs ~1
+# Firecrawl credit per fallback. The fallback fires ONLY on native failure, so
+# Depop pays nothing on the searches where its native render succeeds, and a
+# platform that stops being blocked silently goes back to the free native path.
+FIRECRAWL_FALLBACK_PLATFORMS = {
+    p.strip() for p in os.environ.get("FIRECRAWL_FALLBACK_PLATFORMS", "mercari,depop").split(",") if p.strip()
+}
+SEARCH_FIRECRAWL_FALLBACK = os.environ.get("SEARCH_FIRECRAWL_FALLBACK", "1").strip().lower() not in ("0", "false", "no", "")
+FIRECRAWL_SCRAPE_ENDPOINT = "https://api.firecrawl.dev/v2/scrape"
+
 # Semaphore + restart lock are initialised in lifespan() (asyncio primitives
 # must bind to the running loop).
 _render_semaphore: Optional[asyncio.Semaphore] = None
@@ -945,6 +958,45 @@ async def scrape(req: ScrapeRequest):
         return ScrapeResponse(result=None)
 
 
+async def _firecrawl_search_fallback(platform: str, url: str, limit: int):
+    """Scrape a datacenter-IP-blocked search page via Firecrawl and run the
+    normal grid extractor on the returned HTML.
+
+    Returns a list of coerced listings (possibly empty) on success, or None when
+    the fallback is disabled, unconfigured, or errored — callers treat None as
+    "no fallback available" and fall through to []. Costs ~1 Firecrawl credit.
+    """
+    if not SEARCH_FIRECRAWL_FALLBACK or platform not in FIRECRAWL_FALLBACK_PLATFORMS:
+        return None
+    api_key = os.environ.get("FIRECRAWL_API_KEY", "").strip()
+    if not api_key:
+        log.warning("[firecrawl-fallback] %s blocked but FIRECRAWL_API_KEY unset — skipping", platform)
+        return None
+    import httpx  # local import mirrors the inline httpx use elsewhere in this module
+    try:
+        async with httpx.AsyncClient(timeout=50.0) as cx:
+            resp = await cx.post(
+                FIRECRAWL_SCRAPE_ENDPOINT,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={"url": url, "formats": ["html"], "waitFor": 6000, "timeout": 45000},
+            )
+        if resp.status_code != 200:
+            log.warning("[firecrawl-fallback] %s HTTP %s: %s", platform, resp.status_code, resp.text[:200])
+            return None
+        data = resp.json().get("data") or {}
+        html = data.get("html") or data.get("rawHtml") or ""
+        if not html:
+            log.warning("[firecrawl-fallback] %s returned no html", platform)
+            return None
+        items = extract_search_grid(platform, html, limit=limit)
+        listings = [coerce_listing(it["url"], it) for it in items if isinstance(it.get("url"), str)]
+        log.info("[firecrawl-fallback] %s → %d listings (via Firecrawl proxy, ~1 credit)", platform, len(listings))
+        return listings
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[firecrawl-fallback] %s failed: %s", platform, exc)
+        return None
+
+
 @app.post("/scrape-search", response_model=ScrapeSearchResponse)
 async def scrape_search(req: ScrapeSearchRequest):
     """Render a platform's onsite search page and pull a grid of listings.
@@ -1004,12 +1056,19 @@ async def scrape_search(req: ScrapeSearchRequest):
             status = getattr(result, "status_code", None)
             if status in (403, 429):
                 log.warning(
-                    "[scrape-search] %s BLOCKED (HTTP %s) for %s — likely datacenter-IP anti-bot; "
-                    "needs a residential/proxy path, not a code fix",
+                    "[scrape-search] %s BLOCKED (HTTP %s) for %s — datacenter-IP anti-bot",
                     req.platform, status, target_url,
                 )
             else:
                 log.warning("[scrape-search] crawl failed for %s: %s", target_url, result.error_message)
+            # Native render failed (blocked / never hydrated). For platforms we
+            # know anti-bot the datacenter IP, retry via Firecrawl's proxy.
+            fb = await _firecrawl_search_fallback(req.platform, target_url, req.limit)
+            if fb is not None:
+                if fb:  # only cache non-empty — empty may be a transient block
+                    with _cache_lock:
+                        _search_cache[cache_key] = fb
+                return ScrapeSearchResponse(results=fb)
             return ScrapeSearchResponse(results=[])
 
         raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
