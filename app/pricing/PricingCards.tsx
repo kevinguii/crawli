@@ -75,7 +75,7 @@ const PAID_TIERS: TierConfig[] = [
 ];
 
 const FREE_FEATURES: string[] = [
-  '10 searches per month',
+  '3 searches per week',
   '1 search alert',
   '50 tracked listings',
   'Up to 10 results per native platform',
@@ -158,14 +158,6 @@ export function PricingCards({
               }}
             >
               {c.charAt(0).toUpperCase() + c.slice(1)}
-              {c === 'yearly' && (
-                <span
-                  className="ml-1.5 text-xs font-semibold"
-                  style={{ color: cycle === 'yearly' ? 'rgba(255,255,255,0.8)' : 'var(--accent)' }}
-                >
-                  −17%
-                </span>
-              )}
             </button>
           ))}
         </div>
@@ -205,7 +197,13 @@ export function PricingCards({
           const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : cycle === 'weekly' ? t.weekly : t.monthly;
           const priceLabel = `$${displayPriceNum % 1 === 0 ? displayPriceNum : displayPriceNum.toFixed(2)}`;
           const priceSubLabel = cycle === 'weekly' ? '/wk' : '/mo';
-          const yearlyHint = cycle === 'yearly' ? `$${t.yearly} billed yearly` : null;
+          // Savings hints: monthly saves vs weekly, yearly saves vs monthly
+          const monthlySavingPct = Math.round((1 - (t.monthly / (52 / 12)) / t.weekly) * 100);
+          const yearlySavingPct = Math.round((1 - (t.yearly / 12) / t.monthly) * 100);
+          const priceHint =
+            cycle === 'monthly' ? `Save ${monthlySavingPct}% vs weekly` :
+            cycle === 'yearly' ? `Save ${yearlySavingPct}% vs monthly · $${t.yearly}/yr` :
+            null;
 
           return (
             <PlanCard
@@ -215,7 +213,7 @@ export function PricingCards({
               tagline={t.tagline}
               priceLabel={priceLabel}
               priceSubLabel={priceSubLabel}
-              priceHint={yearlyHint}
+              priceHint={priceHint}
               highlight={t.highlight}
               isCurrent={isCurrent}
               ctaLabel={ctaLabel}
@@ -302,7 +300,7 @@ function PlanCard({
       </div>
       <div style={{ minHeight: '18px', marginBottom: '1rem' }}>
         {priceHint && (
-          <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{priceHint}</span>
+          <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{priceHint}</span>
         )}
       </div>
 

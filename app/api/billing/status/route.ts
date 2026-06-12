@@ -46,11 +46,31 @@ export async function GET() {
   const tier: Tier = profile.subscription_tier ?? (isPro ? 'pro' : 'free');
   const defaults = TIER_CAPS[tier];
 
+  const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
+
+  // Eagerly reset expired periods on status load so the UI never shows a
+  // stale past reset date. The search route also resets lazily, but status
+  // is fetched more often (settings page, badge) so resetting here keeps
+  // the display accurate even for users who haven't searched recently.
+  let searchesUsed = profile.searches_used_this_period ?? 0;
+  let periodStart = profile.searches_period_start;
+  if (periodStart) {
+    const periodStartMs = new Date(periodStart).getTime();
+    if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
+      const now = new Date().toISOString();
+      await admin.from('profiles').update({
+        searches_used_this_period: 0,
+        searches_period_start: now,
+      }).eq('id', user.id);
+      searchesUsed = 0;
+      periodStart = now;
+    }
+  }
+
   // Calculate when searches reset (7 days after period start)
   let searchResetDate: string | null = null;
-  if (profile.searches_period_start) {
-    const periodStartMs = new Date(profile.searches_period_start).getTime();
-    const resetMs = periodStartMs + (7 * 24 * 60 * 60 * 1000);
+  if (periodStart) {
+    const resetMs = new Date(periodStart).getTime() + RESET_PERIOD_MS;
     searchResetDate = new Date(resetMs).toISOString();
   }
 
@@ -78,12 +98,12 @@ export async function GET() {
     plan: tier, // legacy alias for existing clients
     caps,
     usage: {
-      searches: profile.searches_used_this_period ?? 0,
+      searches: searchesUsed,
       alerts: alertsRes.count ?? 0,
       tracked: trackedRes.count ?? 0,
     },
     // Legacy flat fields — keep until callers migrate.
-    used: profile.searches_used_this_period ?? 0,
+    used: searchesUsed,
     cap: caps.searches,
     periodEnd: profile.subscription_period_end,
     searchResetDate,

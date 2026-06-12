@@ -30,7 +30,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Is Crawli free to use?",
     answer:
-      "Yes. Crawli is free to start with no credit card required. Paid plans add more searches per week, daily search alerts and higher result limits, but the core cross-platform price comparison is free.",
+      "Yes. Crawli is free to start with 3 searches per week, no credit card required. Paid plans add more searches per week, daily search alerts and higher result limits.",
   },
   {
     question: "Is buying secondhand fashion worth it?",
