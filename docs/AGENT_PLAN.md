@@ -259,18 +259,21 @@ Workflow: `crawli weekly seo brief` — fires every Monday 8am Pacific.
 - One HTML email to owner@example.com
 
 **Key details:**
-- Workflow ID: (set after deploy)
-- Definition: `docs/workflows/weekly-seo-brief.json`
-- GSC property: `https://thecrawli.com/` (URL-encoded: `https%3A%2F%2Fthecrawli.com%2F`)
-- Auth: refresh token flow using existing mcp-gsc credentials (same Google Cloud project `fashion-crawler-c4ai`, OAuth client `REDACTED.apps.googleusercontent.com`)
-- LLM: gpt-4o-mini, reuses OpenAI cred `eQUItcjo7Td6T6Ui`
-- Email: Gmail SMTP cred `m3Zfuf10aGoLQhov`
+- Weekly brief workflow ID: `5CC5C89EEEE2417C` — active, Monday 8am PT
+- Daily email workflow ID: `FMf2nyTQIZNCRa2L` — active, daily 8am PT (updated to read context)
+- Definitions: `docs/workflows/weekly-seo-brief.json`, `docs/workflows/daily-content-email.json`
+- Supabase `seo_context` table: `id=1` single-row upsert, `keywords_json` jsonb, service role only
+- Auth: refresh token flow (same Google Cloud project `fashion-crawler-c4ai`)
+- LLM: gpt-4o-mini, reuses OpenAI cred `eQUItcjo7Td6T6Ui` + Gmail SMTP cred `m3Zfuf10aGoLQhov`
 
 **Run on demand:**
-- n8n UI: open `crawli weekly seo brief` → Execute Workflow
-- CLI/SSH: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id 5CC5C89EEEE2417C'`
+- Weekly brief: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id 5CC5C89EEEE2417C'`
+- Daily email: `ssh root@5.78.187.97 'N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id FMf2nyTQIZNCRa2L'`
 
-**GSC data note (2026-06-11):** Site has only 2 rows of data currently ("crawli" at pos 8.0, "reachli pricing" at pos 64.0). Workflow handles this gracefully — when data is sparse, the brief is LLM-generated niche research. As the site grows, the GSC-data path activates automatically.
+**How context flows:**
+1. Monday 8am: weekly brief runs GSC query → OpenAI generates 10-12 keywords, 4-5 clusters, top 3 priorities → upserts full map to Supabase `seo_context` → sends keyword map email
+2. Daily 8am (Tue-Sun): daily email reads `seo_context` → injects keyword list into social ideas prompt (3-4 of 10 ideas) and blog brief prompt (2-3 of 4 briefs) → sends content email with green "SEO context active" badge
+3. Before first Monday run: daily email falls back to original prompts, no SEO context badge
 
 ---
 
