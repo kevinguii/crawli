@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Shield with checkmark">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Shield shape -->
+  <path d="M 600 120 L 780 190 L 780 360 C 780 460 700 530 600 560 C 500 530 420 460 420 360 L 420 190 Z"
+        fill="#fef2f2" stroke="#dc2626" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- Checkmark inside shield -->
+  <polyline points="500,345 565,415 710,260"
+            fill="none" stroke="#dc2626" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Sneaker shoe silhouette with downward arrow">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Shoe sole (bottom) -->
+  <rect x="250" y="430" width="620" height="50" rx="25" fill="#f5f3ff" stroke="#6366f1" stroke-width="8"/>
+
+  <!-- Shoe upper body -->
+  <path d="M 290 430 L 290 340 C 290 290 340 260 400 255 L 620 240 C 700 238 760 260 800 300 L 870 430 Z"
+        fill="#f5f3ff" stroke="#6366f1" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Toe box curve -->
+  <path d="M 290 340 C 275 370 265 400 250 430"
+        fill="none" stroke="#6366f1" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Lace line -->
+  <path d="M 400 275 C 450 268 530 260 620 255"
+        fill="none" stroke="#6366f1" stroke-width="6" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Downward arrow (price going down) -->
+  <line x1="960" y1="200" x2="960" y2="420" stroke="#6366f1" stroke-width="14" stroke-linecap="round"/>
+  <polyline points="910,370 960,430 1010,370" fill="none" stroke="#6366f1" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
