@@ -57,7 +57,7 @@ export default function ContactPage() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <Link href="/" className="flex items-center">
-            <Wordmark size={28} />
+            <Wordmark size={30} />
           </Link>
           <Link
             href="/settings"

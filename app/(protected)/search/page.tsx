@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import SearchSection from '@/app/components/SearchSection';
 import AuthButton from '@/app/components/AuthButton';
+import Wordmark from '@/app/components/landing/Wordmark';
 
 export default function Home() {
   return (
@@ -17,21 +18,9 @@ export default function Home() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center">
-            <span
-              style={{
-                fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif",
-                fontSize: '30px',
-                fontWeight: 700,
-                letterSpacing: '-0.5px',
-                background: 'linear-gradient(to right, #E24B4A, #E84D1D, #D85A30, #EF9F27, #FAC775)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                lineHeight: 1.2,
-              }}
-            >
-              Crawli
-            </span>
+            <Link href={process.env.NEXT_PUBLIC_SITE_URL ?? '/'}>
+              <Wordmark size={30} />
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <AuthButton />

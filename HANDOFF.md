@@ -1,6 +1,17 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-12 (prod search fix: fail-fast on datacenter-IP blocks + Firecrawl fallback restores Mercari/Depop results)
+**Last updated:** 2026-06-15 (content brief: twice-weekly, 15 social ideas, 10 blog briefs, published-post dedup)
+
+**Latest change (2026-06-15 — content brief expanded + published-post dedup):**
+
+Reworked the content email workflow (`FMf2nyTQIZNCRa2L`, now named `crawli content brief`) and added a Supabase-backed published-post dedup layer. Verified merge + import; all 8 checks passed.
+
+- **Schedule**: changed from daily to **Tuesday + Friday 8am PT** (`field: weeks`, `triggerAtDay: [2]` and `[5]`). Node renamed "Tue+Fri 8am PT".
+- **Social ideas**: 10 → **15 per brief**. Prompt updated ("Generate 15 content ideas, ranked 1 to 15"; SEO injection now "use for 4-5 of 15"; JSON array count = 15). content_history dedup pool increased to last 100 entries (was 80).
+- **Blog briefs**: 4 → **10 per brief**. Prompt updated ("Generate 10 blog post briefs"; SEO injection now "lean toward 4-6 of 10"; JSON array count = 10).
+- **Published-post hard dedup**: new Supabase table `published_posts` (columns: `id serial PK`, `title text NOT NULL`, `slug text`, `created_at timestamptz`). Seeded with all 6 live posts. Extract context fetches it inline (same pattern as content_history — no separate node to avoid empty-table chain-kill), builds `blogPublishedDedup` with strong constraint "ALREADY PUBLISHED — do NOT generate a brief covering the same topic, angle, or primary keyword". Injected into blogPrompt BEFORE the content_history blogDedup block. **When you publish a new post, add a row:** `INSERT INTO published_posts (title, slug) VALUES ('Post title', 'slug-here');`
+- **Definition**: `docs/workflows/daily-content-email.json` updated (source of truth). Deployed via `scp` + merge script (`/tmp/merge_wf.js`) + `n8n import:workflow`. Node IDs and credentials preserved from live export.
+- **Supabase `published_posts` GRANT**: table was created and GRANTed in the same migration. No separate grant step needed.
 
 **Latest change (2026-06-12 — prod search slowness + Mercari 0-results: diagnosed, fail-fast + Firecrawl fallback shipped):**
 

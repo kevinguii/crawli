@@ -25,7 +25,7 @@ export default function LandingNav({ isAuthenticated = false }: { isAuthenticate
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-8">
         <Link href="/" className="flex items-center">
-          <Wordmark size={28} />
+          <Wordmark size={30} />
         </Link>
         <div className="flex items-center gap-3 sm:gap-5">
           <Link

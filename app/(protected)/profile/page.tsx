@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AuthButton from '@/app/components/AuthButton';
+import Wordmark from '@/app/components/landing/Wordmark';
 import ProfileHeader from '@/app/components/profile/ProfileHeader';
 import ProfileDashboard from '@/app/components/profile/ProfileDashboard';
 import { createClient } from '@/lib/supabase/server';
@@ -35,22 +36,7 @@ export default async function ProfilePage({
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <Link href="/search" className="flex items-center">
-            <span
-              style={{
-                fontFamily: "'Trebuchet MS', 'Segoe UI', sans-serif",
-                fontSize: '30px',
-                fontWeight: 700,
-                letterSpacing: '-0.5px',
-                background:
-                  'linear-gradient(to right, #E24B4A, #E84D1D, #D85A30, #EF9F27, #FAC775)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                lineHeight: 1.2,
-              }}
-            >
-              Crawli
-            </span>
+            <Wordmark size={30} />
           </Link>
           <div className="flex items-center gap-3">
             <AuthButton />
