@@ -66,5 +66,6 @@ __pycache__/
 # personal
 .claude
 .mcp.json
+.gsc/
 # Sentry Config File
 .env.sentry-build-plugin

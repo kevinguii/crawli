@@ -57,7 +57,7 @@ All AI-drafted content must sound like a real person wrote it, not a brand or a 
 ## Prerequisites
 
 ### P2. mcp-gsc (Google Search Console MCP) ✅ DONE (2026-06-11)
-**Summary:** mcp-gsc installed via `uvx`, configured in `.mcp.json`. Google Cloud OAuth credentials at `/Users/kevingui/Documents/gsc-client-secret.json` (outside repo — do not commit). OAuth app in Testing mode with `owner@example.com` as test user. Project: `fashion-crawler-c4ai`. Restart VS Code to activate; first run opens browser for Google auth, token saved permanently after.
+**Summary:** mcp-gsc installed via `uvx`, configured in `.mcp.json`. Google Cloud OAuth credentials at `.gsc/gsc-client-secret.json` (gitignored — do not commit). OAuth app in Testing mode with `owner@example.com` as test user. Project: `fashion-crawler-c4ai`. Restart VS Code to activate; first run opens browser for Google auth, token saved permanently after.
 
 **Config added to `.mcp.json`:**
 ```json
@@ -65,7 +65,7 @@ All AI-drafted content must sound like a real person wrote it, not a brand or a 
   "command": "/opt/homebrew/bin/uvx",
   "args": ["mcp-search-console"],
   "env": {
-    "GSC_OAUTH_CLIENT_SECRETS_FILE": "/Users/kevingui/Documents/gsc-client-secret.json"
+    "GSC_OAUTH_CLIENT_SECRETS_FILE": "/Users/kevingui/Documents/Work/me/fashion-crawler-crawl4ai/.gsc/gsc-client-secret.json"
   }
 }
 ```

@@ -32,6 +32,25 @@ systemctl restart crawli-sidecar
 # If port 8000 still in use: fuser -k 8000/tcp && systemctl restart crawli-sidecar
 ```
 
+### After publishing a new blog post
+
+The content brief workflow deduplicates blog ideas against a Supabase `published_posts` table. Every time you publish a new post, add a row so future briefs don't suggest that topic again.
+
+**Easiest — use the Supabase MCP in Claude Code** (just paste this and fill in the values):
+```
+mcp__supabase__execute_sql:
+  INSERT INTO published_posts (title, slug)
+  VALUES ('Your exact post title', 'the-slug-from-content/blog/');
+```
+
+**Or use the Supabase SQL editor** at https://supabase.com/dashboard/project/peyqxfijdrziqfjkxjsn/sql:
+```sql
+INSERT INTO published_posts (title, slug)
+VALUES ('Your exact post title', 'the-slug-from-content/blog/');
+```
+
+The title should match the `title:` field in the post's frontmatter exactly. The slug is the filename without `.md`. The content brief fetches this table on every run — no other step needed.
+
 ---
 
 ## Going to production (Stripe live mode)

@@ -39,6 +39,6 @@ Here's why resale prices vary so wildly:
 
 ## Let Crawli do the cross-checking
 
-This is the exact grind [Crawli](/) saves you from — one search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire, with the results lined up so you can see the price spread at a glance.
+This is the exact grind [Crawli](/) saves you from. One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire, with the results lined up so you can see the price spread at a glance.
 
 Happy hunting.

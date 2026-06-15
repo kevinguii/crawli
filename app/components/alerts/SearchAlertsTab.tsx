@@ -172,6 +172,19 @@ export default function SearchAlertsTab() {
 
   return (
     <div>
+      {alerts.length === 0 && (
+        <div
+          className="rounded-xl p-4 mb-6"
+          style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
+        >
+          <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+            How alerts work
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            Alerts check daily at 9 AM in your timezone. You'll receive an email <strong>only when new listings are found</strong>. The first check establishes your baseline — no email then.
+          </p>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           {alerts.length === 0

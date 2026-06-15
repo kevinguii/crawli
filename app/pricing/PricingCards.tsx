@@ -6,6 +6,12 @@ import { toast } from 'sonner';
 import type { Tier } from '@/lib/stripe';
 import InfoTooltip from '@/app/components/InfoTooltip';
 
+const ALERT_EMAIL_TOOLTIP = (
+  <>
+    <strong style={{ color: 'var(--text)' }}>Emails only send when new listings are found.</strong> Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+  </>
+);
+
 type Cycle = 'weekly' | 'monthly' | 'yearly';
 type PaidTier = Exclude<Tier, 'free'>;
 
@@ -179,6 +185,7 @@ export function PricingCards({
           ctaLabel={isFree ? 'Current plan' : 'Free plan'}
           ctaDisabled
           features={FREE_FEATURES}
+          featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
         />
 
         {/* ── Paid tiers ── */}
@@ -220,6 +227,7 @@ export function PricingCards({
               ctaDisabled={loading !== null}
               onCtaClick={() => (isCurrent || isOnOtherPaidPlan ? handleManage() : handleSubscribe(t.tier))}
               features={t.features}
+              featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
             />
           );
         })}
@@ -252,6 +260,7 @@ interface PlanCardProps {
   ctaDisabled?: boolean;
   onCtaClick?: () => void;
   features: string[];
+  featureTooltips?: Record<string, React.ReactNode>;
 }
 
 function PlanCard({
@@ -267,6 +276,7 @@ function PlanCard({
   ctaDisabled,
   onCtaClick,
   features,
+  featureTooltips,
 }: PlanCardProps) {
   return (
     <div
@@ -320,12 +330,12 @@ function PlanCard({
         {ctaLabel}
       </button>
 
-      <FeatureList included={features} />
+      <FeatureList included={features} tooltips={featureTooltips} />
     </div>
   );
 }
 
-function FeatureList({ included }: { included: string[] }) {
+function FeatureList({ included, tooltips }: { included: string[]; tooltips?: Record<string, React.ReactNode> }) {
   return (
     <ul className="space-y-2">
       {included.map((f) => (
@@ -333,7 +343,12 @@ function FeatureList({ included }: { included: string[] }) {
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden style={{ color: 'var(--accent)', marginTop: '1px', flexShrink: 0 }}>
             <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          {f}
+          <span className="flex items-center gap-1">
+            {f}
+            {tooltips?.[f] && (
+              <InfoTooltip content={tooltips[f]} label={`More info: ${f}`} />
+            )}
+          </span>
         </li>
       ))}
     </ul>
