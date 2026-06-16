@@ -4,9 +4,9 @@
 
 Each batch has one HTML source file and one exports folder. They are linked by date below. When a new batch is created, add a row here.
 
-| Date | HTML Source | Exports Folder | Posts |
-|------|-------------|----------------|-------|
-| 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
+| Date | HTML Source | Captions File | Exports Folder | Posts |
+|------|-------------|---------------|----------------|-------|
+| 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/post-captions.md` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
 
 **Folder structure:**
 ```
@@ -23,10 +23,11 @@ docs/marketing/
 
 **Starting a new batch:**
 1. Create folder `docs/marketing/YYYY-MM-DD/`
-2. Copy or create a new `content-posts-slides.html` inside it
-3. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
-4. Run: `node export-slides.js --batch=YYYY-MM-DD`
-5. Add a row to this Batch Index
+2. Create `content-posts-slides.html` inside it (slide designs)
+3. Create `post-captions.md` inside it (Instagram + TikTok copy for every post — see caption format rules below)
+4. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
+5. Run: `node export-slides.js --batch=YYYY-MM-DD`
+6. Add a row to this Batch Index
 
 ---
 
@@ -109,6 +110,29 @@ docs/marketing/
 | 8 | Shipping Fee Trap | Total cost comparison |
 | 9 | Circular Fashion | Sustainability + extended lifecycle |
 | 10 | Platform Stereotypes | Humorous platform cultures |
+
+---
+
+## Caption Format (apply to every post in post-captions.md)
+
+Each post needs three sections: Instagram, TikTok Title, TikTok Description.
+
+**Instagram:**
+- Hook sentence (shows in feed preview before "more" truncation)
+- 2-3 sentences of body — what the carousel covers, why it matters
+- Crawli tie-in line in parentheses with `thecrawli.com`
+- 12-15 hashtags at the end (or paste into first comment)
+
+**TikTok Title** (separate field in the app, above the carousel):
+- Under 100 characters
+- Punchy and specific — states the benefit or the exact topic
+- Not a question, not generic ("here are 6 tips") — make it the thing someone would search
+
+**TikTok Description:**
+- 150-400 words. Longer descriptions rank better in TikTok search — treat it like a short article.
+- Repeat the key topic words naturally in the text (TikTok weights keywords in copy more than hashtags)
+- Structure: context/hook → bullet breakdown of each slide's point → Crawli tie-in line with `thecrawli.com`
+- 4-8 focused hashtags at the end
 
 ---
 
