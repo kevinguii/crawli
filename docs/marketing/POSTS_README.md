@@ -7,6 +7,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | Date | HTML Source | Captions File | Exports Folder | Posts |
 |------|-------------|---------------|----------------|-------|
 | 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/post-captions.md` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
+| 2026-06-16 | `2026-06-16/content-posts-slides.html` | `2026-06-16/post-captions.md` | `2026-06-16/exports/carousel/` | 12 carousel posts (all carousel; brief "reel" items built as carousels) |
 
 **Folder structure:**
 ```
@@ -76,6 +77,39 @@ docs/marketing/
 | Day 2: Spotting Fakes | Charcoal | #1c1917 |
 | Day 2: Best Platforms | Deep Purple | #4c1d95 |
 | Day 2: Platform Deep Dive | Teal Green | #065f46 |
+| Day 3: Vintage Tees | Crimson Rose | #be123c |
+| Day 3: Vintage Trends | Fuchsia | #a21caf |
+| Day 3: Smart Sourcing | Royal Blue | #1e40af |
+| Day 3: Item History | Sepia Bronze | #854d0e |
+| Day 3: Shipping Myths | Deep Cyan | #155e75 |
+| Day 3: Spotting Quality | Pine Green | #166534 |
+| Day 3: Real Leather | Saddle Brown | #92400e |
+| Day 3: Accessory Styling | Purple | #6b21a8 |
+| Day 3: Personal Brand | Olive Lime | #4d7c0f |
+| Day 3: Thrift Culture | Deep Teal | #134e4a |
+| Day 3: Vintage vs Fast Fashion | Slate | #1e293b |
+| Day 3: Inventory System | Indigo | #4f46e5 |
+
+---
+
+## Post Breakdown — Day 3 (2026-06-16)
+
+12 posts, all built as carousels. Source brief had 15 ideas; 3 were dropped as too close to Day 2 (emotional pricing vs Day 2 Pricing Strategy, luxury-secondhand myths vs Day 2 Luxury Myths, Depop listing optimization vs Day 2 Profile Optimization). Band-tee idea broadened to vintage tees generally; listing/quality framed multi-platform.
+
+| # | Title | Category | Layout | Slides |
+|---|-------|----------|--------|--------|
+| 1 | Spotting Vintage Tees | Vintage | visual-hero | 7 |
+| 2 | Vintage Trends Now | All | visual-hero | 6 |
+| 3 | Smart Sourcing | Resellers | number-left | 8 |
+| 4 | Every Item Has a Story | Fashionistas | editorial | 8 |
+| 5 | Shipping Myths | Resellers | myth | 7 |
+| 6 | Spotting Quality | All | number-left | 8 |
+| 7 | Real vs Fake Leather | Vintage | visual-hero | 7 |
+| 8 | Accessory Styling | Fashionistas | visual-hero | 8 |
+| 9 | Personal Brand | All | editorial | 8 |
+| 10 | Thrift Culture | Fashionistas | number-left | 8 |
+| 11 | Vintage vs Fast Fashion | Vintage | myth | 6 |
+| 12 | Inventory System | Resellers | number-left | 8 |
 
 ---
 
