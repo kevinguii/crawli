@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Leaf">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="220" fill="#fef3e2"/>
+
+  <!-- Leaf body -->
+  <path d="M 600 150 C 740 190 780 320 700 420 C 660 470 600 480 600 480 C 600 480 540 470 500 420 C 420 320 460 190 600 150 Z"
+        fill="none" stroke="#92400e" stroke-width="16" stroke-linejoin="round"/>
+
+  <!-- Center vein -->
+  <line x1="600" y1="180" x2="600" y2="470" stroke="#92400e" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Side veins -->
+  <line x1="600" y1="250" x2="670" y2="290" stroke="#92400e" stroke-width="8" stroke-linecap="round" opacity="0.35"/>
+  <line x1="600" y1="250" x2="530" y2="290" stroke="#92400e" stroke-width="8" stroke-linecap="round" opacity="0.35"/>
+  <line x1="600" y1="330" x2="660" y2="365" stroke="#92400e" stroke-width="8" stroke-linecap="round" opacity="0.35"/>
+  <line x1="600" y1="330" x2="540" y2="365" stroke="#92400e" stroke-width="8" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- Stem -->
+  <line x1="600" y1="480" x2="600" y2="520" stroke="#92400e" stroke-width="12" stroke-linecap="round"/>
+</svg>

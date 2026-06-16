@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Profile card">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="220" fill="#fdf4ff"/>
+
+  <!-- Card outline -->
+  <rect x="420" y="150" width="360" height="330" rx="28" fill="none" stroke="#c026d3" stroke-width="16"/>
+
+  <!-- Avatar head -->
+  <circle cx="600" cy="270" r="58" fill="none" stroke="#c026d3" stroke-width="14"/>
+
+  <!-- Avatar shoulders -->
+  <path d="M 500 410 C 500 350 545 320 600 320 C 655 320 700 350 700 410"
+        fill="none" stroke="#c026d3" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Bio lines -->
+  <line x1="470" y1="440" x2="730" y2="440" stroke="#c026d3" stroke-width="10" stroke-linecap="round" opacity="0.3"/>
+</svg>

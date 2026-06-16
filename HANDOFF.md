@@ -1,6 +1,19 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-15 (content brief: twice-weekly, 15 social ideas, 10 blog briefs, published-post dedup)
+**Last updated:** 2026-06-16 (5 new blog posts from the daily content brief)
+
+**Latest change (2026-06-16 — 5 new blog posts published):**
+
+Wrote and published 5 posts in `content/blog/` from the day's content brief, each with a matching cover SVG in `public/blog/images/` and a FAQ block (frontmatter `faq:`, rendered by the existing `CollapsibleFAQ` + JSON-LD pipeline — no code changes needed).
+
+- `best-niche-marketplaces-for-vintage-finds.md` — niche vs. mainstream marketplace comparison for vintage. Cover: pink gem icon.
+- `pricing-psychology-for-resale-listings.md` — buyer-facing psychological pricing tactics (anchoring, charm pricing, bundle framing). **Deliberately differentiated from the existing `how-to-price-secondhand-clothing.md`** (overpricing-from-attachment angle) to avoid keyword cannibalization; internally links to it. Cover: cyan price tag.
+- `how-to-optimize-your-depop-profile.md` — profile/listing optimization checklist. Notes the eBay-acquires-Depop deal (closing Q2 2026) as current context. Cover: fuchsia profile card.
+- `vintage-fashion-trends-2026.md` — corrects the brief's assumption that sustainability is the top driver of vintage demand; research showed value/affordability/individuality lead, sustainability shows up more on the regulatory/supply side. Cover: cognac leaf.
+- `build-a-consistent-personal-brand-as-a-reseller.md` — converted from a 6-slide social carousel brief into a full blog post (short answer, stat, table, FAQ) per user request. Cover: slate interlocking rings.
+- **Stats used are all real and sourced** (no fabricated numbers): ThredUp's 2026 Resale Report ($393B global secondhand by 2030, US +13% in 2025 vs. 3.6% broader retail), the 1990 Kahneman/Knetsch/Thaler endowment-effect mug study, Depop's reported 2024/2025 GMS and user counts (via Etsy/Statista), and Lucidpress's State of Brand Consistency report (33% revenue lift). Two of the brief's suggested stats (a ThredUp "49% underprice from attachment" survey and a Depop "50% faster with optimized titles" figure) couldn't be verified anywhere, so they were dropped rather than published as-is.
+- All 5 inserted into Supabase `published_posts` (dedup table) per the existing convention.
+- Verified: typecheck clean, all 5 pages return 200, all 5 cover SVGs return 200, all 5 appear in `/sitemap.xml` and the `/blog` listing, JSON-LD `@graph` (BlogPosting + FAQPage) renders for each. One bug caught and fixed during verification: a markdown link inside a `faq:` frontmatter answer rendered as literal `[text](url)` because `CollapsibleFAQ` renders FAQ answers as plain text, not through the markdown parser — fixed by moving the link into the post body instead.
 
 **Latest change (2026-06-15 — content brief expanded + published-post dedup):**
 

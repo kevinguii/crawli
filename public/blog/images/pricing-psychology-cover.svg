@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Price tag">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="220" fill="#ecfeff"/>
+
+  <!-- Tag string -->
+  <line x1="600" y1="160" x2="600" y2="210" stroke="#0891b2" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Tag shape -->
+  <path d="M 460 210 L 700 210 C 715 210 728 217 737 228 L 800 305 C 812 320 812 340 800 355 L 590 460 C 575 468 558 465 547 452 L 440 320 C 432 308 432 292 442 280 Z"
+        fill="none" stroke="#0891b2" stroke-width="16" stroke-linejoin="round"/>
+
+  <!-- Tag hole -->
+  <circle cx="540" cy="270" r="22" fill="#ffffff" stroke="#0891b2" stroke-width="12"/>
+
+  <!-- Price mark -->
+  <line x1="630" y1="300" x2="700" y2="370" stroke="#0891b2" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
+  <line x1="700" y1="300" x2="630" y2="370" stroke="#0891b2" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
+</svg>
