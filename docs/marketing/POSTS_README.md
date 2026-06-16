@@ -1,11 +1,32 @@
 # Crawli Social Media Posts
 
-## Files
+## Batch Index
 
-| File | Description |
-|------|-------------|
-| `social-posts-slides.html` | Day 1 — 10 buyer-focused posts (Tab Fatigue, Sneaker Crash, etc.). Single slide per post. |
-| `content-posts-slides.html` | Day 2 — 10 informational/step-by-step posts (pricing, boots, myths, sizing, etc.). Full carousel format. |
+Each batch has one HTML source file and one exports folder. They are linked by date below. When a new batch is created, add a row here.
+
+| Date | HTML Source | Exports Folder | Posts |
+|------|-------------|----------------|-------|
+| 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
+
+**Folder structure:**
+```
+docs/marketing/
+  POSTS_README.md
+  post-captions.md
+  export-slides.js          ← shared export script (stays at top level)
+  YYYY-MM-DD/               ← one folder per batch, named by date
+    content-posts-slides.html
+    exports/
+      carousel/
+        post-01/slide-01.png ...
+```
+
+**Starting a new batch:**
+1. Create folder `docs/marketing/YYYY-MM-DD/`
+2. Copy or create a new `content-posts-slides.html` inside it
+3. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
+4. Run: `node export-slides.js --batch=YYYY-MM-DD`
+5. Add a row to this Batch Index
 
 ---
 
@@ -104,18 +125,33 @@
 
 ## Exporting Slides as Images
 
-Run the export script (requires Node.js):
+Run the export script (requires Node.js + Puppeteer):
 
 ```bash
 cd docs/marketing
-npm install puppeteer          # one-time install
-node export-slides.js          # exports 1080×1350 (IG carousel)
-node export-slides.js --size=story  # exports 1080×1920 (Story/TikTok)
+npm install puppeteer                          # one-time install
+node export-slides.js                          # exports current batch (2026-06-15)
+node export-slides.js --batch=2026-06-22       # exports a different batch
 ```
 
-Output: `docs/marketing/exports/carousel/post-01/slide-01.png` etc.
+Output: `docs/marketing/YYYY-MM-DD/exports/carousel/post-01/slide-01.png`
 
-Each PNG is saved at **2× scale** (2160×2700 for carousel) for retina/high-resolution screens. Update `SLIDE_COUNTS` in the script when adding new batches.
+Each PNG is saved at **2× DPR** (2160×2700px; Instagram/TikTok downscale cleanly). The script uses CSS `zoom` to scale the 440px design frame up to 1080px, keeping all font sizes and proportions pixel-perfect from the browser preview.
+
+**When adding a new batch:** update `SLIDE_COUNTS` in `export-slides.js` to match the new posts, then run with `--batch=YYYY-MM-DD`.
+
+### Export script gotchas (fixed 2026-06-15)
+
+| Problem | Fix |
+|---------|-----|
+| `gotoSlide is not defined` | `gotoSlide()` must be explicitly defined in the HTML — `changeSlide(d)` takes a delta, not an index |
+| `headless: 'new'` crash | Puppeteer 22+ removed `'new'`; use `headless: true` |
+| Blurry text | Non-integer `deviceScaleFactor` (e.g. 2.4545) causes sub-pixel hinting artifacts; use integer DPR=2 + CSS `zoom` instead |
+| Bottom of slides cut off | Cover SVGs with no explicit `width`/`height` scale to intrinsic viewBox height, overflowing the 550px frame; fixed with `min-height: 0` on `.cover-visual` + `max-height: 100%` on the SVG |
+| Frame positioned too low | Body padding + nav bars push frame below viewport; use `position: fixed; top: 0` on `#frame` and hide `.top-bar`, `.post-label`, `.bot-bar` via injected CSS |
+
+### Story/Reel format
+`--size=story` (9:16) is **not supported** — the slide layout is 4:5 only. To post as a Story, crop the exported 1080×1350 in the app, or redesign the frame for 9:16.
 
 ---
 

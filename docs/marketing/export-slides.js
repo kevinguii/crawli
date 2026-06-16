@@ -3,19 +3,18 @@
  *
  * Usage:
  *   cd docs/marketing
- *   npx puppeteer-cli ... OR:
+ *   npm install puppeteer            (one-time)
+ *   node export-slides.js            (exports current batch)
+ *   node export-slides.js --batch=2026-06-22  (exports a specific batch)
  *
- *   npm install puppeteer   (one-time)
- *   node export-slides.js
+ * Batch structure:
+ *   docs/marketing/
+ *     YYYY-MM-DD/
+ *       content-posts-slides.html    ← source
+ *       exports/carousel/post-01/    ← output
  *
- * Output:
- *   docs/marketing/exports/post-01/slide-01.png ... etc.
- *
- * Sizes:
- *   --size=carousel  → 1080×1350  (Instagram carousel, TikTok photo post)
- *   --size=story     → 1080×1920  (Instagram/TikTok Story)
- *
- * Default: carousel (1080×1350)
+ * Output size: 1080×1350 (4:5, Instagram carousel / TikTok photo post)
+ * Output resolution: 2160×2700px (2× DPR — downscaled cleanly by platforms)
  */
 
 const puppeteer = require('puppeteer');
@@ -23,21 +22,19 @@ const path = require('path');
 const fs = require('fs');
 
 // ── config ────────────────────────────────────────────────────────────────────
-// carousel = 1080×1350 (4:5) — Instagram feed, carousel posts, TikTok photo post
-// story = not supported yet (9:16 frame doesn't match the 4:5 slide layout)
-const SIZES = {
-  carousel: { width: 1080, height: 1350 },
-};
+const width  = 1080;
+const height = 1350;
 
-const arg = process.argv.find(a => a.startsWith('--size='));
-const sizeKey = arg ? arg.split('=')[1] : 'carousel';
-const { width, height } = SIZES[sizeKey] || SIZES.carousel;
+// --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
+const batchArg = process.argv.find(a => a.startsWith('--batch='));
+const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-15';
 
-// Number of slides per post (cover + steps + cta)
+// Number of slides per post for this batch (cover + steps + cta)
+// Update this array when creating a new batch.
 const SLIDE_COUNTS = [8, 7, 5, 8, 6, 8, 7, 8, 8, 7];
 
-const HTML_FILE = path.resolve(__dirname, 'content-posts-slides.html');
-const OUTPUT_DIR = path.resolve(__dirname, 'exports', sizeKey);
+const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');
+const OUTPUT_DIR = path.resolve(__dirname, BATCH, 'exports', 'carousel');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -106,5 +103,5 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await browser.close();
 
   console.log(`\nDone. ${total} slides saved to:\n  ${OUTPUT_DIR}`);
-  console.log(`\nImage size: ${width * 2}×${height * 2}px (2× retina, displays at ${width}×${height})`);
+  console.log(`Image size: ${width * 2}×${height * 2}px (2× retina, displays at ${width}×${height})`);
 })();

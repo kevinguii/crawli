@@ -88,6 +88,7 @@ select {
   display: flex; flex-direction: column;
   padding: 36px 30px 30px;
   gap: 0;
+  overflow: hidden;
 }
 .cover-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -106,8 +107,16 @@ select {
 }
 .cover-visual {
   flex: 1;
+  min-height: 0; /* allow flex item to shrink below SVG intrinsic height */
   display: flex; align-items: center; justify-content: center;
   margin-top: 20px;
+  overflow: hidden;
+}
+.cover-visual svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
 }
 .cover-swipe {
   font-size: 11px; opacity: .35; text-align: center;
@@ -120,6 +129,7 @@ select {
   padding: 28px;
   display: flex; flex-direction: column; justify-content: space-between;
   position: relative;
+  overflow: hidden;
 }
 .step-nl .ghost-num {
   position: absolute; top: 14px; left: 20px;
@@ -129,8 +139,10 @@ select {
 }
 .step-nl .mid-visual {
   flex: 1;
+  min-height: 0;
   display: flex; align-items: center; justify-content: center;
   padding: 50px 0 12px;
+  overflow: hidden;
 }
 .step-nl .text-block { display: flex; flex-direction: column; gap: 8px; }
 .step-nl .s-label {
@@ -151,6 +163,7 @@ select {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center; gap: 16px;
+  overflow: hidden;
 }
 .step-vh .s-label {
   font-size: 11px; font-weight: 700; letter-spacing: .1em;
@@ -169,6 +182,7 @@ select {
   padding: 32px 28px 28px;
   display: flex; flex-direction: column;
   gap: 0;
+  overflow: hidden;
 }
 .step-ed .ed-top {
   display: flex; align-items: flex-start; gap: 20px;
@@ -197,6 +211,7 @@ select {
   width: 100%; height: 100%;
   padding: 32px 28px;
   display: flex; flex-direction: column; justify-content: center; gap: 0;
+  overflow: hidden;
 }
 .myth-num {
   font-size: 11px; font-weight: 700; letter-spacing: .1em;
@@ -220,6 +235,7 @@ select {
   width: 100%; height: 100%;
   padding: 32px 28px 28px;
   display: flex; flex-direction: column; justify-content: space-between;
+  overflow: hidden;
 }
 .cta-logo { margin-bottom: 12px; }
 .cta-headline {
