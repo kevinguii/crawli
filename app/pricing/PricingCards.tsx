@@ -49,7 +49,7 @@ const PAID_TIERS: TierConfig[] = [
     name: 'Pro',
     icon: '✦',
     tagline: 'More searches, more alerts',
-    weekly: 5,
+    weekly: 3,
     monthly: 10,
     yearly: 100,
     features: [
@@ -66,7 +66,7 @@ const PAID_TIERS: TierConfig[] = [
     name: 'Max',
     icon: '★',
     tagline: 'For power users',
-    weekly: 12,
+    weekly: 10,
     monthly: 30,
     yearly: 300,
     features: [
