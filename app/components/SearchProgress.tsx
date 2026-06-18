@@ -40,24 +40,24 @@ export default function SearchProgress({ platforms, statuses, errors, counts, na
       className="rounded-2xl p-5"
       style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
     >
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {settled === total
             ? 'Search complete'
             : `Searching platforms… (up to ${nativeResultsCap ?? 10} per native platform)`}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 sm:justify-end">
           {isSearching && onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-80"
+              className="shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-80"
               style={{ background: 'var(--danger)' }}
             >
               Cancel
             </button>
           )}
-          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+          <p className="shrink-0 whitespace-nowrap text-xs" style={{ color: 'var(--text-dim)' }}>
             {settled} / {total}
           </p>
         </div>

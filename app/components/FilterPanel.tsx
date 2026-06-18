@@ -82,12 +82,13 @@ export default function FilterPanel({
 
   return (
     <div className="space-y-3">
-      {/* Platform chips — always visible, brand-colored when active. */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Platform chips — always visible, brand-colored when active.
+          Horizontally scrollable on mobile so 8+ chips don't wrap into a wall of rows. */}
+      <div className="hide-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible">
         <button
           type="button"
           onClick={hasSelected ? clearPlatforms : setAllPlatforms}
-          className="text-xs font-medium underline underline-offset-2 transition-colors"
+          className="shrink-0 whitespace-nowrap text-xs font-medium underline underline-offset-2 transition-colors"
           style={{ color: 'var(--text-dim)' }}
         >
           {hasSelected ? 'Clear all' : 'Select all'}
@@ -98,7 +99,7 @@ export default function FilterPanel({
           return (
             <label
               key={p}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+              className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
               style={
                 active
                   ? { background: ps.background, color: ps.color, border: '1px solid transparent' }
@@ -128,8 +129,9 @@ export default function FilterPanel({
 
       <div style={{ borderTop: '1px solid var(--border)' }} />
 
-      {/* Filter pills — always visible, never collapsed. */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filter pills — always visible, never collapsed.
+          Same horizontal-scroll treatment as the platform chips on mobile. */}
+      <div className="hide-scrollbar flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
         <FilterDropdown
           label="Category"
           value={filters.category}
@@ -226,11 +228,11 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
       };
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
+        className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
         style={pillStyle}
       >
         <span style={{ color: active ? 'var(--accent-text)' : 'var(--text-muted)' }}>
@@ -435,11 +437,11 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
   const isInvalid = error !== null;
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
+        className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors"
         style={pillStyle}
       >
         <span style={{ color: hasValue ? 'var(--accent-text)' : 'var(--text-muted)' }}>
