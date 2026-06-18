@@ -253,7 +253,7 @@ Each PNG is saved at **2× DPR** (2160×2700px; Instagram/TikTok downscale clean
 - Cover SVGs: white/transparent on post-color background, one concept, no text in SVGs
 - Step SVGs: white-background card (`vcrd` class) with post-accent colored symbol
 - **SVG text rules**: always use `text-anchor="middle"` + `dominant-baseline="central"` for text inside shapes; set `y` to the geometric center of the containing rect/circle; never rely on default baseline alignment
-- No em dashes anywhere in copy — use commas, colons, or split into new sentences
+- **NO DASHES OF ANY KIND in captions** — never use em dashes (—), en dashes (–), or hyphens in punctuation. Use commas, colons, or split into separate sentences instead. (Hyphens in compound words like "best-selling" are OK; the rule is about punctuation dashes.)
 - No hashtags on slide visuals — they go in the post caption only
 
 ## Step Layout Variants (assign one per post, vary across batch)
