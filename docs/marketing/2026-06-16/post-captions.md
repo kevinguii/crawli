@@ -16,7 +16,7 @@ A reprint and a real vintage tee can look identical in a listing photo. They are
 Vintage tees carry a handful of physical tells that no reproduction gets fully right: the tag, the stitch, the blank, the fade, and the print. Learn these five and you stop paying vintage prices for shirts made last year.
 
 Save this before your next thrift run or online cop.
-
+ 
 (Crawli searches vintage tee listings across Depop, eBay, Etsy, and Grailed at once so you can compare the real ones side by side — thecrawli.com)
 
 #vintagetshirt #vintagetee #vintagefashion #thrifted #thriftfinds #secondhandfashion #vintageclothing #vintagestyle #slowfashion #vintagehunting #depopfinds #grailed #singlestitch #vintagereseller #tshirtcollector
