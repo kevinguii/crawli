@@ -98,7 +98,9 @@ docs/marketing/
 
 ## Post Breakdown — Day 4 (2026-06-18)
 
-Source brief had 15 ideas; **12 were dropped as near-duplicates of posts already shipped in Day 2/Day 3** (full audit below). Only 3 angles were genuinely new, so this batch is intentionally small rather than padded with repeats. The dedup rate itself is being investigated as a likely bug in the n8n daily-content-email workflow's `content_history` dedup logic — see `docs/AGENT_PLAN.md` once that investigation lands.
+Source brief had 15 ideas; **12 were dropped as near-duplicates of posts already shipped in Day 2/Day 3** (full audit below). Only 3 angles were genuinely new, so this batch is intentionally small rather than padded with repeats.
+
+**Why future batches should be bigger and more varied:** the duplicate flood was root-caused (see HANDOFF "content-brief workflow v2") to a too-narrow taxonomy + weak dedup in the n8n generator. The fix broadens the brief into **educational/informational pillars** — fashion history, makers & craft, materials & construction, culture/scene (e.g. Japanese denim, prep, workwear), era guides, and reseller/collector stories — so future briefs will include teach-the-reader posts, not just tips/how-tos. **Embrace these when building carousels:** an "origin of the trench coat" or "how to read a fabric tag" carousel is on-brand and uses the same slide system. The generator also now flags likely repeats in the email itself, so trust those flags but still eyeball against this README's history tables.
 
 | # | Title | Category | Layout | Slides |
 |---|-------|----------|--------|--------|
