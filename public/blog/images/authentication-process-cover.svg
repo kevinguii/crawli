@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Authentication seal with checkmark">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="220" fill="#ecfdf5"/>
+
+  <!-- Seal scalloped edge -->
+  <g fill="none" stroke="#166534" stroke-width="14" stroke-linejoin="round">
+    <circle cx="600" cy="280" r="140"/>
+  </g>
+
+  <!-- Checkmark inside seal -->
+  <path d="M 535 280 L 580 325 L 670 235" fill="none" stroke="#166534" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Ribbon tails -->
+  <path d="M 520 395 L 500 480 L 555 450 L 590 490 L 600 405" fill="none" stroke="#166534" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M 680 395 L 700 480 L 645 450 L 610 490 L 600 405" fill="none" stroke="#166534" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Magnifier accent, lower right -->
+  <circle cx="800" cy="430" r="34" fill="none" stroke="#166534" stroke-width="10" opacity="0.55"/>
+  <line x1="824" y1="454" x2="855" y2="485" stroke="#166534" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Clothing rack with a clock showing stalled inventory">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="220" fill="#f8fafc"/>
+
+  <!-- Rack bar -->
+  <rect x="430" y="195" width="340" height="12" rx="6" fill="#334155"/>
+  <line x1="440" y1="207" x2="440" y2="470" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+  <line x1="760" y1="207" x2="760" y2="470" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+  <line x1="400" y1="470" x2="480" y2="470" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+  <line x1="720" y1="470" x2="800" y2="470" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- Three hanging garments, faded to suggest stalled stock -->
+  <g fill="none" stroke="#334155" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" opacity="0.55">
+    <path d="M 480 215 L 480 195 Q 480 185 490 185 L 480 195 L 510 220 L 530 240 L 525 320 L 480 320 L 480 240 Z"/>
+    <path d="M 600 215 L 600 195 Q 600 185 610 185 L 600 195 L 630 220 L 650 240 L 645 320 L 600 320 L 600 240 Z"/>
+    <path d="M 690 215 L 690 195 Q 690 185 700 185 L 690 195 L 720 220 L 740 240 L 735 320 L 690 320 L 690 240 Z"/>
+  </g>
+
+  <!-- Clock face, overlapping the rack to signal time sitting unsold -->
+  <circle cx="760" cy="400" r="80" fill="#ffffff" stroke="#334155" stroke-width="14"/>
+  <line x1="760" y1="400" x2="760" y2="355" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+  <line x1="760" y1="400" x2="794" y2="412" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+</svg>

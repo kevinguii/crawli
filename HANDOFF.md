@@ -1,6 +1,27 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-17 (n8n MCP access fixed; content brief schedule changed to every-2-days — see docs/SERVER_REFERENCE.md for the bug + workaround)
+**Last updated:** 2026-06-18 (3 new blog posts published from the day's 10-brief content email; 5 of 10 briefs dropped for duplicating existing posts)
+
+**Latest change (2026-06-18 — 3 new blog posts published, 5 of 10 briefs dropped as duplicates):**
+
+The day's content brief email had 10 blog briefs. Cross-checked all 10 against the 14 live posts in `content/blog/` before writing anything (per the published-post dedup intent, even though the brief generator itself didn't catch these): 5 briefs were near-duplicates of already-published posts and were dropped rather than written —
+
+- "Niche secondhand platforms" duplicated `best-niche-marketplaces-for-vintage-finds.md`
+- "Pricing structure / emotional pricing" duplicated `pricing-psychology-for-resale-listings.md` + `how-to-price-secondhand-clothing.md`
+- "Depop visual aesthetics" duplicated `how-to-optimize-your-depop-profile.md`
+- "Spotting counterfeit designer items" duplicated `how-to-avoid-super-fakes-on-resale-apps.md`
+- "Sustainable fashion visibility" reused the exact primary keyword ("trending vintage fashion styles 2026") already targeted by `vintage-fashion-trends-2026.md`
+
+**This is a recurring gap worth fixing in the n8n prompt**: the `published_posts` dedup table only blocks exact title/slug repeats, not angle-level overlap. Day 3 (2026-06-16) hit the same issue (3 of 15 dropped) and it happened again here at a higher rate (5 of 10). Worth tightening the dedup prompt injection to compare against post *topics*, not just titles, next time the n8n workflow is touched.
+
+Wrote the 3 remaining briefs as full posts, each with a matching cover SVG in `public/blog/images/` and an FAQ block:
+
+- `how-to-sell-winter-coats-successfully.md` — seasonal timing > pricing for outerwear. Verified real stat: a $8-thrift-to-$85-resale example and "list at season onset" guidance, both sourced from Voolist's seasonal reselling calendar and The RealReal's own seasonal guide (not the brief's unverifiable "40% less interest" stat, which was dropped). Cover: navy hanging coat.
+- `how-authentication-works-on-resale-sites.md` — platform-by-platform authentication process deep dive (RealReal, Vestiaire, StockX, eBay, Poshmark), deliberately reangled from buyer-tips (already covered by `how-to-avoid-super-fakes-on-resale-apps.md`) to platform-process/comparison-table territory to avoid cannibalizing it. Key stat: a March 2025 federal court ruling found StockX sold 37 counterfeit Nike pairs despite its "100% Authentic" marketing (Nike v. StockX, filed 2022, settled Aug 2025) — verified directly via news sources, not the AI-generated search summary (see gotcha below). Also covers Chanel v. The RealReal (2018, ongoing) and confirmed Poshmark's Posh Authenticate $500 threshold. Cover: green authentication seal.
+- `how-to-sell-unsold-secondhand-clothing.md` — diagnosing visibility vs. pricing problems on stalled listings. Real stats: eBay's ~33% average sell-through rate, the 50 to 99% "healthy" STR band, cross-listing's 60 to 80% faster sell-through / 15 to 25% higher avg price (mylisterhub.com, voolist.com), and that ending/relisting on eBay resets Cassini's accumulated ranking signals. Cover: slate rack + clock.
+- **Gotcha confirmed this session: WebSearch's AI-generated summary fabricated specific statistics that didn't exist on the source page.** Two separate queries (Vestiaire/RealReal authentication rejection rates) returned confident-sounding percentages ("Vestiaire rejects ~10%", "RealReal rejects 40-50%") in the WebSearch tool's summary, but directly fetching the cited source page with WebFetch showed neither stat was actually on the page. Same thing nearly happened with a "39% sales increase from cross-listing" figure that turned out to be wrong when re-fetched (the real figures were 60-80% faster sell-through / 15-25% higher price). **Lesson: always WebFetch the actual source page before citing a stat from a WebSearch summary; do not trust the search tool's own paraphrase.**
+- All 3 inserted into Supabase `published_posts` (ids continue from 14).
+- Verified: typecheck clean, all 3 pages + 3 covers return 200, all 3 appear in `/sitemap.xml` and the `/blog` listing, FAQPage JSON-LD confirmed rendering on the authentication post.
 
 **Latest change (2026-06-17 — n8n MCP access debugged/fixed + content brief schedule changed):**
 

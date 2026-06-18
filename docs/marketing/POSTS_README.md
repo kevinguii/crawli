@@ -8,6 +8,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 |------|-------------|---------------|----------------|-------|
 | 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/post-captions.md` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
 | 2026-06-16 | `2026-06-16/content-posts-slides.html` | `2026-06-16/post-captions.md` | `2026-06-16/exports/carousel/` | 12 carousel posts (all carousel; brief "reel" items built as carousels) |
+| 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 3 carousel posts (12 of 15 brief ideas dropped as duplicates of Day 2/3 — see Post Breakdown — Day 4) |
 
 **Folder structure:**
 ```
@@ -89,6 +90,38 @@ docs/marketing/
 | Day 3: Thrift Culture | Deep Teal | #134e4a |
 | Day 3: Vintage vs Fast Fashion | Slate | #1e293b |
 | Day 3: Inventory System | Indigo | #4f46e5 |
+| Day 4: Hidden Marketplaces | Cyan | #0e7490 |
+| Day 4: Buyer Habits | Burnt Orange | #c2410c |
+| Day 4: Vintage Tee Hunting | Deep Teal | #0f766e |
+
+---
+
+## Post Breakdown — Day 4 (2026-06-18)
+
+Source brief had 15 ideas; **12 were dropped as near-duplicates of posts already shipped in Day 2/Day 3** (full audit below). Only 3 angles were genuinely new, so this batch is intentionally small rather than padded with repeats. The dedup rate itself is being investigated as a likely bug in the n8n daily-content-email workflow's `content_history` dedup logic — see `docs/AGENT_PLAN.md` once that investigation lands.
+
+| # | Title | Category | Layout | Slides |
+|---|-------|----------|--------|--------|
+| 1 | Hidden Marketplaces | Resellers | number-left | 8 |
+| 2 | Buyer Habits | Fashionistas | visual-hero | 8 |
+| 3 | Vintage Tee Hunting | Vintage | editorial | 8 |
+
+**Dropped ideas and their duplicate (from the 15-idea brief):**
+
+| Dropped idea | Duplicates |
+|---|---|
+| Pricing / emotional attachment | Day 2 Post 1 "Pricing Strategy" |
+| Luxury myths (not overpriced) | Day 2 Post 3 "Luxury Myths" |
+| Depop profile optimization | Day 2 Post 4 "Profile Optimization" |
+| Sustainable trends + vintage | Day 2 Post 5 "Sustainable Trends" / Day 1 "Circular Fashion" |
+| Luxury myths (quality/style) | Same brief, duplicate of the luxury-myths idea above; also Day 2 Post 3 |
+| Counterfeit/authentication checks | Day 1 "Super Fakes" / Day 2 Post 8 "Spotting Fakes" |
+| Vintage sizing by decade | Day 2 Post 6 "Vintage Sizing" / Day 1 "Sizing Roulette" |
+| Shipping efficiency for resellers | Day 3 Post 5 "Shipping Myths" |
+| 2026 vintage trends | Day 3 Post 2 "Vintage Trends Right Now" |
+| Real leather identification | Day 3 Post 7 "Real vs Fake Leather" |
+| Inventory management | Day 3 Post 12 "Inventory System" |
+| Item history / provenance | Day 3 Post 4 "Every Item Has a Story" |
 
 ---
 
