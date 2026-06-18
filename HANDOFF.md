@@ -1,6 +1,12 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-16 (5 new blog posts from the daily content brief)
+**Last updated:** 2026-06-17 (n8n MCP access fixed; content brief schedule changed to every-2-days — see docs/SERVER_REFERENCE.md for the bug + workaround)
+
+**Latest change (2026-06-17 — n8n MCP access debugged/fixed + content brief schedule changed):**
+
+The n8n MCP server (`mcp__n8n__*` tools, used by Claude Code) was returning empty results for all 4 workflows even though they were published. Root cause: n8n's "Available in MCP" per-workflow toggle has a backend bug (n8n GitHub #25987) that silently reverts the setting to `false` on save/refresh — confirmed even via direct REST API calls, and confirmed that **any** subsequent `PUT /workflows/:id` (even unrelated changes) re-triggers the revert. Fixed by writing `availableInMCP: true` directly into the SQLite `workflow_entity.settings` column on the server (bypasses the buggy save logic) as the LAST step after any other edits, + `systemctl restart n8n`. **Full details, exact commands, and gotchas (including a node-rename-breaks-connections trap I hit while doing this) are in `docs/SERVER_REFERENCE.md` under "n8n on the server" — read that before touching MCP settings or this workflow again.** Also noted in passing: the n8n REST API **is** enabled on this server (contradicts an earlier note below) — key lives in `.env` as `n8n_api_key_v1`.
+
+Also changed `crawli content brief` (`FMf2nyTQIZNCRa2L`)'s schedule from **Tue/Thu/Sat 8am PT** (the trigger node was mislabeled "Tue+Fri 8am PT" but actually fired Tue/Thu/Sat) to a **true every-2-days interval at 8am PT** (`field: days, daysInterval: 2`, node renamed "Every 2 days 8am PT"). This means the email will land on a rotating set of weekdays over time rather than fixed days — that was the user's explicit choice over a fixed Mon/Wed/Fri-style pattern. Email recipient unchanged: `owner@example.com`.
 
 **Latest change (2026-06-16 — 5 new blog posts published):**
 

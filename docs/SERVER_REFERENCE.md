@@ -209,8 +209,9 @@ curl https://thecrawli.com/api/smoke
 | Editor | `https://n8n.thecrawli.com/` (Cloudflare-proxied) |
 | Data dir | `/root/.n8n/` |
 | Database | **SQLite** at `/root/.n8n/database.sqlite` (WAL mode) |
-| Public REST API | **not enabled** — no `N8N_API_KEY` set; use the CLI instead |
+| Public REST API | **enabled** — key in `.env` as `n8n_api_key` / `n8n_api_key_v1` (same user, `n8n_api_key_v1` is the current one). Use `X-N8N-API-KEY` header against `https://n8n.thecrawli.com/api/v1/...` |
 | n8n's node_modules | `/usr/lib/node_modules/n8n/node_modules` (bundles `sqlite3` + `flatted`) |
+| MCP server | `https://n8n.thecrawli.com/mcp-server/http` (3 tools: `search_workflows`, `get_workflow_details`, `execute_workflow`). Configured in `.mcp.json` (gitignored). |
 
 **No `sqlite3` CLI on the box.** Query the DB via the bundled driver:
 ```bash
@@ -230,3 +231,19 @@ systemctl restart n8n                                 # ⚠ activation/schedule 
 **Gotchas:** (1) `import:workflow` always **deactivates** — re-activate after. (2) `update:workflow` and activation changes **only take effect after `systemctl restart n8n`**. (3) On-demand run conflicts with the live service's task-runner broker (5679) unless overridden: `N8N_RUNNERS_BROKER_PORT=5690 N8N_RUNNERS_BROKER_LISTEN_ADDRESS=127.0.0.1 n8n execute --id <ID>` (this runs the FULL workflow, incl. sending the digest email).
 
 Reddit monitor workflow id: `URiVWju6wMJcrQiW`. Repo source-of-truth: `docs/workflows/reddit-monitor.json`.
+
+**MCP "Available in MCP" toggle is buggy — known n8n bug, don't trust the UI checkbox (2026-06-17):**
+- n8n's per-workflow "Available in MCP" setting (Settings → Available in MCP) silently reverts to `false` on refresh/save, even via the REST API (`PUT /workflows/:id` with `availableInMCP: true` returns 200 but a re-fetch immediately after shows it flipped back to `false`). This is a backend bug (n8n GitHub #25987 / community thread #267321: the backend's "deactivated" check misfires on workflows that are actually active+published). Fixed upstream in n8n v2.9.0+ (pre-release as of writing); this server runs 2.8.4.
+- **Workaround that works:** write the flag directly into the SQLite `workflow_entity.settings` JSON column (bypasses the buggy app-layer save logic), then `systemctl restart n8n`. Confirmed this sticks across restarts and the MCP tools then return the workflow.
+  ```bash
+  ssh root@5.78.187.97 'cp /root/.n8n/database.sqlite /root/.n8n/database.sqlite.bak-$(date +%Y%m%d%H%M%S)'  # backup first
+  # then a small node script using the bundled sqlite3 driver (see "No sqlite3 CLI" above) to:
+  #   SELECT settings FROM workflow_entity WHERE id = ?
+  #   JSON.parse, set availableInMCP = true, JSON.stringify
+  #   UPDATE workflow_entity SET settings = ? WHERE id = ?
+  ssh root@5.78.187.97 'systemctl restart n8n'
+  ```
+- Also required for a workflow to be MCP-eligible at all: published, and trigger type must be Webhook/Schedule/Form/Chat (Manual Trigger blocks publish with a "missing required parameters" error and isn't MCP-compatible anyway).
+- If you re-touch these workflows in the n8n UI and click the toggle again, expect it to revert again until n8n ships the real fix — redo the DB-level workaround instead of trusting the checkbox.
+- **Order matters:** any `PUT /api/v1/workflows/:id` call (even one unrelated to MCP, e.g. changing a schedule) resets `availableInMCP` back to `false` in the DB — even though the PUT's JSON response echoes back whatever you sent, including `availableInMCP: true`. That echo is misleading; only a DB reload (restart) reveals the real value. **Always do the DB-level `availableInMCP` write LAST**, after all other API/CLI edits to that workflow are finished, then restart once.
+- **Renaming a node via the REST API does not rename it in `connections`** (n8n's older connection format keys by node *name*, not id) — if you rename a trigger node, you must also rewrite the matching key in the `connections` object in the same payload, or the trigger gets silently disconnected from the rest of the workflow.
