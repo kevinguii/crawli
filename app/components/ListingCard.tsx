@@ -96,10 +96,9 @@ export default function ListingCard({ listing, isLowest }: Props) {
             type="button"
             onClick={handleHeartClick}
             aria-label={saved ? 'Remove from saves' : 'Add to saves'}
-            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full transition-all"
+            className={`card-action-btn absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full transition-all ${saved ? 'is-active' : ''}`}
             style={{
               background: 'rgba(0, 0, 0, 0.55)',
-              opacity: saved || hovered ? 1 : 0,
               transform: saved ? 'scale(1)' : 'scale(0.95)',
             }}
           >
@@ -123,12 +122,11 @@ export default function ListingCard({ listing, isLowest }: Props) {
             type="button"
             onClick={handleEyeClick}
             aria-label={watched ? 'Remove from tracked listings' : 'Add to tracked listings'}
-            className="absolute flex h-9 w-9 items-center justify-center rounded-full transition-all"
+            className={`card-action-btn absolute flex h-9 w-9 items-center justify-center rounded-full transition-all ${watched ? 'is-active' : ''}`}
             style={{
               right: '0.5rem',
               top: '3rem',
               background: 'rgba(0, 0, 0, 0.55)',
-              opacity: watched || hovered ? 1 : 0,
               transform: watched ? 'scale(1)' : 'scale(0.95)',
             }}
           >

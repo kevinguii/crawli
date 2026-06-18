@@ -242,6 +242,18 @@ body {
   box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.25);
 }
 
+.card-action-btn {
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-action-btn:not(.is-active) {
+    opacity: 0;
+  }
+  .group:hover .card-action-btn {
+    opacity: 1;
+  }
+}
+
 .mock-frame {
   perspective: 1400px;
 }
