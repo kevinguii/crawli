@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#dbeafe"/>
+  <rect x="480" y="160" width="240" height="320" rx="18" fill="none" stroke="#1d4ed8" stroke-width="16"/>
+  <line x1="480" y1="240" x2="720" y2="240" stroke="#1d4ed8" stroke-width="8" opacity="0.4"/>
+  <circle cx="540" cy="200" r="10" fill="#1d4ed8"/>
+  <circle cx="660" cy="200" r="10" fill="#1d4ed8"/>
+  <line x1="600" y1="240" x2="600" y2="480" stroke="#1d4ed8" stroke-width="6" stroke-dasharray="10 8" opacity="0.5"/>
+</svg>

@@ -1,8 +1,71 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-18 (Reddit workflow repurposed: Zernio → PRAW, reply-drafting → research/sentiment digest — DEPLOYED and verified live)
+**Last updated:** 2026-06-18 (New: TikTok automated posting workflow BUILT and deployed, deliberately NOT executed — no real post has gone out via this path. Step 3 of 3 of the original plan, build-only per user request.)
 
-**Latest change (2026-06-18 — Reddit workflow repurposed: dropped Zernio, switched to PRAW, reply-drafting → research digest — DEPLOYED):**
+**Latest change (2026-06-18 — "tiktok auto post" n8n workflow built, deliberately not run):**
+
+Step 3 of the original 3-step plan (analytics digest → Reddit pain points → this). User asked for this to be **built but not executed** — no real TikTok post should go out as part of this work, and none has.
+
+**Constraint reconciled, not silently overridden:** `docs/AGENT_PLAN.md` had a standing rule, *"Do not automate: ... TikTok organic posting (both ToS violations with active enforcement)."* That rule predates Zernio having a TikTok connection and was written around unofficial/scraped posting paths. Zernio's TikTok integration uses TikTok's actual Content Posting API with OAuth scopes the account already has granted, a materially different risk profile. Flagged this explicitly rather than quietly building past the rule; see updated AGENT_PLAN.md wording.
+
+**What was built:**
+- New Supabase Storage bucket `social-media-posts` (public read) — Zernio requires publicly fetchable image URLs for posting (no direct file upload to their API), and the exported slide PNGs only exist locally on the Mac. Bucket created empty; no images uploaded yet since no specific post is queued.
+- n8n workflow **"tiktok auto post"** (ID `FRgQYRidYXfNX2dI`): `Run on demand (CLI/UI)` (Execute Workflow Trigger, **the only trigger node, no schedule of any kind**) → `Validate input` (fails loudly if `imageUrls`/`description`/`privacyLevel` missing, no silent defaults on anything posting-relevant) → `Build Zernio payload` (assembles the TikTok photo-carousel POST body per Zernio's docs: `mediaItems`, `platforms` with the known TikTok account id `6a346bfa5f7d1751ab060a9a`, `tiktokSettings` with both required consent flags hardcoded true) → `Post to TikTok via Zernio` (reuses the existing `httpHeaderAuth` credential `fJu32HkmtmjvrZhX`) → `Summarize result`.
+- **Safety default: `draft: true` unless `publishNow: true` is explicitly passed.** A draft post lands in the TikTok Creator Inbox for one manual tap before it's actually live, matching the project's existing "agent drafts only, manual execution" pattern for IG/TikTok elsewhere, rather than a fully unattended publish.
+- **No separate post-logging needed:** the "tiktok performance digest" workflow already pulls every post from Zernio's `/v1/analytics` regardless of how it was posted, so anything published this way is automatically picked up on its next weekly run.
+
+**Verified structure only, never executed:** confirmed via `mcp__n8n__get_workflow_details` — single linear 5-node chain, no schedule trigger. Notably `triggerInfo` reports *"This workflow does not have a trigger node that can be executed via MCP"* — it can't even be fired accidentally through the MCP execute tool, only via deliberate input. No `n8n execute`, no test post, nothing has gone to TikTok through this path.
+
+**Not done:** actually posting anything through it. That's a future explicit ask, not something to do proactively.
+
+**Previous change (2026-06-18 — Day 4 batch expanded: 13 social posts + 7 blog posts created):**
+
+After reviewing the Reddit-pain-point-informed content brief (previous entry below) with the user, re-ran the actual dedup check (the `dupCheck` logic from "Build email") against history that reflects only what's actually been generated/delivered, not test-run noise, and found 11 of 15 social ideas and 7 of 8 blog briefs were genuinely usable (2 social + 1 blog were true duplicates and dropped; one blog brief, "niche secondhand marketplaces," turned out to be a real duplicate of the already-published `best-niche-marketplaces-for-vintage-finds.md`, caught by manually cross-checking `content/blog/` file titles against the `published_posts` table before writing).
+
+**Social (13 new posts, docs/marketing/2026-06-18/):**
+- Added to the existing `content-posts-slides.html` `posts` array (now 16 posts total) and `post-captions.md`. Updated `SLIDE_COUNTS` in `export-slides.js` and ran the export, producing 113 slide PNGs across all 16 posts.
+- Reused the **existing free icon library** (`V.medal`, `V.checklist`, `V.eye`, etc.) and the 3 already-implemented layouts (number-left, visual-hero, editorial) instead of hand-illustrating new bespoke cover scenes or spending on AI-raster images (`gen-clipart.py`) — kept this batch at $0 cost. Cover slides reuse the post's primary step icon at large size rather than a custom multi-element composition like posts 1-3 had; visually clean but simpler than the original hand-built covers, worth noting if a future session wants to invest in bespoke covers for these.
+- 13 new unique hex colors added to the POSTS_README palette table (none reused).
+- Fixed one real overclaim before writing: the "Shipping Best Practices" CTA originally said "crawli finds everything to sell and ship seamlessly" — corrected to make clear Crawli doesn't handle shipping, only search/price-comparison.
+- Full per-post breakdown (layout, color, pain-point tag) in `docs/marketing/POSTS_README.md` "Post Breakdown — Day 4" part 2.
+
+**Blog (7 new posts, content/blog/):** full long-form articles (800-900 words each, matching the existing AEO frontmatter structure: direct_answer, FAQ, structured lists/tables), not just the brief outlines. **Deliberately omitted every fabricated statistic from the briefs** — several `key_stat` fields (e.g. "$64 billion by 2024 (ThredUp)", "70% of sellers", "1 in 10 luxury items (OECD)", "25% annually") were self-flagged "(verify)" by the brief generator's own prompt and read as LLM-hallucinated; none were used, the posts argue from mechanism and reasoning instead of invented precise numbers. New cover SVGs created in `public/blog/images/` (simple icon-on-circle style matching existing covers).
+
+**Supabase logging:** only the 13 social ideas and 7 blog briefs actually turned into posts were written to `content_history` (ids 159-178) and `published_posts` (ids 18-24, with one typo in the first insert (''s instead of ''d) caught and fixed immediately). Unused ideas from the reviewed batch were not logged, consistent with the dedup-philosophy discussion in the previous entry.
+
+**Not done (deferred, by user request):** native-video-vs-carousel testing is still paused. Automated TikTok posting via Zernio's `video.publish` (step 3 of the original 3-step plan) has not been started.
+
+**Previous change (2026-06-18 — Reddit pain points wired into "crawli content brief" — DEPLOYED, ideas awaiting user pick):**
+
+Step 2 of the agreed 3-step plan (analytics digest → **this** → automated posting). The "crawli content brief" workflow (`FMf2nyTQIZNCRa2L`) had no access to `reddit_research`'s real audience signal (89 threads, top pain points shipping speed/seller trust/platform fees). Wired it in.
+
+**What changed (`Extract context` node):** new inline fetch (same pattern as the existing `content_history`/`published_posts` dedup queries) — `GET reddit_research?run_date=gte.<14d ago>&order=lead_score.desc&limit=200`, aggregated into top-5 pain points by thread count with 1-2 real example summaries each. Injected as a new prompt section in both the social and blog prompts: "use for 2-3 of 15 ideas / 1-2 of 10 briefs, only where genuine" — with an explicit guardrail, since Crawli is search/price-comparison only, not escrow/shipping/authentication: **"Never imply Crawli solves shipping speed, handles disputes or refunds, or verifies authenticity itself."** Added a `pain_point_source` field to both JSON schemas, required (not just optional) when an idea is pain-point-inspired — first pass had the LLM writing relevant content but leaving the field blank, second pass after tightening the instruction got it tagging correctly.
+
+**What changed (`Build email` node):** new "Reddit research active, N pain points this period" badge (same pattern as the existing SEO-context badge), plus a per-idea/brief "🔥 responds to: \<pain point\>" badge when tagged.
+
+**Verified via 2 live CLI/MCP-triggered runs** (executions 125, 126 — this workflow has no Execute Workflow Trigger node so `n8n execute` CLI fails with "Missing node to start execution"; used `mcp__n8n__execute_workflow` instead, which actually runs it server-side even though the MCP call itself times out waiting on the ~90s runtime — confirmed via polling `execution_entity`). Run 126 produced 4 pain-point-tagged items (3 social, 1 blog) with correct topic_keys (shipping-practices, vintage-sizing, how-to-price-secondary-clothes, pricing-challenges). **Caught one real overclaim in review despite the guardrail:** the "shipping-practices" idea's CTA said "crawli finds everything to sell and ship seamlessly" — implies Crawli handles shipping, which it doesn't. Flagging to user, not auto-fixing copy.
+
+**Side effect of testing:** both verification runs (125, 126) wrote their topics to `content_history` via the unconditional `Save topics` step, same as any real run — so today's dedup history now includes test-run topics that were never actually used. Harmless (just means those exact topic_keys won't be suggested again), but worth knowing if a future topic seems to "disappear" without ever appearing in a real email you acted on.
+
+**Blog brief count is unreliable independent of this change:** runs 125/126 returned 7 and 8 briefs respectively instead of the requested 10 — pre-existing gpt-4o-mini under-delivery on "exactly N items", not something this change introduced or fixed.
+
+**Not done yet:** automated TikTok posting via Zernio's `video.publish` (step 3). **Update:** the run-126 ideas were reviewed and turned into 13 social posts + 7 blog posts the same day — see the entry above this one.
+
+**Previous change (2026-06-18 — TikTok performance digest n8n workflow — DEPLOYED and verified live):**
+
+User attached Zernio's freed Reddit slot (see prior entry below) to TikTok (`@thecrawli`) instead. Research before building: pulled Zernio's live `/v1/accounts` and `/v1/analytics` endpoints directly and found the TikTok connection has `video.publish`/`video.upload`/`video.list`/`user.info.stats` scopes already granted, but was only being used passively — all 22 existing TikTok posts are `isExternal: true` (posted manually via the daily content-brief ideas), Zernio just syncs analytics after the fact, nothing read that data. Real numbers at research time: 22 posts, **100% carousel/photo-mode** (zero native video), avg 97 views, max 310, zero comments on any post, 3 followers.
+
+**Agreed build order with user:** analytics digest (this entry) → wire `reddit_research` pain points into the content-brief generator → automated TikTok posting via Zernio's `video.publish`. **Native-video-vs-carousel testing is explicitly paused** — account/format is only ~3 days old, too early to separate "format problem" from "cold-start problem," and new content ideas/formats are coming that the user wants to try on the existing format first.
+
+**What was built/deployed:**
+- New Supabase table `tiktok_performance` (migration `create_tiktok_performance`): one row per post, upserted on `platform_post_id` (unique). Columns: `content_snippet`, `hashtags[]`, `media_type`, `published_at`, `views`/`likes`/`comments`/`shares`, `engagement_rate`, `post_url`, `last_synced_at`, `run_date`. RLS enabled, no policies (service_role-only, same convention as `reddit_research`/`content_history`) — included the explicit `GRANT ... TO service_role` on the table + id sequence up front this time (documented gotcha from `seo_context`/`content_history`: MCP-created tables don't inherit Supabase's default privileges).
+- n8n workflow **"tiktok performance digest"** (new workflow, ID `9QUnEUbl66Zxwl7D`), modeled directly on "reddit research crawli"'s shape: `Every Monday 8am PT` (schedule, timezone pinned `America/Los_Angeles`) + `Run on demand (CLI/UI)` (Execute Workflow Trigger, required for CLI testing) → `Date setup` (rolling 30-day lookback, since Zernio's analytics endpoint returns cumulative totals not deltas — a post from 3 weeks ago can still gain views, so a wide window + upsert-by-`platform_post_id` keeps numbers current rather than freezing at first sync) → `Fetch TikTok analytics` (`GET zernio.com/api/v1/analytics?platform=tiktok`, reuses existing Zernio header-auth credential `fJu32HkmtmjvrZhX`) → `Process analytics` (extracts hashtags via regex, computes engagement rate, ranks by views, flags posts ≥3x account average as "breakouts," buckets by `media_type` for the carousel-vs-video baseline) → `Build digest` (HTML email: totals, by-format breakdown, top hashtags by avg views, breakouts, top 5 / bottom 5 by views) → `Send digest` (existing Gmail SMTP cred `m3Zfuf10aGoLQhov`) → `Save to Supabase` (upserts via `on_conflict=platform_post_id`).
+- Source-of-truth definition saved to `docs/workflows/tiktok-performance-digest.json`.
+- **Verified end-to-end via CLI** (`n8n execute --id 9QUnEUbl66Zxwl7D`): `status: success`. `tiktok_performance` landed exactly 22 rows, `sum(views)=2139`, `max(views)=310` — matches the raw Zernio pull done during research, confirming the pipeline is accurate. Applied the standard `availableInMCP` SQLite workaround **last** (see `docs/SERVER_REFERENCE.md`), then one `systemctl restart n8n` — confirmed visible via `mcp__n8n__get_workflow_details`.
+
+**Not done yet (next two steps of the agreed plan):** wiring `reddit_research` pain points into the "crawli content brief" workflow's ideation step, and building automated TikTok posting via Zernio's `video.publish` scope. Both deferred until the digest has run a few cycles.
+
+**Previous change (2026-06-18 — Reddit workflow repurposed: dropped Zernio, switched to PRAW, reply-drafting → research digest — DEPLOYED):**
 
 At the user's request, the Reddit monitor workflow (`URiVWju6wMJcrQiW`, paused since 2026-06-10 over the IP ban — see below) was rebuilt from scratch with a new purpose and a new data source.
 

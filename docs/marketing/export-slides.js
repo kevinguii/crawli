@@ -33,7 +33,7 @@ const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-18';
 // Update this array when creating a new batch.
 // 2026-06-15: [8, 7, 5, 8, 6, 8, 7, 8, 8, 7]
 // 2026-06-16: [7, 6, 8, 8, 7, 8, 7, 8, 8, 8, 6, 8]
-const SLIDE_COUNTS = [8, 8, 8];
+const SLIDE_COUNTS = [8, 8, 8, 7, 7, 7, 7, 6, 7, 7, 6, 7, 7, 7, 7, 7];
 
 const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');
 const OUTPUT_DIR = path.resolve(__dirname, BATCH, 'exports', 'carousel');

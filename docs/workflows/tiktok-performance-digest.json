@@ -1,0 +1,270 @@
+[
+  {
+    "name": "tiktok performance digest",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "weeks",
+                "triggerAtDay": [
+                  1
+                ],
+                "triggerAtHour": 8
+              }
+            ]
+          }
+        },
+        "id": "node-schedule",
+        "name": "Every Monday 8am PT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -460,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "node-ondemand",
+        "name": "Run on demand (CLI/UI)",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -460,
+          460
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const now = new Date();\nconst end = now.toISOString().slice(0, 10);\nconst start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);\nreturn [{ json: { startDate: start, endDate: end } }];"
+        },
+        "id": "node-dates",
+        "name": "Date setup",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://zernio.com/api/v1/analytics",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "platform",
+                "value": "tiktok"
+              },
+              {
+                "name": "fromDate",
+                "value": "={{ $json.startDate }}"
+              },
+              {
+                "name": "toDate",
+                "value": "={{ $json.endDate }}"
+              }
+            ]
+          },
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {}
+        },
+        "id": "node-fetch",
+        "name": "Fetch TikTok analytics",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          20,
+          300
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 5000,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "fJu32HkmtmjvrZhX",
+            "name": "Header Auth account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const resp = $input.first().json;\nconst posts = resp.posts || [];\n\nfunction extractHashtags(content) {\n  const matches = (content || '').match(/#\\w+/g) || [];\n  return [...new Set(matches.map(t => t.toLowerCase()))];\n}\n\nconst rows = posts.map(p => {\n  const a = p.analytics || {};\n  const views = a.views || 0;\n  const likes = a.likes || 0;\n  const comments = a.comments || 0;\n  const shares = a.shares || 0;\n  const engagement = views > 0 ? (likes + comments + shares) / views : 0;\n  const platformEntry = (p.platforms || []).find(pl => pl.platform === 'tiktok') || {};\n  return {\n    platform_post_id: platformEntry.platformPostId || p._id,\n    content_snippet: (p.content || '').slice(0, 200),\n    hashtags: extractHashtags(p.content),\n    media_type: p.mediaType || 'unknown',\n    published_at: p.publishedAt || null,\n    views, likes, comments, shares,\n    engagement_rate: Math.round(engagement * 10000) / 10000,\n    post_url: platformEntry.platformPostUrl || p.platformPostUrl || '',\n    last_synced_at: a.lastUpdated || null,\n    run_date: new Date().toISOString().slice(0, 10)\n  };\n});\n\nrows.sort((a, b) => b.views - a.views);\n\nconst totalPosts = rows.length;\nconst totalViews = rows.reduce((s, r) => s + r.views, 0);\nconst avgViews = totalPosts ? totalViews / totalPosts : 0;\nconst breakoutThreshold = avgViews * 3;\nconst breakouts = rows.filter(r => r.views >= breakoutThreshold && r.views > 0 && avgViews > 0);\n\nconst byFormat = {};\nfor (const r of rows) {\n  byFormat[r.media_type] = byFormat[r.media_type] || { count: 0, totalViews: 0 };\n  byFormat[r.media_type].count += 1;\n  byFormat[r.media_type].totalViews += r.views;\n}\n\nconst hashtagStats = {};\nfor (const r of rows) {\n  for (const tag of r.hashtags) {\n    hashtagStats[tag] = hashtagStats[tag] || { count: 0, totalViews: 0 };\n    hashtagStats[tag].count += 1;\n    hashtagStats[tag].totalViews += r.views;\n  }\n}\nconst topHashtags = Object.entries(hashtagStats)\n  .map(([tag, s]) => ({ tag, count: s.count, avgViews: Math.round(s.totalViews / s.count) }))\n  .sort((a, b) => b.avgViews - a.avgViews)\n  .slice(0, 8);\n\nreturn [{ json: { rows, totalPosts, totalViews, avgViews: Math.round(avgViews * 10) / 10, breakouts, byFormat, topHashtags } }];"
+        },
+        "id": "node-process",
+        "name": "Process analytics",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          260,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const data = $input.first().json;\nconst rows = data.rows;\nconst today = new Date().toISOString().slice(0, 10);\n\nconst esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\n\nconst postRow = (r) => `\n  <div style=\"margin-bottom:14px;padding:10px;border:1px solid #ddd;border-radius:8px\">\n    <p><strong>${r.views} views</strong> &middot; ${r.likes} likes &middot; ${r.comments} comments &middot; ${r.shares} shares &middot; ${esc(r.media_type)}</p>\n    <p>${esc(r.content_snippet)}${r.content_snippet.length >= 200 ? '...' : ''}</p>\n    <p><a href=\"${esc(r.post_url)}\">view post</a></p>\n  </div>`;\n\nconst top5 = rows.slice(0, 5);\nconst bottom5 = rows.length > 5 ? rows.slice(-5).reverse() : [];\n\nconst top5Html = top5.length ? '<h2>Top 5 by views</h2>' + top5.map(postRow).join('') : '<p>No posts in this window.</p>';\nconst bottom5Html = bottom5.length ? '<h2>Bottom 5 by views</h2>' + bottom5.map(postRow).join('') : '';\nconst breakoutHtml = data.breakouts.length ? '<h2>Breakouts (3x+ account average)</h2>' + data.breakouts.map(postRow).join('') : '';\n\nconst formatRows = Object.entries(data.byFormat)\n  .map(([fmt, s]) => `<li><strong>${esc(fmt)}</strong> - ${s.count} post(s), avg ${Math.round(s.totalViews / s.count)} views</li>`)\n  .join('');\nconst formatHtml = `<h2>By format</h2><ul>${formatRows}</ul>`;\n\nconst hashtagHtml = data.topHashtags.length\n  ? '<h2>Top hashtags (by avg views)</h2><ul>' + data.topHashtags.map(h => `<li><strong>${esc(h.tag)}</strong> - avg ${h.avgViews} views over ${h.count} post(s)</li>`).join('') + '</ul>'\n  : '';\n\nconst html = `<h1>Crawli TikTok performance - ${today}</h1>\n  <p>${data.totalPosts} post(s) tracked (last 30 days), ${data.totalViews} total views, ${data.avgViews} avg views/post.</p>\n  ${formatHtml}\n  ${hashtagHtml}\n  ${breakoutHtml}\n  ${top5Html}\n  ${bottom5Html}`;\n\nreturn [{ json: {\n  html,\n  subject: `Crawli TikTok performance (${data.totalPosts} posts, ${data.totalViews} views) - ${today}`,\n  rows\n} }];"
+        },
+        "id": "node-digest",
+        "name": "Build digest",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          500,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "fromEmail": "owner@example.com",
+          "toEmail": "owner@example.com",
+          "subject": "={{ $json.subject }}",
+          "html": "={{ $json.html }}",
+          "options": {}
+        },
+        "id": "node-email",
+        "name": "Send digest",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          740,
+          300
+        ],
+        "credentials": {
+          "smtp": {
+            "id": "m3Zfuf10aGoLQhov",
+            "name": "Gmail SMTP 587"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/tiktok_performance?on_conflict=platform_post_id",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_JWT"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_JWT"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "resolution=merge-duplicates,return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($('Build digest').first().json.rows) }}",
+          "options": {}
+        },
+        "id": "node-save-supabase",
+        "name": "Save to Supabase",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          980,
+          300
+        ],
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Every Monday 8am PT": {
+        "main": [
+          [
+            {
+              "node": "Date setup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run on demand (CLI/UI)": {
+        "main": [
+          [
+            {
+              "node": "Date setup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Date setup": {
+        "main": [
+          [
+            {
+              "node": "Fetch TikTok analytics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch TikTok analytics": {
+        "main": [
+          [
+            {
+              "node": "Process analytics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process analytics": {
+        "main": [
+          [
+            {
+              "node": "Build digest",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build digest": {
+        "main": [
+          [
+            {
+              "node": "Send digest",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send digest": {
+        "main": [
+          [
+            {
+              "node": "Save to Supabase",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "America/Los_Angeles"
+    }
+  }
+]

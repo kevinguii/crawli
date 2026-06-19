@@ -8,7 +8,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 |------|-------------|---------------|----------------|-------|
 | 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/post-captions.md` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
 | 2026-06-16 | `2026-06-16/content-posts-slides.html` | `2026-06-16/post-captions.md` | `2026-06-16/exports/carousel/` | 12 carousel posts (all carousel; brief "reel" items built as carousels) |
-| 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 3 carousel posts (12 of 15 brief ideas dropped as duplicates of Day 2/3 — see Post Breakdown — Day 4) |
+| 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 16 carousel posts (posts 1-3 from the original small batch; posts 4-16 added later the same day after wiring Reddit pain-point research into the brief generator — see Post Breakdown — Day 4) |
 
 **Folder structure:**
 ```
@@ -93,22 +93,52 @@ docs/marketing/
 | Day 4: Hidden Marketplaces | Cyan | #0e7490 |
 | Day 4: Buyer Habits | Burnt Orange | #c2410c |
 | Day 4: Vintage Tee Hunting | Deep Teal | #0f766e |
+| Day 4: Denim Evolution | Denim Blue | #1d4ed8 |
+| Day 4: Slow Fashion | Moss Green | #3f6212 |
+| Day 4: Pricing Secondhand | Mustard Gold | #ca8a04 |
+| Day 4: 90s Legacy | Hot Magenta | #be185d |
+| Day 4: Sustainable Trends | Eucalyptus | #15803d |
+| Day 4: Leather Guide | Chestnut | #78350f |
+| Day 4: Vintage Collectors | Plum | #86198f |
+| Day 4: Fabric Guide | Indigo Ink | #312e81 |
+| Day 4: Vintage Sizing (2nd) | Coral Rose | #e11d48 |
+| Day 4: Resale Trends | Bronze | #a16207 |
+| Day 4: Reseller Stories | Forest Teal | #0d9488 |
+| Day 4: Shipping Practices (2nd) | Cobalt | #0369a1 |
+| Day 4: Fashion Brand Myths | Wine | #7f1d1d |
 
 ---
 
 ## Post Breakdown — Day 4 (2026-06-18)
 
-Source brief had 15 ideas; **12 were dropped as near-duplicates of posts already shipped in Day 2/Day 3** (full audit below). Only 3 angles were genuinely new, so this batch is intentionally small rather than padded with repeats.
+**Part 1 (posts 1-3):** source brief had 15 ideas; **12 were dropped as near-duplicates of posts already shipped in Day 2/Day 3** (full audit below). Only 3 angles were genuinely new, so this first batch was intentionally small rather than padded with repeats.
 
 **Why future batches should be bigger and more varied:** the duplicate flood was root-caused (see HANDOFF "content-brief workflow v2") to a too-narrow taxonomy + weak dedup in the n8n generator. The fix broadens the brief into **educational/informational pillars** — fashion history, makers & craft, materials & construction, culture/scene (e.g. Japanese denim, prep, workwear), era guides, and reseller/collector stories — so future briefs will include teach-the-reader posts, not just tips/how-tos. **Embrace these when building carousels:** an "origin of the trench coat" or "how to read a fabric tag" carousel is on-brand and uses the same slide system. The generator also now flags likely repeats in the email itself, so trust those flags but still eyeball against this README's history tables.
 
-| # | Title | Category | Layout | Slides |
-|---|-------|----------|--------|--------|
-| 1 | Hidden Marketplaces | Resellers | number-left | 8 |
-| 2 | Buyer Habits | Fashionistas | visual-hero | 8 |
-| 3 | Vintage Tee Hunting | Vintage | editorial | 8 |
+**Part 2 (posts 4-16), added later the same day:** Reddit pain-point research (`reddit_research` table, 89 threads analyzed) was wired into the brief generator's prompt, and the dedup check was re-run against history that reflects what was actually published, not every idea ever generated including unused test-run output. Of the second 15-idea brief, 11 were genuinely clean, 2 more were only blocked by ideas nobody had ever posted (included), and 2 were true repeats (dropped, see below). Imagery for all of part 2 uses the free symbol/icon library (no AI raster spend this batch) rotating across the 3 implemented layouts.
 
-**Dropped ideas and their duplicate (from the 15-idea brief):**
+| # | Title | Category | Layout | Slides | Pain point |
+|---|-------|----------|--------|--------|-----------|
+| 1 | Hidden Marketplaces | Resellers | number-left | 8 | |
+| 2 | Buyer Habits | Fashionistas | visual-hero | 8 | |
+| 3 | Vintage Tee Hunting | Vintage | editorial | 8 | |
+| 4 | Denim Evolution | All | number-left | 7 | |
+| 5 | Slow Fashion Movement | Vintage Community | visual-hero | 7 | |
+| 6 | How to Price Secondhand Clothes | Resellers | editorial | 7 | underpricing |
+| 7 | Legacy of 90s Fashion | Vintage Community | number-left | 7 | |
+| 8 | Sustainable Fashion Trends | All | visual-hero | 6 | |
+| 9 | Understanding Leather Types | Fashionistas | editorial | 7 | |
+| 10 | Profiles of Vintage Collectors | Vintage Community | number-left | 7 | |
+| 11 | Knowing Your Fabrics | All | visual-hero | 6 | |
+| 12 | Understanding Vintage Sizes | Vintage Community | editorial | 7 | sizing inconsistency |
+| 13 | Resale Market Trends | Fashionistas | number-left | 7 | |
+| 14 | Tips from Successful Resellers | All | visual-hero | 7 | |
+| 15 | Shipping Best Practices | Resellers | editorial | 7 | shipping speed |
+| 16 | Debunking Fashion Myths | Fashionistas | number-left | 7 | |
+
+**Dropped from part 2 (true duplicates):** "Niche Marketplaces for Secondhand Finds" (duplicates published "Hidden Marketplaces"), "Hunting for Vintage Band Tees" (duplicates an older published idea). A corresponding blog brief, "The hidden gems of niche secondhand marketplaces," was also dropped as a genuine duplicate of the already-published `best-niche-marketplaces-for-vintage-finds.md`.
+
+**Dropped ideas and their duplicate (from the original 15-idea brief, part 1):**
 
 | Dropped idea | Duplicates |
 |---|---|
