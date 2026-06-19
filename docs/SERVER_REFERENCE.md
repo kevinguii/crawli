@@ -232,6 +232,38 @@ systemctl restart n8n                                 # ⚠ activation/schedule 
 
 Reddit monitor workflow id: `URiVWju6wMJcrQiW`. Repo source-of-truth: `docs/workflows/reddit-monitor.json`.
 
+### Google Search Console OAuth token expiration
+
+The `weekly-seo-brief` and daily content workflows use the Google Search Console API to fetch per-page click/impression data. This uses a **separate OAuth 2.0 credential** from your user-facing Google login — it has its own refresh token that can expire independently.
+
+**When it expires**, the workflow fails at the "Refresh Google token" node with `invalid_grant: Token has been expired or revoked`.
+
+**To regenerate the token:**
+
+1. **Get a new authorization code:**
+   - Open https://developers.google.com/oauthplayground
+   - Left panel → "Step 1: Select & authorize APIs"
+   - Paste scope: `https://www.googleapis.com/auth/webmasters.readonly`
+   - Click **Authorize APIs**
+   - Sign in and grant permission to "Google APIs Explorer"
+   - Complete the flow
+
+2. **Extract the refresh token:**
+   - Step 2 of OAuth Playground will display `access_token` and `refresh_token`
+   - Copy the `refresh_token` value (the long one)
+
+3. **Update n8n:**
+   - Open https://n8n.thecrawli.com/
+   - Go to **Credentials** (bottom-left menu)
+   - Find "Google - Search Console" (or similar)
+   - Paste the new refresh token
+   - Save
+   - Run: `systemctl restart n8n`
+
+4. **Verify:**
+   - Manually trigger `weekly-seo-brief` in n8n
+   - It should pass "Refresh Google token" and complete the full workflow
+
 **MCP "Available in MCP" toggle is buggy — known n8n bug, don't trust the UI checkbox (2026-06-17):**
 - n8n's per-workflow "Available in MCP" setting (Settings → Available in MCP) silently reverts to `false` on refresh/save, even via the REST API (`PUT /workflows/:id` with `availableInMCP: true` returns 200 but a re-fetch immediately after shows it flipped back to `false`). This is a backend bug (n8n GitHub #25987 / community thread #267321: the backend's "deactivated" check misfires on workflows that are actually active+published). Fixed upstream in n8n v2.9.0+ (pre-release as of writing); this server runs 2.8.4.
 - **Workaround that works:** write the flag directly into the SQLite `workflow_entity.settings` JSON column (bypasses the buggy app-layer save logic), then `systemctl restart n8n`. Confirmed this sticks across restarts and the MCP tools then return the workflow.

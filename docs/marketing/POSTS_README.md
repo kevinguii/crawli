@@ -24,12 +24,14 @@ docs/marketing/
 ```
 
 **Starting a new batch:**
+0. Run `node check-visual-diversity.js` (in `docs/marketing/`) and apply its output — see the `marketing-visual-diversity` skill. Do not default to the last batch's layout/typography/imagery/color from memory; check the numbers first.
 1. Create folder `docs/marketing/YYYY-MM-DD/`
 2. Create `content-posts-slides.html` inside it (slide designs)
 3. Create `post-captions.md` inside it (Instagram + TikTok copy for every post — see caption format rules below)
 4. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
 5. Run: `node export-slides.js --batch=YYYY-MM-DD`
 6. Add a row to this Batch Index
+7. Append each post's layout/typography/imagery/color/style_movement to `visual-history.json` (required — this is what step 0 checks for the next batch)
 
 ---
 
@@ -56,6 +58,8 @@ docs/marketing/
 - **Colors:** One unique color per post. Gradient from base → darker shade (145deg). Light text on dark.
 
 ### Color Palette (used so far — avoid repeating)
+
+> This table is a human-readable historical mirror. `docs/marketing/visual-history.json` is now the source of truth for dedup — run `node check-visual-diversity.js` before picking a color for a new batch instead of scanning this table by hand. New entries should still be appended here for readability, but the script is what's actually checked against.
 | Post | Color | Hex |
 |------|-------|-----|
 | Day 1: Tab Fatigue | Purple | #7c3aed |
@@ -115,26 +119,30 @@ docs/marketing/
 
 **Why future batches should be bigger and more varied:** the duplicate flood was root-caused (see HANDOFF "content-brief workflow v2") to a too-narrow taxonomy + weak dedup in the n8n generator. The fix broadens the brief into **educational/informational pillars** — fashion history, makers & craft, materials & construction, culture/scene (e.g. Japanese denim, prep, workwear), era guides, and reseller/collector stories — so future briefs will include teach-the-reader posts, not just tips/how-tos. **Embrace these when building carousels:** an "origin of the trench coat" or "how to read a fabric tag" carousel is on-brand and uses the same slide system. The generator also now flags likely repeats in the email itself, so trust those flags but still eyeball against this README's history tables.
 
-**Part 2 (posts 4-16), added later the same day:** Reddit pain-point research (`reddit_research` table, 89 threads analyzed) was wired into the brief generator's prompt, and the dedup check was re-run against history that reflects what was actually published, not every idea ever generated including unused test-run output. Of the second 15-idea brief, 11 were genuinely clean, 2 more were only blocked by ideas nobody had ever posted (included), and 2 were true repeats (dropped, see below). Imagery for all of part 2 uses the free symbol/icon library (no AI raster spend this batch) rotating across the 3 implemented layouts.
+**Part 2 (posts 4-16), added later the same day:** Reddit pain-point research (`reddit_research` table, 89 threads analyzed) was wired into the brief generator's prompt, and the dedup check was re-run against history that reflects what was actually published, not every idea ever generated including unused test-run output. Of the second 15-idea brief, 11 were genuinely clean, 2 more were only blocked by ideas nobody had ever posted (included), and 2 were true repeats (dropped, see below).
 
-| # | Title | Category | Layout | Slides | Pain point |
-|---|-------|----------|--------|--------|-----------|
-| 1 | Hidden Marketplaces | Resellers | number-left | 8 | |
-| 2 | Buyer Habits | Fashionistas | visual-hero | 8 | |
-| 3 | Vintage Tee Hunting | Vintage | editorial | 8 | |
-| 4 | Denim Evolution | All | number-left | 7 | |
-| 5 | Slow Fashion Movement | Vintage Community | visual-hero | 7 | |
-| 6 | How to Price Secondhand Clothes | Resellers | editorial | 7 | underpricing |
-| 7 | Legacy of 90s Fashion | Vintage Community | number-left | 7 | |
-| 8 | Sustainable Fashion Trends | All | visual-hero | 6 | |
-| 9 | Understanding Leather Types | Fashionistas | editorial | 7 | |
-| 10 | Profiles of Vintage Collectors | Vintage Community | number-left | 7 | |
-| 11 | Knowing Your Fabrics | All | visual-hero | 6 | |
-| 12 | Understanding Vintage Sizes | Vintage Community | editorial | 7 | sizing inconsistency |
-| 13 | Resale Market Trends | Fashionistas | number-left | 7 | |
-| 14 | Tips from Successful Resellers | All | visual-hero | 7 | |
-| 15 | Shipping Best Practices | Resellers | editorial | 7 | shipping speed |
-| 16 | Debunking Fashion Myths | Fashionistas | number-left | 7 | |
+**Part 2 rebuilt (same day, second pass):** the first version of part 2 shipped with two real problems, caught on review: (1) **every post used identical symbol-icon imagery and standard typography across only 3 layouts**, ignoring the Creative Diversity & Visual Experimentation system below entirely, and (2) **a real bug** — `renderNumberLeft` reads `s.num` for the giant ghost number, but the step objects only carried `label`, so every number-left post rendered the literal word "undefined" in huge text across every step slide (visible on posts 4, 7, 10, 13, 16). Both fixed: the `myth` layout (struck-through myth / bright reality reveal) and the colored figurative clipart system were actually built into this batch's HTML (previously only existed as reference code in this README, never wired into a live batch file), along with `manifesto`, `pull-quote`, and `stat` interstitial slide types and the editorial typography track (Playfair Display / JetBrains Mono / Inter). Verified programmatically across all 116 rendered slides with zero "undefined"/"NaN" occurrences, not just spot-checked.
+
+**Part 2 final mix:** 4 layouts used (number-left, visual-hero, editorial, **myth** — first use), imagery roughly 54% symbol / 46% colored clipart (AI raster skipped to avoid spend without asking first), typography ~38% editorial / 62% standard (target was ~40/60), and 7 of 13 posts carry one manifesto/pull-quote/stat interstitial as a rhythm break, per the "seasoning, not the meal" guidance below.
+
+| # | Title | Category | Layout | Typography | Imagery | Slides | Pain point | Extra |
+|---|-------|----------|--------|------------|---------|--------|-----------|-------|
+| 1 | Hidden Marketplaces | Resellers | number-left | standard | symbol | 8 | | |
+| 2 | Buyer Habits | Fashionistas | visual-hero | standard | symbol | 8 | | |
+| 3 | Vintage Tee Hunting | Vintage | editorial | standard | symbol | 8 | | |
+| 4 | Denim Evolution | All | number-left | standard | symbol | 8 | | stat |
+| 5 | Slow Fashion Movement | Vintage Community | visual-hero | editorial | clipart | 7 | | manifesto |
+| 6 | How to Price Secondhand Clothes | Resellers | editorial | standard | symbol | 8 | underpricing | pull-quote |
+| 7 | Legacy of 90s Fashion | Vintage Community | number-left | standard | clipart | 7 | | |
+| 8 | Sustainable Fashion Trends | All | visual-hero | editorial | symbol | 6 | | manifesto |
+| 9 | Understanding Leather Types | Fashionistas | editorial | editorial | clipart | 7 | | |
+| 10 | Profiles of Vintage Collectors | Vintage Community | number-left | editorial | clipart | 7 | | pull-quote |
+| 11 | Knowing Your Fabrics | All | visual-hero | standard | clipart | 6 | | |
+| 12 | Understanding Vintage Sizes | Vintage Community | editorial | standard | symbol | 7 | sizing inconsistency | |
+| 13 | Resale Market Trends | Fashionistas | number-left | standard | symbol | 8 | | stat |
+| 14 | Tips from Successful Resellers | All | visual-hero | editorial | clipart | 7 | | pull-quote |
+| 15 | Shipping Best Practices | Resellers | editorial | standard | symbol | 7 | shipping speed | |
+| 16 | Debunking Fashion Myths | Fashionistas | **myth** | standard | symbol | 7 | | |
 
 **Dropped from part 2 (true duplicates):** "Niche Marketplaces for Secondhand Finds" (duplicates published "Hidden Marketplaces"), "Hunting for Vintage Band Tees" (duplicates an older published idea). A corresponding blog brief, "The hidden gems of niche secondhand marketplaces," was also dropped as a genuine duplicate of the already-published `best-niche-marketplaces-for-vintage-finds.md`.
 
@@ -157,60 +165,7 @@ docs/marketing/
 
 ---
 
-## Post Breakdown — Day 3 (2026-06-16)
-
-12 posts, all built as carousels. Source brief had 15 ideas; 3 were dropped as too close to Day 2 (emotional pricing vs Day 2 Pricing Strategy, luxury-secondhand myths vs Day 2 Luxury Myths, Depop listing optimization vs Day 2 Profile Optimization). Band-tee idea broadened to vintage tees generally; listing/quality framed multi-platform.
-
-| # | Title | Category | Layout | Slides |
-|---|-------|----------|--------|--------|
-| 1 | Spotting Vintage Tees | Vintage | visual-hero | 7 |
-| 2 | Vintage Trends Now | All | visual-hero | 6 |
-| 3 | Smart Sourcing | Resellers | number-left | 8 |
-| 4 | Every Item Has a Story | Fashionistas | editorial | 8 |
-| 5 | Shipping Myths | Resellers | myth | 7 |
-| 6 | Spotting Quality | All | number-left | 8 |
-| 7 | Real vs Fake Leather | Vintage | visual-hero | 7 |
-| 8 | Accessory Styling | Fashionistas | visual-hero | 8 |
-| 9 | Personal Brand | All | editorial | 8 |
-| 10 | Thrift Culture | Fashionistas | number-left | 8 |
-| 11 | Vintage vs Fast Fashion | Vintage | myth | 6 |
-| 12 | Inventory System | Resellers | number-left | 8 |
-
----
-
-## Post Breakdown — Day 2
-
-| # | Title | Category | Format | Slides |
-|---|-------|----------|--------|--------|
-| 1 | Pricing Strategy | Resellers | Carousel | 8 |
-| 2 | Leather Boots Inspection | Vintage | Reel | 7 |
-| 3 | Luxury Myths | Fashionistas | Carousel | 5 |
-| 4 | Profile Optimization | Resellers | Carousel | 8 |
-| 5 | Sustainable Trends | All | Reel | 6 |
-| 6 | Vintage Sizing | Vintage | Carousel | 8 |
-| 7 | Timing Listings | Resellers | Carousel | 7 |
-| 8 | Spotting Fakes | Fashionistas | Reel | 8 |
-| 9 | Best Platforms | All | Carousel | 8 |
-| 10 | Platform Deep Dive | All | Reel | 7 |
-
----
-
-## Post Breakdown — Day 1
-
-| # | Title | Primary Angle |
-|---|-------|---------------|
-| 1 | Tab Fatigue | Too many apps, one search |
-| 2 | Sneaker Crash | Volatility = need to compare |
-| 3 | Lowball Leverage | Negotiation via comp data |
-| 4 | Sizing Roulette | Vintage vs. modern sizing |
-| 5 | Super Fakes | Authentication safety |
-| 6 | Watchlist Success | Daily alert = grail found |
-| 7 | Utilitarian Trend | Aesthetic search, not algorithm |
-| 8 | Shipping Fee Trap | Total cost comparison |
-| 9 | Circular Fashion | Sustainability + extended lifecycle |
-| 10 | Platform Stereotypes | Humorous platform cultures |
-
----
+## Archive: Previous Batch Breakdowns (Days 1–3)
 
 ## Caption Format (apply to every post in post-captions.md)
 
@@ -259,7 +214,7 @@ node export-slides.js --batch=2026-06-22       # exports a different batch
 
 Output: `docs/marketing/YYYY-MM-DD/exports/carousel/post-01/slide-01.png`
 
-Each PNG is saved at **2× DPR** (2160×2700px; Instagram/TikTok downscale cleanly). The script uses CSS `zoom` to scale the 440px design frame up to 1080px, keeping all font sizes and proportions pixel-perfect from the browser preview.
+Each PNG is saved at **2× DPR** (2160×2700px). Script uses CSS `zoom` to scale the design frame for pixel-perfect proportions.
 
 **When adding a new batch:** update `SLIDE_COUNTS` in `export-slides.js` to match the new posts, then run with `--batch=YYYY-MM-DD`.
 
@@ -334,9 +289,9 @@ Each PNG is saved at **2× DPR** (2160×2700px; Instagram/TikTok downscale clean
 
 ## Creative Diversity & Visual Experimentation (added 2026-06-17)
 
-**Why this section exists:** Days 1–3 all share one look — system-sans type, centered layout, abstract SVG symbols, one color per post. It is clean and recognizable, but every post reads the same. The goal now is **slight, deliberate diversity** — visually, tonally, and in imagery — so we can A/B what actually performs and lean into it. Keep the Crawli system recognizable (still one monotone color per post, still no hashtags on slides, still a CTA with the logo). Vary *within* it.
+**Why:** Days 1–3 are all the same look — system-sans type, centered layout, abstract symbols, one color. Clean and recognizable, but monotonous. Introduce **deliberate visual variety** to A/B what performs, while keeping the system recognizable (one color per post, no slide hashtags, CTA with logo). Vary typography, imagery style, and layout *within* the Crawli system.
 
-> Research backing (June 2026): carousels drive ~22% more saves than single images, and saves/DM-shares outweigh likes in the current algorithm. Posts with **custom illustrations** see up to ~40% higher engagement than stock/abstract visuals. The cover is the whole ballgame — it must answer "is this for me?" and "what do I get if I swipe?" in under 8–10 words. Build 3–5 recognizable layout templates and rotate them so the series stays cohesive while individual posts feel fresh. (Sources: socialhabitmarketing.com, truefuturemedia.com, lovart.ai, mindstudio.ai.)
+**Style movement (new, optional 5th axis, added 2026-06-18):** beyond layout/typography/imagery/color, a post can optionally lean into a named CSS style movement (minimalism, brutalism, glassmorphism, neumorphism, etc.) sourced from `ui-ux-pro-max`'s `styles.csv` via `check-visual-diversity.js`. This is the lever most likely to make a batch actually *look* different rather than just differently colored — use sparingly (it's a deliberate experiment, not a default) and track it in `visual-history.json`.
 
 **Imagery decision (2026-06-17):** there are THREE imagery types. The diversity comes from **rotating ONE style per post across the batch** — NOT from mixing styles inside a single post.
 1. **Original symbols** — white card + monochrome post-color symbol (Days 1–3 style). Free. Best for abstract/data posts.
@@ -345,7 +300,7 @@ Each PNG is saved at **2× DPR** (2160×2700px; Instagram/TikTok downscale clean
 
 **Rule: one imagery style per post.** A carousel is consumed as one unit; three illustration fidelities back-to-back read as inconsistent. Keeping each post to a single style (a) looks intentional, (b) lets us cleanly A/B which style drives saves/shares — the whole goal — since performance is attributable per post, and (c) controls AI cost (only AI-assigned posts spend anything).
 
-**Sizing the split — use ratios, not fixed counts.** The brief generator returns ~15 candidate ideas, then drops some that overlap prior days (e.g. Day 4 dropped 3 of 15 for being too close to Day 2 topics) — so the final batch size varies and is rarely exactly 12. Don't hardcode "4/5/3"; split the *actual* final batch roughly **35% symbol · 40% vector clipart · 25% AI raster**, rounding so the batch still totals 100%. (A 9-post batch ≈ 3 symbol · 4 vector · 2 AI; a 13-post batch ≈ 5 symbol · 5 vector · 3 AI.) Tag each post's style in its Post Breakdown table and let the data pick the winner after 2–3 batches. (Mixing all three in one post is fine ONLY for a side-by-side demo, never for a shipped post.) The full canonical clipart code lives in the appendix at the bottom of this file. (The `_experiments/2026-06-17-creative-test/` previews were folded into this README and deleted; everything needed to rebuild is here.)
+**Sizing the split — use ratios, not counts.** Final batch sizes vary after dedup. Aim for roughly **35% symbol · 40% vector clipart · 25% AI raster** (e.g. 9 posts = 3 symbol · 4 vector · 2 AI). Tag each post's style in its Post Breakdown table. One imagery style per post only (never mixing all three in a single post). The full canonical clipart code is in the appendix below.
 
 ### 1. Typography — add an "editorial" track
 The default track is system-sans, bold/800, centered. Add a second, opt-in track for posts that want a fashion/luxury/storytelling feel:
@@ -370,13 +325,13 @@ Beyond `cover / step / myth / cta`, these are now approved:
 
 Use **at most one or two** interstitials per post — they are seasoning, not the meal. Keep the numbered steps coherent.
 
-### 3. Figurative scene illustrations (the big experiment)
-Replace abstract symbols with **a person doing the action** — flipping a rack, holding a shirt to the light, shooting a flatlay. This is the "AI clipart of someone swinging a golf club" idea. Two ways to produce them:
+### 3. Figurative scene illustrations
+Replace abstract symbols with **a person doing the action** — flipping a rack, holding a shirt, shooting a flatlay. Two methods:
 
-- **Colored vector clipart (default, no external asset) — CHOSEN DIRECTION.** Flat colored characters (skin, hair, colored clothes) in a cream framed card (`.ccard`) on the post's monotone background. Drawn directly as SVG, crisp at any export size. Full code + the 5 starter scenes are in the **Colored Clipart Build Kit** appendix. **Critical consistency rule:** never hand-draw a one-off garment or head — always build them from the shared `tee()` and `head()` helpers so the **collar/neckline sits at the same proportion in every scene** (this was a real bug: separately-drawn shirts had collars in different spots). See the Proportion Checklist in the appendix.
-- **AI raster images (richest look, WORKING as of 2026-06-17):** generated with `gpt-image-2` via `gen-clipart.py`, dropped into the *same `.ccard` frame* as an `<img>`. See the **AI Raster Generation** section just below for the tool, model, cost, and prompt formula. Tested end-to-end: AI raster + vector clipart + symbol all read coherently in one post.
+- **Colored vector clipart (default):** Flat characters in a cream card on the post's background. Built via SVG helpers (`tee()`, `head()`) that enforce consistent proportions (same collar height everywhere). See Colored Clipart Build Kit appendix.
+- **AI raster (richest look):** Generated with `gpt-image-2` via `gen-clipart.py`. See AI Raster Generation section below.
 
-**Symbols are NOT retired** — they still work for abstract/data posts. Figurative clipart (vector or AI) is for posts with a human action (thrifting, styling, inspecting, selling). Mix all three across a batch so we can compare.
+**Symbols still work** for abstract/data posts. Use figurative clipart for posts with human actions. Mix all three types across a batch to A/B performance.
 
 ### 3b. AI Raster Generation (`gen-clipart.py`)
 A no-dependency Python tool at `docs/marketing/gen-clipart.py` calls OpenAI's image API and saves a PNG. It reads `OPENAI_API_KEY` from the shell env or the repo `.env` automatically.
@@ -391,10 +346,8 @@ python3 gen-clipart.py \
 ```
 
 - **Model: `gpt-image-2`** (chosen). Its low tier is as cheap as the mini (~$0.005) but it's the newest flagship and isn't deprecating (gpt-image-1 retires 2026-10-23). Options: `low | medium | high` quality; `1024x1024 | 1024x1536 | 1536x1024`.
-- **Cost (measured): ~$0.05 per medium 1024×1024 image** (1756 output tokens × $30/M). `low` ≈ a cent; `high` ≈ $0.15–0.25. For clipart, **medium is plenty**. Use sparingly. Budget guide (with one-style-per-post): an all-AI post has ~6 image slides ≈ $0.30 at medium, or **cover at medium + body slides at `low` ≈ $0.10/post**. Cap a batch at ~3 AI posts and it stays ≈ $0.30–1.00. Symbol and vector posts are free, so they should be the majority.
-- **Prompt formula that works:**
-  > `Flat color clipart illustration of [a person doing X], simple flat vector shapes, warm skin tone, dark hair, teal top, denim jeans, [object/scene colors], plain solid cream background, centered, minimal, editorial, no text`
-  Keep "teal top, denim jeans, warm skin tone, dark hair, cream background" verbatim — it keeps the AI character consistent with the vector clipart palette across generations (verified: two separate calls produced a matching character).
+- **Cost: ~$0.05 per medium 1024×1024 image.** Budget: cover at medium + body at `low` ≈ $0.10/post. Cap a batch at ~3 AI posts (≈ $0.30–1.00 total). Symbol and vector posts are free, so keep them the majority.
+- **Prompt formula:** `Flat color clipart illustration of [a person doing X], simple flat vector shapes, warm skin tone, dark hair, teal top, denim jeans, [object/scene colors], plain solid cream background, centered, minimal, editorial, no text` — keep the style descriptors verbatim for consistency across generations.
 - **Placement:** store PNGs in `<batch>/ai-images/`, render with `<img class="ccard aimg" src="ai-images/NAME.png">` where `.aimg{ object-fit:cover; }`. The image's own cream background becomes the framed card (no separate cream card needed).
 - **Note:** OpenAI requires one-time org verification (gov ID) before image models work on a key; this account is already verified (test calls returned 200, not 403). If a future key 403s on image calls, that's the fix.
 
@@ -406,8 +359,8 @@ python3 gen-clipart.py \
 - The editorial track pairs with **shorter, punchier sentences** and second person ("Walk in right after open and you are first hands on the new rack"). Less explainer, more voice.
 - The standard track keeps the current informative tone. Don't make every post sound the same either — let the topic set the register.
 
-### How to roll this out (don't flip everything at once)
-Per future batch, aim for roughly: **60% standard / 40% experimental**. Tag each post's track + imagery type in the batch's Post Breakdown table (add an "Imagery" column: `symbol` / `clipart` / `ai-raster`). After a few batches, check IG/TikTok saves + shares by type and let the data pick the winners.
+### Rollout: 60% standard / 40% experimental per batch
+Tag each post's track + imagery type in the Post Breakdown table. After 2–3 batches, check IG/TikTok saves/shares by type and lean into the winners.
 
 ---
 
@@ -415,16 +368,15 @@ Per future batch, aim for roughly: **60% standard / 40% experimental**. Tag each
 
 Everything needed to rebuild the colored-clipart system. Copy these blocks into a new batch's `content-posts-slides.html`. All scenes use a **200×200 viewBox** inside a cream card on the post's monotone gradient.
 
-### Proportion spec (locked — keep identical across every scene)
+### Proportion spec (locked)
 
 | Part | Rule |
 |------|------|
-| Card | `viewBox 0 0 200 200`, `rx 18`, fill `#f7efe0` cream, floor strip at `y≈158–162` |
-| Garment (any shirt/tee/sweater) | **Always** built from `tee()` — never hand-drawn. Collar dip = `7×scale`, collar half-width = `8×scale`, shoulder half-width = `19×scale`, body half-width = `12×scale`. This is what keeps the collar in the same place everywhere. |
-| Head | **Always** `head()` — radius **13**, hair path fixed. Never draw a one-off head. |
-| Shoes | ellipse `rx 8, ry 4` (squat scene uses `rx 9`) |
-| Limbs | torso ≈ 30 tall, legs ≈ 38, arm/hand skin circle `r 5.5–6` |
-| Person | faces left, reaches with the far arm; stands at `x≈150–177`, head at `y≈80–84` |
+| Card | `viewBox 0 0 200 200`, `rx 18`, cream fill `#f7efe0`, floor strip at `y≈160` |
+| Garment | Always `tee()`, never hand-drawn. Collar dip = `7×scale`, ensures collar sits at same height everywhere. |
+| Head | Always `head(cx,cy)` with `r=13`, never a one-off. |
+| Shoes | ellipse `rx 8, ry 4` |
+| Person | Faces left; head at `y≈80–84`, stands at `x≈150–177` |
 
 ### Proportion / consistency checklist (run before exporting any clipart post)
 - [ ] Every garment was produced by `tee()` (grep the scene for raw `<path` shirt shapes — there should be none)
