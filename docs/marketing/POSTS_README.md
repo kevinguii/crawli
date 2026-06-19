@@ -24,38 +24,75 @@ docs/marketing/
 ```
 
 **Starting a new batch:**
-0. Run `node check-visual-diversity.js` (in `docs/marketing/`) and apply its output — see the `marketing-visual-diversity` skill. Do not default to the last batch's layout/typography/imagery/color from memory; check the numbers first.
+0a. **Source fresh topics:** run the `/last30days` skill scoped to the niche (secondhand fashion, vintage, resale, thrifting, brands/eras) to pull what people are actually talking about now. Use those as the positive starting subjects. Cross-check each candidate `topic_key` against Supabase `content_history` — skip anything with `posted = true` (already posted). The twice-weekly n8n brief is idea-fodder; `/last30days` is the live freshness source at build time.
+0b. **Plan visuals:** run `node check-visual-diversity.js` (in `docs/marketing/`) and apply its output — see the `marketing-visual-diversity` skill. Read the `=== PREVIOUS BATCH ... DO NOT REUSE ===` block; the new batch must differ on `font_pairing` AND `text_placement` AND `layout`. Pull a genuinely different font pairing / layout / style movement from the `ui-ux-pro-max` skill. Do not default to the last batch's look from memory.
 1. Create folder `docs/marketing/YYYY-MM-DD/`
 2. Create `content-posts-slides.html` inside it (slide designs)
 3. Create `post-captions.md` inside it (Instagram + TikTok copy for every post — see caption format rules below)
 4. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
 5. Run: `node export-slides.js --batch=YYYY-MM-DD`
 6. Add a row to this Batch Index
-7. Append each post's layout/typography/imagery/color/style_movement to `visual-history.json` (required — this is what step 0 checks for the next batch)
+7. Append each post's `color_hex`/`color_name`/`typography`/`font_pairing`/`layout`/`text_placement`/`imagery`/`style_movement` to `visual-history.json` (required, all fields — this is what step 0 checks for the next batch; omitting `font_pairing`/`text_placement`/`layout` triggers a `!!! BLOCK` and blinds the diversity check)
+8. Mark the posted ideas `posted = true` in Supabase `content_history` so the content brief never re-suggests them — see "After posting a social batch" in `docs/SERVER_REFERENCE.md`. Use each post's `#topic-key` from the brief email.
 
 ---
 
 ## Design System (apply to all future posts)
 
 ### Slide Format
-- **Aspect ratio:** 4:5 (1080×1350px) — standard IG carousel. Story/Reel adapts to 9:16.
+- **Platform:** TikTok photo carousels (IG dropped). **Aspect ratio:** 4:5 (1080×1350px) works on TikTok; switch to 9:16 (1080×1920) per batch if you want full-screen — update `width`/`height` in `export-slides.js`.
 - **Slide count per post:** Cover + steps (4–6) + CTA = 6–8 slides total
-- **Typeface:** System sans-serif, bold/800 weight for headlines
+- **Typeface:** NOT fixed — vary every batch. Pull a different `font_pairing` from the `ui-ux-pro-max` skill (`typography.csv`, 57+ pairings) and never reuse the previous 1–2 batches' pairing. `check-visual-diversity.js` prints the last batch's pairing to avoid. (System sans-serif was the old default and is the sameness trap — move off it.)
 
 ### Slide Types
 
 | Type | Layout |
 |------|--------|
-| `cover` | Category badge → hook headline (large) → one-line sub → SVG visual → "swipe" cue |
+| `cover-photo` | **Default cover now.** Full-bleed `gpt-image-2` photo → dark scrim → category badge → hook headline overlaid → "swipe" cue. The photo is generated with no baked-in text; the headline is HTML on top. |
+| `cover` (SVG) | Legacy symbol cover (badge → headline → SVG visual). Allowed only as a deliberate non-photo variant, not the default. |
 | `step` | Huge ghost step number (top-right) → icon box → "Step N" label → step title → one-line desc |
 | `myth` | Ghost myth number → icon → myth text (struck-through, dim) → truth text (bright) |
 | `cta` | crawli.co badge → action headline → Crawli tie-in line → hashtags |
 
 ### Visual System
-- **Cover SVG:** One clean thematic SVG per post (inline, white strokes, transparent fills, 120×120)
-- **Step slides:** No illustration needed — large ghost number + emoji icon carries the visual weight
+- **Imagery mix (required):** the cover is ALWAYS a real `gpt-image-2` photo (`imagery: ai-raster`). Inner slides are a deliberate mix of the colorful symbol/clipart compositions AND photographic `gpt-image-2` images — not all-symbol like the old batches. `check-visual-diversity.js` flags `ai-raster`/`clipart` as under target until this shifts.
+- **Step slides:** large ghost number + emoji icon carries the weight (symbol style), OR a photographic slide — alternate.
 - **SVG style:** White strokes on color bg, opacity layers for depth, no text in SVGs
 - **Colors:** One unique color per post. Gradient from base → darker shade (145deg). Light text on dark.
+
+### Generating photo covers / slides (`gpt-image-2`)
+
+Same OpenAI API key as everything else. From `docs/marketing/`:
+```bash
+python3 gen-clipart.py --style photo --quality medium \
+  --prompt "a worn vintage leather jacket on a wooden hanger against a sunlit studio wall" \
+  --out 2026-06-22/ai-images/post-01-cover.png
+```
+`--style photo` prepends an editorial-photo preamble, forces **no baked-in text** (headline is overlaid in HTML), defaults to portrait `1024x1536`, and keeps the upper-center calm for the overlay. Save images into the batch folder so `export-slides.js` (which renders the HTML via Puppeteer over `file://`) picks them up with a relative path.
+
+**Reusable `cover-photo` slide pattern** (full-bleed image + scrim + overlaid headline):
+```html
+<div class="slide cover-photo" style="--accent:#b45309">
+  <img class="bg" src="ai-images/post-01-cover.png" alt="">
+  <div class="scrim"></div>
+  <div class="content">
+    <span class="badge">VINTAGE</span>
+    <h1 class="hook">how to spot real leather in 4 seconds</h1>
+    <span class="swipe">swipe →</span>
+  </div>
+</div>
+```
+```css
+.cover-photo { position:relative; overflow:hidden; }
+.cover-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+/* scrim keeps any overlaid headline legible regardless of the photo */
+.cover-photo .scrim { position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.8) 100%); }
+.cover-photo .content { position:relative; z-index:1; height:100%;
+  display:flex; flex-direction:column; justify-content:flex-end; padding:64px; color:#fff; }
+.cover-photo .hook { font-size:88px; line-height:1.02; font-weight:800; margin:16px 0; }
+```
+Vary `text_placement` per batch — this `justify-content:flex-end` bottom-anchor is one option; top-anchored, centered, or side-rail are others. Don't ship the same placement two batches running.
 
 ### Color Palette (used so far — avoid repeating)
 

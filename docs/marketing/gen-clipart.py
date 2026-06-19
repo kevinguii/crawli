@@ -26,21 +26,49 @@ def load_key():
     return None
 
 
+# Preamble prepended per --style. `photo` is for full-bleed social covers/slides:
+# a real photographic image with NO text baked in (the headline is overlaid in
+# HTML) and the frame left calm enough for that overlay to read.
+PHOTO_PREAMBLE = (
+    "Editorial photographic image for a secondhand-fashion social post. "
+    "Natural light, realistic textures, shallow depth of field, magazine-quality. "
+    "Absolutely no text, no words, no letters, no logos, no watermarks anywhere in the image. "
+    "Composition leaves the upper-center area relatively clean and low-contrast so a bold headline can be overlaid on top. "
+    "Subject: "
+)
+CLIPART_PREAMBLE = (
+    "Flat vector clipart, bold simple shapes, clean solid colors, no gradients, no text. "
+    "Subject: "
+)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--prompt", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--model", default="gpt-image-2")
-    ap.add_argument("--size", default="1024x1024")     # 1024x1024 | 1024x1536 | 1536x1024
+    ap.add_argument("--size", default=None)            # default depends on --style; 1024x1024 | 1024x1536 | 1536x1024
     ap.add_argument("--quality", default="medium")     # low | medium | high
     ap.add_argument("--transparent", action="store_true")
+    ap.add_argument("--style", default="raw", choices=["raw", "photo", "clipart"],
+                    help="photo = full-bleed photographic cover/slide (portrait default, no baked text); "
+                         "clipart = flat vector preamble; raw = use --prompt verbatim (default)")
     a = ap.parse_args()
 
     key = load_key()
     if not key:
         sys.exit("ERROR: no OPENAI_API_KEY found in env or .env")
 
-    body = {"model": a.model, "prompt": a.prompt, "size": a.size,
+    prompt = a.prompt
+    if a.style == "photo":
+        prompt = PHOTO_PREAMBLE + prompt
+    elif a.style == "clipart":
+        prompt = CLIPART_PREAMBLE + prompt
+
+    # Covers/photo slides are portrait (4:5-ish); clipart/raw default square.
+    size = a.size or ("1024x1536" if a.style == "photo" else "1024x1024")
+
+    body = {"model": a.model, "prompt": prompt, "size": size,
             "quality": a.quality, "n": 1, "output_format": "png"}
     if a.transparent:
         body["background"] = "transparent"

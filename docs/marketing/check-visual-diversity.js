@@ -51,14 +51,50 @@ function printRatioReport(label, counts, known, target) {
   }
 }
 
-function printLayoutCounts(counts, known) {
-  console.log(`\nLayout usage (last ${known} posts with layout recorded):`);
+function printUsageCounts(label, counts, known) {
+  console.log(`\n${label} (last ${known} posts with this recorded):`);
   const entries = Object.entries(counts).sort((a, b) => a[1] - b[1]);
   for (const [key, n] of entries) {
-    console.log(`  ${key.padEnd(14)} ${n}`);
+    console.log(`  ${String(key).padEnd(40)} ${n}`);
   }
-  if (entries.length) {
-    console.log(`  Least used: ${entries[0][0]} -> consider it for the next post.`);
+  if (entries.length === 1) {
+    console.log(`  Only one value ever used (${entries[0][0]}) -> pick a NEW one this batch.`);
+  } else if (entries.length) {
+    console.log(`  Least used: ${entries[0][0]} -> consider it next.`);
+  }
+}
+
+// The whole point of the file: surface the immediately-previous batch's exact
+// visual choices so the next batch can deliberately differ. Sameness across
+// batches (same font, same centered layout) is the recurring failure this guards.
+function previousBatchReport(posts) {
+  const dated = posts.filter((p) => p.date);
+  if (!dated.length) return;
+  const lastDate = dated[dated.length - 1].date;
+  const lastBatch = dated.filter((p) => p.date === lastDate);
+  const uniq = (field) => [...new Set(lastBatch.map((p) => p[field]).filter(Boolean))];
+  console.log(`\n=== PREVIOUS BATCH (${lastDate}, ${lastBatch.length} posts) - DO NOT REUSE THESE ===`);
+  console.log(`  font_pairing:   ${uniq('font_pairing').join(' | ') || '(not recorded)'}`);
+  console.log(`  typography:     ${uniq('typography').join(' | ') || '(not recorded)'}`);
+  console.log(`  layout:         ${uniq('layout').join(' | ') || '(not recorded)'}`);
+  console.log(`  text_placement: ${uniq('text_placement').join(' | ') || '(not recorded)'}`);
+  console.log(`  imagery:        ${uniq('imagery').join(' | ') || '(not recorded)'}`);
+  console.log(`  Pick a DIFFERENT font_pairing AND text_placement AND layout for the next batch.`);
+}
+
+// Enforce the record-back discipline: if the last shipped batch is missing the
+// experimentation axes, the ledger goes blind on exactly the dimensions that
+// keep repeating. Warn loudly so the gap gets fixed instead of silently growing.
+function enforceRecordBack(posts) {
+  const dated = posts.filter((p) => p.date);
+  if (!dated.length) return;
+  const lastDate = dated[dated.length - 1].date;
+  const lastBatch = dated.filter((p) => p.date === lastDate);
+  const REQUIRED = ['typography', 'font_pairing', 'layout', 'text_placement', 'imagery'];
+  const missing = REQUIRED.filter((f) => lastBatch.every((p) => !p[f]));
+  if (missing.length) {
+    console.log(`\n!!! BLOCK: last batch (${lastDate}) never recorded: ${missing.join(', ')}.`);
+    console.log(`    The diversity check is blind on these axes. Backfill them in visual-history.json before designing.`);
   }
 }
 
@@ -141,10 +177,17 @@ function main() {
   const layout = tally(recent, 'layout');
   const typography = tally(recent, 'typography');
   const imagery = tally(recent, 'imagery');
+  const textPlacement = tally(recent, 'text_placement');
+  const fontPairing = tally(recent, 'font_pairing');
 
   console.log(`Visual diversity check - ${posts.length} posts total in history, looking at last ${recent.length}.`);
 
-  printLayoutCounts(layout.counts, layout.known);
+  previousBatchReport(posts);
+  enforceRecordBack(posts);
+
+  printUsageCounts('Layout usage', layout.counts, layout.known);
+  printUsageCounts('Text placement usage', textPlacement.counts, textPlacement.known);
+  printUsageCounts('Font pairing usage', fontPairing.counts, fontPairing.known);
   printRatioReport('Typography track', typography.counts, typography.known, TYPOGRAPHY_TARGET);
   printRatioReport('Imagery type', imagery.counts, imagery.known, IMAGERY_TARGET);
 

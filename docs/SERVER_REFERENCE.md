@@ -51,6 +51,29 @@ VALUES ('Your exact post title', 'the-slug-from-content/blog/');
 
 The title should match the `title:` field in the post's frontmatter exactly. The slug is the filename without `.md`. The content brief fetches this table on every run — no other step needed.
 
+### After posting a social batch (TikTok/IG carousels)
+
+Mirror of the blog flow above, for social. The content brief now dedups social ideas in **two layers** (added 2026-06-19, "Phase 1: fix dedup memory"):
+- `content_history` rows with `posted = true` → **hard dedup, forever** (the social equivalent of `published_posts`)
+- `content_history` rows with `posted = false` → **soft dedup, last 21 days only** — unused ideas resurface instead of being burned forever
+
+So when you actually turn brief ideas into a posted batch under `docs/marketing/YYYY-MM-DD/`, mark those ideas `posted = true` so they never get re-suggested. The brief email shows each idea's `#topic-key` (e.g. `#denim-history`) — that is the value to use.
+
+**Easiest — Supabase MCP in Claude Code** (list the topic_keys of the posts you actually built):
+```
+mcp__supabase__execute_sql:
+  UPDATE content_history SET posted = true
+  WHERE kind = 'social' AND topic_key IN ('denim-history', 'vintage-sizing', 'understanding-leathers');
+```
+
+If a brief idea you posted isn't in `content_history` yet (e.g. you hand-wrote it), insert it as already-posted:
+```sql
+INSERT INTO content_history (kind, title, topic_key, posted)
+VALUES ('social', 'Exact post label', 'topic-key-slug', true);
+```
+
+Why this matters: before this fix, the workflow logged **all 15 generated ideas every run** as "covered" whether or not you posted them, so the dedup memory was mostly never-posted ideas and the model kept regenerating + re-flagging the same subjects. Only marking what you actually post keeps the hard-block list honest. (Automating this from `tiktok-auto-post.json` is a future step — it isn't confirmed working on-device yet.)
+
 ---
 
 ## Going to production (Stripe live mode)

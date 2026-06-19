@@ -1,8 +1,43 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-19 (7 new blog posts written from a user-pasted batch of blog briefs; 5 of the 7 had primary keywords that collided with already-published posts, so those were retargeted to distinct keywords rather than written as-briefed — see latest entry. TikTok inbox-upload mystery and `published_posts` RLS-disabled issue both still open from earlier today.)
+**Last updated:** 2026-06-19 (Phases 1+2 of the social-content overhaul shipped: fixed dedup memory, removed idea-gen quotas, fixed the visual-experimentation loop, wired in trend/design skills, and added gpt-image-2 photo covers. Earlier today: 7 new blog posts. TikTok inbox-upload mystery and `published_posts` RLS-disabled issue both still open.)
 
-**Latest change (2026-06-19 — 7 new blog posts published from a manually-pasted brief batch; keyword cannibalization caught and fixed before writing):**
+**Latest change (2026-06-19 — "Phase 2: social content quality" — generation diversity, visual experimentation, and real images, done in the order #4, #2, #1, #3):**
+
+Follow-on to Phase 1 (dedup memory). User reshaped Phase 2: trend injection happens at *session/batch* time (not n8n, no new table); drop the rigid idea-gen quotas; finish the visual-experimentation loop that past sessions kept ignoring; covers always become real `gpt-image-2` photos with inner slides a symbol/photo mix. TikTok-only (IG dropped). Blog idea-gen and the blog symbol visual system left untouched.
+
+**#4 — visual-experimentation loop fixed (the root of "sessions don't vary fonts/layouts"):** `check-visual-diversity.js` already tallied `layout`/`typography`/`imagery` — but `visual-history.json` only ever recorded *color* (style_movement all-null; typography/layout/imagery never written), so the diff was blind on the exact axes that repeated. Fix: expanded the per-post schema to require `typography`, `font_pairing`, `layout`, `text_placement`, `imagery`, `style_movement`; backfilled the 38 indexed posts at batch level from the actual HTML (06-15/06-16 = system sans + SVG symbols + centered-stacked; 06-18 = Playfair/Inter editorial, still symbols + centered-stacked; 10 null-date posts left omitted, honest); upgraded `check-visual-diversity.js` with a `=== PREVIOUS BATCH ... DO NOT REUSE ===` fingerprint, `text_placement` + `font_pairing` tallies, a `!!! BLOCK` guard when a batch forgets to record axes, and a "only one value ever used -> pick a NEW one" hint. Strengthened the `marketing-visual-diversity` skill + POSTS_README step 7 to require all axes and to mandate differing from the last 1-2 batches on `font_pairing` AND `text_placement` AND `layout`. Saved a cross-session memory (`feedback-marketing-visual-experimentation`).
+
+**#2 — removed idea-gen quotas (n8n `Extract context` SOCIAL prompt only):** dropped "at least HALF MUST be educational", "OPERATIONAL (at most ~7 of 15)", "EDUCATIONAL (aim ~8 of 15)", and the operational/educational split. Pillars are now a palette; kept the soft "no two ideas share a subject, spread across segments" nudge and the "lean educational because underused" steer, just no hard counts. Deployed live (export→patch→import→activate→restart); verified active + quotas gone + Phase 1 URL still present. Blog prompt quotas left as-is.
+
+**#1 — trend + design skills wired into batch start (no n8n change, no table):** added a "Social media content (TikTok carousels)" section to CLAUDE.md and steps 0a/0b to POSTS_README: run `/last30days` scoped to the niche for fresh positive topics (cross-check `content_history.posted=true` so covered subjects are skipped), then `marketing-visual-diversity` + `ui-ux-pro-max` for genuinely different fonts/layout/style.
+
+**#3 — gpt-image-2 photo covers + mixed inner slides:** extended `gen-clipart.py` with `--style photo` (editorial-photo preamble, no baked-in text so headline overlays cleanly, portrait `1024x1536` default; same API key). Added a reusable `cover-photo` slide pattern (full-bleed `<img>` + scrim + overlaid headline) and a "Generating photo covers" section to POSTS_README Design System; changed the mandated typeface from fixed "System sans-serif" to "vary every batch via ui-ux-pro-max"; cover is now always `ai-raster`, inner slides a symbol/photo mix. `export-slides.js` renders over `file://` with `networkidle0`, so relative batch-folder images load and capture — confirmed, no pipeline change needed. **Not yet done:** no live image actually generated yet (billable) — mechanism is ready; generate on the next real batch (or a one-image validation render).
+
+---
+
+**Earlier change (2026-06-19 — "Phase 1: fix dedup memory" — social content brief was generating ~12/15 repeats; root-caused and fixed the dedup layer):**
+
+User flagged that the twice-weekly "crawli content brief" (n8n workflow `daily-content-email.json`, id `FMf2nyTQIZNCRa2L`) keeps producing near-identical social ideas (today: 12 of 15 flagged as possible repeats). Investigated the full pipeline. Root causes found:
+1. **Polluted dedup memory** — `Build email` → `Save topics` logged **all 15 generated social ideas every run** to `content_history`, posted or not. Fires every 2 days → ~75 social ideas/week logged as "covered." Data: 133 social rows in 7 days but only 49 distinct subjects. The model's own repeats fed back as "already covered" memory, and ideas the user actually wanted got burned the moment they were generated.
+2. **45% of rows had `null` topic_key** (the primary dedup key) — historical, from before the field existed. Both the prompt's "taken keys" steering and the flagger ran half-blind.
+3. **topic_key fragmentation** — same subject → different keys (`denim-evolution` vs `denim-history`, `shipping-best-practices` vs `shipping-practices`, three `trending-vintage-*` keys), so exact-key dedup missed and titles repeated.
+4. **Weak model + negative-only steering** — generator is `gpt-4o-mini` told "don't repeat these 40 things" with no fresh candidates to reach for. In a narrow niche it collapses back to the same ~25 safe wells. (Addressed in Phase 2, not this change.)
+
+The "12 of 15 flagged" is the flagger working correctly — the rot was upstream in generation/memory.
+
+**Phase 1 fix shipped (this session):** Gave social the same two-layer dedup blog already had (`content_history` soft + `published_posts` hard):
+- DB migration (`docs/migrations/social-posted-dedup.sql`, applied live): added `content_history.posted boolean default false`; backfilled all null topic_keys via slugified title (now 0 null); marked `posted=true` for the ~25 subjects the 3 shipped batches (06-15/06-16/06-18) actually covered → social now 62 posted / 71 unposted.
+- Workflow: rewrote the `Extract context` dedup read from `?...&order=created_at.desc&limit=100` (last 100 *generated*, posted or not) to `?...&posted&or=(posted.eq.true,created_at.gte.<now-21d>)&order=created_at.desc&limit=400` — **hard-block posted=true forever + soft-block unposted only 21 days**, so unused ideas resurface instead of being permanently burned. Deployed to live n8n (export→patch→import→activate→restart); verified active=1 + new query live in SQLite.
+- Docs: added "After posting a social batch" to `SERVER_REFERENCE.md` and step 8 to the batch checklist in `marketing/POSTS_README.md` — mark `posted=true` for what you actually post (mirror of the `published_posts` discipline). Automating this from `tiktok-auto-post.json` is a future step.
+
+**Not yet done (user-chosen sequencing — Phase 1 first):** Phase 2 = wire `/last30days` trend feed in as *positive* candidate topics + upgrade the generator off `gpt-4o-mini` + pillar/segment quotas. Phase 3 = TikTok-only real-AI-image slide template (drop IG; reuse `gen-clipart.py`'s `gpt-image-2` path for full-bleed photographic images; keep blog on the symbol system). `gen-clipart.py` already calls OpenAI image gen, so the image infra exists.
+
+**Effect timing:** immediate effect is modest (everything is still <21 days old so all rows return for now), but posted subjects are now correctly hard-blocked and unposted ideas age out over ~3 weeks. Full freshness comes from Phase 2.
+
+---
+
+**Earlier change (2026-06-19 — 7 new blog posts published from a manually-pasted brief batch; keyword cannibalization caught and fixed before writing):**
 
 User pasted 7 blog briefs directly into chat (not generated via the "crawli content brief" n8n workflow — these came from somewhere else, possibly a different tool's output format). Brief stated "10 briefs... 1 flagged as possible repeats" but only 7 were actually pasted; user confirmed proceeding with just the 7 rather than waiting for the rest.
 
