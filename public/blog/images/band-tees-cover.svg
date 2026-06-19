@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="T-shirt with a music note print">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fee2e2"/>
+
+  <!-- T-shirt -->
+  <path d="M 520 220 L 560 190 L 600 215 L 640 190 L 680 220 L 720 260 L 690 300 L 670 285 L 670 460 L 530 460 L 530 285 L 510 300 L 480 260 Z"
+        fill="#fff5f5" stroke="#991b1b" stroke-width="12" stroke-linejoin="round"/>
+
+  <!-- Music note print -->
+  <circle cx="585" cy="380" r="16" fill="#991b1b"/>
+  <circle cx="635" cy="395" r="16" fill="#991b1b"/>
+  <line x1="601" y1="380" x2="601" y2="320" stroke="#991b1b" stroke-width="8" stroke-linecap="round"/>
+  <line x1="651" y1="395" x2="651" y2="335" stroke="#991b1b" stroke-width="8" stroke-linecap="round"/>
+  <line x1="601" y1="320" x2="651" y2="335" stroke="#991b1b" stroke-width="8" stroke-linecap="round"/>
+</svg>

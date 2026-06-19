@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Retro paisley swirl print">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fce7f3"/>
+
+  <!-- Paisley swirls -->
+  <path d="M 600 200 C 660 200 700 250 680 310 C 665 355 615 360 600 320 C 590 295 610 280 630 295"
+        fill="none" stroke="#a21caf" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="640" cy="220" r="10" fill="#a21caf"/>
+
+  <path d="M 540 360 C 480 360 440 410 460 470 C 475 515 525 520 540 480 C 550 455 530 440 510 455"
+        fill="none" stroke="#a21caf" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+  <circle cx="500" cy="475" r="9" fill="#a21caf" opacity="0.7"/>
+
+  <path d="M 690 380 C 740 390 760 440 730 480 C 710 505 670 495 675 460"
+        fill="none" stroke="#a21caf" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <circle cx="700" cy="475" r="7" fill="#a21caf" opacity="0.5"/>
+</svg>

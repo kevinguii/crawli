@@ -17,7 +17,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const input = $input.first().json;\nconst errors = [];\nif (!Array.isArray(input.imageUrls) || input.imageUrls.length === 0) errors.push('imageUrls is required and must be a non-empty array');\nif (!input.description || typeof input.description !== 'string') errors.push('description is required');\nconst validPrivacy = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'SELF_ONLY'];\nif (!validPrivacy.includes(input.privacyLevel)) errors.push('privacyLevel must be one of ' + validPrivacy.join(', '));\nif (errors.length) {\n  throw new Error('tiktok auto post: invalid input - ' + errors.join('; '));\n}\nreturn [{ json: {\n  imageUrls: input.imageUrls,\n  description: input.description,\n  privacyLevel: input.privacyLevel,\n  publishNow: input.publishNow === true\n} }];"
+          "jsCode": "const input = $input.first().json;\nconst errors = [];\nif (!Array.isArray(input.imageUrls) || input.imageUrls.length === 0) errors.push('imageUrls is required and must be a non-empty array');\nif (!input.title || typeof input.title !== 'string') errors.push('title is required');\nif (input.title && input.title.length > 90) errors.push('title must be 90 characters or fewer (TikTok photo post title cap)');\nif (!input.description || typeof input.description !== 'string') errors.push('description is required');\nconst validPrivacy = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'SELF_ONLY'];\nif (!validPrivacy.includes(input.privacyLevel)) errors.push('privacyLevel must be one of ' + validPrivacy.join(', '));\nif (errors.length) {\n  throw new Error('tiktok auto post: invalid input - ' + errors.join('; '));\n}\nreturn [{ json: {\n  imageUrls: input.imageUrls,\n  title: input.title,\n  description: input.description,\n  privacyLevel: input.privacyLevel,\n  publishNow: input.publishNow === true\n} }];"
         },
         "id": "node-validate",
         "name": "Validate input",
@@ -30,7 +30,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const input = $input.first().json;\nconst TIKTOK_ACCOUNT_ID = '6a346bfa5f7d1751ab060a9a';\n\nconst payload = {\n  content: input.description,\n  mediaItems: input.imageUrls.map(url => ({ type: 'image', url })),\n  platforms: [\n    { platform: 'tiktok', accountId: TIKTOK_ACCOUNT_ID }\n  ],\n  tiktokSettings: {\n    privacy_level: input.privacyLevel,\n    allow_comment: true,\n    media_type: 'photo',\n    photo_cover_index: 0,\n    description: input.description,\n    auto_add_music: true,\n    content_preview_confirmed: true,\n    express_consent_given: true\n  },\n  publishNow: input.publishNow,\n  draft: !input.publishNow\n};\n\nreturn [{ json: payload }];"
+          "jsCode": "const input = $input.first().json;\nconst TIKTOK_ACCOUNT_ID = '6a346bfa5f7d1751ab060a9a';\n\n// Zernio only actually calls TikTok's API when publishNow:true is sent (publishNow:false just\n// saves the post inertly inside Zernio and never contacts TikTok at all). To get a TikTok\n// Creator Inbox draft, we must send publishNow:true to Zernio AND tiktokSettings.draft:true,\n// which tells TikTok's own API to route the publish into Creator Inbox instead of going live.\n// TikTok photo posts: top-level content = title (<=90 chars, hashtags/URLs stripped),\n// tiktokSettings.description = full caption (up to 4000 chars). They are NOT interchangeable.\nconst payload = {\n  content: input.title,\n  mediaItems: input.imageUrls.map(url => ({ type: 'image', url })),\n  platforms: [\n    { platform: 'tiktok', accountId: TIKTOK_ACCOUNT_ID }\n  ],\n  tiktokSettings: {\n    privacy_level: input.privacyLevel,\n    allow_comment: true,\n    media_type: 'photo',\n    photo_cover_index: 0,\n    description: input.description,\n    auto_add_music: true,\n    content_preview_confirmed: true,\n    express_consent_given: true,\n    draft: !input.publishNow\n  },\n  publishNow: true\n};\n\nreturn [{ json: payload }];"
         },
         "id": "node-build-payload",
         "name": "Build Zernio payload",
@@ -69,7 +69,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const resp = $input.first().json;\nconst wasDraft = $('Build Zernio payload').first().json.draft === true;\nreturn [{ json: {\n  postId: resp._id || resp.post?._id || null,\n  status: resp.status || (wasDraft ? 'sent_to_creator_inbox' : 'published'),\n  mode: wasDraft ? 'draft (needs manual confirm in TikTok Creator Inbox)' : 'published live',\n  raw: resp\n} }];"
+          "jsCode": "const resp = $input.first().json;\nconst wasDraft = $('Build Zernio payload').first().json.tiktokSettings.draft === true;\nreturn [{ json: {\n  postId: resp._id || resp.post?._id || null,\n  status: resp.status || (wasDraft ? 'sent_to_creator_inbox' : 'published'),\n  mode: wasDraft ? 'draft (needs manual confirm in TikTok Creator Inbox)' : 'published live',\n  raw: resp\n} }];"
         },
         "id": "node-summarize",
         "name": "Summarize result",

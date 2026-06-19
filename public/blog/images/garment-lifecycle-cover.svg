@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Circular timeline showing the lifecycle of a garment">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#dbeafe"/>
+
+  <!-- Cycle arrow -->
+  <path d="M 600 200 A 130 130 0 1 1 472 330" fill="none" stroke="#1d4ed8" stroke-width="16" stroke-linecap="round"/>
+  <polygon points="472,330 440,300 500,290" fill="#1d4ed8"/>
+
+  <!-- Stage markers -->
+  <circle cx="600" cy="200" r="14" fill="#1d4ed8"/>
+  <circle cx="715" cy="245" r="14" fill="#1d4ed8" opacity="0.75"/>
+  <circle cx="730" cy="385" r="14" fill="#1d4ed8" opacity="0.55"/>
+  <circle cx="610" cy="445" r="14" fill="#1d4ed8" opacity="0.35"/>
+</svg>

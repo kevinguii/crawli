@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Receipt with a magnifying glass over a hidden fee line">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fef3e2"/>
+
+  <!-- Receipt -->
+  <path d="M 500 170 L 700 170 L 700 460 L 670 440 L 640 460 L 610 440 L 580 460 L 550 440 L 520 460 L 500 440 Z"
+        fill="#fffaf0" stroke="#b45309" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Receipt lines -->
+  <line x1="530" y1="220" x2="670" y2="220" stroke="#b45309" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <line x1="530" y1="255" x2="670" y2="255" stroke="#b45309" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <line x1="530" y1="290" x2="630" y2="290" stroke="#b45309" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Magnifying glass over hidden fee -->
+  <circle cx="640" cy="345" r="52" fill="#fffaf0" stroke="#b45309" stroke-width="12"/>
+  <line x1="678" y1="383" x2="730" y2="435" stroke="#b45309" stroke-width="16" stroke-linecap="round"/>
+  <text x="640" y="356" text-anchor="middle" font-family="monospace" font-size="34" fill="#b45309" font-weight="bold">$?</text>
+</svg>

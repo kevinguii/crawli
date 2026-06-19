@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Color palette swatches">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fff7ed"/>
+
+  <!-- Palette board -->
+  <path d="M 600 200 C 690 200 760 270 760 350 C 760 400 720 420 690 400 C 670 387 680 365 660 365 C 600 365 540 420 470 380 C 420 350 430 250 530 215 C 555 206 578 200 600 200 Z"
+        fill="#fffaf5" stroke="#9a3412" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Color swatches -->
+  <circle cx="570" cy="265" r="22" fill="#9f1239"/>
+  <circle cx="650" cy="255" r="22" fill="#b45309"/>
+  <circle cx="700" cy="310" r="22" fill="#4d7c0f"/>
+  <circle cx="555" cy="335" r="22" fill="#1d4ed8"/>
+  <circle cx="620" cy="335" r="22" fill="#7e22ce"/>
+</svg>
