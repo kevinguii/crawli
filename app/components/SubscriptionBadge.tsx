@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 type BillingStatus = {
   status: string;
@@ -14,6 +15,7 @@ type BillingStatus = {
 export default function SubscriptionBadge() {
   const [data, setData] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +68,7 @@ export default function SubscriptionBadge() {
       </span>
       {isFree && (
         <Link
-          href="/pricing"
+          href={`/pricing?from=${encodeURIComponent(pathname)}`}
           className="text-xs font-semibold rounded-full px-2.5 py-1 transition-opacity hover:opacity-90"
           style={{ background: 'var(--accent)', color: '#ffffff' }}
         >

@@ -427,7 +427,7 @@ export default function SettingsPage() {
                       }
                     >
                       <Link
-                        href="/pricing"
+                        href="/pricing?from=/settings"
                         className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
                         style={{
                           background: isPaid ? 'var(--surface-hover)' : 'var(--accent)',

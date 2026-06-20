@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PricingCards } from './PricingCards';
+import PricingCloseButton from './PricingCloseButton';
 import type { Tier } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/pricing' },
 };
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -34,16 +39,7 @@ export default async function PricingPage() {
   return (
     <main className="min-h-screen px-4 py-16" style={{ background: 'var(--bg)' }}>
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <Link
-          href="/"
-          aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
-          style={{ color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-          </svg>
-        </Link>
+        <PricingCloseButton from={from} />
       </div>
       <div className="mx-auto max-w-6xl">
         <div className="text-center mb-12">

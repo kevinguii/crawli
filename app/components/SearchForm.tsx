@@ -183,7 +183,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           toast.error(quotaMessage ?? 'Search limit reached.', {
             action: {
               label: 'Upgrade',
-              onClick: () => { window.location.href = '/pricing'; },
+              onClick: () => { window.location.href = '/pricing?from=/search'; },
             },
             duration: 8000,
           });
@@ -310,7 +310,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
       {quota?.tier === 'free' && quota.remaining === 1 && (
         <p className="text-xs" style={{ color: '#d97706' }}>
           This is your last free search this week.{' '}
-          <Link href="/pricing" className="font-semibold underline">
+          <Link href="/pricing?from=/search" className="font-semibold underline">
             Upgrade
           </Link>{' '}
           for more.

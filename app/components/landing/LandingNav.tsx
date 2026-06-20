@@ -1,11 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Wordmark from './Wordmark';
 
 export default function LandingNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
+  // LandingNav renders on "/" and on blog pages — read the real current
+  // path so the pricing page's close button returns to whichever one.
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -36,7 +40,7 @@ export default function LandingNav({ isAuthenticated = false }: { isAuthenticate
             Blog
           </Link>
           <Link
-            href="/pricing"
+            href={`/pricing?from=${encodeURIComponent(pathname)}`}
             className="hidden text-sm font-medium transition-opacity hover:opacity-80 sm:inline-block"
             style={{ color: 'var(--text-muted)' }}
           >

@@ -70,7 +70,7 @@ export default function SearchAlertsTab() {
         isPro
           ? { duration: 6000 }
           : {
-              action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
+              action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing?from=/alerts'; } },
               duration: 8000,
             },
       );

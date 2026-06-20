@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
@@ -61,6 +61,7 @@ export default function AuthButton() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const supabase = createClient();
@@ -267,7 +268,7 @@ export default function AuthButton() {
           Settings
         </Link>
         <Link
-          href="/pricing"
+          href={`/pricing?from=${encodeURIComponent(pathname)}`}
           onClick={() => setMenuOpen(false)}
           className="menu-item block w-full text-left px-3 py-2.5 text-sm"
         >
