@@ -52,7 +52,7 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 2. **Run the `marketing-visual-diversity` skill** (it triggers on "new batch", "carousel post", etc.) — it runs `node check-visual-diversity.js`, which prints the previous batch's exact fonts/layout/placement to avoid. Each batch MUST differ from the last 1-2 on `font_pairing` AND `text_placement` AND `layout`.
 3. **Use the `ui-ux-pro-max` skill** for the actual design choices — pull a genuinely different font pairing (`typography.csv`, 57+), layout, and style movement from it each batch. It is the menu of options; `visual-history.json` is the record of what is used up.
 
-TikTok-only now (IG dropped). Cover slide is always a real `gpt-image-2` image; inner slides mix symbol-compositions and photographic `gpt-image-2` images. Blog posts keep their simple symbol system — this only applies to social.
+TikTok-only now (IG fully dropped from prompts, schema, captions, and posting docs — 2026-06-19). Default export is 9:16 full-screen (1080×1920, `export-slides.js`), not 4:5 — keep headline/CTA text out of the bottom ~20%/right ~15% where TikTok's own UI sits. Cover slide is always a real `gpt-image-2` image; inner slides mix symbol-compositions and photographic `gpt-image-2` images. Blog posts keep their simple symbol system — this only applies to social.
 
 ## Testing Checklist
 

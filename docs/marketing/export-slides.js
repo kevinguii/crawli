@@ -13,8 +13,8 @@
  *       content-posts-slides.html    ← source
  *       exports/carousel/post-01/    ← output
  *
- * Output size: 1080×1350 (4:5, Instagram carousel / TikTok photo post)
- * Output resolution: 2160×2700px (2× DPR — downscaled cleanly by platforms)
+ * Output size: 1080×1920 (9:16, TikTok full-screen photo post)
+ * Output resolution: 2160×3840px (2× DPR — downscaled cleanly by platforms)
  */
 
 const puppeteer = require('puppeteer');
@@ -22,8 +22,13 @@ const path = require('path');
 const fs = require('fs');
 
 // ── config ────────────────────────────────────────────────────────────────────
+// TikTok-only, full-screen vertical (9:16) is the default since 2026-06-19.
+// Templates should keep critical text inside a safe zone (roughly top 75-80%,
+// left ~85%) so TikTok's own UI chrome (caption, like/comment/share, profile,
+// sound disc — bottom ~20% and right ~15% of the frame) never covers it. The
+// background image/photo can still bleed fully edge to edge.
 const width  = 1080;
-const height = 1350;
+const height = 1920;
 
 // --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
 const batchArg = process.argv.find(a => a.startsWith('--batch='));
@@ -56,8 +61,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 2× resolution — avoids the sub-pixel blurring of a fractional DPR like 2.4545.
   // CSS zoom scales the 440px-wide frame design up to fill the full 1080px viewport
   // without changing any font sizes or layout proportions in the source HTML.
+  // DESIGN_H is derived from the output aspect ratio (not hardcoded) so it always
+  // matches width/height above — this is what broke when 9:16 was first considered:
+  // changing width/height alone left the frame the old 4:5 shape with blank space.
   const DESIGN_W = 440;
-  const DESIGN_H = 550;
+  const DESIGN_H = Math.round(DESIGN_W * (height / width));
   const zoom = width / DESIGN_W; // e.g. 1080/440 ≈ 2.454 applied at CSS level
 
   await page.setViewport({ width, height, deviceScaleFactor: 2 });

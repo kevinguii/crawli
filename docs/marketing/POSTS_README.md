@@ -28,7 +28,7 @@ docs/marketing/
 0b. **Plan visuals:** run `node check-visual-diversity.js` (in `docs/marketing/`) and apply its output — see the `marketing-visual-diversity` skill. Read the `=== PREVIOUS BATCH ... DO NOT REUSE ===` block; the new batch must differ on `font_pairing` AND `text_placement` AND `layout`. Pull a genuinely different font pairing / layout / style movement from the `ui-ux-pro-max` skill. Do not default to the last batch's look from memory.
 1. Create folder `docs/marketing/YYYY-MM-DD/`
 2. Create `content-posts-slides.html` inside it (slide designs)
-3. Create `post-captions.md` inside it (Instagram + TikTok copy for every post — see caption format rules below)
+3. Create `post-captions.md` inside it (TikTok copy for every post — see caption format rules below)
 4. Update `SLIDE_COUNTS` in `export-slides.js` to match the new post count
 5. Run: `node export-slides.js --batch=YYYY-MM-DD`
 6. Add a row to this Batch Index
@@ -40,7 +40,8 @@ docs/marketing/
 ## Design System (apply to all future posts)
 
 ### Slide Format
-- **Platform:** TikTok photo carousels (IG dropped). **Aspect ratio:** 4:5 (1080×1350px) works on TikTok; switch to 9:16 (1080×1920) per batch if you want full-screen — update `width`/`height` in `export-slides.js`.
+- **Platform:** TikTok photo carousels only (Instagram dropped 2026-06-19 — no IG captions, no IG posting steps, no IG-specific fields anywhere in the pipeline).
+- **Aspect ratio:** 9:16 full-screen vertical (1080×1920px) is the default in `export-slides.js`, since 2026-06-19. TikTok overlays its own UI on photo posts — caption text, profile icon, like/comment/share/bookmark, and the sound disc sit in roughly the **bottom ~20%** and **right ~15%** of the frame. Background images/photos can bleed fully edge to edge, but keep headline/CTA text inside a safe zone (top ~75-80%, left ~83-85%) so TikTok's chrome never covers it. Validated 2026-06-19 with a `cover-photo` template at 1080×1920 — see git history for the test render.
 - **Slide count per post:** Cover + steps (4–6) + CTA = 6–8 slides total
 - **Typeface:** NOT fixed — vary every batch. Pull a different `font_pairing` from the `ui-ux-pro-max` skill (`typography.csv`, 57+ pairings) and never reuse the previous 1–2 batches' pairing. `check-visual-diversity.js` prints the last batch's pairing to avoid. (System sans-serif was the old default and is the sameness trap — move off it.)
 
@@ -68,7 +69,7 @@ python3 gen-clipart.py --style photo --quality medium \
   --prompt "a worn vintage leather jacket on a wooden hanger against a sunlit studio wall" \
   --out 2026-06-22/ai-images/post-01-cover.png
 ```
-`--style photo` prepends an editorial-photo preamble, forces **no baked-in text** (headline is overlaid in HTML), defaults to portrait `1024x1536`, and keeps the upper-center calm for the overlay. Save images into the batch folder so `export-slides.js` (which renders the HTML via Puppeteer over `file://`) picks them up with a relative path.
+`--style photo` prepends an editorial-photo preamble, forces **no baked-in text** (headline is overlaid in HTML), defaults to portrait `1024x1536`, and keeps the upper-center calm for the overlay. `1024x1536` (~2:3) is `gpt-image-2`'s closest available portrait size to the 9:16 slide frame — it is not a bug; the `cover-photo` template's `object-fit: cover` crops it to fill 1080×1920 regardless. Save images into the batch folder so `export-slides.js` (which renders the HTML via Puppeteer over `file://`) picks them up with a relative path.
 
 **Reusable `cover-photo` slide pattern** (full-bleed image + scrim + overlaid headline):
 ```html
@@ -87,12 +88,22 @@ python3 gen-clipart.py --style photo --quality medium \
 .cover-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 /* scrim keeps any overlaid headline legible regardless of the photo */
 .cover-photo .scrim { position:absolute; inset:0;
-  background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.8) 100%); }
+  background:linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.45) 65%, rgba(0,0,0,.75) 100%); }
+/* padding right/bottom is the TikTok-UI safe zone: keep text out of roughly the
+   right ~15-18% and bottom ~18-20% of the frame (where caption/like/share/profile/
+   sound-disc UI sits). Px values below were validated at FULL 1080x1920 output
+   scale directly (docs/marketing/_test, 2026-06-19, deleted after review) - NOT
+   through the 440px-wide design-frame + zoom system export-slides.js actually
+   uses for per-batch HTML. If authoring against the 440-wide design frame, scale
+   these down by the zoom factor (~2.454) instead of copying the px values as-is,
+   or just use the percentages above directly (right/bottom padding as % of frame
+   width/height) which are scale-invariant either way. */
 .cover-photo .content { position:relative; z-index:1; height:100%;
-  display:flex; flex-direction:column; justify-content:flex-end; padding:64px; color:#fff; }
-.cover-photo .hook { font-size:88px; line-height:1.02; font-weight:800; margin:16px 0; }
+  display:flex; flex-direction:column; justify-content:flex-end;
+  padding: 80px 200px 280px 64px; color:#fff; } /* px tuned for direct 1080x1920 output */
+.cover-photo .hook { font-size:92px; line-height:1.04; font-weight:800; margin:18px 0; }
 ```
-Vary `text_placement` per batch — this `justify-content:flex-end` bottom-anchor is one option; top-anchored, centered, or side-rail are others. Don't ship the same placement two batches running.
+Vary `text_placement` per batch — this `justify-content:flex-end` bottom-anchor is one option; top-anchored, centered, or side-rail are others (keep the same right/bottom safe-zone clearance regardless of which you pick). Don't ship the same placement two batches running.
 
 ### Color Palette (used so far — avoid repeating)
 
@@ -206,13 +217,7 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 
 ## Caption Format (apply to every post in post-captions.md)
 
-Each post needs three sections: Instagram, TikTok Title, TikTok Description.
-
-**Instagram:**
-- Hook sentence (shows in feed preview before "more" truncation)
-- 2-3 sentences of body — what the carousel covers, why it matters
-- Crawli tie-in line in parentheses with `thecrawli.com`
-- 12-15 hashtags at the end (or paste into first comment)
+Each post needs two sections: TikTok Title, TikTok Description. (Instagram dropped 2026-06-19 — TikTok-only now.)
 
 **TikTok Title** (separate field in the app, above the carousel):
 - **Max 90 characters** (hard limit — count them; the app truncates past this)
@@ -251,7 +256,7 @@ node export-slides.js --batch=2026-06-22       # exports a different batch
 
 Output: `docs/marketing/YYYY-MM-DD/exports/carousel/post-01/slide-01.png`
 
-Each PNG is saved at **2× DPR** (2160×2700px). Script uses CSS `zoom` to scale the design frame for pixel-perfect proportions.
+Each PNG is saved at **2× DPR** (2160×3840px, 9:16). Script uses CSS `zoom` to scale the design frame for pixel-perfect proportions; `DESIGN_H` is derived from `width`/`height` so the frame shape always matches the configured aspect ratio.
 
 **When adding a new batch:** update `SLIDE_COUNTS` in `export-slides.js` to match the new posts, then run with `--batch=YYYY-MM-DD`.
 
@@ -265,23 +270,13 @@ Each PNG is saved at **2× DPR** (2160×2700px). Script uses CSS `zoom` to scale
 | Bottom of slides cut off | Cover SVGs with no explicit `width`/`height` scale to intrinsic viewBox height, overflowing the 550px frame; fixed with `min-height: 0` on `.cover-visual` + `max-height: 100%` on the SVG |
 | Frame positioned too low | Body padding + nav bars push frame below viewport; use `position: fixed; top: 0` on `#frame` and hide `.top-bar`, `.post-label`, `.bot-bar` via injected CSS |
 
-### Story/Reel format
-`--size=story` (9:16) is **not supported** — the slide layout is 4:5 only. To post as a Story, crop the exported 1080×1350 in the app, or redesign the frame for 9:16.
-
 ---
 
-## Posting to Instagram and TikTok
-
-**Instagram carousel (recommended):**
-- Export at `--size=carousel` (1080×1350)
-- Open Instagram app or [Meta Creator Studio](https://business.facebook.com/creatorstudio) on desktop
-- Create new post, tap the "+" and select all slide images for that post in order
-- Write your caption with hashtags there (not on the slides)
-- Schedule or post
+## Posting to TikTok
 
 **TikTok photo carousel:**
-- TikTok now supports photo posts (carousels) natively
-- Export at `--size=carousel` (1080×1350)
+- TikTok supports photo posts (carousels) natively
+- Export at the default 1080×1920 (9:16)
 - Open TikTok app, tap "+" to create, select photos
 - Add the slides in order, write caption + hashtags
 
@@ -292,7 +287,6 @@ Each PNG is saved at **2× DPR** (2160×2700px). Script uses CSS `zoom` to scale
 
 **Quality tips:**
 - Always export at 2× scale (already default in the script)
-- On Instagram: choose "High quality" when uploading, avoid JPEG compression
 - On TikTok: upload from a fast connection; re-compression is aggressive on mobile uploads
 
 ---

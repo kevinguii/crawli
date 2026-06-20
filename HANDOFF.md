@@ -1,8 +1,26 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-19 (Phases 1+2 of the social-content overhaul shipped: fixed dedup memory, removed idea-gen quotas, fixed the visual-experimentation loop, wired in trend/design skills, and added gpt-image-2 photo covers. Earlier today: 7 new blog posts. TikTok inbox-upload mystery and `published_posts` RLS-disabled issue both still open.)
+**Last updated:** 2026-06-19 (Phases 1+2+3 of the social-content overhaul shipped: fixed dedup memory, removed idea-gen quotas, fixed the visual-experimentation loop, wired in trend/design skills, added gpt-image-2 photo covers, switched to 9:16 default, and fully dropped Instagram. User also fixed `published_posts` RLS themselves. TikTok inbox-upload mystery still open — separate, unrelated issue.)
 
-**Latest change (2026-06-19 — "Phase 2: social content quality" — generation diversity, visual experimentation, and real images, done in the order #4, #2, #1, #3):**
+**Latest change (2026-06-19 — "Phase 3: TikTok-only, 9:16 default" — dropped Instagram everywhere, switched slide export to full-screen vertical):**
+
+Follow-on to Phases 1+2. User fixed the `published_posts` RLS-disabled advisory themselves (not done by this session). Two remaining Phase 3 items, both shipped:
+
+**9:16 default (`export-slides.js`):** `width`/`height` changed 1080×1350 → 1080×1920. Caught a real bug before shipping: the script renders per-batch HTML inside a fixed-ratio internal "frame" (`DESIGN_W=440`, `DESIGN_H` was hardcoded `550` = 4:5) that gets CSS-zoomed up to the output size — just flipping `width`/`height` would have left the frame the wrong shape with blank space in the screenshot. Fixed by deriving `DESIGN_H = Math.round(DESIGN_W * (height / width))` instead of hardcoding it, so the frame shape always tracks the configured aspect ratio. Validated with a standalone Puppeteer render in `docs/marketing/_test/` (created, reviewed, deleted per user instruction — not committed) showing the `cover-photo` template's bottom-anchored headline sits clear of a marked-up "TikTok UI" zone (bottom ~20%, right ~15% — where caption/like/comment/share/profile/sound-disc actually sit on a real TikTok photo post). Safe-zone padding documented in POSTS_README's `cover-photo` CSS, with a note that the validated px values were measured at full 1080×1920 output scale directly, not through the 440px design-frame + zoom path real per-batch HTML uses — percentages are the scale-invariant fallback if porting.
+
+**Instagram fully dropped:** removed from every layer, live + repo, via the same backup→export→patch→import→activate→restart deploy path as Phases 1-2 (verified active + each phase's prior changes still intact after each redeploy):
+- n8n `Extract context` (social prompt): "works as both an Instagram post and a TikTok" → TikTok-only framing; removed the `ig_hook` JSON schema field and its WRONG/RIGHT example pair (kept `tiktok_hook`'s).
+- n8n `Build email`: removed the "IG opening line" row from the rendered brief email; "IG + TikTok versions" → "TikTok carousel posts"; "Twice-weekly ideas for Instagram, TikTok, and blog" → "...for TikTok and blog".
+- `POSTS_README.md`: Caption Format collapsed from 3 sections (Instagram/TikTok Title/TikTok Description) to 2; removed the whole Instagram-carousel posting block; removed the stale "Story/Reel format... not supported" gotcha (9:16 *is* the format now); removed the Instagram quality-tip line; batch checklist step 3 "Instagram + TikTok copy" → "TikTok copy".
+- `CLAUDE.md`: updated the social-content section to state IG is fully dropped + 9:16 is default + the safe-zone constraint.
+
+Blog idea-gen, blog visual system, and `gen-clipart.py` left untouched (no IG references existed there).
+
+All three original Phase 3 bullets are now done: 9:16 full-bleed template ✅ (mechanism + safe zone validated, no real batch built on it yet), IG dropped ✅, design driven through `ui-ux-pro-max`/`marketing-visual-diversity` ✅ (already done in Phase 2 #1). **Not yet done:** no real batch has shipped using the new 9:16 + photo-cover + no-IG pipeline end to end — next real batch is the first live test of the whole stack together.
+
+---
+
+**Earlier change (2026-06-19 — "Phase 2: social content quality" — generation diversity, visual experimentation, and real images, done in the order #4, #2, #1, #3):**
 
 Follow-on to Phase 1 (dedup memory). User reshaped Phase 2: trend injection happens at *session/batch* time (not n8n, no new table); drop the rigid idea-gen quotas; finish the visual-experimentation loop that past sessions kept ignoring; covers always become real `gpt-image-2` photos with inner slides a symbol/photo mix. TikTok-only (IG dropped). Blog idea-gen and the blog symbol visual system left untouched.
 
