@@ -1,8 +1,18 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-19 (Phases 1+2+3 of the social-content overhaul shipped: fixed dedup memory, removed idea-gen quotas, fixed the visual-experimentation loop, wired in trend/design skills, added gpt-image-2 photo covers, switched to 9:16 default, and fully dropped Instagram. User also fixed `published_posts` RLS themselves. TikTok inbox-upload mystery still open — separate, unrelated issue.)
+**Last updated:** 2026-06-20 (pricing-page default cycle switched to weekly + stale tier-cap docs corrected — see Latest change below.)
 
-**Latest change (2026-06-19 — "Phase 3: TikTok-only, 9:16 default" — dropped Instagram everywhere, switched slide export to full-screen vertical):**
+**Latest change (2026-06-20 — pricing default → weekly + HANDOFF tier docs corrected):**
+
+First week with real users (~10) live; most were landing at 2-3 searches, which prompted a pricing-cadence discussion. Investigation found the real cause wasn't low engagement — it's the **free tier's 3-searches/week cap** (most users were simply hitting the wall), and that the §"three-tier pricing shipped" (2026-05-26) section of this file was stale: a later change added a `weekly` Stripe billing cycle and switched all quota periods from monthly to a 7-day rolling window, but that change was never logged here. Corrected in place (see the ⚠️ note under the old tier table, and the §8 env var block, both now reflect real caps: Free 3/wk, Pro 20/wk ($3/wk·$10/mo·$100/yr), Max 70/wk ($10/wk·$30/mo·$300/yr)).
+
+Product change: since the free tier already resets weekly, a capped-out user's natural next step is the $3/wk Pro price, not a $10/mo commitment — much lower friction for a brand-new, unproven-to-them product. But [`PricingCards.tsx`](app/pricing/PricingCards.tsx) defaulted its billing-cycle toggle to `'monthly'`, and the quota-exceeded "Upgrade" toast in [`SearchForm.tsx`](app/components/SearchForm.tsx#L167-176) routes to plain `/pricing` with no cycle param — so the cap-hit moment (the strongest conversion signal you have) was landing users on the higher-commitment monthly price by default. Fixed by changing the toggle's default `useState` to `'weekly'` ([PricingCards.tsx:98](app/pricing/PricingCards.tsx#L98)); since the Upgrade CTA has no cycle param, this single change also fixes the cap-hit path without needing query-param plumbing.
+
+**Not done / worth revisiting:** the Free plan card's price sub-label is hardcoded to `/mo` regardless of the selected cycle ([PricingCards.tsx:183](app/pricing/PricingCards.tsx#L183)) — cosmetic only since Free is always $0, not touched. Also untested in a real browser this session — verify the weekly toggle renders correctly and the cap-hit toast → pricing flow lands on weekly before calling this fully done.
+
+---
+
+**Earlier change (2026-06-19 — "Phase 3: TikTok-only, 9:16 default" — dropped Instagram everywhere, switched slide export to full-screen vertical):**
 
 Follow-on to Phases 1+2. User fixed the `published_posts` RLS-disabled advisory themselves (not done by this session). Two remaining Phase 3 items, both shipped:
 
@@ -863,7 +873,7 @@ Polished billing UI after three-tier launch. All plan switching tested and worki
 Replaced the binary Free/Pro model with three tiers. All caps now live on
 the `profiles` table and the Stripe webhook switches on price ID.
 
-**Tier table:**
+**Tier table (as shipped 2026-05-26 — since superseded, see correction below):**
 
 | | Free | Pro $10/mo · $100/yr | Max $30/mo · $300/yr |
 |---|---|---|---|
@@ -875,6 +885,22 @@ the `profiles` table and the Stripe webhook switches on price ID.
 
 (Old Pro 100-searches / 5-alerts plan is gone; the SQL migration backfills
 existing Pro subscribers to the **new** Pro caps — 75 / 3 / 200 / 30.)
+
+> **⚠️ Stale — corrected 2026-06-20.** Quota period was changed from monthly
+> to a **weekly rolling 7-day window** (`RESET_PERIOD_MS` in
+> `app/api/search/route.ts`) and a `weekly` Stripe billing cycle was added
+> for Pro/Max, with no HANDOFF entry ever made for that change — this table
+> was found stale during a pricing-strategy discussion. **Current real caps**
+> (`lib/stripe.ts` `TIER_CAPS`, verified 2026-06-20):
+>
+> | | Free | Pro $3/wk · $10/mo · $100/yr | Max $10/wk · $30/mo · $300/yr |
+> |---|---|---|---|
+> | Searches / week | 3 | 20 | 70 |
+> | Search alerts | 1 | 3 | 10 |
+> | Tracked listings | 50 | 200 | 1,000 |
+> | Native results / platform | 10 | 40 | 80 |
+>
+> Treat the table above this note as historical only.
 
 **⚠️ DB MIGRATION REQUIRED — run before deploy:** see
 `docs/migrations/three-tier.sql`. Adds four columns to `profiles`:
@@ -3763,12 +3789,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...                  # required for admin-client writes (search cache, billing webhook, /api/search quota)
 PORT=8000
 
-# Stripe payments (Crawli Pro $10/mo or $100/yr — see §0 latest change)
+# Stripe payments (Free 3/wk, Pro $3/wk·$10/mo·$100/yr, Max $10/wk·$30/mo·$300/yr)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000     # swap to https://thecrawli.com in prod
 STRIPE_SECRET_KEY=sk_test_...                  # sk_live_... in prod
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_PRICE_ID_MONTHLY=price_...              # test-mode and live-mode have different IDs
-STRIPE_PRICE_ID_YEARLY=price_...
+STRIPE_PRICE_ID_WEEKLY=price_...               # Pro weekly; test-mode and live-mode have different IDs
+STRIPE_PRICE_ID_MONTHLY=price_...              # Pro monthly
+STRIPE_PRICE_ID_YEARLY=price_...               # Pro yearly
+STRIPE_PRICE_ID_MAX_WEEKLY=price_...           # Max weekly
+STRIPE_PRICE_ID_MAX_MONTHLY=price_...          # Max monthly
+STRIPE_PRICE_ID_MAX_YEARLY=price_...           # Max yearly
 STRIPE_WEBHOOK_SECRET=whsec_...                # from `stripe listen` locally; from Dashboard for prod
 
 # SEO / Analytics (added 2026-05-29) — all optional; absent = feature off

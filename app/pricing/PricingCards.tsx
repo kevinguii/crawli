@@ -95,7 +95,7 @@ export function PricingCards({
   isSignedIn: boolean;
   currentTier: Tier;
 }) {
-  const [cycle, setCycle] = useState<Cycle>('monthly');
+  const [cycle, setCycle] = useState<Cycle>('weekly');
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
 

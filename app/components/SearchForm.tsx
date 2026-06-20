@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   PlatformResults,
   SearchResponse,
@@ -96,8 +97,21 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const [query, setQuery] = useState(initQuery);
   const [selected, setSelected] = useState<string[]>(initPlatforms);
   const [isLoading, setIsLoading] = useState(false);
+  const [quota, setQuota] = useState<{ tier: string; remaining: number } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const { addSearch } = useSearchHistory();
+
+  // Last-search nudge — only meaningful on the free tier, where the cap (3)
+  // is too small for a ratio-based warning to ever fire before exhaustion.
+  useEffect(() => {
+    fetch('/api/billing/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setQuota({ tier: d.tier ?? d.plan, remaining: Math.max(0, d.cap - d.used) });
+      })
+      .catch(() => {});
+  }, []);
 
   // Apply the initial filters override (prop callback, not setState) and
   // trigger auto-submit for searches replayed from history.
@@ -136,6 +150,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     setIsLoading(true);
     // Optimistically decrement the nav counter immediately so quota feels instant
     window.dispatchEvent(new CustomEvent('crawli:search-started'));
+    setQuota((prev) => (prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : prev));
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -291,6 +306,16 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           {isLoading ? 'Searching…' : 'Search'}
         </button>
       </div>
+
+      {quota?.tier === 'free' && quota.remaining === 1 && (
+        <p className="text-xs" style={{ color: '#d97706' }}>
+          This is your last free search this week.{' '}
+          <Link href="/pricing" className="font-semibold underline">
+            Upgrade
+          </Link>{' '}
+          for more.
+        </p>
+      )}
 
       {filterHints.length > 0 && (
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>

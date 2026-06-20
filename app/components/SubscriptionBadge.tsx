@@ -42,16 +42,18 @@ export default function SubscriptionBadge() {
   if (loading || !data) return null;
 
   const remaining = Math.max(0, data.cap - data.used);
-  const ratio = data.used / data.cap;
   const isFree = data.plan === 'free';
 
-  // Only show counter once the user is in the red zone (≥90% used) or fully exhausted.
-  const showCounter = ratio >= 0.9;
+  // Only show the counter once the user is down to their last search or
+  // fully exhausted — a fixed 90%-of-cap ratio never fires a warning state
+  // for the free tier (cap=3: 2/3 used is 66%, so it'd jump straight from
+  // invisible to exhausted with no heads-up).
+  const showCounter = remaining <= 1;
 
   if (!showCounter) return null;
 
-  // Color: red when exhausted, amber when approaching.
-  const counterColor = ratio >= 1 ? 'var(--error, #dc2626)' : '#d97706';
+  // Color: red when exhausted, amber when one search left.
+  const counterColor = remaining <= 0 ? 'var(--error, #dc2626)' : '#d97706';
 
   return (
     <div className="flex items-center gap-2">

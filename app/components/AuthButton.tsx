@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
-import SubscriptionBadge from './SubscriptionBadge';
+// import SubscriptionBadge from './SubscriptionBadge'; // disabled 2026-06-20, see usage below
 
 function useTotalUnreadAlerts(userId: string | undefined) {
   const [unread, setUnread] = useState(0);
@@ -133,7 +133,8 @@ export default function AuthButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <SubscriptionBadge />
+      {/* Disabled 2026-06-20 — redundant with SearchForm's inline "last search" notice on /search; kept for possible reuse on other pages. */}
+      {/* <SubscriptionBadge /> */}
       <Link
         href="/alerts"
         aria-label="Alerts"
