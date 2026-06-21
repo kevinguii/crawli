@@ -19,7 +19,7 @@ Every time you push new code to GitHub and want the server to run it:
 
 ```bash
 ssh root@5.78.187.97
-cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next
+cd /opt/crawli && git pull && npm run build && npm install && systemctl restart crawli-next
 ```
 
 **Order matters:** build first, restart after. Restarting before the build completes loads the old code.
