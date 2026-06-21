@@ -269,6 +269,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   }
 
   const filterHints = detectFilterHints(query);
+  const isExhausted = quota?.tier === 'free' && quota.remaining === 0;
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -278,7 +279,8 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search for a product (e.g. Nike Air Jordan 1 Chicago)"
-          className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+          disabled={isExhausted}
+          className="flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
@@ -295,7 +297,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         />
         <button
           type="submit"
-          disabled={isLoading || !query.trim()}
+          disabled={isLoading || !query.trim() || isExhausted}
           className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40"
           style={{ background: 'linear-gradient(to right, #E24B4A, #D85A30)' }}
           onMouseEnter={(e) => {
@@ -310,6 +312,16 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
       {quota?.tier === 'free' && quota.remaining === 1 && (
         <p className="text-xs" style={{ color: '#d97706' }}>
           This is your last free search this week.{' '}
+          <Link href="/pricing?from=/search" className="font-semibold underline">
+            Upgrade
+          </Link>{' '}
+          for more.
+        </p>
+      )}
+
+      {isExhausted && (
+        <p className="text-xs" style={{ color: '#dc2626' }}>
+          You have no free searches left this week.{' '}
           <Link href="/pricing?from=/search" className="font-semibold underline">
             Upgrade
           </Link>{' '}
