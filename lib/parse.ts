@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import { Listing } from './types';
 import { RawSearchResult, ScrapedListing } from './firecrawl';
+import { COMMON_WORDS } from './data/commonWords';
 
 // ── URL filtering ──────────────────────────────────────────────────────────
 // Only keep URLs that look like individual listing pages, not browse/category pages.
@@ -55,6 +56,18 @@ const RELEVANCE_STOPWORDS = new Set([
   'bag', 'handbag', 'purse', 'backpack', 'tote',
 ]);
 
+// Well-known resale/streetwear brand names that double as ordinary English
+// words (so COMMON_WORDS would otherwise treat them as generic, non-required
+// tokens — e.g. "nike", "jordan", and "supreme" all rank in the top ~10k
+// English words). Forced to count as anchor tokens regardless of corpus
+// frequency. Keep this list narrow and brand-only — it exists to patch a
+// specific blind spot in the frequency heuristic, not to be a general brand
+// database.
+const BRAND_ANCHOR_OVERRIDES = new Set([
+  'nike', 'adidas', 'jordan', 'supreme', 'champion', 'guess', 'polo',
+  'diesel', 'palace', 'essentials', 'gap', 'express', 'balance',
+]);
+
 function relevanceTokens(text: string): Set<string> {
   return new Set(
     text
@@ -72,7 +85,15 @@ function relevanceTokens(text: string): Set<string> {
 //   1. If the query has numeric tokens (model numbers like "1", "350"),
 //      the title must contain at least one of them — "jordan 4" must not
 //      slip through a "jordan 1" search.
-//   2. If the query has text tokens, the title must match at least one.
+//   2. Text tokens are split into "anchors" (specific/identifying terms —
+//      not in the common-English-word corpus, e.g. "messi", "carhartt") and
+//      "soft" tokens (ordinary English words left over from the stopword
+//      pass, e.g. "soccer", "running"). If the query has any anchors, the
+//      title must contain ALL of them — this is what stops a "messi jersey"
+//      search from matching a Ronaldo jersey just because both titles say
+//      "soccer jersey". Soft tokens are not required once anchors are
+//      satisfied. If the query has no anchors at all (all-generic query),
+//      fall back to "match at least one" so we don't reject everything.
 // If the query has no substantive tokens at all we pass everything through.
 function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
   if (queryTokens.size === 0) return true;
@@ -83,7 +104,17 @@ function titleMatchesQuery(title: string | null, queryTokens: Set<string>): bool
   const queryText = [...queryTokens].filter((t) => !/^\d+$/.test(t));
 
   if (queryNumerics.length > 0 && !queryNumerics.some((t) => titleTokens.has(t))) return false;
-  if (queryText.length > 0 && !queryText.some((t) => titleTokens.has(t))) return false;
+
+  if (queryText.length > 0) {
+    const isAnchor = (t: string) => BRAND_ANCHOR_OVERRIDES.has(t) || !COMMON_WORDS.has(t);
+    const anchors = queryText.filter(isAnchor);
+
+    if (anchors.length > 0) {
+      if (!anchors.every((t) => titleTokens.has(t))) return false;
+    } else if (!queryText.some((t) => titleTokens.has(t))) {
+      return false;
+    }
+  }
 
   return true;
 }
