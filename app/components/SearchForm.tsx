@@ -311,7 +311,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
       {quota?.tier === 'free' && quota.remaining === 1 && (
         <p className="text-xs" style={{ color: '#d97706' }}>
-          This is your last free search this week.{' '}
+          You have one search remaining this week.{' '}
           <Link href="/pricing?from=/search" className="font-semibold underline">
             Upgrade
           </Link>{' '}
@@ -321,7 +321,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
       {isExhausted && (
         <p className="text-xs" style={{ color: '#dc2626' }}>
-          You have no free searches left this week.{' '}
+          You have no searches remaining this week.{' '}
           <Link href="/pricing?from=/search" className="font-semibold underline">
             Upgrade
           </Link>{' '}
