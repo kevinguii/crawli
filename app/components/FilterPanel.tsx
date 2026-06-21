@@ -7,7 +7,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
+import { useAnchoredPosition } from '@/lib/hooks/useAnchoredPosition';
+import { useScrollEdges, scrollFadeMask } from '@/lib/hooks/useScrollEdges';
 import { platformStyle } from './platformColors';
 import {
   CATEGORY_OPTIONS,
@@ -80,11 +83,23 @@ export default function FilterPanel({
     filters.category === 'footwear' ? SHOE_SIZE_OPTIONS : CLOTHING_SIZE_OPTIONS;
   const sizeLabel = filters.category === 'footwear' ? 'Shoe size' : 'Size';
 
+  const platformsRowRef = useRef<HTMLDivElement>(null);
+  const platformsEdges = useScrollEdges(platformsRowRef);
+  const pillsRowRef = useRef<HTMLDivElement>(null);
+  const pillsEdges = useScrollEdges(pillsRowRef);
+
   return (
     <div className="space-y-3">
       {/* Platform chips — always visible, brand-colored when active.
           Horizontally scrollable on mobile so 8+ chips don't wrap into a wall of rows. */}
-      <div className="hide-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible">
+      <div
+        ref={platformsRowRef}
+        className="hide-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible"
+        style={{
+          WebkitMaskImage: scrollFadeMask(platformsEdges),
+          maskImage: scrollFadeMask(platformsEdges),
+        }}
+      >
         <button
           type="button"
           onClick={hasSelected ? clearPlatforms : setAllPlatforms}
@@ -131,7 +146,14 @@ export default function FilterPanel({
 
       {/* Filter pills — always visible, never collapsed.
           Same horizontal-scroll treatment as the platform chips on mobile. */}
-      <div className="hide-scrollbar flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+      <div
+        ref={pillsRowRef}
+        className="hide-scrollbar flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+        style={{
+          WebkitMaskImage: scrollFadeMask(pillsEdges),
+          maskImage: scrollFadeMask(pillsEdges),
+        }}
+      >
         <FilterDropdown
           label="Category"
           value={filters.category}
@@ -192,13 +214,18 @@ interface DropdownProps {
 function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const pos = useAnchoredPosition(open, rootRef, 200);
 
-  // Click-outside + Escape to close.
+  // Click-outside + Escape to close. Panel is portaled to <body>, so it's no
+  // longer a DOM descendant of rootRef — check both.
   useEffect(() => {
     if (!open) return;
     function onDocMouseDown(e: MouseEvent) {
-      if (!rootRef.current) return;
-      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -253,51 +280,48 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
         </svg>
       </button>
 
-      {/* Smooth grid 0fr → 1fr open. Absolute below the pill. */}
-      <div
-        className="absolute left-0 z-20 mt-1 grid transition-all duration-200 ease-out"
-        style={{
-          gridTemplateRows: open ? '1fr' : '0fr',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          minWidth: '180px',
-        }}
-        aria-hidden={!open}
-      >
-        <div className="overflow-hidden">
-          <div
-            className="hide-scrollbar rounded-xl py-1 shadow-lg"
-            style={{
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-strong)',
-              maxHeight: '170px',
-              overflowY: 'auto',
-              scrollbarWidth: 'none',
+      {/* Portaled to <body> with fixed positioning — the pill row scrolls
+          horizontally on mobile, which clips any absolutely-positioned
+          descendant (overflow-x: auto implicitly clips overflow-y too). */}
+      {open && pos && createPortal(
+        <div
+          ref={panelRef}
+          className="hide-scrollbar fixed z-50 rounded-xl py-1 shadow-lg"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            minWidth: '180px',
+            maxWidth: 'calc(100vw - 16px)',
+            maxHeight: '170px',
+            overflowY: 'auto',
+            scrollbarWidth: 'none',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-strong)',
+          }}
+        >
+          <DropdownItem
+            label="Any"
+            selected={value === null}
+            onClick={() => {
+              onChange(null);
+              setOpen(false);
             }}
-          >
+          />
+          {options.map((o) => (
             <DropdownItem
-              label="Any"
-              selected={value === null}
+              key={o.key}
+              label={o.label}
+              leading={o.leading}
+              selected={value === o.key}
               onClick={() => {
-                onChange(null);
+                onChange(value === o.key ? null : o.key);
                 setOpen(false);
               }}
             />
-            {options.map((o) => (
-              <DropdownItem
-                key={o.key}
-                label={o.label}
-                leading={o.leading}
-                selected={value === o.key}
-                onClick={() => {
-                  onChange(value === o.key ? null : o.key);
-                  setOpen(false);
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+          ))}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -357,12 +381,16 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
   const [maxRaw, setMaxRaw] = useState(maxPrice !== null ? String(maxPrice) : '');
   const [error, setError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const pos = useAnchoredPosition(open, rootRef, 252);
 
   useEffect(() => {
     if (!open) return;
     function onDocMouseDown(e: MouseEvent) {
-      if (!rootRef.current) return;
-      if (!rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -462,21 +490,17 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
         </svg>
       </button>
 
-      {/* Fixed width (not minWidth) so both inputs never get clipped. */}
-      <div
-        className="absolute left-0 z-20 mt-1 transition-all duration-200 ease-out"
-        style={{
-          width: '252px',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transform: open ? 'translateY(0)' : 'translateY(-4px)',
-          visibility: open ? 'visible' : 'hidden',
-        }}
-        aria-hidden={!open}
-      >
+      {/* Portaled to <body> with fixed positioning — see FilterDropdown for why
+          (the pill row's overflow-x-auto on mobile clips absolute descendants). */}
+      {open && pos && createPortal(
         <div
-          className="rounded-xl p-3 shadow-lg space-y-2"
+          ref={panelRef}
+          className="fixed z-50 rounded-xl p-3 shadow-lg space-y-2"
           style={{
+            top: pos.top,
+            left: pos.left,
+            width: '252px',
+            maxWidth: 'calc(100vw - 16px)',
             background: 'var(--bg-elevated)',
             border: '1px solid var(--border-strong)',
           }}
@@ -542,8 +566,9 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
               Clear
             </button>
           )}
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

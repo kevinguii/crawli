@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SearchResponse, PLATFORM_NAMES, Listing } from '@/lib/types';
 import ListingCard from './ListingCard';
 import PriceSummary, { pickPriceSources } from './PriceSummary';
 import { useSaves } from './SavesProvider';
 import { useWatchlist } from './WatchlistProvider';
 import { convertToUSD } from '@/lib/currency';
+import { useScrollEdges, scrollFadeMask } from '@/lib/hooks/useScrollEdges';
 
 interface Props {
   data: SearchResponse;
@@ -24,6 +25,8 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   const [activeTab, setActiveTab] = useState('all');
   const { hydrateUrls } = useSaves();
   const { hydrateUrls: hydrateWatchUrls } = useWatchlist();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabsEdges = useScrollEdges(tabsRef);
 
   useEffect(() => {
     const urls = platformKeys.flatMap((p) => results[p].listings.map((l) => l.url));
@@ -99,8 +102,13 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
       />
 
       <div
+        ref={tabsRef}
         className="hide-scrollbar flex gap-1 overflow-x-auto"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        style={{
+          borderBottom: '1px solid var(--border)',
+          WebkitMaskImage: scrollFadeMask(tabsEdges),
+          maskImage: scrollFadeMask(tabsEdges),
+        }}
       >
         {tabs.map((tab) => {
           const active = activeTab === tab;

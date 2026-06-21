@@ -164,12 +164,23 @@ export function PricingCards({
               }}
             >
               {c.charAt(0).toUpperCase() + c.slice(1)}
+              {c === 'yearly' && (
+                <span
+                  className="absolute -top-2.5 -right-2.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"
+                  style={{
+                    background: cycle === 'yearly' ? 'var(--accent-text)' : 'var(--accent)',
+                    color: cycle === 'yearly' ? '#111110' : '#fff',
+                  }}
+                >
+                  Best value
+                </span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
         {/* ── Free plan ── */}
         <PlanCard
           icon={
@@ -186,6 +197,7 @@ export function PricingCards({
           ctaDisabled
           features={FREE_FEATURES}
           featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
+          reassurance="No credit card required"
         />
 
         {/* ── Paid tiers ── */}
@@ -228,6 +240,7 @@ export function PricingCards({
               onCtaClick={() => (isCurrent || isOnOtherPaidPlan ? handleManage() : handleSubscribe(t.tier))}
               features={t.features}
               featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
+              reassurance="Cancel anytime"
             />
           );
         })}
@@ -261,6 +274,7 @@ interface PlanCardProps {
   onCtaClick?: () => void;
   features: string[];
   featureTooltips?: Record<string, React.ReactNode>;
+  reassurance?: string;
 }
 
 function PlanCard({
@@ -277,19 +291,32 @@ function PlanCard({
   onCtaClick,
   features,
   featureTooltips,
+  reassurance,
 }: PlanCardProps) {
   return (
     <div
-      className="rounded-xl flex flex-col"
+      className="relative rounded-xl flex flex-col transition-transform duration-200 md:hover:-translate-y-1"
       style={{
-        background: 'var(--bg-elevated)',
+        background: highlight
+          ? 'linear-gradient(180deg, var(--accent-soft), var(--bg-elevated) 45%)'
+          : 'var(--bg-elevated)',
         border: `1px solid ${highlight ? 'var(--accent)' : 'var(--border)'}`,
         padding: '1.5rem',
-        boxShadow: highlight ? '0 8px 24px rgba(0,0,0,0.08)' : undefined,
+        boxShadow: highlight ? '0 12px 32px -8px var(--accent-soft)' : undefined,
+        transform: highlight ? 'scale(1.03)' : undefined,
+        zIndex: highlight ? 1 : undefined,
       }}
     >
+      {highlight && (
+        <span
+          className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap"
+          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 4px 12px -2px var(--accent-soft)' }}
+        >
+          Most popular
+        </span>
+      )}
       <div className="flex items-center gap-2">
-        <span className="flex items-center" style={{ fontSize: '1.1rem', lineHeight: 1 }}>{icon}</span>
+        <span className="flex items-center" style={{ fontSize: '1.1rem', lineHeight: 1, color: highlight ? 'var(--accent)' : undefined }}>{icon}</span>
         <span className="text-base font-semibold" style={{ color: 'var(--text)' }}>{name}</span>
         {isCurrent && (
           <span
@@ -305,7 +332,12 @@ function PlanCard({
       <hr className="my-4" style={{ borderColor: 'var(--border)' }} />
 
       <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{priceLabel}</span>
+        <span
+          className="font-bold"
+          style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums', fontSize: highlight ? '2.25rem' : '1.875rem' }}
+        >
+          {priceLabel}
+        </span>
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{priceSubLabel}</span>
       </div>
       <div style={{ minHeight: '18px', marginBottom: '1rem' }}>
@@ -318,17 +350,25 @@ function PlanCard({
         type="button"
         onClick={onCtaClick}
         disabled={ctaDisabled || !onCtaClick}
-        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-opacity mb-5"
+        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] mb-2 hover:brightness-110"
         style={{
           background: onCtaClick ? 'var(--accent)' : 'var(--surface)',
           color: onCtaClick ? '#fff' : 'var(--text-dim)',
           border: onCtaClick ? 'none' : '1px solid var(--border)',
           opacity: ctaDisabled ? 0.6 : 1,
           cursor: !onCtaClick ? 'default' : (ctaDisabled ? 'not-allowed' : 'pointer'),
+          boxShadow: highlight && !ctaDisabled ? '0 4px 14px -2px var(--accent-soft)' : undefined,
         }}
       >
         {ctaLabel}
       </button>
+
+      {reassurance && (
+        <p className="text-center text-xs mb-5" style={{ color: 'var(--text-dim)' }}>
+          {reassurance}
+        </p>
+      )}
+      {!reassurance && <div className="mb-5" />}
 
       <FeatureList included={features} tooltips={featureTooltips} />
     </div>

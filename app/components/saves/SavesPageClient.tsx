@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Save, CollectionFolder } from '@/lib/types';
@@ -8,6 +9,7 @@ import { PLATFORM_NAMES } from '@/lib/types';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import { useSaves } from '@/app/components/SavesProvider';
 import { useWatchlist } from '@/app/components/WatchlistProvider';
+import { useAnchoredPosition } from '@/lib/hooks/useAnchoredPosition';
 
 type ViewMode = 'pills' | 'cards';
 const VIEW_MODE_KEY = 'collectionViewMode';
@@ -613,11 +615,16 @@ function FolderCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pos = useAnchoredPosition(menuOpen, menuRef, 160);
 
   useEffect(() => {
     if (!menuOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setMenuOpen(false);
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
@@ -647,15 +654,23 @@ function FolderCard({
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
           aria-label="Folder menu"
-          className="flex h-7 w-7 items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white"
+          className="card-action-btn flex h-7 w-7 items-center justify-center rounded-full transition-opacity text-white"
           style={{ background: 'rgba(0,0,0,0.55)' }}
         >
           ⋯
         </button>
-        {menuOpen && (
+        {/* Portaled to <body> with fixed positioning — the card itself is
+            overflow-hidden, which clips any absolutely-positioned descendant. */}
+        {menuOpen && pos && createPortal(
           <div
-            className="absolute right-0 top-full z-30 mt-1 w-40 rounded-lg py-1 text-sm shadow-xl"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+            ref={panelRef}
+            className="fixed z-30 w-40 rounded-lg py-1 text-sm shadow-xl"
+            style={{
+              top: pos.top,
+              left: pos.left,
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-strong)',
+            }}
           >
             <button
               type="button"
@@ -675,7 +690,8 @@ function FolderCard({
                 Delete
               </button>
             )}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 

@@ -37,20 +37,55 @@ export default async function PricingPage({
   }
 
   return (
-    <main className="min-h-screen px-4 py-16" style={{ background: 'var(--bg)' }}>
+    <main className="relative min-h-screen overflow-hidden px-4 py-16" style={{ background: 'var(--bg)' }}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(226,75,74,0.12), transparent 60%), radial-gradient(ellipse 60% 40% at 85% 10%, rgba(239,159,39,0.08), transparent 60%)',
+        }}
+      />
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <PricingCloseButton from={from} />
       </div>
-      <div className="mx-auto max-w-6xl">
+      <div className="relative mx-auto max-w-6xl">
         <div className="text-center mb-12">
+          <span
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+            style={{
+              background: 'var(--accent-soft)',
+              color: 'var(--accent-text)',
+              border: '1px solid var(--accent-soft)',
+            }}
+          >
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ background: 'var(--accent)' }}
+            />
+            Simple, transparent pricing
+          </span>
+
           <h1
-            className="text-4xl sm:text-5xl font-semibold tracking-tight"
+            className="mt-5 text-4xl sm:text-5xl font-semibold tracking-tight"
             style={{ color: 'var(--text)' }}
           >
             Crawli
           </h1>
-          <p className="mt-3 text-base sm:text-lg" style={{ color: 'var(--text-muted)' }}>
-            Search every resale platform at once. Find the best price.
+          <p className="mx-auto mt-3 max-w-xl text-base sm:text-lg" style={{ color: 'var(--text-muted)' }}>
+            Search every resale platform at once. Find{' '}
+            <span
+              style={{
+                background: 'linear-gradient(to right, #E24B4A, #D85A30, #EF9F27, #FAC775)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontWeight: 600,
+              }}
+            >
+              the best price
+            </span>
+            .
           </p>
         </div>
 
