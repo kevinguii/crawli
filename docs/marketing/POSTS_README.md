@@ -42,7 +42,7 @@ docs/marketing/
 
 ### Slide Format
 - **Platform:** TikTok photo carousels only (Instagram dropped 2026-06-19 — no IG captions, no IG posting steps, no IG-specific fields anywhere in the pipeline).
-- **Aspect ratio:** 9:16 full-screen vertical (1080×1920px) is the default in `export-slides.js`, since 2026-06-19. TikTok overlays its own UI on photo posts — caption text, profile icon, like/comment/share/bookmark, and the sound disc sit in roughly the **bottom ~20%** and **right ~15%** of the frame. Background images/photos can bleed fully edge to edge, but keep headline/CTA text inside a safe zone (top ~75-80%, left ~83-85%) so TikTok's chrome never covers it. Validated 2026-06-19 with a `cover-photo` template at 1080×1920 — see git history for the test render.
+- **Aspect ratio:** 4:5 (1080×1350px) is the default in `export-slides.js`, reverted back from 9:16 on 2026-06-22. The 2026-06-19 full 9:16 switch was undone because on a full-bleed 9:16 photo post, TikTok does not overlay the caption/title text on top of the image — once a caption runs past one line (plus the separate Title field), TikTok reserves that space by compressing/pushing the displayed image upward, since a 9:16 canvas has no built-in margin for it. 4:5 leaves empty canvas below the image for that text to render into, so the photo itself stays the size it was designed at instead of getting dynamically shrunk after upload. TikTok still overlays its own static chrome (profile icon, like/comment/share, sound disc) on the right edge of whatever vertical span the image occupies, so keep meaningful right-edge clearance in cover-photo content; bottom clearance can be lighter now since the caption no longer overlaps the image. See `export-slides.js` and `content-posts-slides.html` comments for the same rationale.
 - **Slide count per post:** Cover + steps (4–6) + CTA = 6–8 slides total
 - **Typeface:** NOT fixed — vary every batch. Pull a different `font_pairing` from the `ui-ux-pro-max` skill (`typography.csv`, 57+ pairings) and never reuse the previous 1–2 batches' pairing. `check-visual-diversity.js` prints the last batch's pairing to avoid. (System sans-serif was the old default and is the sameness trap — move off it.)
 
@@ -288,7 +288,7 @@ node export-slides.js --batch=2026-06-22       # exports a different batch
 
 Output: `docs/marketing/YYYY-MM-DD/exports/carousel/post-01/slide-01.png`
 
-Each PNG is saved at **2× DPR** (2160×3840px, 9:16). Script uses CSS `zoom` to scale the design frame for pixel-perfect proportions; `DESIGN_H` is derived from `width`/`height` so the frame shape always matches the configured aspect ratio.
+Each PNG is saved at **2× DPR** (2160×2700px, 4:5). Script uses CSS `zoom` to scale the design frame for pixel-perfect proportions; `DESIGN_H` is derived from `width`/`height` so the frame shape always matches the configured aspect ratio.
 
 **When adding a new batch:** update `SLIDE_COUNTS` in `export-slides.js` to match the new posts, then run with `--batch=YYYY-MM-DD`.
 
@@ -308,7 +308,7 @@ Each PNG is saved at **2× DPR** (2160×3840px, 9:16). Script uses CSS `zoom` to
 
 **TikTok photo carousel:**
 - TikTok supports photo posts (carousels) natively
-- Export at the default 1080×1920 (9:16)
+- Export at the default 1080×1350 (4:5)
 - Open TikTok app, tap "+" to create, select photos
 - Add the slides in order, write caption + hashtags
 

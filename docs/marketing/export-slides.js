@@ -22,13 +22,20 @@ const path = require('path');
 const fs = require('fs');
 
 // ── config ────────────────────────────────────────────────────────────────────
-// TikTok-only, full-screen vertical (9:16) is the default since 2026-06-19.
-// Templates should keep critical text inside a safe zone (roughly top 75-80%,
-// left ~85%) so TikTok's own UI chrome (caption, like/comment/share, profile,
-// sound disc — bottom ~20% and right ~15% of the frame) never covers it. The
-// background image/photo can still bleed fully edge to edge.
+// Reverted to 4:5 (1080×1350) on 2026-06-22, undoing the 2026-06-19 switch to
+// full 9:16. Reason: on a full-bleed 9:16 photo post, TikTok does not simply
+// overlay the caption/title text on top of the image — once the caption runs
+// past one line (and the separate Title field adds more), TikTok reserves
+// that space by compressing/pushing the image upward, since a 9:16 canvas has
+// no built-in margin for it. 4:5 already leaves empty canvas below the image
+// for that text to render into, so the photo itself stays the size you
+// designed instead of getting dynamically shrunk after upload. TikTok still
+// overlays its own static chrome (profile icon, like/comment/share, sound
+// disc) on the right edge of whatever vertical span the image occupies, so
+// keep meaningful right-edge clearance in cover-photo content; the bottom
+// clearance can be lighter now since caption no longer overlaps the image.
 const width  = 1080;
-const height = 1920;
+const height = 1350;
 
 // --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
 const batchArg = process.argv.find(a => a.startsWith('--batch='));

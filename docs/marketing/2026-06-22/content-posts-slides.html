@@ -60,10 +60,15 @@ select {
 }
 
 /* ── slide frame ── */
-/* 9:16 full-screen vertical is the default since 2026-06-19 (TikTok-only). */
+/* 4:5 is the default again as of 2026-06-22 (reverted the 2026-06-19 switch
+   to full 9:16) — on a full-bleed 9:16 photo post TikTok compresses the
+   image upward to make room for a multi-line caption/title instead of
+   overlaying it, since 9:16 has no built-in margin for that text. 4:5
+   already leaves canvas below the image for TikTok to render the caption
+   into, so the photo stays the size it was designed at after upload. */
 .frame {
   width: 100%; max-width: 440px;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 4 / 5;
   border-radius: 18px;
   overflow: hidden;
   position: relative;
@@ -90,14 +95,18 @@ select {
 .cover-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 /* scrim keeps the overlaid headline legible regardless of the photo underneath */
 .cover-photo .scrim { position:absolute; inset:0;
-  background:linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.30) 55%, rgba(0,0,0,.74) 100%); }
-/* padding is % of frame width/height (scale-invariant) — right/bottom clearance
-   keeps text out of TikTok's own UI chrome (right ~15%, bottom ~18-20%) */
+  background:linear-gradient(180deg, rgba(0,0,0,.18) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.78) 100%); }
+/* padding is % of frame width/height (scale-invariant). Right clearance still
+   matters at 4:5 — TikTok's static action rail (like/comment/share/profile)
+   overlays the right edge of whatever vertical span the image occupies.
+   Bottom clearance is lighter now than the old 9:16 version: the caption no
+   longer overlaps the image itself, TikTok renders it in the dedicated
+   space below the 4:5 frame instead. */
 .cover-photo .content { position:relative; z-index:1; height:100%;
   display:flex; flex-direction:column;
-  padding: 7% 18% 9% 13%; color:#fff; }
+  padding: 7% 15% 7% 13%; color:#fff; }
 .cover-photo.anchor-top .content { justify-content:flex-start; }
-.cover-photo.anchor-bottom .content { justify-content:flex-end; padding-bottom: 20%; }
+.cover-photo.anchor-bottom .content { justify-content:flex-end; padding-bottom: 9%; }
 .cover-photo .badge {
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 13px; border-radius:100px;
@@ -706,7 +715,7 @@ const posts = [
     textPlacement: 'bottom',
     slides: [
       { type:'cover-photo', img:'ai-images/post-03-cover.png', badge:'📟 Y2K Revival',
-        title:'Y2K is not a phase. It is the biggest resale category right now.',
+        title:'Y2K is officially the biggest resale category right now.',
         swipe:'Swipe for the breakdown →' },
       { type:'step', num:'01', label:'Y2K · 1 of 4', title:'What actually defines Y2K',
         desc:'Low rise cuts, shine fabrics, logo heavy branding, and bold color blocking defined the early 2000s look.',
@@ -798,7 +807,7 @@ const posts = [
     textPlacement: 'top',
     slides: [
       { type:'cover-photo', img:'ai-images/post-06-cover.png', badge:'🐑 Wool 101',
-        title:'Not all wool is the same, and the difference has a number attached.',
+        title:'Wool quality comes down to one number.',
         swipe:'Swipe for the breakdown →' },
       { type:'step', num:'01', label:'Wool · 1 of 4', title:'What actually defines wool quality',
         desc:'Fiber fineness, measured in microns, is the real quality marker, not the brand name on the tag.',
@@ -828,7 +837,7 @@ const posts = [
     textPlacement: 'bottom',
     slides: [
       { type:'cover-photo', img:'ai-images/post-07-cover.png', badge:'📦 Niche Check',
-        title:'The category you specialize in matters more than the platform you sell on.',
+        title:'Your niche matters more than your platform.',
         swipe:'Swipe for the breakdown →' },
       { type:'step', label:'Niche · 1 of 4', title:'Low competition categories worth trying',
         desc:'Workwear, vintage band tees, and designer handbags all have steady demand without the saturation of generic streetwear.',
@@ -859,7 +868,7 @@ const posts = [
     textPlacement: 'top',
     slides: [
       { type:'cover-photo', img:'ai-images/post-08-cover.png', badge:'🔎 Search Check',
-        title:'If you keep missing the best resale finds, the problem might not be you.',
+        title:'If you keep missing resale finds, it might not be you.',
         swipe:'Swipe for the real issue →' },
       { type:'myth', num:'01', label:'Myth 1 of 3',
         myth:'You are just not fast enough at refreshing listings.',
