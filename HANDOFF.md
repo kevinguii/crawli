@@ -1,8 +1,31 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-22 (3rd blog post published same-day after GSC backfill check confirmed the first 2 had zero keyword overlap; 1 more brief resolved with a differentiated angle, 1 dropped as unsalvageably saturated. See Latest change below.)
+**Last updated:** 2026-06-22 (n8n workflow patches deployed to production; 3 blog posts published; content-brief dedup bugs now live).
 
-**Latest change (2026-06-22 PM — 3rd blog post published, brief #4 confirmed unsalvageable):**
+**Latest change (2026-06-22 PM #3 — n8n workflow patches deployed, blog briefs now on gpt-4o, dedup threshold fixed):**
+
+Deployed two critical fixes to the live `crawli content brief` workflow (`FMf2nyTQIZNCRa2L`) that were patched locally in the previous session but couldn't be applied then due to n8n MCP access issues:
+
+1. **`Generate blog briefs` upgraded to gpt-4o** — was running on gpt-4o-mini despite a 2026-06-19 TODO. The `Extract context` node already injects the full, untruncated published post titles as a hard negative list ("do NOT cover these"), but gpt-4o-mini was too weak to reliably follow a long instruction. gpt-4o is more reliable at compliance on long lists.
+
+2. **`Build email` dupCheck threshold fixed** — was using a strict `>= 0.67` ratio for the topic-key-contained-in-prior-title check. For a 3-token key with 2 matches, `2/3 = 0.6666... < 0.67`, so the intended "2 of 3 tokens match" case silently failed. This is why `japanese-denim-quality` wasn't caught as a duplicate of the published `japanese-denim-culture` post on 2026-06-22 AM. Replaced with count-based check: `containedCount(title) >= Math.ceil(keyToks.size * 0.6)` — same intent, no float boundary.
+
+**Deployment:** Used the n8n REST API directly (n8n MCP still not functional, same access gap as GSC) to fetch the live workflow, merged the local patches, and PUTted it back. Verified both changes live at 2026-06-22T19:42:01.821Z. Committed as `af04f0b` ("Deploy n8n workflow patches...").
+
+**Unresolved MCP issues:** n8n search_workflows still only returns 2 unrelated workflows ("pinterest crawli", "tiktok auto post") when queried empty; GSC MCP env var path issue remains (the `.mcp.json` has the correct path, but either a shell profile or a prior session cached config is pointing to `/Users/kevingui/Documents/Work/me/...`). Both need a session with MCP debugging/config access.
+
+**Earlier change (2026-06-22 PM #2 — content-brief dedup bugs found and patched locally, now deployed):**
+
+User asked why only 3 of 8 blog briefs got published this session, which led to actually tracing the dedup logic in the live `crawli content brief` workflow (`FMf2nyTQIZNCRa2L`, exported at `docs/workflows/daily-content-email.json`) instead of guessing from HANDOFF notes. Found two distinct, separately-fixable bugs:
+
+1. **`Generate blog briefs` was still on gpt-4o-mini**, despite a TODO from 2026-06-19 to upgrade it that was never done. The `Extract context` node already injects the full, untruncated `published_posts` title list into the prompt as a hard "ALREADY PUBLISHED, do NOT cover the same topic" constraint — the constraint exists, the model just doesn't reliably follow it on a long negative list. **Fixed:** swapped to gpt-4o (user confirmed). `Generate social ideas` left on gpt-4o-mini, untouched, not in scope.
+2. **An off-by-a-hair threshold bug in the `Build email` node's `dupCheck` fallback.** The topic_key-contained-in-prior-title check used a strict `>= 0.67` ratio. For a 3-token topic_key with 2 tokens matching, `2/3 = 0.6666... < 0.67`, so the intended "2 of 3 tokens match" case silently failed by a rounding hair. This is the exact reason the `japanese-denim-quality` brief weren't flagged as a likely repeat of the published `japanese-denim-culture` post on 2026-06-22 AM. **Fixed:** replaced the ratio check with a count-based one (`containedCount(title) >= Math.ceil(keyToks.size * 0.6)`), same intent, no float boundary.
+
+**Also found, not fixed (lower priority, schema changes needed, user did not approve this round):** `published_posts` rows are forwarded to the dedup check with `topic_key` hardcoded to `''` (the table has no topic_key column), so the cheapest/strongest exact-key-match dedup layer can never fire against actual published content, only against `content_history`. And the Jaccard fallback only compares against each published post's `title` (no `description` column exists on `published_posts` either), so paraphrased duplicates that share almost no title words (e.g. this session's `pricing-strategy-resale` brief vs. the published `why-pricing-secondhand-items-right-is-hard.md`, ~1 shared word) slip through entirely. Real fix would need a `description` column on `published_posts` + a stable topic_key populated at insert time, not just LLM-instruction compliance. Flagged to user, deferred.
+
+**STATUS: NOW LIVE** (deployed in subsequent session using n8n REST API directly; see PM #3 entry above for deployment details).
+
+**Earlier change (2026-06-22 PM #1 — 3rd blog post published, brief #4 confirmed unsalvageable):**
 
 Same-day follow-up to the entry directly below. User ran GSC checks in a separate session (this session's GSC MCP is still broken, see the unresolved note below) and confirmed both new posts are "URL unknown to Google" with zero keyword overlap against the site's 35 ranking queries, i.e. the dedup calls were correct and these are genuinely uncovered topics. Also confirmed the 2026-06-19 batch is fully indexed; `lifecycle-of-vintage-clothing` has 0 impressions in 90 days despite being indexed (flagged, not urgent, not investigated this session).
 
