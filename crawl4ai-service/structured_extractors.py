@@ -229,6 +229,27 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     }
 
 
+def _jsonld_product_color(soup: BeautifulSoup) -> Optional[str]:
+    """Best-effort color lookup from a page's JSON-LD Product node, for
+    platforms whose primary extractor doesn't go through `_extract_from_jsonld`
+    (e.g. StockX/Vinted, where price lives elsewhere and the JSON-LD path was
+    never used). Purely additive — callers should not let a parse failure here
+    affect price/title/image extraction.
+
+    Verified live 2026-06-21: both StockX and Vinted emit a direct top-level
+    `color` string on their Product JSON-LD (StockX: official colorway names
+    like "Diffused Blue"; Vinted: plain color words like "Blue") even though
+    neither platform's price lives there.
+    """
+    try:
+        product = _find_product_jsonld(soup)
+        if not product:
+            return None
+        return _extract_color_from_product(product)
+    except Exception:  # noqa: BLE001 — never let this break price/title extraction
+        return None
+
+
 # ── Platform-specific extractors ─────────────────────────────────────────────
 
 def extract_depop(html: str) -> Optional[dict]:
@@ -313,6 +334,7 @@ def extract_stockx(html: str) -> Optional[dict]:
         "isSold": False,
         "condition": None,
         "imageUrl": image,
+        "color": _jsonld_product_color(soup),
     }
 
 
@@ -519,6 +541,7 @@ def extract_vinted(html: str) -> Optional[dict]:
         "isSold": False,
         "condition": None,
         "imageUrl": image,
+        "color": _jsonld_product_color(soup),
     }
 
 

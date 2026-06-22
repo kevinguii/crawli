@@ -78,6 +78,32 @@ export function resolveColorKey(rawColor: string | null | undefined): string | n
 }
 
 /**
+ * Title-text color fallback — used only when a listing has no structured
+ * `color` field at all (verified live 2026-06-21: Depop and Grailed's
+ * per-listing JSON-LD never carries color, and Mercari/Grailed/Depop's
+ * native search-grid path has no structured color signal whatsoever — DOM
+ * cards only, no JSON-LD). Lower-trust than structured data since free text
+ * can contain a color word for an unrelated reason, so two narrow guards:
+ *   - "denim" is skipped — usually describes fabric, not reliably a blue
+ *     garment (kept in COLOR_SYNONYMS for structured data, where a
+ *     platform's own color attribute literally saying "Denim" is trustworthy).
+ *   - "stone" is skipped when followed by "island" — Stone Island is a real
+ *     brand, same collision pattern as the existing Off-White guard above.
+ */
+export function extractColorFromTitle(title: string | null | undefined): string | null {
+  if (!title) return null;
+  const tokens = title.toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token === 'denim') continue;
+    if (token === 'stone' && tokens[i + 1] === 'island') continue;
+    if (VALID_COLOR_KEYS.has(token)) return token;
+    if (COLOR_SYNONYMS[token]) return COLOR_SYNONYMS[token];
+  }
+  return null;
+}
+
+/**
  * Boost-only sort: listings whose resolved structured color matches the
  * active color filter move first; everything else (including listings with
  * no structured color data at all) keeps its existing relative order.

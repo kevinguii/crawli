@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import { Listing } from './types';
 import { RawSearchResult, ScrapedListing } from './firecrawl';
 import { COMMON_WORDS } from './data/commonWords';
+import { extractColorFromTitle } from './colorFilter';
 
 // ── URL filtering ──────────────────────────────────────────────────────────
 // Only keep URLs that look like individual listing pages, not browse/category pages.
@@ -137,7 +138,10 @@ export function parseScrapedListings(
       currency: s.currency,
       condition: s.condition,
       size: s.size ?? null,
-      color: s.color ?? null,
+      // Structured color (JSON-LD) first; fall back to scanning the title
+      // when the platform doesn't expose it at all (Depop/Grailed per-listing,
+      // and Mercari/Grailed/Depop's native search-grid path — see colorFilter.ts).
+      color: s.color ?? extractColorFromTitle(s.title),
       seller: null,
       url: s.url,
       image: s.imageUrl,

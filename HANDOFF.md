@@ -1,8 +1,38 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-21 (color filtering: structured-color extraction (Tier 1) + boost-only sort — see Latest change below.)
+**Last updated:** 2026-06-21 (StockX + Vinted structured color wired up — see Latest change below.)
 
-**Latest change (2026-06-21 — color filtering Tier 1: structured-color extraction + boost-only sort, no strict drop):**
+**Latest change (2026-06-21 — found and wired up StockX + Vinted's structured color field):**
+
+User asked directly: do Grailed/Depop/Mercari/Vinted/StockX (all "title-fallback only" per the prior color-filtering entry below) actually lack JSON-LD entirely, or was that assumed? Worth checking rather than trusting — went and dumped the raw JSON-LD `Product` node for all five live:
+
+- **Depop, Grailed: genuinely no color anywhere.** Full node dumped for both — only `name`, `description`, `image`, `brand`, `offers` (+`review` for Grailed). No `additionalProperty` list, no renamed/aliased field. Title-fallback is correctly the only option for these two.
+- **Mercari: has a separate per-listing JSON-LD block that the current extractor doesn't even use** (`extract_mercari` reads `__NEXT_DATA__` instead). No dedicated `color` key in it either, but free-text `description` sometimes states it in prose (e.g. *"is Royal Blue in color"*) — not parsed anywhere, a real but lower-priority opportunity (would need threading `description` through the whole pipeline, out of scope today).
+- **Vinted: DOES have a clean top-level `"color"` field** (e.g. `"Blue"`) on its JSON-LD `Product` node — confirmed on a real live listing. `extract_vinted()` never reads it; it uses a custom regex/og:meta extractor for price that was written before JSON-LD was checked.
+- **StockX: DOES have a clean top-level `"color"` field** (e.g. `"Diffused Blue"` — official colorway name) plus `sku`/`model`/`gtin`/`releaseDate`. The existing code comment ("StockX does NOT emit JSON-LD with the Lowest Ask") is true and was the reason a custom DOM extractor was built for *price* — but it doesn't mean no JSON-LD exists at all; the Product node is there with real color data, just never read.
+
+**Shipped:** new `_jsonld_product_color(soup)` helper in `structured_extractors.py` — reuses the already-existing `_find_product_jsonld()` + `_extract_color_from_product()` (the same functions Poshmark/eBay/Depop/Grailed go through via `_extract_from_jsonld`), wrapped in a try/except so a parse miss can never affect price/title/image extraction. Called additively at the end of `extract_stockx()` and `extract_vinted()` — neither function's existing price/title/image logic was touched.
+
+**Verified live:** `/scrape` on a real StockX listing now returns `color: "Diffused Blue"` alongside the unchanged `price: 130.0`/title/image; a real Vinted listing returns `color: "Blue"` alongside unchanged `price: 10.0`. `resolveColorKey()` correctly normalizes both (`"Diffused Blue"` → `blue`, `"Blue"` → `blue`). Full `searchAndScrape('stockx', 'nike hoodie', {color: 'blue'}, ...)` run: the one listing whose JSON-LD color resolved to `blue` (`"Midnight Navy/Black"`, via the `navy` synonym) correctly boosted to position 0 of 10, all others kept their relative order.
+
+**Net effect:** of the 7 active platforms, only Depop and Grailed now rely purely on the title-text fallback — every other platform (Poshmark, eBay, Mercari-grid-titles, Vinted, StockX) has either a structured color field or, for Mercari's native grid, decent organic title coverage. `npx tsc --noEmit` clean (no TS changes this round, Python-only).
+
+---
+
+**Earlier change (2026-06-21 — ThredUp/Vestiaire/RealReal temporarily disabled, code untouched):**
+
+User asked to temporarily drop ThredUp and Vestiaire Collective as selectable platforms (comment out, don't delete), then to also drop RealReal. Done entirely in `lib/types.ts`, the single source of truth `PLATFORM_DOMAINS`/`PLATFORM_NAMES`/`NATIVE_PLATFORMS` — all other platform lists (`FilterPanel.tsx`, the settings page, `/api/search` + `/api/settings` request validation, alert platform options) derive from these via `Object.keys()`/`Object.entries()`, so commenting out the three entries there cascaded everywhere automatically with zero other edits needed.
+
+- `thredup`/`vestiaire` commented out of `PLATFORM_DOMAINS` and `PLATFORM_NAMES`.
+- `thredup`/`realreal` commented out of `NATIVE_PLATFORMS`. Note: **`realreal` was already absent from `PLATFORM_DOMAINS`/`PLATFORM_NAMES`** — it was never actually wired up as a selectable platform despite being in `NATIVE_PLATFORMS` and having a real implementation in `crawl4ai-service` (the §6/§7 entries elsewhere in this file describing a "TRR opt-in gate" predate this and are stale — there is no live gate today, it just isn't registered). So this change makes RealReal's disabled status consistent/explicit rather than actually changing its current behavior.
+- No scraping/extraction code touched in `lib/` or `crawl4ai-service/` — `structured_extractors.py`, `search_page_extractors.py`, `extractors.py`, and `lib/firecrawl.ts`'s `PLATFORM_STRATEGY` map all still have their ThredUp/Vestiaire/RealReal logic intact, just unreachable since those platform strings can no longer pass `/api/search` validation. Re-enabling any of the three later is just uncommenting their line(s) in `lib/types.ts`.
+- Left the marketing/landing-page demo components untouched (`app/components/landing/mockSearches.ts`, `PlatformLogos.tsx`, `WatchlistDemo.tsx`, `SavesMock.tsx` reference vestiaire as cosmetic example content, not real search routing) — flagged to user, not done since it's out of scope for "temporarily."
+
+**Verified live, not just typechecked:** ran real searches via `searchAndScrape()` against all 7 remaining active platforms (`nike hoodie` query) — all 7 returned real listings with zero errors: grailed 10, depop 10, mercari 10, stockx 10, ebay 8, poshmark 2, vinted 2 (Poshmark/Vinted's lower count was normal query-relevance filtering, not a failure — Brave found 16-20 candidate URLs each, fewer survived the title-relevance + scrape pipeline). `npx tsc --noEmit` clean.
+
+---
+
+**Earlier change (2026-06-21 — color filtering Tier 1: structured-color extraction + boost-only sort, no strict drop):**
 
 User reported content-matching is in good shape but color still isn't reliable ("some listings don't say the color, they just show the color"). Investigated the full color pipeline before writing any code, per usual practice.
 
@@ -27,11 +57,31 @@ User reported content-matching is in good shape but color still isn't reliable (
 
 **Verified live, not just typechecked:** ran `searchAndScrape('thredup', 'fear of god essentials sweatshirt', ...)` directly against the real sidecar with and without `filters.color`. Unfiltered order: `Tan, Brown, Tan, Black, Gray`. With `color: 'brown'`: `Brown, Tan, Tan, Black, Gray` — the Brown listing moved from index 1 to index 0, the two Tan listings (a different, correctly-distinct swatch) did **not** move, and all 5 results were preserved (none dropped). Also independently verified `resolveColorKey`: `"Coral"→orange`, `"Dark Oatmeal"→beige`, `"Stretch Limo"→black`, `"Mauve"→null` (unmapped colors correctly fall through to no-match rather than guessing). Confirmed the raw `color` field lands correctly through both live endpoints (`/scrape-search` for ThredUp, `/scrape` for the Poshmark Coral/Orange listing).
 
-**Not done / scoped out this session (by design, not oversight):**
-- **Mercari/Grailed/Depop's native search-grid path has no structured color signal available without visiting each listing individually** — which would defeat the reason these 5 platforms are "native" (one render → full grid, scaling to 60 results without 60 fetches). The only lever left for these is title-text color-word matching (Grailed's title text does carry color often; Depop's synthesized-from-slug title sometimes does). Not built this session — would need the same colorway-alias vocabulary now living in `colorFilter.ts` applied to title tokens, plus real testing against how often it actually helps vs. false-matches. Worth a follow-up if Tier 1's real-world coverage (once exercised across all platforms via normal use) still leaves Mercari/Grailed/Depop thin.
-- **Depop/Grailed/eBay/Vestiaire's per-listing JSON-LD `color` field is code-verified (shared `_extract_from_jsonld()` helper, same as Poshmark which IS data-verified) but not separately confirmed live for each of those 4** — didn't want to spend a real Firecrawl API call during the research/probe pass. Worth a quick spot-check the next time any of those platforms is actually exercised in production, same spirit as the existing "Surveyed N/N listings" verification notes already in `structured_extractors.py`.
-- **Tier 2 (local dominant-color extraction from the thumbnail) and Tier 3 (vision-LLM classification)** were discussed and explicitly deferred — user chose Tier 1 first. Both remain real options if Tier 1's structured-data coverage turns out thin in practice, especially for Mercari/Grailed/Depop's grid-only gap above.
-- **No production build / lint run this session** — only `npx tsc --noEmit` (clean) and live `tsx` integration calls against the real sidecar. Recommend a normal browser smoke-test of the Color filter dropdown on a real search before fully trusting end-to-end (the underlying `searchAndScrape` logic is verified, but the FilterPanel → SearchForm → `/api/search` → streaming → ResultsDisplay chain wasn't re-clicked through in a browser this session — the route is auth-gated so it was tested by calling `searchAndScrape` directly instead).
+**Follow-up, same session — verified the other platforms live, then closed the grid-only gap with a title-text fallback:**
+
+User asked "what can we do to address the other platforms?" Rather than trust the "shared helper, probably works" assumption from above, verified each platform live before deciding:
+- **eBay confirmed working**: 4/5 real per-listing pages had a structured `color` (e.g. "Coral" Hoodie → `color: "Pink"` on one listing, `color: "Orange"` on another — real seller-set Item Specifics, not perfectly standardized across sellers, but real signal).
+- **Depop and Grailed per-listing JSON-LD confirmed to NOT carry color** — checked 2 real listings on each, both returned `color: null` even though they go through the same shared `_extract_from_jsonld()` helper that works for Poshmark/eBay/ThredUp. The prior entry's "code-verified, likely works" assumption for these two was wrong — glad it got checked instead of trusted.
+- **Vestiaire stays unverified** — its URL-discovery is a known, pre-existing, documented dead end (see §7 — "don't fix"), not something to chase here.
+
+**Net effect:** Depop and Grailed have **zero** structured color anywhere (neither their native grid nor their per-listing page), and Mercari's grid is the same. Title text is the only remaining signal for these three.
+
+**Shipped — title-text color fallback (`lib/colorFilter.ts`):** new `extractColorFromTitle(title)`, reuses the same `COLOR_SYNONYMS`/`VALID_COLOR_KEYS` tables `resolveColorKey()` already has (single source of truth, no drift), with two narrow guards since free title text is lower-trust than a platform's own structured field:
+- `"denim"` is skipped — usually names the fabric, not reliably the color (e.g. black/white denim exist). Still trusted from structured data, where a platform's own attribute literally saying "Denim" is more credible.
+- `"stone"` is skipped only when immediately followed by `"island"` — Stone Island is a real resale brand; same collision shape as the existing Off-White guard.
+
+Wired into `lib/parse.ts`: `color: s.color ?? extractColorFromTitle(s.title)` — structured data wins when present, title-text is purely a fallback for listings with none.
+
+**Verified live, not just unit-tested:**
+- `extractColorFromTitle` against real captured titles: `"Stone Island Brushed Cotton Overshirt Black"` → `black` (guard correctly let "Black" through later in the title rather than blocking the whole title), `"Stone Washed Beige Chinos"` → `beige`, `"Levi 501 Denim Jacket"` → `null` (denim correctly excluded, no other color word present), `"Essentials hoodie stretch limo fear"` → `black`.
+- Full `searchAndScrape('grailed', ...)` live run: unfiltered → `orange (Coral), null (Bulls Sport), black`; with `color: 'black'` → `black, orange, null` — exact match promoted to position 0, the other two kept their original relative order, all 3 results preserved.
+- Spot-checked Mercari (`color: 'beige'`) and Depop (`color: 'beige'`) the same way — both correctly promoted oatmeal/tan/beige-titled listings to the front of 15 results each, nothing dropped in either case.
+
+**Still open:**
+- TheRealReal stays at zero color coverage (PerimeterX blocks even a research render; not a new problem, not addressed here).
+- Vestiaire stays unverified (pre-existing URL-discovery issue, out of scope per existing §7 guidance).
+- Tier 2 (thumbnail dominant-color) / Tier 3 (vision-LLM) remain undone — only relevant now if TheRealReal/Vestiaire coverage specifically becomes a priority, since every other platform now has either structured color or a title-text fallback.
+- **No production build / lint run, no real-browser click-through this session** — verification was `npx tsc --noEmit` (clean) plus direct `tsx` calls into `searchAndScrape`/`colorFilter.ts` against the live sidecar (the `/api/search` route is auth-gated, so the FilterPanel → SearchForm → streaming → ResultsDisplay chain itself wasn't re-clicked through in a browser). Recommend a real smoke-test of the Color filter dropdown before fully trusting end-to-end.
 
 ---
 
@@ -3660,7 +3710,7 @@ Do NOT re-propose strict **drop** filters here without a specific bad-case bug t
 **Options to address (status as of 2026-06-21):**
 1. **UX nudge (cheapest):** if the typed query contains a color word and no color swatch is ticked, surface a toast. **Still not implemented.**
 2. **Strict-when-ticked:** drop listings whose title/structured color clearly says a different color. **Still not implemented / not chosen** — would require reversing §7 J's "color never drops" rule. Don't add without a specific revisit + sign-off.
-3. **Structured color extraction:** add a `color` field to `Listing` from JSON-LD (not LLM — turned out to be a free, already-rendered structured-data field on the platforms surveyed), then use it. **Implemented 2026-06-21** — but as a sort **boost**, not a post-filter drop (see Latest change at the top of this file). `resolveColorKey()` + `sortByColorMatch()` in `lib/colorFilter.ts`. Coverage: ThredUp grid ✓ data-verified, Poshmark per-listing ✓ data-verified, Depop/Grailed/eBay/Vestiaire per-listing code-verified via the shared JSON-LD helper but not separately data-verified live, Mercari/Grailed/Depop's *grid* path has no structured color available at all (DOM-only, no per-listing visit by design) — title-text matching there is an open follow-up, not done.
+3. **Structured color extraction:** add a `color` field to `Listing` from JSON-LD (not LLM — turned out to be a free, already-rendered structured-data field on most platforms surveyed), then use it. **Implemented 2026-06-21** — but as a sort **boost**, not a post-filter drop (see Latest change at the top of this file). `resolveColorKey()` + `sortByColorMatch()` in `lib/colorFilter.ts`. Coverage as of 2026-06-21, all data-verified live (full JSON-LD node dumps, not assumed): ThredUp grid ✓, Poshmark per-listing ✓, eBay per-listing ✓ (4/5 sampled), **StockX per-listing ✓ (added 2026-06-21 — `color` field with official colorway names like "Diffused Blue" was sitting unused in StockX's own JSON-LD)**, **Vinted per-listing ✓ (added 2026-06-21 — same discovery, plain color words like "Blue")**. Depop and Grailed per-listing JSON-LD confirmed **genuinely absent** (full node dumped, nothing color-related at all — not a naming mismatch). Vestiaire unverified (pre-existing URL-discovery dead end). For Depop/Grailed (no color anywhere) and Mercari's native grid (DOM-only, no JSON-LD on that path) a **title-text fallback** (`extractColorFromTitle()`, same vocabulary, two narrow guards for "denim" and "Stone Island") covers the gap. Only TheRealReal (PerimeterX-blocked), Vestiaire (URL-discovery broken), and Depop/Grailed (title-text only) lack a structured color source now.
 
 **Carry-forward instruction:** option (2) — strict drop — still needs a §7 J revisit + explicit sign-off before ever being added; the boost-only version of (3) does not conflict with §7 J's "never drop" rule and is already live. Option (1) UX nudge is still open if (3)'s real-world coverage turns out insufficient on its own.
 

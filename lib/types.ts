@@ -1,12 +1,17 @@
+// thredup and vestiaire temporarily disabled (commented out, not deleted) —
+// see HANDOFF.md for the date/reason. Re-enable by uncommenting both entries
+// here (and in NATIVE_PLATFORMS below for thredup) — all downstream lists
+// (FilterPanel, settings page, /api/search validation, alerts) derive from
+// these two maps via Object.keys(), so nothing else needs to change.
 export const PLATFORM_DOMAINS: Record<string, string> = {
   grailed: 'grailed.com',
   depop: 'depop.com',
   poshmark: 'poshmark.com',
   mercari: 'mercari.com',
   vinted: 'vinted.com',
-  thredup: 'thredup.com',
+  // thredup: 'thredup.com',
   ebay: 'ebay.com',
-  vestiaire: 'vestiairecollective.com',
+  // vestiaire: 'vestiairecollective.com',
   stockx: 'stockx.com',
 };
 
@@ -16,9 +21,9 @@ export const PLATFORM_NAMES: Record<string, string> = {
   poshmark: 'Poshmark',
   mercari: 'Mercari',
   vinted: 'Vinted',
-  thredup: 'ThredUp',
+  // thredup: 'ThredUp',
   ebay: 'eBay',
-  vestiaire: 'Vestiaire Collective',
+  // vestiaire: 'Vestiaire Collective',
   stockx: 'StockX',
 };
 
@@ -32,7 +37,7 @@ export const PLATFORM_NAMES: Record<string, string> = {
 //   - lib/scraper.ts (re-exports from here)
 //   - crawl4ai-service/search_page_extractors.py (Python side)
 export const NATIVE_PLATFORMS = new Set<string>([
-  'grailed', 'depop', 'mercari', 'thredup', 'realreal',
+  'grailed', 'depop', 'mercari', /* thredup, realreal, */
 ]);
 
 export function isNativePlatform(platform: string): boolean {
