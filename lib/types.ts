@@ -46,6 +46,7 @@ export interface Listing {
   currency: string; // 'USD', 'GBP', 'EUR', etc.
   condition: string | null;
   size: string | null;
+  color: string | null;
   seller: string | null;
   url: string;
   image: string | null;

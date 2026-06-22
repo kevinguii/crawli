@@ -4,7 +4,7 @@ import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
 import { Listing } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
-import { matchListingColor } from '@/lib/colorFilter';
+import { matchListingColor, sortByColorMatch } from '@/lib/colorFilter';
 
 // Run at most `limit` promises concurrently, returns results in input order.
 export async function allSettledWithConcurrency<T>(
@@ -53,7 +53,8 @@ export async function searchAndScrape(
     const colorFiltered = sizeFiltered.filter((l) =>
       matchListingColor(l.title, filters?.color, query),
     );
-    return colorFiltered.filter((l) => matchListingPrice(l, filters)).slice(0, nativeResultsCap);
+    const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
+    return sortByColorMatch(priceFiltered, filters?.color).slice(0, nativeResultsCap);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -83,7 +84,8 @@ export async function searchAndScrape(
   const colorFiltered = sizeFiltered.filter((l) =>
     matchListingColor(l.title, filters?.color, query),
   );
-  return colorFiltered.filter((l) => matchListingPrice(l, filters));
+  const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
+  return sortByColorMatch(priceFiltered, filters?.color);
 }
 
 // Runs a full cross-platform search and returns all matched listings.

@@ -145,6 +145,33 @@ def _extract_size_from_product(product: dict) -> Optional[str]:
     return None
 
 
+def _extract_color_from_product(product: dict) -> Optional[str]:
+    """Extract color from a Schema.org Product node.
+
+    Verified live 2026-06-21: Poshmark emits a top-level "color" string
+    (normalized, e.g. listing titled "...Coral..." had color="Orange") and
+    ThredUp's search-grid JSON-LD also carries a direct "color" field
+    ("Black", etc). Same dual-shape pattern as size — check the direct field,
+    then additionalProperty.
+    """
+    raw = product.get("color")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+
+    additional = product.get("additionalProperty")
+    if isinstance(additional, list):
+        for prop in additional:
+            if not isinstance(prop, dict):
+                continue
+            name = prop.get("name", "")
+            if isinstance(name, str) and name.lower() == "color":
+                val = prop.get("value")
+                if isinstance(val, str) and val.strip():
+                    return val.strip()
+
+    return None
+
+
 def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     """Generic JSON-LD Product extractor (Depop, Grailed, Poshmark).
 
@@ -173,6 +200,7 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     name = product.get("name") if isinstance(product.get("name"), str) else None
     image = _first_image(product)
     size = _extract_size_from_product(product)
+    color = _extract_color_from_product(product)
 
     # Reject the node if it has NO price — caller should fall back to LLM.
     #
@@ -197,6 +225,7 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
         "condition": condition_label,
         "imageUrl": image,
         "size": size,
+        "color": color,
     }
 
 

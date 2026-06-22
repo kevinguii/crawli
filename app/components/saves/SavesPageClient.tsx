@@ -797,6 +797,7 @@ function SaveCard({
       currency: save.currency,
       condition: save.condition,
       size: null,
+      color: null,
       seller: save.seller,
       url: save.listing_url,
       image: save.image_url,

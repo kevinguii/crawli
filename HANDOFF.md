@@ -1,8 +1,41 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-20 (search relevance: title-match gate switched from OR to anchor-token AND, using a free local common-word corpus — see Latest change below.)
+**Last updated:** 2026-06-21 (color filtering: structured-color extraction (Tier 1) + boost-only sort — see Latest change below.)
 
-**Latest change (2026-06-20 — search relevance: anchor-token AND match + free local word-frequency corpus):**
+**Latest change (2026-06-21 — color filtering Tier 1: structured-color extraction + boost-only sort, no strict drop):**
+
+User reported content-matching is in good shape but color still isn't reliable ("some listings don't say the color, they just show the color"). Investigated the full color pipeline before writing any code, per usual practice.
+
+**Root cause confirmed by reading the code:** `lib/colorFilter.ts`'s `matchListingColor()` was a no-op for every color except `white` (that one case only exists to strip Off-White-brand false positives — see the 2026-05-20 entry below). Color filtering today is 100% "append the color word to the query text and hope the platform's own search + the listing title cooperate" (`filtersToQuerySuffix()` in `lib/filterOptions.ts`). No extractor anywhere (`structured_extractors.py`, `search_page_extractors.py`) pulled a structured `color` field, even though `size` already does via the same JSON-LD `additionalProperty` pattern.
+
+**Verified live before writing code (per CLAUDE.md's "never guess API/field shapes" rule) — spun up the real sidecar (`crawl4ai-service`) and rendered real pages:**
+- **ThredUp** search-grid JSON-LD: every `Product` node carries a direct top-level `"color"` string (e.g. `"Black"`) — confirmed across 119 real products on a live render. Zero-cost, already-fetched data, never extracted.
+- **Poshmark** per-listing JSON-LD (via the shared generic `_extract_from_jsonld()` helper that Depop/Grailed/eBay/Vestiaire/ThredUp-listing also use): confirmed `color` present and *normalized* — a listing titled "...Coral..." had `color: "Orange"`, i.e. the platform already did the slang→generic-color mapping for us.
+- **Mercari** grid DOM cards: confirmed **no** color attribute (only `data-brand`, `data-size`, `data-is-on-sale`, `data-productid`). **Grailed** grid cards: no structured color field, but title text frequently includes real color words organically (sellers write it in — "Fear of God Hoodie - Grey", "Pullover Hoodie Black" observed live). **Depop** grid cards: title is synthesized from the URL slug (cards have no visible title text at all) — slug sometimes carries a color word, sometimes doesn't.
+- **TheRealReal**: blocked by its PerimeterX challenge on a plain render (consistent with the platform's known bot-wall, documented elsewhere in this file) — color coverage there is unverified, not a new problem.
+- Real listing titles also surfaced a genuine finding: brand-specific colorway slang ("Stretch Limo", "Dark Oatmeal", "Tar") shows up often on streetwear platforms and doesn't match generic color words at all — these needed an explicit alias table, the same pattern as `BRAND_ANCHOR_OVERRIDES` in `lib/parse.ts`.
+
+**User's explicit direction (asked before writing filtering-semantics code, since the prior 2026-05-20 "color stays permissive" call was deliberate, not an oversight):** do Tier 1 (structured extraction) first; once we have real structured color, never use it to **drop** a listing — only as a sort **boost** (matches move first, everything else — including listings with no color data — keeps its existing order).
+
+**Shipped:**
+- `crawl4ai-service/structured_extractors.py` — new `_extract_color_from_product()` (direct `color` field, then `additionalProperty` named "color" — mirrors `_extract_size_from_product()` exactly), wired into `_extract_from_jsonld()`'s return dict. Covers Depop/Grailed/Poshmark/eBay/Vestiaire/ThredUp-listing automatically (shared helper).
+- `crawl4ai-service/search_page_extractors.py` — `extract_thredup_grid()` now pulls `color` directly off each JSON-LD `Product` node (same place `brand` is already pulled).
+- `crawl4ai-service/main.py` — `ScrapedListing` model + `coerce_listing()` carry the new `color: Optional[str]` field through.
+- `lib/firecrawl.ts`, `lib/types.ts`, `lib/parse.ts` — `color: string | null` threaded through `ScrapedListing` → `Listing` end to end. Fixed three other `Listing` object literals (`SavesPageClient.tsx`, `SavesTab.tsx`, `WatchlistTab.tsx`'s save/watch toggle handlers) that needed the new required field — `npx tsc --noEmit` clean.
+- **New in `lib/colorFilter.ts`:** `resolveColorKey(rawColor)` — maps a raw structured-color string to one of the 14 `COLOR_OPTIONS` keys via direct match + a synonym table (includes the real colorway aliases found live: `oatmeal`/`tan`/`khaki`/`sand`/`stone`/`camel` → beige, `limo`/`tar`/`jet`/`onyx`/`ink` → black, `coral`/`rust` → orange, plus ordinary dictionary synonyms like `navy`→blue, `charcoal`→gray). Token-based (not substring) to avoid false matches. `sortByColorMatch(listings, colorKey)` — stable boost-only partition (matches first, original relative order preserved on both sides, nothing ever dropped).
+- `lib/searchWorker.ts` — both `searchAndScrape()` branches (native search-page path and per-listing path) now call `sortByColorMatch()` as the final step, *after* price filtering and *before* the native path's `nativeResultsCap` slice (so a color match can win one of the capped slots, not just get reordered within an already-capped set). `matchListingColor()` (the Off-White hard-drop case) is untouched — this is additive, not a replacement.
+
+**Verified live, not just typechecked:** ran `searchAndScrape('thredup', 'fear of god essentials sweatshirt', ...)` directly against the real sidecar with and without `filters.color`. Unfiltered order: `Tan, Brown, Tan, Black, Gray`. With `color: 'brown'`: `Brown, Tan, Tan, Black, Gray` — the Brown listing moved from index 1 to index 0, the two Tan listings (a different, correctly-distinct swatch) did **not** move, and all 5 results were preserved (none dropped). Also independently verified `resolveColorKey`: `"Coral"→orange`, `"Dark Oatmeal"→beige`, `"Stretch Limo"→black`, `"Mauve"→null` (unmapped colors correctly fall through to no-match rather than guessing). Confirmed the raw `color` field lands correctly through both live endpoints (`/scrape-search` for ThredUp, `/scrape` for the Poshmark Coral/Orange listing).
+
+**Not done / scoped out this session (by design, not oversight):**
+- **Mercari/Grailed/Depop's native search-grid path has no structured color signal available without visiting each listing individually** — which would defeat the reason these 5 platforms are "native" (one render → full grid, scaling to 60 results without 60 fetches). The only lever left for these is title-text color-word matching (Grailed's title text does carry color often; Depop's synthesized-from-slug title sometimes does). Not built this session — would need the same colorway-alias vocabulary now living in `colorFilter.ts` applied to title tokens, plus real testing against how often it actually helps vs. false-matches. Worth a follow-up if Tier 1's real-world coverage (once exercised across all platforms via normal use) still leaves Mercari/Grailed/Depop thin.
+- **Depop/Grailed/eBay/Vestiaire's per-listing JSON-LD `color` field is code-verified (shared `_extract_from_jsonld()` helper, same as Poshmark which IS data-verified) but not separately confirmed live for each of those 4** — didn't want to spend a real Firecrawl API call during the research/probe pass. Worth a quick spot-check the next time any of those platforms is actually exercised in production, same spirit as the existing "Surveyed N/N listings" verification notes already in `structured_extractors.py`.
+- **Tier 2 (local dominant-color extraction from the thumbnail) and Tier 3 (vision-LLM classification)** were discussed and explicitly deferred — user chose Tier 1 first. Both remain real options if Tier 1's structured-data coverage turns out thin in practice, especially for Mercari/Grailed/Depop's grid-only gap above.
+- **No production build / lint run this session** — only `npx tsc --noEmit` (clean) and live `tsx` integration calls against the real sidecar. Recommend a normal browser smoke-test of the Color filter dropdown on a real search before fully trusting end-to-end (the underlying `searchAndScrape` logic is verified, but the FilterPanel → SearchForm → `/api/search` → streaming → ResultsDisplay chain wasn't re-clicked through in a browser this session — the route is auth-gated so it was tested by calling `searchAndScrape` directly instead).
+
+---
+
+**Earlier change (2026-06-20 — search relevance: anchor-token AND match + free local word-frequency corpus):**
 
 **Symptom (user-reported):** searching "long sleeve messi soccer jersey size medium black" returned other teams' jerseys (not Messi's) in size medium/black. Root cause: `titleMatchesQuery` in [lib/parse.ts](lib/parse.ts) did an OR match — after stopword removal, the title only needed to share **one** leftover query token (e.g. "soccer" or "jersey") with the query, so a Ronaldo or Mbappé jersey titled "Soccer Jersey Long Sleeve Medium Black" passed without ever containing "messi". This is a general gap, not jersey-specific — any query mixing one truly-discriminating word (player/brand/model name) with multiple generic descriptive words had the same hole, and it would only ever get patched reactively by hand-adding more words to `RELEVANCE_STOPWORDS` (same pattern as the BAPE/ThredUp fix in §7 L) instead of being fixed at the root.
 
@@ -3608,13 +3641,13 @@ Audit triggered by size-filter bug fix. Findings:
 |---|---|---|
 | size | ✓ yes (2026-05-20) | checks structured `Listing.size` for Grailed/Depop/Poshmark/ThredUp; title regex for ThredUp-style |
 | price (min/max) | ✓ yes | numeric, in `matchListingPrice` |
-| color | ✗ no | only the Off-White/white brand-collision post-filter; otherwise relies on query-suffix + platform fuzzy search |
+| color | ✗ no strict drop / ✓ boost (2026-06-21) | Off-White/white brand-collision still hard-drops; otherwise structured `Listing.color` (when present) only *reorders* via `sortByColorMatch` — never drops. See Latest change at the top of this file and §7 K below. |
 | category | ✗ no | query-suffix only |
 | condition | ✗ no | query-suffix only (even though `ScrapedListing.condition` IS extracted) |
 
-**User decision:** keep color/category/condition permissive. Reasoning: these three are inherently fuzzy ("Like New" vs "New", "navy" vs "blue", "hoodie" = tops or outerwear?), so a strict post-filter would drop too many listings the user actually wants. Pattern going forward: add **narrowly-targeted** post-filters only when a specific semantic collision shows up (like the Off-White case) — don't add broad strict filters.
+**User decision:** keep color/category/condition permissive — i.e. never **drop** a listing on these grounds outside the narrow Off-White case. Reasoning: these three are inherently fuzzy ("Like New" vs "New", "navy" vs "blue", "hoodie" = tops or outerwear?), so a strict post-filter would drop too many listings the user actually wants. Pattern going forward: add **narrowly-targeted** post-filters only when a specific semantic collision shows up (like the Off-White case) — don't add broad strict filters. **2026-06-21 update:** this still holds for *dropping*; a non-dropping **sort boost** using real structured color data was added and is consistent with this rule (nothing is removed from results, just reordered/prioritized within the cap).
 
-Do NOT re-propose strict filters here without a specific bad-case bug to motivate them.
+Do NOT re-propose strict **drop** filters here without a specific bad-case bug to motivate them. A boost/reorder using verified structured data is a different, already-approved category.
 
 ### K. Color in query text is NOT a strict filter (surfaced 2026-05-22 user smoke test of hybrid)
 
@@ -3624,12 +3657,12 @@ Do NOT re-propose strict filters here without a specific bad-case bug to motivat
 
 **Why it shows up now:** the user expected typing "white" in the query to act like a soft filter; the platform's onsite text-relevance ranks color words below brand/item, so a typed color barely constrains results.
 
-**Options to address (none chosen):**
-1. **UX nudge (cheapest):** if the typed query contains a color word and no color swatch is ticked, surface a toast "Tip — for cleaner color results, use the color filter in the panel." No filtering logic changes.
-2. **Strict-when-ticked:** raise the bar for the existing color swatch — drop listings whose title clearly says a different color word. Requires reversing §7 J's "color stays permissive" rule.
-3. **Structured color extraction:** add a `color` field to `Listing` (extracted via the LLM tier or a regex over the listing body, not just the title), then post-filter. Most accurate, most code.
+**Options to address (status as of 2026-06-21):**
+1. **UX nudge (cheapest):** if the typed query contains a color word and no color swatch is ticked, surface a toast. **Still not implemented.**
+2. **Strict-when-ticked:** drop listings whose title/structured color clearly says a different color. **Still not implemented / not chosen** — would require reversing §7 J's "color never drops" rule. Don't add without a specific revisit + sign-off.
+3. **Structured color extraction:** add a `color` field to `Listing` from JSON-LD (not LLM — turned out to be a free, already-rendered structured-data field on the platforms surveyed), then use it. **Implemented 2026-06-21** — but as a sort **boost**, not a post-filter drop (see Latest change at the top of this file). `resolveColorKey()` + `sortByColorMatch()` in `lib/colorFilter.ts`. Coverage: ThredUp grid ✓ data-verified, Poshmark per-listing ✓ data-verified, Depop/Grailed/eBay/Vestiaire per-listing code-verified via the shared JSON-LD helper but not separately data-verified live, Mercari/Grailed/Depop's *grid* path has no structured color available at all (DOM-only, no per-listing visit by design) — title-text matching there is an open follow-up, not done.
 
-**Carry-forward instruction:** do not implement (2) or (3) without revisiting §7 J — the user explicitly chose permissive once. Option (1) is the minimal-risk first move.
+**Carry-forward instruction:** option (2) — strict drop — still needs a §7 J revisit + explicit sign-off before ever being added; the boost-only version of (3) does not conflict with §7 J's "never drop" rule and is already live. Option (1) UX nudge is still open if (3)'s real-world coverage turns out insufficient on its own.
 
 ### L. Brand-driven queries return generic results on platforms without that brand (surfaced 2026-05-22) — **PARTIALLY RESOLVED 2026-06-09**
 

@@ -183,6 +183,7 @@ export interface ScrapedListing {
   condition: string | null;
   imageUrl: string | null;
   size: string | null;
+  color: string | null;
 }
 
 export async function scrapeListing(

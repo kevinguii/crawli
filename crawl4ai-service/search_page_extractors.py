@@ -146,6 +146,12 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
         if isinstance(name, str):
             name = html_module.unescape(name)
 
+        # Verified live 2026-06-21: every Product node in this JSON-LD array
+        # carries a direct top-level "color" string (e.g. "Black") — no
+        # additionalProperty lookup needed here, unlike per-listing pages.
+        color_raw = p.get("color")
+        color = color_raw.strip() if isinstance(color_raw, str) and color_raw.strip() else None
+
         # Extract brand.name from JSON-LD (format: {"@type": "Brand", "name": "..."}).
         brand_raw = p.get("brand")
         brand_name: Optional[str] = None
@@ -179,6 +185,7 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
             "isSold": _thredup_availability_is_sold(availability),
             "condition": _thredup_condition_label(condition_raw),
             "imageUrl": image,
+            "color": color,
         })
 
         if len(results) >= limit:
