@@ -32,13 +32,15 @@ const height = 1920;
 
 // --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
 const batchArg = process.argv.find(a => a.startsWith('--batch='));
-const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-18';
+const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-22';
 
 // Number of slides per post for this batch (cover + steps + cta)
 // Update this array when creating a new batch.
 // 2026-06-15: [8, 7, 5, 8, 6, 8, 7, 8, 8, 7]
 // 2026-06-16: [7, 6, 8, 8, 7, 8, 7, 8, 8, 8, 6, 8]
-const SLIDE_COUNTS = [8, 8, 8, 8, 7, 8, 7, 6, 7, 7, 6, 7, 8, 7, 7, 7];
+// 2026-06-18: [8, 8, 8, 8, 7, 8, 7, 6, 7, 7, 6, 7, 8, 7, 7, 7]
+// 2026-06-22: [7,7, 7,7,7,7,7, 6] (posts 1-2 approved, 3-8 added same session)
+const SLIDE_COUNTS = [7, 7, 7, 7, 7, 7, 7, 6];
 
 const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');
 const OUTPUT_DIR = path.resolve(__dirname, BATCH, 'exports', 'carousel');

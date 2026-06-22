@@ -9,6 +9,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-15 | `2026-06-15/content-posts-slides.html` | `2026-06-15/post-captions.md` | `2026-06-15/exports/carousel/` | 10 step-by-step carousel posts |
 | 2026-06-16 | `2026-06-16/content-posts-slides.html` | `2026-06-16/post-captions.md` | `2026-06-16/exports/carousel/` | 12 carousel posts (all carousel; brief "reel" items built as carousels) |
 | 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 16 carousel posts (posts 1-3 from the original small batch; posts 4-16 added later the same day after wiring Reddit pain-point research into the brief generator — see Post Breakdown — Day 4) |
+| 2026-06-22 | `2026-06-22/content-posts-slides.html` | `2026-06-22/post-captions.md` | `2026-06-22/exports/carousel/` | 8 carousel posts (posts 1-2 approved by user mid-batch, feedback applied to posts 3-8 the same session) — see Post Breakdown — Day 5 |
 
 **Folder structure:**
 ```
@@ -158,6 +159,37 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 | Day 4: Reseller Stories | Forest Teal | #0d9488 |
 | Day 4: Shipping Practices (2nd) | Cobalt | #0369a1 |
 | Day 4: Fashion Brand Myths | Wine | #7f1d1d |
+| Day 5: Seller Scam Myths | Amber Alert | #f59e0b |
+| Day 5: Selvedge Denim Facts | Indigo | #6366f1 |
+| Day 5: Y2K Fashion Trends | Hot Pink | #ec4899 |
+| Day 5: 1960s Fashion Guide | Monochrome | #18181b |
+| Day 5: Handmade vs Machine Made | Violet | #8b5cf6 |
+| Day 5: Wool Quality Facts | Navy | #0f172a |
+| Day 5: Best Niches for Reselling | Tangerine | #f97316 |
+| Day 5: The Search Problem | Teal | #14b8a6 |
+
+---
+
+## Post Breakdown — Day 5 (2026-06-22, in progress)
+
+Built from the 2026-06-22 content brief (15 ideas) plus this session's own audit: cross-checked all 15 against Supabase `content_history` `posted=true` directly (not just the brief's 3 self-flagged repeats) and found 4 more real duplicates the brief missed (vintage-collector-profiles repeats "Profiles of Vintage Collectors" 2026-06-18; 1990s-fashion-guide repeats "Legacy of 90s Fashion" 2026-06-18; shipping-solutions repeats "Shipping Best Practices" posted 3x already; sustainable-fashion-news overlaps 3 prior sustainable posts). Trends validated via `/last30days` + WebSearch: Y2K and vintage/raw denim are the dominant 2026 resale categories; secondhand scam fear is data backed (40% of Depop buyers hesitant, 35% have hit fraud per a 2026 Consumer Reports survey, "paying outside the app" is the universal red flag).
+
+All 8 posts built and exported. First batch built fully under the 2026-06-19 photo-cover rule (every cover is a real `gpt-image-2` photo, not an SVG symbol) and the first to break the font_pairing duopoly that had been either "System sans-serif" or "Playfair Display + Inter + JetBrains Mono" on every post since the project started — three new pairings introduced this batch (Syne + Manrope, Abril Fatface + Merriweather, Libre Bodoni + Public Sans), sourced from `ui-ux-pro-max` and rotated across posts.
+
+**Mid-batch user feedback (after posts 1-2 shipped):** post 1 (myth layout + a stat interstitial) read as visually alive; post 2 (editorial layout, same symbol/clipart card on every step slide in a row) was called out as lacking creativity even though it correctly followed the "one imagery style per post" rule. Saved as [[feedback-marketing-intra-post-diversity]]: vary visuals *within* a single post too, not just across posts in a batch — add at least one interstitial (stat/pull-quote/manifesto) per post, never repeat an icon within the same post, and let imagery carry meaning where content has a natural contrast (e.g. clipart for the human/craft side vs symbol for the mechanical/abstract side on post 5). Also flagged: keep decorative display fonts (Abril Fatface, Syne, Libre Bodoni) to short headline text only, always paired with a genuinely legible body font — checked at actual mobile export size, not just as a CSS choice. Posts 3-8 were built applying this directly.
+
+| # | Title | Category | Layout | Typography | Imagery | Slides | Pain point | Extra |
+|---|-------|----------|--------|------------|---------|--------|-----------|-------|
+| 1 | Seller Scam Myths | Resellers | myth | bold-modern (Syne + Manrope) | ai-raster cover + symbol | 7 | seller trust/scam fear (Reddit #1 pain point, 18 threads) | stat slide (35%), Minimalism & Swiss Style accent (first use) |
+| 2 | Selvedge Denim Facts | Vintage Community | editorial | vintage-statement (Abril Fatface + Merriweather) | ai-raster cover + clipart | 7 | | |
+| 3 | Y2K Fashion Trends | All | number-left | magazine (Libre Bodoni + Public Sans, first use) | ai-raster cover + symbol | 7 | | manifesto interstitial |
+| 4 | 1960s Fashion Guide | Vintage Community | visual-hero | bold-modern | ai-raster cover + clipart/symbol mix | 7 | | pull-quote interstitial |
+| 5 | Handmade vs Machine Made | Fashionistas | editorial | magazine | ai-raster cover + clipart/symbol contrast (handmade=clipart, machine=symbol, deliberate) | 7 | | stat slide (0) |
+| 6 | Wool Quality Facts | Fashionistas | number-left | vintage-statement | ai-raster cover + symbol/clipart mix | 7 | | stat slide (19.5 microns) |
+| 7 | Best Niches for Reselling | Resellers | visual-hero | bold-modern | ai-raster cover + clipart/symbol mix | 7 | | manifesto interstitial; reframed as product categories, not platforms, to differentiate from posted "best-niche-marketplaces" |
+| 8 | The Search Problem | All | myth | magazine | ai-raster cover, no inner visuals (myth layout) | 6 | search/discovery is bad (Reddit pain point); not from today's brief, added from this session's own pain-point synthesis since it maps directly to Crawli's core pitch | stat slide (5+) |
+
+japanese-denim-history was considered and parked for a future batch to avoid two denim posts in one batch (post 2 already covers denim).
 
 ---
 
