@@ -5,6 +5,7 @@ import { Listing } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
 import { matchListingColor, sortByColorMatch } from '@/lib/colorFilter';
+// extractColorFromTitle: only needed by the disabled refetchDepopColors below.
 
 // Run at most `limit` promises concurrently, returns results in input order.
 export async function allSettledWithConcurrency<T>(
@@ -28,6 +29,49 @@ export async function allSettledWithConcurrency<T>(
   await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
   return results;
 }
+
+// DISABLED 2026-06-21 — user decided Depop search speed matters more than
+// the color-accuracy gain (see HANDOFF.md). Kept, not deleted: re-enable by
+// uncommenting this function, the `extractColorFromTitle` import above, and
+// the call site below.
+//
+// Depop's native search-grid cards carry no real title text at all — the
+// title we use is synthesized from the URL slug (see
+// `_depop_title_from_slug` in search_page_extractors.py), a much weaker
+// signal than the seller's actual listing title. When a color filter is
+// active and that slug guess resolved no color, fetch the real per-listing
+// page (which has the genuine seller-written title) for a small, bounded
+// number of still-unresolved listings and retry. Gated on filters.color so
+// this never adds latency to a normal search — only fires for the specific
+// case the slug guess already failed. Capped at 8 to keep added latency
+// predictable; only updates `color`, leaves title/price/image untouched.
+//
+// const DEPOP_COLOR_REFETCH_CAP = 8;
+//
+// async function refetchDepopColors(
+//   listings: Listing[],
+//   signal?: AbortSignal,
+// ): Promise<Listing[]> {
+//   const candidates = listings.filter((l) => l.color === null).slice(0, DEPOP_COLOR_REFETCH_CAP);
+//   if (candidates.length === 0) return listings;
+//
+//   const resolvedById = new Map<string, string>();
+//   const settled = await allSettledWithConcurrency(
+//     candidates.map((l) => async () => {
+//       const real = await scrapeListing(l.url, 'depop', signal);
+//       const color = real ? (real.color ?? extractColorFromTitle(real.title)) : null;
+//       return { id: l.id, color };
+//     }),
+//     3,
+//   );
+//   for (const result of settled) {
+//     if (result.status === 'fulfilled' && result.value.color) {
+//       resolvedById.set(result.value.id, result.value.color);
+//     }
+//   }
+//   if (resolvedById.size === 0) return listings;
+//   return listings.map((l) => (resolvedById.has(l.id) ? { ...l, color: resolvedById.get(l.id)! } : l));
+// }
 
 export function matchListingPrice(listing: Listing, filters: FilterState | undefined): boolean {
   if (listing.price === null) return true;
@@ -54,6 +98,8 @@ export async function searchAndScrape(
       matchListingColor(l.title, filters?.color, query),
     );
     const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
+    // Depop's per-listing color refetch is disabled — speed preferred over
+    // the color-accuracy gain (see refetchDepopColors above, kept not deleted).
     return sortByColorMatch(priceFiltered, filters?.color).slice(0, nativeResultsCap);
   }
 

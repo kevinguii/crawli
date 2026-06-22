@@ -1,8 +1,34 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-21 (StockX + Vinted structured color wired up — see Latest change below.)
+**Last updated:** 2026-06-21 (Depop real-title color refetch built, then disabled same day — speed preferred over the accuracy gain. See Latest change below.)
 
-**Latest change (2026-06-21 — found and wired up StockX + Vinted's structured color field):**
+**Latest change (2026-06-21 — Depop color refetch DISABLED — user decided speed matters more than the accuracy gain):**
+
+Same-day reversal of the entry directly below. After seeing the real latency tradeoff stated plainly (~10-25s added in the worst case, only when a color filter is active and the cheap slug guess came up empty), user decided Depop search speed is preferred over that color-accuracy gain.
+
+**Disabled, not deleted** — same pattern as the ThredUp/Vestiaire/RealReal platform disable earlier today: `refetchDepopColors()` and its call site in `lib/searchWorker.ts` are now commented out (along with the now-unused `extractColorFromTitle` import), with a note on exactly what to uncomment to re-enable. `npx tsc --noEmit` and `npx eslint lib/searchWorker.ts` both clean — commenting out the whole block (not just the call site) avoids an unused-function/unused-import lint warning.
+
+**Verified live:** re-ran the same Depop + `color=black` search — no per-listing refetch round-trips occur (confirmed by the call completing in the time of a cached search-page lookup alone, ~30ms, which would be impossible if any per-listing fetches were still firing regardless of cache state, since refetch targets different per-listing URLs not covered by the search-page cache). Boost-sort still works correctly off whatever cheap signal (structured field or slug-derived title) was already available — Depop is back to exactly its pre-refetch behavior.
+
+**Net state:** Depop is back to slug-title-only color resolution (medium reliability, per the earlier "is the color search good for all platforms" entry). The rescue mechanism exists, tested, and proven correct (see the entry below) — it's a single config flip (uncomment) away if the latency tradeoff is ever reconsidered.
+
+---
+
+**Earlier change (2026-06-21 — Depop: targeted real-title refetch rescues color the slug-derived title loses — SUPERSEDED, see disable entry above):**
+
+User pushed on whether title-text fallback was "good enough" for the two platforms still relying on it (Depop, Grailed). Investigated the actual structural difference between them rather than treating "title-fallback" as one bucket: **Grailed's grid cards render real seller-written title text** (decent signal already); **Depop's grid cards render no title text at all** — `_depop_title_from_slug()` in `search_page_extractors.py` reverse-engineers an approximation from the URL slug, which can silently drop words. So Depop, specifically, was the weak case, not "title-fallback" generally.
+
+**Shipped — `refetchDepopColors()` in `lib/searchWorker.ts`:** when `platform === 'depop'` and `filters.color` is set, any result still showing `color: null` after the slug-based fallback gets one real per-listing fetch (`scrapeListing()`, already exists) to read the *actual* seller-written title (the JSON-LD `name` field), and `extractColorFromTitle()` is retried against that richer text. Capped at 8 listings, concurrency 3, to bound added latency — and gated entirely behind `filters.color` being set, so a normal Depop search (no color filter) is completely unaffected. Only `color` is overwritten; title/price/image stay as the original slug-derived values shown to the user.
+
+**Verified live with a real, traceable case, not a synthetic example:** pulled a real Depop listing (`brianna9ee123-essentials-fear-of-god-light-2a21`) whose slug-derived title was `"essentials fear of god light"` (→ `extractColorFromTitle` → `null`). Its real per-listing title was `"Essentials Fear of God light oatmeal hoodie"` — the slug had silently dropped "oatmeal". Confirmed `extractColorFromTitle()` resolves the real title to `beige`. Ran the actual `searchAndScrape('depop', 'essentials hoodie', {color: 'beige'}, ...)` path end-to-end: this exact listing went from `color: null` to `color: 'beige'` and moved to position 4 of 24 (inside the matched block), title display unchanged. `npx tsc --noEmit` clean.
+
+**Tradeoff, stated plainly:** this adds real latency to Depop searches specifically when a color filter is active and the cheap pass came up short — up to 8 sequential-ish fetches at ~3 concurrent (roughly 10-25s added in the worst case, based on the ~9-10s per-listing fetch times observed elsewhere this session). Acceptable because it only fires in that specific scenario, not on every search.
+
+**Not done:** the equivalent for Grailed wasn't built — its grid title text is already decent enough that a forced refetch would mostly re-confirm the same words, not rescue new signal, so the cost/benefit didn't justify it. Worth revisiting only if real-world Grailed color-filter usage shows otherwise.
+
+---
+
+**Earlier change (2026-06-21 — found and wired up StockX + Vinted's structured color field):**
 
 User asked directly: do Grailed/Depop/Mercari/Vinted/StockX (all "title-fallback only" per the prior color-filtering entry below) actually lack JSON-LD entirely, or was that assumed? Worth checking rather than trusting — went and dumped the raw JSON-LD `Product` node for all five live:
 
