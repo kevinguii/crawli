@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#e0f2fe"/>
+  <circle cx="600" cy="315" r="110" fill="none" stroke="#0369a1" stroke-width="10" opacity="0.5"/>
+  <path d="M555 250 L548 270 L558 280 L548 380 Q548 395 563 395 L573 395 L573 320 L627 320 L627 395 L637 395 Q652 395 652 380 L642 280 L652 270 L645 250 Q645 232 600 232 Q555 232 555 250 Z" fill="none" stroke="#0369a1" stroke-width="12" stroke-linejoin="round"/>
+  <line x1="600" y1="232" x2="600" y2="395" stroke="#0369a1" stroke-width="8" stroke-linecap="round"/>
+  <line x1="558" y1="280" x2="573" y2="280" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+  <line x1="627" y1="280" x2="642" y2="280" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+  <line x1="552" y1="310" x2="648" y2="310" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+  <line x1="550" y1="340" x2="650" y2="340" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+  <line x1="549" y1="368" x2="651" y2="368" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+</svg>

@@ -1,8 +1,59 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-22 (n8n workflow patches deployed to production; 3 blog posts published; content-brief dedup bugs now live).
+**Last updated:** 2026-06-23 (new TikTok carousel batch built: 8 posts, new split/grid layouts, new font pairings, Brutalism/Glassmorphism style movements, 5/8 human covers).
 
-**Latest change (2026-06-22 PM #3 — n8n workflow patches deployed, blog briefs now on gpt-4o, dedup threshold fixed):**
+**Latest change (2026-06-23 — new marketing carousel batch, docs/marketing/2026-06-23/):**
+
+Built a full 8-post TikTok carousel batch under `docs/marketing/2026-06-23/`. All creative decisions (topics, copy, colors, layout/typography/style assignments) were fully pre-specified up front by the user for this session — sourced via the standard process (`/last30days` + Reddit pain-point patterns + Supabase `content_history` dedup + `ui-ux-pro-max`) in a prior planning pass, so this session was execution-only: build to spec, verify output, no topic/copy/layout invention.
+
+**New visual-system elements this batch** (tracked in `visual-history.json`, checked clean by `check-visual-diversity.js` after append):
+- **Two new layouts:** `split` (image occupies ~half the frame, text the other half, alternating which side per post — used on posts 1, 2, 4, 6, 8) and `grid` (new 2x2 panel grid replacing a single-column step list for fact/checklist posts — used on posts 3, 5, 7). Neither reuses the prior batch's `myth`/`editorial`/`number-left`/`visual-hero` CSS.
+- **Two new font pairings:** "standard" track = Anton + Epilogue; "editorial" track = Cormorant + Montserrat. Neither appeared in any prior batch.
+- **Two new style movements:** Brutalism (raw, high-contrast, blocky borders, hard offset shadows, sharp corners) on standard-track posts; Glassmorphism (frosted/blurred translucent badge chips and CTA panels) on editorial-track posts.
+- **`side-rail` text placement on every cover** — text in a vertical column anchored left or right of the frame, picked per post by cover composition. Top-anchor/bottom-anchor/centered-stacked were banned this batch since the 2026-06-22 batch used those.
+- **5 of 8 covers feature a human subject** (hands writing on a tag, hands on a denim rack, a hand touching a button, a person in a bomber jacket shot from behind/three-quarter, a generic 1980s-styled woman by a plane window — none a recognizable real individual), up from 1 of 8 in the 2026-06-22 batch, per explicit user request.
+
+**Real bug caught and fixed before final export:** the 3 grid-layout posts (3, 5, 7) consolidate their 4 body facts into one `grid-panel` slide instead of 4 separate step slides, so their actual slide count is 6, not 7 like the split-layout posts. The first `export-slides.js` run used a uniform `SLIDE_COUNTS = [7,7,7,7,7,7,7,7]`, which made the script call `gotoSlide(6)` on posts that only have indices 0-5 in the DOM — no slide ever got the `.on` (visible) class, so Puppeteer screenshotted an empty frame (solid near-black PNG, ~22KB instead of the normal 900KB+). Caught by checking exported file sizes for outliers (`find ... -size -50k` flagged 3 identical-byte files), confirmed with a Puppeteer debug script that printed `document.querySelectorAll('.slide').length` per post (6 for posts 3/5/7 vs 7 for the rest) and the on-page slide counter showing `7 / 6`. Fixed by setting `SLIDE_COUNTS = [7,7,6,7,6,7,6,7]` in `docs/marketing/export-slides.js` to match each post's real DOM slide count, then re-exporting cleanly — 53 slides total, all in the normal size range, zero blank frames on a second visual spot-check across covers/grid/split/CTA slides.
+
+**Image generation:** all 8 `gen-clipart.py --style photo --quality medium` cover generations succeeded on the first try, no retries or symbol-cover fallbacks needed (all 8 PNGs ~1.8-2.4MB, healthy file sizes).
+
+**Aspect ratio:** unchanged this batch — `export-slides.js` is still 4:5 (1080×1350), as reverted on 2026-06-22; this batch's instructions explicitly said not to change it.
+
+**Supabase:** marked all 8 topic_keys `posted = true` in `content_history`, scoped to `created_at > now() - interval '7 days'` (verified each had exactly one recent unposted row before updating, then verified all 8 flipped to `true` after): `luxury-price-discrepancy-cross-platform`, `vintage-listing-stories`, `birkin-bag-story`, `bomber-jacket-history`, `luxury-bag-construction-signs`, `shell-buttons-dating`, `cross-platform-price-fake-check`, `levis-501-era-hunt`.
+
+**Files touched:** `docs/marketing/2026-06-23/content-posts-slides.html` (new), `docs/marketing/2026-06-23/post-captions.md` (new), `docs/marketing/2026-06-23/ai-images/post-0{1-8}-cover.png` (new), `docs/marketing/2026-06-23/exports/carousel/post-0{1-8}/slide-0{1-7}.png` (new, 53 files), `docs/marketing/export-slides.js` (BATCH default + SLIDE_COUNTS updated), `docs/marketing/POSTS_README.md` (Batch Index row, Day 6 breakdown table, 8 new color palette rows), `docs/marketing/visual-history.json` (8 new post entries appended, all required fields populated).
+
+---
+
+**Earlier change (2026-06-23 — 8 of 10 blog briefs written and published, 2 dropped for cannibalization):**
+
+User pasted today's 10-brief content email (`content_history` ids 288-297, already logged by the n8n workflow) and asked to run the full research process before writing: dedup against `content/blog/*.md` + `published_posts`, GSC cannibalization check, real-fact verification (no fabricated "(verify)" stats from the brief).
+
+**GSC MCP works again this session** (previous sessions had a broken `GSC_OAUTH_CLIENT_SECRETS_FILE` env var) — `list_properties` and `get_search_analytics` both returned real data for `https://thecrawli.com/` (90-day query report, 38 rows). Whatever was stale before has resolved itself or was fixed elsewhere; no action taken on it this session.
+
+**Dropped 2 of 10 briefs** for real cannibalization risk, found by reading the actual existing post content (not just title-matching):
+- `poshmark-relisting-timing` (id 296) — near-duplicate of the published `why-your-poshmark-listings-are-not-selling.md`, which already covers the exact same Sunday 7-9pm / share-to-followers timing advice. GSC shows "how to relist on poshmark" already ranking **#3** off that existing post — writing a second one would cannibalize a query already won.
+- `comparable-sales-vintage` (id 295) — 3 existing posts (`how-to-price-secondhand-clothing`, `pricing-psychology-for-resale-listings`, `why-pricing-secondhand-items-right-is-hard`) already saturate "how to price X" queries; several already rank in GSC. Not enough differentiation from the cross-platform-comp framing to justify a 4th.
+
+**Wrote and published the other 8** (`content_history` ids 288, 289, 290, 291, 292, 293, 294, 297 marked `posted = true`; `published_posts` ids 28-35 added), each via a dedicated research agent that WebSearched to verify every brief stat marked "(verify)" before using it — several were dropped or corrected, not just rubber-stamped:
+- `content/blog/puffer-jacket-history.md` — corrected the brief's claim that Eddie Bauer's Skyliner jacket was *patented* in 1936 (it was *designed* in 1936, patent granted 1940); used real 1stDibs Moncler resale range ($225-$3,150) instead of the brief's unsourced "four figures" framing.
+- `content/blog/suede-vs-split-leather.md` — distinct material/test from the existing `identifying-quality-vintage-leather.md` (suede nap + water-drop test vs. full-grain/bonded + finger-press test). Dropped the brief's unverifiable Leather Working Group stat and the static-cling microfiber test (search evidence actually contradicted the brief's framing); dropped "Banana Republic" vintage-suede claim as unsourced, kept verified Schott Model 316 history instead.
+- `content/blog/deadstock-sneaker-culture.md` — corrected the brief's "$560k Sotheby's deadstock Jordan" claim: that was Michael Jordan's **signed, game-worn** pair, not deadstock, and the post says so explicitly rather than implying $560k is a typical deadstock price.
+- `content/blog/70s-polyester-doubleknit.md` — corrected the brief's framing that Halston worked in polyester double-knit; his actual signature synthetic was Ultrasuede (trademarked nonwoven polyester/urethane) plus matte jersey, not woven double-knit. Dropped Pucci/Diane von Furstenberg (unverified for this angle), kept Stephen Burrows and Nik Nik (verified).
+- `content/blog/hand-rolled-hem-guide.md` — dropped the brief's fabricated "20-40% value increase" stat and the Givenchy/YSL-specific claim (couldn't verify house-specific hand-finishing); reframed as general French/American couture houses through the 1970s.
+- `content/blog/luxury-selling-platform-fees-vs-speed.md` — seller-intent companion to the existing buyer-intent `best-secondhand-marketplaces-for-luxury-items.md` (different table, different angle, cross-linked once). Verified current real fee numbers via WebSearch (eBay ~13.6% + per-order fee, Vestiaire 12% + 3% processing, Poshmark flat 20%/$15+, Depop 0% commission + ~3.3% processing since 2024 reform, eBay Authenticity Guarantee free on $500+ listings) — dropped the brief's unverified "eBay luxury handbags +30% YoY" stat entirely.
+- `content/blog/ebay-listing-buyer-psychology.md` — dropped the brief's unverified "40% impressions lift" stat (no real eBay Seller Center source found for that number); kept the verified mechanism (item specifics feed Cassini search/filtering, missing fields can exclude a listing from filtered results).
+- `content/blog/depop-aesthetic-authenticity.md` — deliberately contrarian companion to the existing `how-to-optimize-your-depop-profile.md` (explicitly framed as community-forum consensus, not official Depop guidance, since no sourceable Depop editorial statement was found); cross-linked once for the tactical keyword/photo side, no content overlap.
+
+8 new cover SVGs added in `public/blog/images/`, each a new exact hex not previously used in the cover system (assigned up front to avoid collisions across parallel writers): sky-700 `#0369a1` (puffer), amber-900 `#78350f` (suede), indigo-700 `#4338ca` (deadstock), fuchsia-900 `#701a75` (polyester), teal-800 `#115e59` (hand-rolled hem), emerald-800 `#065f46` (luxury selling), cyan-800 `#155e75` (eBay psychology), red-900 `#7f1d1d` (Depop authenticity).
+
+**Verified live, not just typechecked:** ran a real `npm run dev`, hit all 8 `/blog/<slug>` pages and all 8 cover SVGs directly (all 200; one post showed a transient 500 on its very first Turbopack compile, re-checked clean), confirmed all 8 titles render on `/blog`, confirmed all 8 slugs appear in `/sitemap.xml`. `npx tsc --noEmit` clean repo-wide. Confirmed zero em-dashes across all 8 new files via regex grep (independent check, not just trusting each writer's self-report).
+
+**Process note for next session:** writing 8 fully-researched posts in one batch (parallel agents, each independently WebSearching to verify/correct brief stats) worked well and caught several real factual errors in the brief generator's output (patent dates, auction provenance, designer/fabric misattribution) that would have shipped as fabricated facts if taken at face value. Worth repeating this pattern rather than writing briefs verbatim.
+
+---
+
+**Earlier change (2026-06-22 PM #3 — n8n workflow patches deployed, blog briefs now on gpt-4o, dedup threshold fixed):**
 
 Deployed two critical fixes to the live `crawli content brief` workflow (`FMf2nyTQIZNCRa2L`) that were patched locally in the previous session but couldn't be applied then due to n8n MCP access issues:
 

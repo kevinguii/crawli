@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fdf0d5"/>
+  <circle cx="600" cy="315" r="110" fill="none" stroke="#78350f" stroke-width="10" opacity="0.5"/>
+  <path d="M555 250 L555 380 Q555 395 570 395 L630 395 Q645 395 645 380 L645 250 Q645 230 600 230 Q555 230 555 250 Z" fill="none" stroke="#78350f" stroke-width="12" stroke-linejoin="round"/>
+  <line x1="555" y1="270" x2="525" y2="300" stroke="#78350f" stroke-width="10" stroke-linecap="round"/>
+  <line x1="645" y1="270" x2="675" y2="300" stroke="#78350f" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="580" cy="290" r="4" fill="#78350f"/>
+  <circle cx="600" cy="300" r="4" fill="#78350f"/>
+  <circle cx="620" cy="290" r="4" fill="#78350f"/>
+  <circle cx="585" cy="320" r="4" fill="#78350f"/>
+  <circle cx="615" cy="320" r="4" fill="#78350f"/>
+  <circle cx="600" cy="335" r="4" fill="#78350f"/>
+  <circle cx="570" cy="350" r="4" fill="#78350f"/>
+  <circle cx="630" cy="350" r="4" fill="#78350f"/>
+  <circle cx="600" cy="365" r="4" fill="#78350f"/>
+</svg>

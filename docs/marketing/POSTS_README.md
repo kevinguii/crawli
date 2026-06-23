@@ -10,6 +10,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-16 | `2026-06-16/content-posts-slides.html` | `2026-06-16/post-captions.md` | `2026-06-16/exports/carousel/` | 12 carousel posts (all carousel; brief "reel" items built as carousels) |
 | 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 16 carousel posts (posts 1-3 from the original small batch; posts 4-16 added later the same day after wiring Reddit pain-point research into the brief generator — see Post Breakdown — Day 4) |
 | 2026-06-22 | `2026-06-22/content-posts-slides.html` | `2026-06-22/post-captions.md` | `2026-06-22/exports/carousel/` | 8 carousel posts (posts 1-2 approved by user mid-batch, feedback applied to posts 3-8 the same session) — see Post Breakdown — Day 5 |
+| 2026-06-23 | `2026-06-23/content-posts-slides.html` | `2026-06-23/post-captions.md` | `2026-06-23/exports/carousel/` | 8 carousel posts, all creative decisions pre-specified — new split/grid layouts, new Anton+Epilogue and Cormorant+Montserrat font pairings, Brutalism/Glassmorphism style movements, side-rail text placement, 5 of 8 covers feature a human subject — see Post Breakdown — Day 6 |
 
 **Folder structure:**
 ```
@@ -167,6 +168,40 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 | Day 5: Wool Quality Facts | Navy | #0f172a |
 | Day 5: Best Niches for Reselling | Tangerine | #f97316 |
 | Day 5: The Search Problem | Teal | #14b8a6 |
+| Day 6: Cross-Platform Price Gap | Sky Blue | #0ea5e9 |
+| Day 6: The Story Sells It | Fuchsia | #d946ef |
+| Day 6: The Birkin's Real Origin | Deep Navy | #1e3a8a |
+| Day 6: Built for Pilots, Worn by Everyone | Near Black | #0f0f23 |
+| Day 6: What's Inside Tells the Truth | Royal Purple | #7e22ce |
+| Day 6: The Touch Test | Olive Green | #65a30d |
+| Day 6: When the Price Doesn't Add Up | Rose Red | #f43f5e |
+| Day 6: Big E, Red Tab, 1971 | Indigo Ink | #1e1b4b |
+
+---
+
+## Post Breakdown — Day 6 (2026-06-23)
+
+All 8 posts built from a fully pre-specified creative brief (topics, copy, colors, and visual-system assignments given up front by the user, sourced via `/last30days` + Reddit pain-point patterns + Supabase `content_history` dedup + `ui-ux-pro-max` in a prior planning pass). Execution-only session: no topic/copy/color/layout invention, only building to spec and verifying output.
+
+**New this batch (per `check-visual-diversity.js` + explicit user direction):**
+- **Two new layouts:** `split` (image occupies roughly half the frame, text in the other half, alternating which side the image sits on per post) and `grid` (2x2 panel grid replacing the old single-column step list for fact/checklist-style posts — used on posts 3, 5, 7). Both layouts are new builds, not reused from any prior batch's `myth`/`editorial`/`number-left`/`visual-hero` CSS.
+- **Two new font pairings:** "standard" track = Anton (heading) + Epilogue (body); "editorial" track = Cormorant (heading) + Montserrat (body). Neither pairing appears in any prior batch.
+- **Two new style movements:** Brutalism (raw, high-contrast, blocky borders, hard offset shadows, sharp corners, no rounding) on standard-track posts; Glassmorphism (frosted/blurred translucent badge chips and CTA panels) on editorial-track posts.
+- **`side-rail` text placement on every cover:** text lives in a vertical column anchored to one side of the frame (left or right, picked per post by cover composition), never top-anchor, bottom-anchor, or centered-stacked — all banned this batch since they were the 2026-06-22 batch's placements.
+- **5 of 8 covers feature a human subject** (hands, three-quarter angle, or a generic stylish period-styled figure — never a recognizable real individual), up from 1 of 8 in the 2026-06-22 batch, per explicit user request for more human presence in cover photography.
+
+**Build note (slide-count bug caught and fixed before final export):** the three grid-layout posts (3, 5, 7) consolidate their 4 body facts into a single `grid-panel` slide instead of 4 separate step slides, which means their total slide count is 6, not 7 like the split-layout posts. The first `export-slides.js` run used a uniform `SLIDE_COUNTS = [7,7,7,7,7,7,7,7]`, which made the script call `gotoSlide(6)` on posts with only 6 slides in the DOM — no slide ever got the `.on` class, so Puppeteer screenshotted the slide-7 frame with zero visible content (solid near-black, ~22KB instead of the normal 900KB+ a rendered slide produces). Caught by spot-checking exported file sizes (`find ... -size -50k` flagged 3 identical-byte-count files), confirmed by inspecting one of the flagged PNGs directly, root-caused with a Puppeteer debug script that printed `.slide` count per post (6 for posts 3/5/7, 7 for the rest) versus the slide counter showing `7 / 6`. Fixed by setting `SLIDE_COUNTS = [7,7,6,7,6,7,6,7]` to match each post's actual DOM slide count, then re-exporting cleanly (53 slides total, all file sizes back in the normal range, no blank frames).
+
+| # | Title | Category | Layout | Typography | Style Movement | Imagery | Slides | Human Cover | Cover Subject |
+|---|-------|----------|--------|------------|-----------------|---------|--------|--------------|----------------|
+| 1 | Cross-Platform Price Gap | Resellers | split | standard (Anton + Epilogue) | Brutalism | ai-raster cover + symbol | 7 | No | split-screen phone app listings |
+| 2 | The Story Sells It | Vintage Community | split | editorial (Cormorant + Montserrat) | Glassmorphism | ai-raster cover + symbol/clipart mix | 7 | Yes | hands writing on a fabric tag, holding a flannel |
+| 3 | The Birkin's Real Origin | Fashion History | grid | editorial (Cormorant + Montserrat) | Glassmorphism | ai-raster cover + symbol, 4-panel grid interstitial | 6 | Yes | generic 1980s-styled woman by an airplane window |
+| 4 | Built for Pilots, Worn by Everyone | Vintage Community | split | standard (Anton + Epilogue) | Brutalism | ai-raster cover + symbol/clipart mix | 7 | Yes | person in MA-1 bomber, three-quarter angle, face turned away |
+| 5 | What's Inside Tells the Truth | Fashionistas | grid | editorial (Cormorant + Montserrat) | Glassmorphism | ai-raster cover + symbol, 4-panel grid interstitial | 6 | No | macro interior shot of an open luxury bag |
+| 6 | The Touch Test | Vintage Community | split | standard (Anton + Epilogue) | Brutalism | ai-raster cover + symbol/clipart mix | 7 | Yes | close-up hand touching a shell button |
+| 7 | When the Price Doesn't Add Up | All | grid | standard (Anton + Epilogue) | Brutalism | ai-raster cover + symbol, 4-panel grid interstitial | 6 | No | split-screen phone price comparison |
+| 8 | Big E, Red Tab, 1971 | Resellers | split | editorial (Cormorant + Montserrat) | Glassmorphism | ai-raster cover + symbol | 7 | Yes | hands flipping through a denim rack |
 
 ---
 
