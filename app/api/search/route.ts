@@ -59,8 +59,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Quota check. All users get a weekly quota reset on a 7-day rolling window.
-  // Quotas reset lazily on first search after the 7-day window expires.
+  // Quota check. pg_cron resets expired periods at midnight UTC daily.
+  // This lazy reset is a fallback for users who search before the cron fires.
   const admin = createAdminClient();
   const { data: profile, error: profileErr } = await admin
     .from('profiles')
@@ -83,19 +83,22 @@ export async function POST(request: Request) {
   const nativeCap = TIER_CAPS[tier].nativeResultsCap;
 
   let used = profile.searches_used_this_period ?? 0;
-  const periodStartMs = profile.searches_period_start
-    ? new Date(profile.searches_period_start).getTime()
-    : 0;
-  if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
-    const { error: resetErr } = await admin
-      .from('profiles')
-      .update({
-        searches_used_this_period: 0,
-        searches_period_start: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-    if (resetErr) console.error(`[search] weekly reset failed for user=${user.id}:`, resetErr);
-    else used = 0;
+  if (profile.searches_period_start) {
+    const periodDayStart = new Date(profile.searches_period_start);
+    periodDayStart.setUTCHours(0, 0, 0, 0);
+    if (Date.now() - periodDayStart.getTime() > RESET_PERIOD_MS) {
+      const todayMidnight = new Date();
+      todayMidnight.setUTCHours(0, 0, 0, 0);
+      const { error: resetErr } = await admin
+        .from('profiles')
+        .update({
+          searches_used_this_period: 0,
+          searches_period_start: todayMidnight.toISOString(),
+        })
+        .eq('id', user.id);
+      if (resetErr) console.error(`[search] weekly reset failed for user=${user.id}:`, resetErr);
+      else used = 0;
+    }
   }
 
   if (used >= cap) {

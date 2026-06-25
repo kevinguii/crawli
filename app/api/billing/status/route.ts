@@ -48,22 +48,24 @@ export async function GET() {
 
   const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
-  // Eagerly reset expired periods on status load so the UI never shows a
-  // stale past reset date. The search route also resets lazily, but status
-  // is fetched more often (settings page, badge) so resetting here keeps
-  // the display accurate even for users who haven't searched recently.
+  // pg_cron resets expired periods at midnight UTC daily. This lazy reset
+  // catches the gap between period expiry and the next cron tick, so the
+  // UI never shows a stale count when the user loads the settings page.
   let searchesUsed = profile.searches_used_this_period ?? 0;
   let periodStart = profile.searches_period_start;
   if (periodStart) {
-    const periodStartMs = new Date(periodStart).getTime();
-    if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
-      const now = new Date().toISOString();
+    const periodDayStart = new Date(periodStart);
+    periodDayStart.setUTCHours(0, 0, 0, 0);
+    if (Date.now() - periodDayStart.getTime() > RESET_PERIOD_MS) {
+      const todayMidnight = new Date();
+      todayMidnight.setUTCHours(0, 0, 0, 0);
+      const midnightISO = todayMidnight.toISOString();
       await admin.from('profiles').update({
         searches_used_this_period: 0,
-        searches_period_start: now,
+        searches_period_start: midnightISO,
       }).eq('id', user.id);
       searchesUsed = 0;
-      periodStart = now;
+      periodStart = midnightISO;
     }
   }
 
