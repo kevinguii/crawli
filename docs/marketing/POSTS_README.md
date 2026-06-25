@@ -11,6 +11,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-18 | `2026-06-18/content-posts-slides.html` | `2026-06-18/post-captions.md` | `2026-06-18/exports/carousel/` | 16 carousel posts (posts 1-3 from the original small batch; posts 4-16 added later the same day after wiring Reddit pain-point research into the brief generator — see Post Breakdown — Day 4) |
 | 2026-06-22 | `2026-06-22/content-posts-slides.html` | `2026-06-22/post-captions.md` | `2026-06-22/exports/carousel/` | 8 carousel posts (posts 1-2 approved by user mid-batch, feedback applied to posts 3-8 the same session) — see Post Breakdown — Day 5 |
 | 2026-06-23 | `2026-06-23/content-posts-slides.html` | `2026-06-23/post-captions.md` | `2026-06-23/exports/carousel/` | 8 carousel posts, all creative decisions pre-specified — new split/grid layouts, new Anton+Epilogue and Cormorant+Montserrat font pairings, Brutalism/Glassmorphism style movements, side-rail text placement, 5 of 8 covers feature a human subject — see Post Breakdown — Day 6 |
+| 2026-06-25 | `2026-06-25/content-posts-slides.html` | `2026-06-25/post-captions.md` | `2026-06-25/exports/carousel/` | 8 carousel posts (56 slides) — number-left/visual-hero/myth layouts, four new font pairings (Poiret One+Didact Gothic, Newsreader+Roboto, Bebas Neue+Source Sans 3, Noto Serif JP+Noto Sans JP), Neumorphism style movement (first use) on the three light-background posts, centered/top/bottom cover placements, flat colored clipart object illustrations on inner slides — see Post Breakdown — Day 7 |
 
 **Folder structure:**
 ```
@@ -176,6 +177,43 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 | Day 6: The Touch Test | Olive Green | #65a30d |
 | Day 6: When the Price Doesn't Add Up | Rose Red | #f43f5e |
 | Day 6: Big E, Red Tab, 1971 | Indigo Ink | #1e1b4b |
+| Day 7: How a Garment Hangs | Minimal Black + Gold | #171717 |
+| Day 7: Union Label Date Stamp | Archival Ocean Blue | #075985 |
+| Day 7: Algorithm Is Hiding It | Industrial Grey | #64748b |
+| Day 7: Boro and Sashiko | Indigo Violet | #4338ca |
+| Day 7: A Flawless Bag's Secret | Forensic Slate | #334155 |
+| Day 7: Peacoat Built for Sea | Naval Navy | #172554 |
+| Day 7: Walked a Runway | Warm Stone | #44403c |
+| Day 7: Sell Where the Buyer Is | Crimson | #9f1239 |
+
+---
+
+## Post Breakdown — Day 7 (2026-06-25)
+
+Topics sourced via `/last30days` (vintage/secondhand fashion, Reddit r/VintageFashion was deep in garment identification this window) + the 2026-06-25 DeepSeek content brief, cross-checked against Supabase `content_history` `posted=true`. Five brief ideas were dropped as near-duplicates of already-posted topics: `#narrative-pricing-vintage` (overlaps posted `vintage-listing-stories`), `#leather-finish-guide` (overlaps `understanding-leathers` + `vintage-leather-quality`), `#vegan-leather-myth` (overlaps `suede-vs-split-leather`), `#deadstock-fabric-reseller` (deadstock + reseller-story both covered), and `#duplicate-listing-scam-check` (borderline with `cross-platform-price-fake-check`). The 8 built are all genuinely new topic_keys.
+
+**New this batch (per `check-visual-diversity.js` + `ui-ux-pro-max`, all differing from the 2026-06-23 batch on font_pairing AND text_placement AND layout):**
+- **Three returning-but-unused layouts, none from last batch:** `number-left` (posts 1, 5, 6), `visual-hero` (posts 2, 4, 7), `myth` (posts 3, 8). Last batch was split/grid only; both are absent here.
+- **Four new font pairings, none used in the previous 1-2 batches:** Poiret One + Didact Gothic (art deco, posts 1, 6), Newsreader + Roboto (news editorial, posts 2, 5, 8), Bebas Neue + Source Sans 3 (bold statement, posts 3, 7), and Noto Serif JP + Noto Sans JP (Japanese elegant, post 4 — chosen thematically for the boro topic). Decorative faces (Poiret One, Bebas Neue) are kept to short headlines only, paired with legible body fonts, verified at export size.
+- **Neumorphism (first use in the project)** on the three light-background font-news posts (2, 5, 8): soft dual-shadow raised cards on an off-white page with dark text — a genuine departure from last batch's Brutalism/Glassmorphism and from every prior batch's dark-gradient-with-light-text default. The other five posts use no style movement (clean), which is itself a contrast to last batch's heavy treatments.
+- **Three cover text placements rotated, none side-rail:** centered-stacked (1, 4, 7), top-anchor (2, 5, 8), bottom-anchor (3, 6). Last batch was side-rail on every cover.
+- **Flat colored clipart object illustrations** built fresh for this batch (24 distinct, no icon reused within a post): dresses on hangers by decade, ILGWU label evolution, boro/sashiko motifs, leather repaint tells, peacoat naval details, runway-sample tells. This moves imagery off the all-symbol historical default (clipart was 0% across all prior batches). The two myth posts (3, 8) carry only their ai-raster cover (myth slides are text-only by design).
+- **8 distinct unused colors**, none repeated within the batch and none in the prior palette table.
+
+Every post is cover + 4 body + 1 interstitial (manifesto / pull-quote / stat) + cta = 7 slides, so `SLIDE_COUNTS = [7,7,7,7,7,7,7,7]` (56 slides total). Export verified: no blank/undersized frames; light-background neumorphism slides compress smaller (~80-150KB) than dark slides but render fully.
+
+| # | Title | Category | topic_key | Layout | Font pairing | Style | Cover placement | Imagery |
+|---|-------|----------|-----------|--------|--------------|-------|-----------------|---------|
+| 1 | How a Garment Hangs Dates It | Vintage Community | hanger-appeal-dating | number-left | Poiret One + Didact Gothic | none | centered-stacked | clipart |
+| 2 | The Union Label Date Stamp | Vintage Community | union-label-dating | visual-hero | Newsreader + Roboto | Neumorphism | top-anchor | clipart |
+| 3 | The Algorithm Is Hiding It | All | algorithm-vs-true-search | myth | Bebas Neue + Source Sans 3 | none | bottom-anchor | ai-raster cover |
+| 4 | Boro and Sashiko | Vintage Community | japanese-sashiko-boro | visual-hero | Noto Serif JP + Noto Sans JP | none | centered-stacked | clipart |
+| 5 | A Flawless Bag's Secret | Fashionistas | handbag-repainting-signs | number-left | Newsreader + Roboto | Neumorphism | top-anchor | clipart |
+| 6 | The Peacoat Was Built for Sea | Vintage Community | peacoat-history | number-left | Poiret One + Didact Gothic | none | bottom-anchor | clipart |
+| 7 | It May Have Walked a Runway | Fashionistas | sample-sale-garment-history | visual-hero | Bebas Neue + Source Sans 3 | none | centered-stacked | clipart |
+| 8 | Sell Where the Buyer Is | Fashionistas | luxury-resale-platform-demographics | myth | Newsreader + Roboto | Neumorphism | top-anchor | ai-raster cover |
+
+Parked for a future batch (passed dedup, not built this round): `#1940s-vintage-styling-guide`, `#convertible-clothing-history`.
 
 ---
 
