@@ -13,15 +13,15 @@
      "rule": {
       "interval": [
        {
-        "field": "days",
-        "daysInterval": 2,
-        "triggerAtHour": 8
+        "field": "week",
+        "weekday": ["Monday", "Thursday"],
+        "triggerAtHour": 7
        }
       ]
      }
     },
     "id": "node-schedule",
-    "name": "Every 2 days 8am PT",
+    "name": "Monday & Thursday 7am PT",
     "type": "n8n-nodes-base.scheduleTrigger",
     "typeVersion": 1.2,
     "position": [

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#a5f3fc" opacity="0.45"/>
+  <g stroke="#0e7490" stroke-width="11" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M460 250 L600 200 L740 250 L740 410 L600 460 L460 410 Z"/>
+    <path d="M460 250 L600 300 L740 250"/>
+    <path d="M600 300 L600 460"/>
+  </g>
+  <g stroke="#0e7490" stroke-width="9" fill="none" stroke-linecap="round">
+    <path d="M515 350 L545 350"/>
+    <path d="M520 332 L520 368"/>
+  </g>
+  <text x="600" y="540" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="#0e7490" text-anchor="middle">+$6.49</text>
+</svg>

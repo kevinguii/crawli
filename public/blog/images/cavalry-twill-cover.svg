@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#fde68a" opacity="0.45"/>
+  <defs>
+    <clipPath id="twillClip"><circle cx="600" cy="315" r="200"/></clipPath>
+  </defs>
+  <g clip-path="url(#twillClip)" stroke="#713f12" stroke-width="12" stroke-linecap="round">
+    <path d="M380 560 L560 100 M440 560 L620 100 M500 560 L680 100 M560 560 L740 100 M620 560 L800 100 M680 560 L860 100 M320 560 L500 100 M740 560 L920 100"/>
+  </g>
+  <circle cx="600" cy="315" r="200" fill="none" stroke="#713f12" stroke-width="10"/>
+</svg>

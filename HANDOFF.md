@@ -1,8 +1,24 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-23 (new TikTok carousel batch built: 8 posts, new split/grid layouts, new font pairings, Brutalism/Glassmorphism style movements, 5/8 human covers).
+**Last updated:** 2026-06-25 (10 new blog posts written and published from a pasted brief email, all verified live).
 
-**Latest change (2026-06-23 — new marketing carousel batch, docs/marketing/2026-06-23/):**
+**Latest change (2026-06-25 — 10 new blog posts written and published):**
+
+User pasted a 10-brief content email (material guides, maker deep-dives, era guides, platform deep-dives, opinion pieces) and asked to run the standard research process before writing. Ran the full pipeline: read HANDOFF, loaded WebSearch, dedup-checked all 10 against `content/blog/*.md`, verified key brief stats via WebSearch, then wrote all 10 as full ~1,000-1,800 word AEO-structured posts (direct-answer lede, 5-item FAQ each, comparison table or numbered list, Crawli CTA).
+
+**Dedup outcome — all 10 cleared, none dropped.** The 3 platform posts had distinct angles from existing posts: Poshmark *shipping-cost friction* (vs the existing `why-your-poshmark-listings-are-not-selling.md` which is about *timing*); Depop *AI-search burying vintage* (vs `depop-aesthetic-authenticity.md` listing-presentation and `how-to-optimize-your-depop-profile.md` profile-building); cross-platform *image-theft scam* (vs `how-to-spot-counterfeit-luxury-items.md` fake-product-quality). The brief's own "possible repeat" flag on the Depop post referenced a hypothetical "Depop search rewards resellers" post that does not exist in the blog directory.
+
+**Fact corrections made during writing (not rubber-stamped):**
+- Poshmark shipping post: brief cited "$7.97" as the current flat rate. WebSearch confirmed Poshmark raised it to $8.27 in April 2025, then **lowered it to $6.49 in September 2025** (USPS Ground Advantage). Post uses $6.49 as current and notes the 2025 trajectory.
+- Verified and used as-is: Harris Tweed Act 1993 + Orb Mark definition; Schott Perfecto 1928 origin + 613/618 distinction; Significant Objects 2,700% figure (Walker/Glenn 2009); shell cordovan / Horween facts; Mary Quant mod-revival framing.
+
+**New files (10 posts + 10 covers):** `content/blog/{harris-tweed-authentication-guide, schott-perfecto-jacket-history, shell-cordovan-guide, japanese-boro-textiles-guide, 1960s-mod-fashion-undervalued, cavalry-twill-fabric-guide, cross-platform-scam-spotting, poshmark-shipping-conversion-killer, vintage-story-selling, depop-ai-search-find-vintage}.md` and matching `public/blog/images/*-cover.svg`. Each cover uses a hex not previously used in the cover system (checked against all existing covers first): Harris Tweed green-900 `#14532d`, Schott stone-900 `#1c1917`, shell cordovan rose-900 `#881337`, boro indigo-900 `#312e81`, mod pink-700 `#be185d`, cavalry twill amber-900 `#713f12`, scam rose-700 `#be123c`, Poshmark cyan-700 `#0e7490`, story purple-800 `#6b21a8`, Depop orange-900 `#7c2d12`.
+
+**Verified live (not just typechecked):** `npx tsc --noEmit` clean; all 10 `/blog/<slug>` pages return 200; all 10 cover SVGs return 200; all 10 slugs in `/sitemap.xml`; titles render on `/blog`; FAQPage JSON-LD confirmed present; tables and Crawli CTA links render in HTML; dev log clean of errors. Confirmed **zero em-dashes** across all 10 files (I initially wrote ~65 em-dashes, caught them in the post-write check, and replaced all with commas via `perl -CSD s/\x{2014}/, /g` — verified 0 remaining and no `, ,` artifacts).
+
+**NOT done — Supabase logging deferred.** Unlike prior blog sessions (which referenced explicit `content_history` ids like 288-297), these briefs were pasted as raw text with no `content_history` row ids provided, so I did not mark anything `posted = true` or add `published_posts` rows. If these briefs were logged by the n8n workflow, the matching `content_history` rows should be flipped to `posted = true` and 10 `published_posts` rows added next session (needs the row ids or a topic_key lookup).
+
+**Earlier change (2026-06-23 — new marketing carousel batch, docs/marketing/2026-06-23/):**
 
 Built a full 8-post TikTok carousel batch under `docs/marketing/2026-06-23/`. All creative decisions (topics, copy, colors, layout/typography/style assignments) were fully pre-specified up front by the user for this session — sourced via the standard process (`/last30days` + Reddit pain-point patterns + Supabase `content_history` dedup + `ui-ux-pro-max`) in a prior planning pass, so this session was execution-only: build to spec, verify output, no topic/copy/layout invention.
 
