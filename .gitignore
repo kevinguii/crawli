@@ -75,3 +75,6 @@ docs/marketing/**/*.png
 docs/marketing/**/*.jpg
 docs/marketing/**/*.mp4
 docs/marketing/**/*.mov
+
+# Runtime logs
+token_usage.jsonl
