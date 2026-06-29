@@ -125,7 +125,7 @@ function FlipMargin({
 
   const fee = MARKETPLACE_FEES[platform];
   const hasInputs = sourcingNum > 0 && resaleNum > 0;
-  const profitColor = result.netProfit >= 0 ? 'var(--accent)' : '#dc2626';
+  const profitColor = result.netProfit >= 0 ? '#22c55e' : '#dc2626';
 
   return (
     <div
