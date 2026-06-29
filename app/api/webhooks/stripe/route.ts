@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, tierFromPriceId, TIER_CAPS } from '@/lib/stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { packById, searchesForPriceId } from '@/lib/creditPacks';
 import type Stripe from 'stripe';
 
 export const runtime = 'nodejs';
@@ -32,7 +33,17 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id;
+        const userId = session.client_reference_id
+          ?? (session.metadata?.supabase_user_id as string | undefined)
+          ?? null;
+
+        // One-time payment = prepaid credit pack. Grant credits now that Stripe
+        // has confirmed payment (cash collected before the searches are used).
+        if (session.mode === 'payment') {
+          await grantCreditPack(admin, userId, session);
+          break;
+        }
+
         const subscriptionId = session.subscription as string | null;
         console.log(`[stripe-webhook] checkout.session.completed userId=${userId} sub=${subscriptionId}`);
         if (!userId || !subscriptionId) {
@@ -142,6 +153,56 @@ async function applySubscription(
     console.error(`[stripe-webhook] supabase update failed for user=${userId}:`, error);
   } else {
     console.log(`[stripe-webhook] updated user=${userId} status=${status} tier=${tier} rows=${data?.length ?? 0}`);
+  }
+}
+
+/**
+ * Grant prepaid search credits for a completed one-time credit-pack checkout.
+ * Resolves the pack from session metadata first (set by the credits route),
+ * falling back to the line-item price ID. Increments profiles.search_credits.
+ */
+async function grantCreditPack(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string | null,
+  session: Stripe.Checkout.Session,
+) {
+  const resolvedUserId = userId
+    ?? await userIdFromCustomer(admin, session.customer as string);
+  if (!resolvedUserId) {
+    console.warn('[stripe-webhook] credit pack: could not resolve userId — skipping');
+    return;
+  }
+
+  // Prefer the pack id stamped in metadata; fall back to the price ID.
+  let searches = packById(session.metadata?.credit_pack ?? '')?.searches ?? 0;
+  if (!searches) {
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
+    const priceId = lineItems.data[0]?.price?.id ?? null;
+    searches = searchesForPriceId(priceId);
+  }
+
+  if (!searches) {
+    console.warn(`[stripe-webhook] credit pack: no searches resolved for session=${session.id} — skipping`);
+    return;
+  }
+
+  // Read-modify-write the balance. Volume is low (manual purchases) so the race
+  // window is negligible; revisit with an atomic RPC if packs get popular.
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('search_credits')
+    .eq('id', resolvedUserId)
+    .single();
+  const current = profile?.search_credits ?? 0;
+
+  const { error } = await admin
+    .from('profiles')
+    .update({ search_credits: current + searches })
+    .eq('id', resolvedUserId);
+  if (error) {
+    console.error(`[stripe-webhook] credit grant failed for user=${resolvedUserId}:`, error);
+  } else {
+    console.log(`[stripe-webhook] granted ${searches} credits to user=${resolvedUserId} (now ${current + searches})`);
   }
 }
 

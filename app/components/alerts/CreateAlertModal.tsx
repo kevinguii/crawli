@@ -28,6 +28,12 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
     prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p)) ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence] = useState<24>(24);
+  // Optional AND-only sourcing criteria — narrows matches to brand AND size AND
+  // price<X. Empty fields are omitted (no-op).
+  const [brand, setBrand] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [critSize, setCritSize] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -57,6 +63,17 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
     );
   }
 
+  function buildCriteria(): Record<string, unknown> | undefined {
+    const criteria: Record<string, unknown> = {};
+    if (brand.trim()) criteria.brand = brand.trim();
+    const kw = keywords.split(',').map((s) => s.trim()).filter(Boolean);
+    if (kw.length) criteria.keywordsAll = kw;
+    if (critSize.trim()) criteria.size = critSize.trim();
+    const mp = parseFloat(maxPrice);
+    if (!isNaN(mp) && mp > 0) criteria.maxPrice = mp;
+    return Object.keys(criteria).length ? criteria : undefined;
+  }
+
   async function handleConfirm() {
     setSubmitting(true);
     // Optimistically decrement nav search counter — the first run is charged 1 search.
@@ -68,6 +85,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
         body: JSON.stringify({
           query,
           platforms,
+          criteria: buildCriteria(),
           cadence_hours: cadence,
           notify_timezone: timezone,
           next_run_at: nextRunDate.toISOString(),
@@ -149,6 +167,52 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
               </div>
             </div>
 
+            {/* Sourcing criteria (optional, AND-only) */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Sourcing filters <span style={{ color: 'var(--text-dim)' }}>(optional)</span>
+              </label>
+              <p className="text-[11px] mb-2" style={{ color: 'var(--text-dim)' }}>
+                Only notify when a listing matches all of these. e.g. brand AND size AND under $X.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  placeholder="Brand (e.g. Arc'teryx)"
+                  className="rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+                <input
+                  type="text"
+                  value={critSize}
+                  onChange={(e) => setCritSize(e.target.value)}
+                  placeholder="Size (e.g. M, 10.5)"
+                  className="rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Max price ($)"
+                  className="rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+                <input
+                  type="text"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  placeholder="Keywords (comma sep.)"
+                  className="rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+              </div>
+            </div>
+
             {/* Cadence */}
             <div className="mb-6">
               <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
@@ -208,6 +272,23 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
                   {platforms.map((p) => PLATFORM_NAMES[p] ?? p).join(', ')}
                 </span>
               </div>
+              {(() => {
+                const c = buildCriteria();
+                if (!c) return null;
+                const parts: string[] = [];
+                if (c.brand) parts.push(`brand: ${c.brand}`);
+                if (Array.isArray(c.keywordsAll)) parts.push(`has: ${(c.keywordsAll as string[]).join(' + ')}`);
+                if (c.size) parts.push(`size: ${c.size}`);
+                if (c.maxPrice != null) parts.push(`under $${c.maxPrice}`);
+                return (
+                  <div className="flex justify-between gap-3">
+                    <span style={{ color: 'var(--text-muted)' }}>Filters</span>
+                    <span className="text-right text-xs" style={{ color: 'var(--text)' }}>
+                      {parts.join(' · ')}
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
                 <span style={{ color: 'var(--text)' }}>

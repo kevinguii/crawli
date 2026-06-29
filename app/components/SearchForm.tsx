@@ -97,7 +97,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const [query, setQuery] = useState(initQuery);
   const [selected, setSelected] = useState<string[]>(initPlatforms);
   const [isLoading, setIsLoading] = useState(false);
-  const [quota, setQuota] = useState<{ tier: string; remaining: number } | null>(null);
+  const [quota, setQuota] = useState<{ tier: string; remaining: number; credits: number } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const { addSearch } = useSearchHistory();
 
@@ -108,7 +108,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return;
-        setQuota({ tier: d.tier ?? d.plan, remaining: Math.max(0, d.cap - d.used) });
+        setQuota({ tier: d.tier ?? d.plan, remaining: Math.max(0, d.cap - d.used), credits: d.credits ?? 0 });
       })
       .catch(() => {});
   }, []);
@@ -150,7 +150,13 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     setIsLoading(true);
     // Optimistically decrement the nav counter immediately so quota feels instant
     window.dispatchEvent(new CustomEvent('crawli:search-started'));
-    setQuota((prev) => (prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : prev));
+    setQuota((prev) => {
+      if (!prev) return prev;
+      // Spend an included search first; once those are gone, draw down a credit.
+      return prev.remaining > 0
+        ? { ...prev, remaining: prev.remaining - 1 }
+        : { ...prev, credits: Math.max(0, prev.credits - 1) };
+    });
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -180,10 +186,12 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         // 402 quota_exceeded — show a richer toast with an Upgrade CTA
         // instead of routing through the generic onError red banner.
         if (res.status === 402 && errorCode === 'quota_exceeded') {
+          // Included cap + any prepaid credits are both exhausted. Point to
+          // settings, where the user can buy a credit pack or upgrade.
           toast.error(quotaMessage ?? 'Search limit reached.', {
             action: {
-              label: 'Upgrade',
-              onClick: () => { window.location.href = '/pricing?from=/search'; },
+              label: 'Buy credits',
+              onClick: () => { window.location.href = '/settings?from=/search#credits'; },
             },
             duration: 8000,
           });
@@ -269,7 +277,10 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   }
 
   const filterHints = detectFilterHints(query);
-  const isExhausted = quota?.tier === 'free' && quota.remaining === 0;
+  // Free tier with no included searches left can still search if they hold
+  // prepaid overage credits — only hard-block when both are zero.
+  const isExhausted = quota?.tier === 'free' && quota.remaining === 0 && quota.credits === 0;
+  const onCredits = quota?.tier === 'free' && quota.remaining === 0 && quota.credits > 0;
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -319,13 +330,29 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         </p>
       )}
 
+      {onCredits && (
+        <p className="text-xs" style={{ color: '#d97706' }}>
+          Weekly searches used. Now using overage credits: {quota?.credits} left.{' '}
+          <Link href="/settings#credits" className="font-semibold underline">
+            Buy more
+          </Link>{' '}
+          or{' '}
+          <Link href="/pricing?from=/search" className="font-semibold underline">
+            upgrade
+          </Link>.
+        </p>
+      )}
+
       {isExhausted && (
         <p className="text-xs" style={{ color: '#dc2626' }}>
           You have no searches remaining this week.{' '}
-          <Link href="/pricing?from=/search" className="font-semibold underline">
-            Upgrade
+          <Link href="/settings#credits" className="font-semibold underline">
+            Buy credits
           </Link>{' '}
-          for more.
+          or{' '}
+          <Link href="/pricing?from=/search" className="font-semibold underline">
+            upgrade
+          </Link>.
         </p>
       )}
 

@@ -1,8 +1,25 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-25 (10 new blog posts written and published from a pasted brief email, all verified live).
+**Last updated:** 2026-06-28 (B2B Session 1: margin calculator, debt-proof credit-pack overage, boolean alert criteria, reseller repositioning).
 
-**Latest change (2026-06-25 — 10 new blog posts written and published):**
+**Latest change (2026-06-28 — B2B Foundation Session 1: margin calculator + debt-proof pricing + boolean alerts):**
+
+Repositioned Crawli from a consumer price aggregator toward a **B2B sourcing tool for resellers** (wedge = find underpriced inventory + know the real cross-platform comp/margin before buying; we do NOT do cross-listing). Search core untouched. **Full spec: [docs/B2B_FEATURE_TRUTH.md](docs/B2B_FEATURE_TRUTH.md) — read that first; it is the ground truth for Sessions 2 & 3.**
+
+What shipped:
+- **Margin calculator.** New `lib/marketplaceFees.ts` = the single source of truth for fees (7 platforms: eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX). Seller-payout fees separated from buyer-side fees; per-platform `lastVerified` (all 2026-06-28, every rate WebSearch-verified at build, NOT from memory or older HANDOFF notes). `netFlipProfit()` → net profit / margin% / ROI%. `app/components/PriceSummary.tsx` gained a "Suggested flip margin" panel (sourcing price + destination platform + editable resale defaulting to the search's comp). Verified live: eBay $40→$100 = $46.35 net (matches hand calc); Depop = $56.25.
+- **Debt-proof overage = prepaid credit packs.** Once a tier's included searches are spent, searches draw down prepaid credits bought up front (one-time Stripe `mode=payment`); 402 only when cap AND credits are both 0. New `profiles.search_credits` column; gate in `app/api/search/route.ts` (decrements a credit instead of period usage); `app/api/billing/credits/route.ts` checkout; `grantCreditPack()` in the Stripe webhook on `checkout.session.completed`/`mode=payment`; `lib/creditPacks.ts` config (price IDs from env, NOT created in Stripe by me). Surfaced in `/api/billing/status`, settings, SearchForm. **Verified live: cap-exhausted free user searched on a credit, balance 5→4, period usage unchanged.**
+- **Boolean alert criteria (AND-only).** `AlertCriteria` + `applyCriteria()` in `lib/alertRunner.ts` post-filter the listings returned by `runSearchJob` (brand AND keywords AND size AND price). Whole-word size match (so "M" ≠ "atom"), USD-normalized price. New `saved_searches.criteria jsonb`; POST/PATCH + `CreateAlertModal` extended. 7/7 logic tests pass. **SESSION-4 HANDOFF: cross-user cache sharing goes between `runSearchJob` and `applyCriteria` — see the comment in `runAlert()`; criteria matching is decoupled from the search call on purpose.**
+- **COGS readout:** `scripts/cogs-per-search.mjs` ($0, no deps) prints cost-per-search per tier from §9 and checks every pack price is above worst-case marginal cost (~$0.28 Hobby/max). Use it to set caps + pack prices with real numbers.
+- **Repositioning copy:** Hero, BentoFeatures, AboutSection, and `app/layout.tsx` meta reframed toward resellers/sourcing/margin. Tier labels unchanged.
+
+NOT shipped / sign-off gates (propose, don't ship): `TIER_CAPS` numbers unchanged; credit-pack prices (small 50/$20, medium 150/$50, large 500/$150) are PROPOSALS — owner provisions the three `STRIPE_PRICE_PACK_*` one-time prices in Stripe and confirms numbers. Until provisioned the credits route returns 503 (feature dormant, no broken checkout).
+
+DB (applied to live Supabase 2026-06-28, additive/backward-compatible): `profiles.search_credits int default 0`, `saved_searches.criteria jsonb`. SQL: `docs/migrations/b2b-foundation.sql`. Untouched per scope: `crawl4ai-service/`, `lib/parse.ts`, `lib/colorFilter.ts`, searchWorker/searchCache discovery path.
+
+Verified: `tsc --noEmit` clean; changed files lint-clean; real-browser tested logged in (margin calc light+dark, settings credits UI, alert criteria modal + confirm summary, live credit-decrement search); 0 console errors. Test account state was temporarily manipulated for the credit/alert-cap tests and **fully restored** afterward.
+
+**Earlier change (2026-06-25 — 10 new blog posts written and published):**
 
 User pasted a 10-brief content email (material guides, maker deep-dives, era guides, platform deep-dives, opinion pieces) and asked to run the standard research process before writing. Ran the full pipeline: read HANDOFF, loaded WebSearch, dedup-checked all 10 against `content/blog/*.md`, verified key brief stats via WebSearch, then wrote all 10 as full ~1,000-1,800 word AEO-structured posts (direct-answer lede, 5-item FAQ each, comparison table or numbered list, Crawli CTA).
 
@@ -4039,6 +4056,12 @@ STRIPE_PRICE_ID_YEARLY=price_...               # Pro yearly
 STRIPE_PRICE_ID_MAX_WEEKLY=price_...           # Max weekly
 STRIPE_PRICE_ID_MAX_MONTHLY=price_...          # Max monthly
 STRIPE_PRICE_ID_MAX_YEARLY=price_...           # Max yearly
+# Prepaid search credit packs (one-time prices, mode=payment) — overage path.
+# UNSET = that pack returns 503 (dormant). Owner provisions in Stripe + signs off
+# on numbers. Pack→search-count map lives in lib/creditPacks.ts.
+STRIPE_PRICE_PACK_SMALL=price_...              # 50 searches (proposed $20)
+STRIPE_PRICE_PACK_MEDIUM=price_...             # 150 searches (proposed $50)
+STRIPE_PRICE_PACK_LARGE=price_...              # 500 searches (proposed $150)
 STRIPE_WEBHOOK_SECRET=whsec_...                # from `stripe listen` locally; from Dashboard for prod
 
 # SEO / Analytics (added 2026-05-29) — all optional; absent = feature off
@@ -4084,6 +4107,8 @@ If `llm_mode` is `stub`, the API key isn't being read — check `.env` and that 
 ## 9. Cost Model
 
 **Sources of truth:** [docs/FIRECRAWL_PRICING.md](docs/FIRECRAWL_PRICING.md) for Firecrawl credit pricing, [docs/engine_bakeoff_findings.md](docs/engine_bakeoff_findings.md) for measured per-search cost and per-platform verdicts. This section is a summary — update those files first when prices change.
+
+**Per-tier COGS readout (added 2026-06-28):** run `node scripts/cogs-per-search.mjs` for a $0, no-dep table of cost-per-search per tier derived from the numbers below, plus a debt-proof check that every credit-pack price sits above worst-case marginal cost (~$0.28/search at Hobby, max tier). It mirrors `TIER_CAPS` (lib/stripe.ts) and `CREDIT_PACKS` (lib/creditPacks.ts) as plain constants — keep them in sync when you change either. **Debt-proof overage:** once a tier's included searches are spent, additional searches draw down prepaid credits (`profiles.search_credits`, bought via one-time Stripe checkout) instead of being free-unlimited — see [docs/B2B_FEATURE_TRUTH.md](docs/B2B_FEATURE_TRUTH.md) §2. **Marketplace seller/buyer fees** (for the margin calculator, distinct from our search COGS) live in `lib/marketplaceFees.ts`, verified 2026-06-28.
 
 | Operation | Cost |
 |---|---|

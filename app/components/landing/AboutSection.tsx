@@ -12,17 +12,17 @@ export default function AboutSection() {
           className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl"
           style={{ color: 'var(--text)' }}
         >
-          Resale shopping shouldn’t take eight tabs.
+          Sourcing shouldn’t take eight tabs and a guess.
         </h2>
         <p
           className="mx-auto mt-5 text-base sm:text-lg"
           style={{ color: 'var(--text-muted)' }}
         >
-          Buying secondhand should mean better prices, not more work. Crawli
-          exists because the preloved or vintage piece you want is almost always
-          on a platform you forgot to check. One search bar, every resale
-          marketplace, ranked by price. The price-comparison tool every resale
-          shopper already wishes they had.
+          Good flips come from buying below the real market, not from luck.
+          Crawli pulls every resale marketplace into one search so you see the
+          true cross-platform comp, then shows your net margin after each
+          platform’s fees before you buy. The sourcing edge every serious
+          reseller wishes they had.
         </p>
 
         <div

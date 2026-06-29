@@ -23,6 +23,7 @@ export async function GET() {
       'max_saved_searches',
       'max_tracked_listings',
       'native_results_cap',
+      'search_credits',
     ].join(','))
     .eq('id', user.id)
     .single<{
@@ -35,6 +36,7 @@ export async function GET() {
       max_saved_searches: number | null;
       max_tracked_listings: number | null;
       native_results_cap: number | null;
+      search_credits: number | null;
     }>();
 
   if (error || !profile) {
@@ -104,6 +106,8 @@ export async function GET() {
       alerts: alertsRes.count ?? 0,
       tracked: trackedRes.count ?? 0,
     },
+    // Prepaid overage credits drawn down after the included cap is spent.
+    credits: profile.search_credits ?? 0,
     // Legacy flat fields — keep until callers migrate.
     used: searchesUsed,
     cap: caps.searches,

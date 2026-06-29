@@ -58,13 +58,14 @@ export default function BentoFeatures() {
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
             style={{ color: 'var(--text)' }}
           >
-            Built for buyers who know what they want
+            Built for resellers who buy to flip
           </h2>
           <p
             className="mt-3 text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Every feature exists to get you to the right listing, faster.
+            Every feature exists to help you source underpriced inventory and
+            protect your margin.
           </p>
         </div>
 

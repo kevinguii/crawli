@@ -25,6 +25,19 @@ const createSchema = z.object({
     .partial()
     .nullable()
     .optional(),
+  // AND-only boolean sourcing criteria (brand AND size AND price<X), applied as
+  // a post-filter in alertRunner. All fields optional; null/absent = no-op.
+  criteria: z
+    .object({
+      brand: z.string().max(80).nullable().optional(),
+      keywordsAll: z.array(z.string().max(40)).max(10).optional(),
+      size: z.string().max(40).nullable().optional(),
+      minPrice: z.number().nonnegative().nullable().optional(),
+      maxPrice: z.number().nonnegative().nullable().optional(),
+    })
+    .partial()
+    .nullable()
+    .optional(),
   cadence_hours: z.literal(24),
   notify_timezone: z.string().max(64).optional(),
   next_run_at: z.string().datetime().optional(),
@@ -145,6 +158,7 @@ export async function POST(request: Request) {
       query: parsed.data.query,
       platforms: parsed.data.platforms,
       filters: parsed.data.filters ?? null,
+      criteria: parsed.data.criteria ?? null,
       cadence_hours: parsed.data.cadence_hours,
       notify_timezone: parsed.data.notify_timezone ?? null,
       next_run_at: new Date().toISOString(),

@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runSearchJob } from '@/lib/searchWorker';
 import type { FilterState } from '@/lib/filterOptions';
+import type { Listing } from '@/lib/types';
+import { convertToUSD } from '@/lib/currency';
 import { Resend } from 'resend';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
 import { nextAnchoredRunAt } from '@/lib/alertSchedule';
@@ -8,18 +10,91 @@ import { TIER_CAPS, type Tier } from '@/lib/stripe';
 
 export { ALERT_EXCLUDED_PLATFORMS };
 
+/**
+ * Hyper-specific boolean sourcing criteria layered on top of a saved search.
+ * AND-only this session: every populated field must match for a listing to
+ * count (e.g. brand AND size AND price < X). OR-within-a-field (brand A OR
+ * brand B) is a flagged later extension. Matching happens in `applyCriteria`
+ * over already-fetched listings — NEVER inside searchWorker (Session-4 owns it).
+ */
+export interface AlertCriteria {
+  brand?: string | null;       // must appear in listing.title (case-insensitive)
+  keywordsAll?: string[];      // every token must appear in listing.title
+  size?: string | null;        // must appear in listing.size or title
+  minPrice?: number | null;    // listing price >= minPrice (USD-normalized)
+  maxPrice?: number | null;    // listing price <= maxPrice (USD-normalized)
+}
+
 export interface SavedSearch {
   id: string;
   user_id: string;
   query: string;
   platforms: string[];
   filters: FilterState | null;
+  criteria: AlertCriteria | null;
   cadence_hours: number;
   last_seen_urls: string[] | null;
   unread_match_count: number;
   paused: boolean;
   next_run_at: string;
   notify_timezone: string | null;
+}
+
+/** USD-normalized price for a listing, or null if not convertible. */
+function priceInUSD(listing: Listing): number | null {
+  if (listing.price == null) return null;
+  if (listing.currency === 'USD') return listing.price;
+  return convertToUSD(listing.price, listing.currency);
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Size match: prefer the structured `size` field (substring is fine — values are
+ * like 'm', 'm7_5'); fall back to a WHOLE-WORD match in the title so a
+ * single-letter size like "M" doesn't false-match inside words like "atom".
+ */
+function sizeMatches(listing: Listing, size: string): boolean {
+  if ((listing.size ?? '').toLowerCase().includes(size)) return true;
+  return new RegExp(`\\b${escapeRegExp(size)}\\b`, 'i').test(listing.title ?? '');
+}
+
+/**
+ * AND-only post-filter for boolean sourcing criteria. Returns listings that
+ * satisfy every populated criterion. A null/empty criteria object is a no-op
+ * (legacy alerts behave exactly as before).
+ */
+export function applyCriteria(
+  listings: Listing[],
+  criteria: AlertCriteria | null | undefined,
+): Listing[] {
+  if (!criteria) return listings;
+  const brand = criteria.brand?.trim().toLowerCase();
+  const keywords = (criteria.keywordsAll ?? [])
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+  const size = criteria.size?.trim().toLowerCase();
+  const { minPrice, maxPrice } = criteria;
+  const hasPriceBound = minPrice != null || maxPrice != null;
+
+  return listings.filter((l) => {
+    const title = (l.title ?? '').toLowerCase();
+
+    if (brand && !title.includes(brand)) return false;
+    if (keywords.length && !keywords.every((k) => title.includes(k))) return false;
+    if (size && !sizeMatches(l, size)) return false;
+
+    if (hasPriceBound) {
+      const usd = priceInUSD(l);
+      if (usd == null) return false; // a price bound is set but this listing has no usable price
+      if (minPrice != null && usd < minPrice) return false;
+      if (maxPrice != null && usd > maxPrice) return false;
+    }
+
+    return true;
+  });
 }
 
 // Called by /api/cron/run-alerts for each due saved search.
@@ -50,6 +125,12 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   let listings: Awaited<ReturnType<typeof runSearchJob>> = [];
   try {
+    // SESSION-4 HANDOFF POINT: cross-user cache sharing (the COGS track) will
+    // sit HERE — between fetching listings and the criteria post-filter below.
+    // Today this is a live `runSearchJob`; later it may be served from a shared
+    // cache. Keep boolean-criteria matching decoupled from this call (it runs on
+    // the returned Listing[], never inside searchWorker) so the source can be
+    // swapped without touching match logic.
     listings = await runSearchJob(
       savedSearch.query,
       platforms,
@@ -60,6 +141,10 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   } catch (err) {
     console.error(`[alertRunner] search failed for alert=${savedSearch.id}:`, err);
   }
+
+  // AND-only boolean sourcing criteria (brand AND size AND price<X). No-op for
+  // legacy alerts where criteria is null.
+  listings = applyCriteria(listings, savedSearch.criteria);
 
   const currentUrls = listings.map((l) => l.url);
   const lastSeen = new Set(savedSearch.last_seen_urls ?? []);

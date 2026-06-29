@@ -54,14 +54,14 @@ export default function Hero() {
               className="inline-block h-1.5 w-1.5 rounded-full"
               style={{ background: 'var(--accent)' }}
             />
-            8 resale platforms, one search
+            Sourcing intelligence for resellers
           </span>
 
           <h1
             className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl"
             style={{ color: 'var(--text)', lineHeight: 1.05 }}
           >
-            Stop checking 8 apps.{' '}
+            Stop guessing.{' '}
             <span
               style={{
                 background:
@@ -71,7 +71,7 @@ export default function Hero() {
                 backgroundClip: 'text',
               }}
             >
-              Find the best resale price instantly.
+              Know your margin before you buy.
             </span>
           </h1>
 
@@ -79,9 +79,9 @@ export default function Hero() {
             className="mx-auto mt-5 max-w-2xl text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Crawli searches Grailed, Depop, Poshmark, StockX, and more
-            simultaneously, so you can compare secondhand prices and never
-            overpay again.
+            Crawli searches Grailed, Depop, Poshmark, StockX, and more at once, so
+            you can find underpriced inventory and know the real cross-platform
+            comp and your flip margin before you spend a dollar.
           </p>
 
           <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-3xl">

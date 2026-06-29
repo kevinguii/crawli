@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: profile, error: profileErr } = await admin
     .from('profiles')
-    .select('subscription_status, subscription_tier, searches_used_this_period, searches_period_start, max_searches_per_period, native_results_cap')
+    .select('subscription_status, subscription_tier, searches_used_this_period, searches_period_start, max_searches_per_period, native_results_cap, search_credits')
     .eq('id', user.id)
     .single();
 
@@ -101,13 +101,21 @@ export async function POST(request: Request) {
     }
   }
 
-  if (used >= cap) {
+  // DEBT-PROOF OVERAGE: once the tier's included searches are spent, draw down
+  // prepaid credits (bought up front) instead of granting free-unlimited search.
+  // Only 402 when BOTH the included cap is exhausted AND the credit balance is 0.
+  // When a credit is used, we decrement search_credits at charge time instead of
+  // incrementing searches_used_this_period (see the charge block below).
+  const credits = profile.search_credits ?? 0;
+  const usingCredit = used >= cap;
+  if (usingCredit && credits <= 0) {
     return NextResponse.json(
       {
         error: 'quota_exceeded',
-        message: `You have used all ${cap} searches for this week. Check back next week or upgrade.`,
+        message: `You have used all ${cap} searches for this week. Buy a credit pack to keep sourcing, or upgrade your plan.`,
         used,
         cap,
+        credits,
         plan: tier,
       },
       { status: 402 },
@@ -228,12 +236,19 @@ export async function POST(request: Request) {
         // Fix: charge immediately after the platform fan-out starts (before
         // results are streamed) so cancel-after-start still costs 1 quota.
         // Deferred: low-frequency enough at launch; add to Phase 3 checklist.
+        // Overage: if the included cap was already spent, draw down a prepaid
+        // credit instead of incrementing period usage. Otherwise charge the
+        // normal included-search slot. (Same read-at-start / write-at-end race
+        // as the original increment — acceptable at current volume.)
+        const charge = usingCredit
+          ? { search_credits: Math.max(0, credits - 1) }
+          : { searches_used_this_period: used + 1 };
         void admin
           .from('profiles')
-          .update({ searches_used_this_period: used + 1 })
+          .update(charge)
           .eq('id', user.id)
           .then(({ error }) => {
-            if (error) console.error(`[search] quota increment failed for user=${user.id}:`, error);
+            if (error) console.error(`[search] quota charge failed for user=${user.id}:`, error);
           });
       }
     },
