@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawli Content Posts — 2026-06-29</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 3 fresh pairings, none in the previous 1-2 batches:
+     Space Grotesk+DM Sans (font-grotesk), Calistoga+Inter (font-cali),
+     Archivo Black+Spectral (font-archivo).
+     Cover text placement: corner-block (solid accent panel anchored bottom-left) — new.
+     Inner layouts: ledger, checklist, editorial-step — all new. -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Calistoga&family=Inter:wght@300;400;500;600;700&family=Archivo+Black&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  background: #0a0a0a;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px; gap: 14px;
+}
+
+/* ── top bar ── */
+.top-bar { width:100%; max-width:440px; display:flex; align-items:center; gap:10px; }
+select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; background:#1a1a1a; color:#ccc; font-size:13px; cursor:pointer; }
+.nbtn { padding:9px 14px; border:1px solid #2a2a2a; border-radius:8px; background:#1a1a1a; color:#aaa; font-size:13px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.nbtn:hover:not(:disabled) { background:#252525; color:#fff; }
+.nbtn:disabled { opacity:.3; cursor:default; }
+.post-label { width:100%; max-width:440px; font-size:11px; color:#444; text-transform:uppercase; letter-spacing:.1em; }
+
+/* ── slide frame (4:5) ── */
+.frame { width:100%; max-width:440px; aspect-ratio:4/5; border-radius:18px; overflow:hidden; position:relative; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.slide { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+.slide.on { display:block; }
+.bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
+.slide-ctr { font-size:12px; color:#444; }
+
+/* ════════════════════════════════════════════════════════════════════
+   COVER PHOTO
+   ════════════════════════════════════════════════════════════════════ */
+.cover-photo { width:100%; height:100%; position:relative; overflow:hidden; }
+.cover-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.cover-photo .scrim { position:absolute; inset:0; }
+
+/* NEW: corner-block — solid accent panel in bottom-left, photo visible in upper-right.
+   The panel IS the text surface; no text bleeds into the raw photo. */
+.cover-photo.place-corner .scrim {
+  background: linear-gradient(148deg, rgba(0,0,0,.02) 38%, rgba(0,0,0,.10) 62%, rgba(0,0,0,.22) 82%);
+}
+.cover-photo.place-corner .content {
+  position:absolute; z-index:2; bottom:0; left:0; right:0; display:block; padding:0;
+}
+.cover-photo.place-corner .corner-box {
+  background: var(--accent);
+  padding: 18px 22px 22px;
+  max-width: 84%;
+  display: flex; flex-direction:column; gap:8px;
+}
+/* fallback bottom placement */
+.cover-photo.place-bottom .scrim {
+  background: linear-gradient(180deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.36) 55%,rgba(0,0,0,.82) 100%);
+}
+.cover-photo.place-bottom .content {
+  position:absolute; z-index:2; bottom:0; left:0; right:0;
+  padding: 8% 16% 12% 7%;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* shared cover text elements */
+.cover-photo .badge {
+  display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:100px;
+  background:rgba(255,255,255,.20); border:1px solid rgba(255,255,255,.32);
+  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  width:fit-content; color:#fff;
+}
+.cover-photo .hook {
+  font-size:23px; line-height:1.18; font-weight:800; color:#fff;
+  text-shadow:0 1px 12px rgba(0,0,0,.35);
+}
+.cover-photo .swipe { font-size:10px; opacity:.80; letter-spacing:.07em; text-transform:uppercase; color:#fff; }
+
+/* ════════════════════════════════════════════════════════════════════
+   LEDGER — horizontal-striped rows, number col left, content right.
+   Best for 4–6 items; each row is a discrete data point.
+   ════════════════════════════════════════════════════════════════════ */
+.ledger { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; }
+.ledger .l-head {
+  padding:22px 22px 14px; border-bottom:1px solid rgba(255,255,255,.10); flex-shrink:0;
+}
+.ledger .l-section {
+  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; margin-bottom:5px;
+}
+.ledger .l-head-title { font-size:18px; font-weight:800; line-height:1.22; }
+.ledger .l-rows { flex:1; display:flex; flex-direction:column; }
+.ledger .l-row {
+  flex:1; display:flex; align-items:stretch;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.ledger .l-row:last-child { border-bottom:none; }
+.ledger .l-num {
+  width:52px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:900; opacity:.14; padding:0; letter-spacing:-.5px;
+}
+.ledger .l-row.hi .l-num { opacity:1; color:var(--accent); background:rgba(255,255,255,.05); }
+.ledger .l-sep { width:1px; background:rgba(255,255,255,.08); flex-shrink:0; }
+.ledger .l-content {
+  flex:1; padding:12px 16px 12px 14px; display:flex; flex-direction:column; justify-content:center; gap:3px;
+}
+.ledger .l-label { font-size:10px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; opacity:.36; }
+.ledger .l-title { font-size:13.5px; font-weight:700; line-height:1.28; }
+.ledger .l-desc { font-size:11.5px; line-height:1.55; opacity:.66; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CHECKLIST — numbered items stacked vertically, actionable format.
+   Best for 4–5 items; each item is a step or check.
+   ════════════════════════════════════════════════════════════════════ */
+.checklist {
+  width:100%; height:100%; display:flex; flex-direction:column;
+  padding:24px 22px 20px; overflow:hidden;
+}
+.checklist .ck-head { margin-bottom:14px; flex-shrink:0; }
+.checklist .ck-section {
+  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; margin-bottom:5px;
+}
+.checklist .ck-head-title { font-size:18px; font-weight:800; line-height:1.22; }
+.checklist .ck-items { display:flex; flex-direction:column; flex:1; justify-content:space-between; }
+.checklist .ck-item {
+  display:flex; align-items:flex-start; gap:13px;
+  padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08);
+}
+.checklist .ck-item:last-child { border-bottom:none; }
+.checklist .ck-num {
+  font-size:10px; font-weight:800; min-width:22px; height:22px; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.28); display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:1px; opacity:.52; letter-spacing:0;
+}
+.checklist .ck-num.tick {
+  background:var(--accent); border-color:var(--accent); opacity:1; color:#fff;
+}
+.checklist .ck-text { display:flex; flex-direction:column; gap:2px; }
+.checklist .ck-name { font-size:13.5px; font-weight:700; line-height:1.28; }
+.checklist .ck-detail { font-size:11.5px; line-height:1.55; opacity:.68; }
+
+/* ════════════════════════════════════════════════════════════════════
+   EDITORIAL STEP — text-dominant, typographic, no icon dependency.
+   Large ghost element for depth; content sits center stage.
+   ════════════════════════════════════════════════════════════════════ */
+.ed-step {
+  width:100%; height:100%; display:flex; flex-direction:column;
+  justify-content:space-between; padding:28px 24px 26px; overflow:hidden; position:relative;
+}
+.ed-step .ed-ghost {
+  position:absolute; right:12px; top:14px; font-size:96px; font-weight:900;
+  opacity:.05; letter-spacing:-3px; user-select:none; line-height:1; pointer-events:none;
+}
+.ed-step .ed-top { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+.ed-step .ed-section {
+  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36;
+}
+.ed-step .ed-counter { font-size:11px; font-weight:600; opacity:.36; letter-spacing:.04em; }
+.ed-step .ed-body {
+  flex:1; display:flex; flex-direction:column; justify-content:center; gap:12px; padding:16px 0;
+}
+.ed-step .ed-headline { font-size:24px; font-weight:800; line-height:1.22; }
+.ed-step .ed-sub { font-size:13px; line-height:1.65; opacity:.76; }
+.ed-step .ed-pill {
+  display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:100px;
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+  font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  margin-top:2px; width:fit-content;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MANIFESTO / STAT / PULL-QUOTE / MYTH (reused patterns)
+   ════════════════════════════════════════════════════════════════════ */
+.manifesto {
+  width:100%; height:100%; padding:38px 26px; display:flex; flex-direction:column; justify-content:center; gap:16px;
+}
+.manifesto .big { font-weight:800; font-size:31px; line-height:1.16; letter-spacing:-.4px; }
+.manifesto .big .hl { font-style:italic; }
+.manifesto .footnote { font-size:12px; opacity:.48; letter-spacing:.02em; }
+
+.stat {
+  width:100%; height:100%; padding:38px 26px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:14px;
+}
+.stat .num { font-size:88px; font-weight:900; line-height:.9; letter-spacing:-2px; }
+.stat .ctx { font-size:14.5px; line-height:1.58; opacity:.76; max-width:300px; }
+
+.pull-quote { width:100%; height:100%; padding:38px 26px; display:flex; flex-direction:column; justify-content:center; }
+.pull-quote .mark { font-size:76px; line-height:.5; opacity:.18; margin-bottom:14px; }
+.pull-quote blockquote { font-style:italic; font-weight:600; font-size:22px; line-height:1.34; }
+.pull-quote .attribution { font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.48; margin-top:18px; }
+
+.myth-card {
+  width:100%; height:100%; padding:32px 24px; display:flex; flex-direction:column;
+  justify-content:center; gap:12px; position:relative; overflow:hidden;
+}
+.myth-card .mc-ghost {
+  position:absolute; top:10px; right:14px; font-size:84px; font-weight:900;
+  opacity:.06; line-height:1; user-select:none; pointer-events:none;
+}
+.myth-card .mc-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.40; }
+.myth-card .mc-myth { font-size:17.5px; font-weight:700; line-height:1.36; text-decoration:line-through; opacity:.38; }
+.myth-card .mc-truth-label {
+  font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.60; margin-top:8px;
+}
+.myth-card .mc-truth { font-size:21px; font-weight:800; line-height:1.28; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CTA — 2026-06-29 batch: NO URL, NO explicit CTA, subtle/varied closing.
+   ════════════════════════════════════════════════════════════════════ */
+.cta-slide {
+  width:100%; height:100%; padding:32px 24px; display:flex; flex-direction:column;
+  justify-content:space-between; overflow:hidden;
+}
+.cta-slide .cta-tag {
+  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; flex-shrink:0;
+}
+.cta-slide .cta-headline { font-size:23px; font-weight:800; line-height:1.24; flex:1; display:flex; align-items:center; }
+.cta-slide .cta-closing {
+  font-size:13px; line-height:1.66; opacity:.76;
+  border-top:1px solid rgba(255,255,255,.14); padding-top:15px; margin-top:14px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FONT TRACKS
+   ════════════════════════════════════════════════════════════════════ */
+/* font-grotesk = Space Grotesk (display) + DM Sans (body) */
+.font-grotesk .hook,
+.font-grotesk .l-head-title,
+.font-grotesk .ck-head-title,
+.font-grotesk .ed-headline,
+.font-grotesk .manifesto .big,
+.font-grotesk .stat .num,
+.font-grotesk .pull-quote blockquote,
+.font-grotesk .cta-headline,
+.font-grotesk .mc-myth,
+.font-grotesk .mc-truth { font-family:'Space Grotesk', sans-serif; }
+
+.font-grotesk .badge,.font-grotesk .swipe,
+.font-grotesk .l-section,.font-grotesk .l-label,.font-grotesk .l-title,.font-grotesk .l-desc,
+.font-grotesk .ck-section,.font-grotesk .ck-name,.font-grotesk .ck-detail,
+.font-grotesk .ed-section,.font-grotesk .ed-counter,.font-grotesk .ed-sub,.font-grotesk .ed-pill,
+.font-grotesk .manifesto .footnote,.font-grotesk .stat .ctx,
+.font-grotesk .cta-tag,.font-grotesk .cta-closing,
+.font-grotesk .mc-label,.font-grotesk .mc-truth-label,
+.font-grotesk .pull-quote .attribution { font-family:'DM Sans', sans-serif; }
+
+/* font-cali = Calistoga (display) + Inter (body) */
+.font-cali .hook,
+.font-cali .l-head-title,
+.font-cali .ck-head-title,
+.font-cali .ed-headline,
+.font-cali .manifesto .big,
+.font-cali .stat .num,
+.font-cali .pull-quote blockquote,
+.font-cali .cta-headline,
+.font-cali .mc-myth,
+.font-cali .mc-truth { font-family:'Calistoga', cursive; }
+
+.font-cali .badge,.font-cali .swipe,
+.font-cali .l-section,.font-cali .l-label,.font-cali .l-title,.font-cali .l-desc,
+.font-cali .ck-section,.font-cali .ck-name,.font-cali .ck-detail,
+.font-cali .ed-section,.font-cali .ed-counter,.font-cali .ed-sub,.font-cali .ed-pill,
+.font-cali .manifesto .footnote,.font-cali .stat .ctx,
+.font-cali .cta-tag,.font-cali .cta-closing,
+.font-cali .mc-label,.font-cali .mc-truth-label,
+.font-cali .pull-quote .attribution { font-family:'Inter', sans-serif; }
+
+/* font-archivo = Archivo Black (heavy display) + Spectral (literary serif body) */
+.font-archivo .hook,
+.font-archivo .l-head-title,
+.font-archivo .ck-head-title,
+.font-archivo .ed-headline,
+.font-archivo .manifesto .big,
+.font-archivo .stat .num,
+.font-archivo .pull-quote blockquote,
+.font-archivo .cta-headline,
+.font-archivo .mc-myth,
+.font-archivo .mc-truth { font-family:'Archivo Black', sans-serif; }
+
+.font-archivo .badge,.font-archivo .swipe,
+.font-archivo .l-section,.font-archivo .l-label,.font-archivo .l-title,.font-archivo .l-desc,
+.font-archivo .ck-section,.font-archivo .ck-name,.font-archivo .ck-detail,
+.font-archivo .ed-section,.font-archivo .ed-counter,.font-archivo .ed-sub,.font-archivo .ed-pill,
+.font-archivo .manifesto .footnote,.font-archivo .stat .ctx,
+.font-archivo .cta-tag,.font-archivo .cta-closing,
+.font-archivo .mc-label,.font-archivo .mc-truth-label,
+.font-archivo .pull-quote .attribution { font-family:'Spectral', serif; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <select id="sel" onchange="jumpPost(this.value)"></select>
+  <button class="nbtn" id="pp" onclick="changePost(-1)">← Post</button>
+  <button class="nbtn" id="np" onclick="changePost(1)">Post →</button>
+</div>
+<div class="post-label" id="plabel"></div>
+<div class="frame" id="frame"></div>
+<div class="bot-bar">
+  <button class="nbtn" id="ps" onclick="changeSlide(-1)">← Slide</button>
+  <span class="slide-ctr" id="sctr"></span>
+  <button class="nbtn" id="ns" onclick="changeSlide(1)">Slide →</button>
+</div>
+<script>
+// ─── RENDER FUNCTIONS ────────────────────────────────────────────────────────
+
+function sv(post) { return `--accent:${post.color};`; }
+
+function renderCoverPhoto(s, post) {
+  if (s.place === 'corner') {
+    return `<div class="cover-photo place-corner" style="${sv(post)}">
+      <img class="bg" src="${s.img}" alt="">
+      <div class="scrim"></div>
+      <div class="content">
+        <div class="corner-box">
+          <span class="badge">${s.badge}</span>
+          <h1 class="hook">${s.title}</h1>
+          <span class="swipe">${s.swipe || 'swipe →'}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `<div class="cover-photo place-bottom" style="${sv(post)}">
+    <img class="bg" src="${s.img}" alt="">
+    <div class="scrim"></div>
+    <div class="content">
+      <span class="badge">${s.badge}</span>
+      <h1 class="hook">${s.title}</h1>
+      <span class="swipe">${s.swipe || 'swipe →'}</span>
+    </div>
+  </div>`;
+}
+
+function renderLedger(s, post) {
+  const rows = (s.rows || []).map(r => `
+    <div class="l-row${r.hi ? ' hi' : ''}">
+      <div class="l-num">${r.num}</div>
+      <div class="l-sep"></div>
+      <div class="l-content">
+        ${r.label ? `<div class="l-label">${r.label}</div>` : ''}
+        <div class="l-title">${r.title}</div>
+        ${r.desc ? `<div class="l-desc">${r.desc}</div>` : ''}
+      </div>
+    </div>`).join('');
+  return `<div class="ledger" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="l-head">
+      ${s.section ? `<div class="l-section">${s.section}</div>` : ''}
+      <div class="l-head-title">${s.title}</div>
+    </div>
+    <div class="l-rows">${rows}</div>
+  </div>`;
+}
+
+function renderChecklist(s, post) {
+  const items = (s.items || []).map((it, i) => `
+    <div class="ck-item">
+      <div class="ck-num${it.tick ? ' tick' : ''}">${i + 1}</div>
+      <div class="ck-text">
+        <div class="ck-name">${it.name}</div>
+        ${it.detail ? `<div class="ck-detail">${it.detail}</div>` : ''}
+      </div>
+    </div>`).join('');
+  return `<div class="checklist" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="ck-head">
+      ${s.section ? `<div class="ck-section">${s.section}</div>` : ''}
+      <div class="ck-head-title">${s.title}</div>
+    </div>
+    <div class="ck-items">${items}</div>
+  </div>`;
+}
+
+function renderEdStep(s, post) {
+  return `<div class="ed-step" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="ed-ghost" aria-hidden="true">${s.ghost || ''}</div>
+    <div class="ed-top">
+      ${s.section ? `<div class="ed-section">${s.section}</div>` : ''}
+      ${s.counter ? `<div class="ed-counter">${s.counter}</div>` : ''}
+    </div>
+    <div class="ed-body">
+      <div class="ed-headline">${s.headline}</div>
+      ${s.sub ? `<div class="ed-sub">${s.sub}</div>` : ''}
+      ${s.pill ? `<div class="ed-pill">${s.pill}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderManifesto(s, post) {
+  return `<div class="manifesto" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="big">${s.text}</div>
+    ${s.footnote ? `<div class="footnote">${s.footnote}</div>` : ''}
+  </div>`;
+}
+
+function renderStat(s, post) {
+  return `<div class="stat" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="num">${s.num}</div>
+    <div class="ctx">${s.ctx}</div>
+  </div>`;
+}
+
+function renderPullQuote(s, post) {
+  return `<div class="pull-quote" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="mark">&ldquo;</div>
+    <blockquote>${s.quote}</blockquote>
+    ${s.attribution ? `<div class="attribution">${s.attribution}</div>` : ''}
+  </div>`;
+}
+
+function renderMyth(s, post) {
+  return `<div class="myth-card" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="mc-ghost" aria-hidden="true">${s.num || ''}</div>
+    <div class="mc-label">Common belief</div>
+    <div class="mc-myth">${s.myth}</div>
+    <div class="mc-truth-label">What is actually true</div>
+    <div class="mc-truth">${s.truth}</div>
+  </div>`;
+}
+
+function renderCTA(s, post) {
+  return `<div class="cta-slide" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="cta-tag">${s.tag || 'RESELLER INTEL'}</div>
+    <div class="cta-headline">${s.headline}</div>
+    <div class="cta-closing">${s.closing}</div>
+  </div>`;
+}
+
+function buildSlideHTML(s, post) {
+  if (s.type === 'cover-photo') return renderCoverPhoto(s, post);
+  if (s.type === 'ledger')      return renderLedger(s, post);
+  if (s.type === 'checklist')   return renderChecklist(s, post);
+  if (s.type === 'ed-step')     return renderEdStep(s, post);
+  if (s.type === 'manifesto')   return renderManifesto(s, post);
+  if (s.type === 'stat')        return renderStat(s, post);
+  if (s.type === 'pull-quote')  return renderPullQuote(s, post);
+  if (s.type === 'myth')        return renderMyth(s, post);
+  if (s.type === 'cta')         return renderCTA(s, post);
+  return `<div style="background:${post.bg};color:${post.text};height:100%;display:flex;align-items:center;justify-content:center;padding:24px;">Unknown type: ${s.type}</div>`;
+}
+
+// ─── POST DATA ────────────────────────────────────────────────────────────────
+
+const posts = [
+
+  // ── 1. MISSPELLING SEARCH ARBITRAGE ─────────────────────────────────────────
+  // color:#1a1a2e  font-grotesk  ledger+ed-step  corner-block  topic:misspelling-search-technique
+  {
+    label: 'CAROUSEL · RESELLERS · SOURCING HACK',
+    ptitle: 'Misspelling Search Arbitrage',
+    color: '#1a1a2e', text: '#e8eaf6',
+    bg: 'linear-gradient(165deg,#23254a 0%,#0d0e1d 100%)',
+    fontClass: 'font-grotesk',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-01-cover.png', badge:'Reseller Intel',
+        place:'corner',
+        title:'the listings no one is bidding on are spelled wrong.',
+        swipe:'swipe for the technique →' },
+
+      { type:'ed-step', section:'Why it works', counter:'The search gap',
+        ghost:'01',
+        headline:'Sellers mistype brand names. Search engines miss the listing entirely.',
+        sub:'No exact-match traffic means zero competition. The item sits unlisted for weeks with no bids. One deliberate typo in your search unlocks it.' },
+
+      { type:'ledger', section:'Brand misspelling list', title:'Start with these on eBay',
+        rows:[
+          { num:'CT', label:'Carhartt',   title:'Carrhart · Carthatt · Carhart',       desc:'Workwear. Common on eBay and Mercari.' },
+          { num:'PG', label:'Patagonia',  title:'Patagona · Patagonya · Patgonia',      desc:'Fleece and Nano Puff surface under all three.' },
+          { num:'LV', label:"Levi's",     title:'Levis · Levis 501 (no apostrophe)',    desc:'Missing the apostrophe is the single most common eBay gap.' },
+          { num:'SP', label:'Supreme',    title:'Supreem · Supeme · Surpreme',          desc:'High-value, regularly misspelled by casual sellers.' },
+          { num:'TB', label:'Timberland', title:'Timbland · Timberlend · Timberlad',    desc:'Boot searches especially.' },
+        ]
+      },
+
+      { type:'ed-step', section:'Platform by platform', counter:'Where to run it',
+        ghost:'02',
+        headline:'eBay is the gold mine. It runs pure keyword search with no algorithmic boosting.',
+        sub:'A misspelled listing on eBay gets zero impressions from platform traffic. Only someone who deliberately searches that typo will find it. Depop and Mercari work the same way.' },
+
+      { type:'ed-step', section:'The compound play', counter:'Narrow it further',
+        ghost:'03',
+        headline:'Brand typo + category = the narrowest possible search.',
+        sub:'"Carrhart jacket" on eBay in the workwear section. Sometimes the result is a single listing with no bids. That is the play.' },
+
+      { type:'manifesto',
+        text:'Most resellers<br>search the right<br>spelling.<br><span class="hl">Search the<br>wrong one.</span>' },
+
+      { type:'cta', tag:'RESELLER INTEL',
+        headline:'The gap is in what sellers cannot type correctly.',
+        closing:'Most resellers check one platform at a time, with the correct spelling. Some have figured out how to run every typo variation across all of them at once. That changes what they find.' },
+    ]
+  },
+
+  // ── 2. RISE MEASUREMENT STANDARD ────────────────────────────────────────────
+  // color:#2d6a4f  font-archivo  ed-step+ledger  corner-block  topic:rise-measurement-fit
+  {
+    label: 'CAROUSEL · RESELLERS · LISTING QUALITY',
+    ptitle: 'Rise Measurement Standard',
+    color: '#2d6a4f', text: '#e6f4ee',
+    bg: 'linear-gradient(162deg,#2e5a42 0%,#0f2219 100%)',
+    fontClass: 'font-archivo',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-02-cover.png', badge:'Reseller Tips',
+        place:'corner',
+        title:'the measurement that causes more returns than the waist is the rise.',
+        swipe:'swipe to list it right →' },
+
+      { type:'myth', num:'01',
+        myth:'If the waist and inseam match, the fit is right.',
+        truth:'A 32" waist on a 1980s high-rise sits three inches higher than a modern mid-rise. Same tag numbers. Completely different fit.' },
+
+      { type:'ed-step', section:'What rise is', counter:'Front rise',
+        ghost:'↕',
+        headline:'Front rise: waistband top to crotch seam.',
+        sub:'Lay the pants flat on a clean surface. Measure from the top of the waistband down the front, following the natural crease, to the crotch point. This single number explains half of all pants returns.' },
+
+      { type:'ledger', section:'Rise by decade', title:'What to expect when dating pants',
+        rows:[
+          { num:'60–70s', title:'High rise',        desc:'10–12 in front. Sits at or above the navel. Universally underpriced right now.' },
+          { num:'80–90s', title:'High to mid',       desc:'9–11 in, varies by brand and gender cut. Always measure; the label won\'t say.' },
+          { num:'2000s',  title:'Low rise peak',     desc:'7–8 in. Sits at or below the hip bone. The era that caused the most returns.' },
+          { num:'2010s+', title:'Mid-rise default',  desc:'8.5–9.5 in most contemporary denim. The new "expected" by buyers.' },
+        ]
+      },
+
+      { type:'ed-step', section:'Back rise', counter:'The comfort measurement',
+        ghost:'↕',
+        headline:'Back rise is why pants pull down when you sit.',
+        sub:'Measure from waistband top down the back seam to the crotch point. Low back rise causes the pants to drag. This is the measurement buyers complain about in reviews, and sellers almost never list it.' },
+
+      { type:'manifesto',
+        text:'Front rise<br>is the look.<br><span class="hl">Back rise<br>is the feel.</span>',
+        footnote:'List both or expect questions.' },
+
+      { type:'cta', tag:'LISTING QUALITY',
+        headline:'One extra measurement closes the sale.',
+        closing:'Buyers who return pants for fit will not return them if the rise is listed accurately. Some resellers also pull comps from other platforms to see which sold listings included the rise measurement. The correlation with sell-through rate is not subtle.' },
+    ]
+  },
+
+  // ── 3. MA-1 ORANGE LINING HISTORY ───────────────────────────────────────────
+  // color:#8b1a1a  font-cali  ed-step+ledger+checklist  corner-block  topic:flight-jacket-lining-history
+  {
+    label: 'CAROUSEL · VINTAGE COMMUNITY · ERA GUIDE',
+    ptitle: 'MA-1 Orange Lining History',
+    color: '#8b1a1a', text: '#f7e8e8',
+    bg: 'linear-gradient(162deg,#701616 0%,#1f0707 100%)',
+    fontClass: 'font-cali',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-03-cover.png', badge:'Vintage Community',
+        place:'corner',
+        title:'the orange lining in this flight jacket was not a design choice. it saved lives.',
+        swipe:'swipe for the dating guide →' },
+
+      { type:'ed-step', section:'The origin', counter:'1958 · US Air Force',
+        ghost:'58',
+        headline:'Downed pilots needed to be seen from the air.',
+        sub:'The MA-1 was designed reversible. Olive drab exterior for flight operations. International Orange interior for signaling ground and air rescue teams after an ejection. The color was chosen for maximum visibility over water and terrain.' },
+
+      { type:'ed-step', section:'The color has a name', counter:'International Orange',
+        ghost:'●',
+        headline:'The same orange used on the Golden Gate Bridge.',
+        sub:'High-visibility, high-contrast against water and most natural terrain. Adopted across US military survival gear of the era. Today an intact orange-lining MA-1 in good condition sells for $200 to $500 and up.' },
+
+      { type:'ledger', section:'Dating by lining color', title:'The lining tells you the era',
+        rows:[
+          { hi:true, num:'1958', title:'Bright orange lining', desc:'The reversible safety signal. Earliest and most collectible MA-1 configuration.' },
+          { num:'1963', title:'Transition period', desc:'Both orange and sage existed during changeover. Check the spec label for the contract year.' },
+          { num:'1967+', title:'Sage green lining', desc:'USAF dropped the orange standard. Sage remained through the 70s and 80s.' },
+        ]
+      },
+
+      { type:'checklist', section:'Beyond the lining',
+        title:'Three more tells that confirm the era',
+        items:[
+          { tick:true, name:'Knit cuffs', detail:'Early MA-1s have tighter, heavier knit cuffs. Post-1970s go thinner and more synthetic.' },
+          { name:'Zipper brand', detail:'Talon zipper = pre-1970s. YKK zipper = 1970s onward.' },
+          { name:'USAF spec label', detail:'Inside left chest. The MIL-J-number and contract year are printed directly on it.' },
+        ]
+      },
+
+      { type:'manifesto',
+        text:'The orange tells you<br>when it was made.<br><span class="hl">The story tells you<br>what it is worth.</span>' },
+
+      { type:'cta', tag:'RESELLER INTEL · CRAWLI',
+        headline:'Orange-lining MA-1s move fast when they surface.',
+        closing:'Once you know that the orange stopped in 1967, you see listings differently. Some resellers now scan the whole market looking for orange lining visible in the listing photos before the seller has even described it in the title.' },
+    ]
+  },
+
+  // ── 4. FAKE RAY-BAN WAYFARER CHECK ──────────────────────────────────────────
+  // color:#1b263b  font-grotesk  ed-step+checklist  corner-block  topic:fake-rayban-wayfarer-check
+  {
+    label: 'CAROUSEL · ALL · AUTHENTICATION',
+    ptitle: 'Fake Ray-Ban Wayfarer Check',
+    color: '#1b263b', text: '#e8edf5',
+    bg: 'linear-gradient(162deg,#1f2f49 0%,#090e19 100%)',
+    fontClass: 'font-grotesk',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-04-cover.png', badge:'Authentication',
+        place:'corner',
+        title:'real wayfarers have a tell fakes almost never get right. it is in the lens.',
+        swipe:'swipe for the five-point check →' },
+
+      { type:'ed-step', section:'The lens etching', counter:'The fastest tell',
+        ghost:'RB',
+        headline:'Every real Wayfarer has a tiny RB etched on the left lens.',
+        sub:'The etching changed in 1999. Pre-1999: fine, delicate sans-serif. Post-1999: thicker, more rounded letterforms. Fakes almost always get the weight wrong, or skip the etching entirely.' },
+
+      { type:'checklist', section:'The five-point check',
+        title:'Do all five before you buy',
+        items:[
+          { tick:true, name:'Lens etching font', detail:'Pre-1999 = fine sans. Post-1999 = thicker rounded. Wrong font or no etching = fake.' },
+          { name:'Hinge count', detail:'Real Wayfarers have a 7-barrel hinge. Fakes commonly use 5.' },
+          { name:'Temple numbers', detail:'Inside arm: model number + "BL" country stamp on authentic pairs.' },
+          { name:'Nose pad attachment', detail:'Real = molded attached pads, not removable. Fakes use adhesive pads that peel.' },
+          { name:'Price floor', detail:'Under $30 as "authentic" on any platform is not authentic.' },
+        ]
+      },
+
+      { type:'ed-step', section:'Reading a listing remotely', counter:'Before you commit',
+        ghost:'📷',
+        headline:'Always ask for a close-up of the inner temple arm before buying vintage.',
+        sub:'The model number and country stamp are on the inside of the temple arm. If the seller won\'t provide that photo, or the image is deliberately blurry, skip it entirely.' },
+
+      { type:'stat', num:'7',
+        ctx:'The number of barrel hinges on a real Wayfarer frame. The most reliable hardware tell you can check from a single clear photo.' },
+
+      { type:'manifesto',
+        text:'Font weight.<br>Hinge count.<br><span class="hl">Two seconds<br>per listing.</span>' },
+
+      { type:'cta', tag:'AUTHENTICATION',
+        headline:'Every fake passes the first look. The second look is where it fails.',
+        closing:'The tells are in the details sellers do not think to fake. Once you know what the RB etching font actually looks like, you can run this check across every platform\'s listing photos before you spend anything.' },
+    ]
+  },
+
+  // ── 5. SHEARLING AUTHENTICATION ─────────────────────────────────────────────
+  // color:#5c4033  font-cali  myth+checklist+ed-step  corner-block  topic:shearling-authentication
+  {
+    label: 'CAROUSEL · ALL · MATERIAL AUTHENTICATION',
+    ptitle: 'Shearling Authentication',
+    color: '#5c4033', text: '#f5ede8',
+    bg: 'linear-gradient(162deg,#54392c 0%,#1a1008 100%)',
+    fontClass: 'font-cali',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-05-cover.png', badge:'Material Guide',
+        place:'corner',
+        title:'most shearling coats listed online are not shearling. here is how to check.',
+        swipe:'swipe for the three tests →' },
+
+      { type:'ed-step', section:'What real shearling is', counter:'One material, not two',
+        ghost:'✦',
+        headline:'Real shearling is a hide with the wool still attached.',
+        sub:'It is not a jacket with wool sewn onto leather as a separate layer. It is one continuous piece of sheepskin or lambskin, tanned with the wool intact and never removed from the hide.' },
+
+      { type:'myth', num:'01',
+        myth:'"Shearling-look," "shearling-faced," and "sherpa-lined" are close enough.',
+        truth:'These are legal descriptions for synthetic or laminated materials. Only "genuine shearling" or "shearling hide" means the real thing. The listing word choice matters.' },
+
+      { type:'checklist', section:'The three physical tests',
+        title:'Do these in order',
+        items:[
+          { tick:true, name:'Pore test', detail:'Under a phone macro lens: real leather shows irregular hair follicles. Synthetic is uniform, patterned, too regular.' },
+          { name:'Backing test', detail:'Bend the collar back. Real shearling has a hide back, smooth and slightly porous. Faux has woven fabric backing.' },
+          { name:'Fold test', detail:'Real shearling follows the natural curve of the hide and springs back. Faux bends uniformly in any direction.' },
+        ]
+      },
+
+      { type:'ed-step', section:'Reading a listing remotely', counter:'Photo tells',
+        ghost:'📷',
+        headline:'Good listings always show the backing. Bad listings hide it.',
+        sub:'Ask for a photo of the interior backing and a close-up of the collar edge. If the seller does not have one or sends a blurry image, assume the coat is faux shearling being listed as genuine.' },
+
+      { type:'manifesto',
+        text:'The pore structure<br>does not lie.<br><span class="hl">The word<br>"shearling"<br>sometimes does.</span>' },
+
+      { type:'cta', tag:'RESELLER INTEL · CRAWLI',
+        headline:'The price difference between real and faux is $40 versus $400.',
+        closing:'Three photos tell you which one you are looking at. Some resellers cross-reference three platforms at once to find the listing that got the shearling right but mislabeled it at the wrong price.' },
+    ]
+  },
+
+  // ── 6. 2026 LEATHER BLAZER TREND ────────────────────────────────────────────
+  // color:#2c2c54  font-archivo  stat+ed-step+ledger  corner-block  topic:2026-leather-blazer-trend
+  {
+    label: 'CAROUSEL · RESELLERS · TREND INTELLIGENCE',
+    ptitle: '2026 Leather Blazer Trend',
+    color: '#2c2c54', text: '#e8e8f4',
+    bg: 'linear-gradient(162deg,#333368 0%,#0e0e20 100%)',
+    fontClass: 'font-archivo',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-06-cover.png', badge:'Sourcing Intel',
+        place:'corner',
+        title:'search demand for vintage leather blazers is rising. the oversized 80s cuts are still underpriced.',
+        swipe:'swipe for the sourcing window →' },
+
+      { type:'ed-step', section:'Why it is happening', counter:'The styling shift',
+        ghost:'80s',
+        headline:'Wide-shoulder 80s blazers are being worn as outerwear, not office wear.',
+        sub:'The silhouette that read as outdated in 2015 is now being layered over hoodies and cropped knits. The styling changed before the market priced in the demand.' },
+
+      { type:'ledger', section:'Where the price gap is right now', title:'Three tiers of the same item',
+        rows:[
+          { hi:true, num:'$40', title:"Men's oversized 80s leather blazer, sized to fit a women's L", desc:'Still labeled menswear. The styling potential is not yet in the price.' },
+          { num:'$150', title:'Tailored women\'s vintage leather blazer', desc:'Already priced for the aesthetic. The margin has compressed.' },
+          { num:'$80',  title:'Unisex or androgynous cut, mid-decade', desc:'Middle ground with room to move before the restyling becomes obvious.' },
+        ]
+      },
+
+      { type:'checklist', section:'Quality check before you buy',
+        title:'What separates a flip from a loss',
+        items:[
+          { tick:true, name:'Lining quality', detail:'Quilted or satin-backed lining signals construction quality and photographs better.' },
+          { name:'Button stance', detail:'High button stance = 80s signature. Low or single button = 90s or later.' },
+          { name:'Shoulder structure', detail:'Padded, structured shoulders must be intact. Crushed shoulder pads cannot be fully restored.' },
+          { name:'Leather smell', detail:'Real aged leather has a distinct dry-animal scent. Pleather smells chemical or plastic.' },
+        ]
+      },
+
+      { type:'manifesto',
+        text:'The demand is<br>already there.<br><span class="hl">The inventory<br>has not noticed.</span>' },
+
+      { type:'ed-step', section:'The sourcing window', counter:'How long it stays open',
+        ghost:'⏱',
+        headline:'Once a styling shift hits critical mass, thrift prices catch up within a season.',
+        sub:'The resellers moving on oversized leather blazers right now are the ones checking search volume across every resale platform at once, before the item gets a viral moment and reprices itself.' },
+
+      { type:'cta', tag:'SOURCING INTEL',
+        headline:'Trend windows close fast once the content starts.',
+        closing:'The inventory that moves right now is the oversized men\'s cut sitting in the workwear section, not the fashion section. Some resellers are already tracking search spikes across every marketplace to find these before the category name catches up.' },
+    ]
+  },
+
+  // ── 7. POSHMARK MIGRATION REALITY ───────────────────────────────────────────
+  // color:#203a43  font-grotesk  myth+ed-step+ledger  corner-block  topic:poshmark-sales-not-algorithm
+  {
+    label: 'CAROUSEL · RESELLERS · PLATFORM STRATEGY',
+    ptitle: 'Poshmark Migration Reality',
+    color: '#203a43', text: '#e4eef2',
+    bg: 'linear-gradient(162deg,#254855 0%,#080e12 100%)',
+    fontClass: 'font-grotesk',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-07-cover.png', badge:'Platform Strategy',
+        place:'corner',
+        title:'poshmark sales are down. it is not the algorithm. it is where buyers went.',
+        swipe:'swipe for the map →' },
+
+      { type:'myth', num:'01',
+        myth:'The Poshmark algorithm changed and that is why sales are slower.',
+        truth:'Buyer behavior shifted. Under-30 secondhand shoppers now start their search on Depop or Vinted for discovery. Poshmark\'s social mechanics appeal to a different use case than it did three years ago.' },
+
+      { type:'ed-step', section:'What changed for buyers', counter:'The behavior shift',
+        ghost:'→',
+        headline:'Intent-driven buying is replacing feed-based discovery.',
+        sub:'Saved searches and sourcing alerts are overtaking the social scroll. Buyers who know what they want are searching directly across platforms, not waiting to be shown something in a feed.' },
+
+      { type:'ledger', section:'Where each platform is strong now', title:'Match the item to the audience',
+        rows:[
+          { num:'PM', label:'Poshmark',    title:'Authenticated luxury, known brands, NWT',        desc:'US-based buyers. Best for designer bags and well-documented brand items.' },
+          { num:'DP', label:'Depop',       title:'Y2K, vintage aesthetic, under-25 buyers',         desc:'Best for 90s-00s branded, quirky vintage, statement pieces.' },
+          { num:'VT', label:'Vinted',      title:'Everyday casual, price-conscious, EU-forward',    desc:'High volume, fast turns, lower margins on basics.' },
+          { num:'GR', label:'Grailed',     title:'Designer menswear, Japanese brands, archive',     desc:'Best for luxury menswear and slow-burn collector pieces.' },
+        ]
+      },
+
+      { type:'ed-step', section:'The smarter play', counter:'Alerts over scrolling',
+        ghost:'🔔',
+        headline:'Set your search criteria once and let inventory come to you.',
+        sub:'Instead of refreshing one platform hoping the right listing appears, sourcing alerts across every platform surface new inventory the moment it lists. The resellers still shipping every morning figured this out first.' },
+
+      { type:'manifesto',
+        text:'List where<br>your buyer<br><span class="hl">is already<br>looking.</span>' },
+
+      { type:'cta', tag:'PLATFORM STRATEGY',
+        headline:'Platform loyalty is a business decision, not a personality.',
+        closing:'The question is not which platform you prefer. It is where the buyer for your specific item is actively searching right now. For some resellers that answer changes by category, and they have built their sourcing to reflect that.' },
+    ]
+  },
+
+  // ── 8. AUTHENTICITY GUARANTEE LIMITS ────────────────────────────────────────
+  // color:#6b2737  font-archivo  myth+checklist+ed-step  corner-block  topic:authenticity-guarantee-limits
+  {
+    label: 'CAROUSEL · ALL · MYTH-BUSTING',
+    ptitle: 'Authenticity Guarantee Limits',
+    color: '#6b2737', text: '#f4e6ea',
+    bg: 'linear-gradient(162deg,#602232 0%,#19070c 100%)',
+    fontClass: 'font-archivo',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-08-cover.png', badge:'Myth-Busting',
+        place:'corner',
+        title:'an authenticity guarantee does not mean the item is real. it means the platform has an opinion.',
+        swipe:'swipe for the fine print →' },
+
+      { type:'myth', num:'01',
+        myth:'"Authenticity Guaranteed" means I am fully protected if this turns out to be fake.',
+        truth:'Most guarantees cover only items sold directly by the platform or vetted seller accounts, not standard peer-to-peer transactions.' },
+
+      { type:'checklist', section:'What is commonly excluded',
+        title:'Read these before you trust a badge',
+        items:[
+          { name:'Vintage items pre-2000', detail:'Most programs exclude vintage because provenance is harder to verify independently.' },
+          { name:'Items without original tags', detail:'Missing authenticity cards or hang tags often void the guarantee entirely.' },
+          { name:'Peer-to-peer private listings', detail:'The guarantee usually applies to platform-curated inventory, not individual seller accounts.' },
+          { name:'Accessories under the price threshold', detail:'Common exclusion floor is $100 to $500 depending on platform and category.' },
+        ]
+      },
+
+      { type:'ed-step', section:'If it goes wrong', counter:'The refund reality',
+        ghost:'⚖',
+        headline:'Getting a refund often requires a third-party authentication letter at your own cost.',
+        sub:'Some platforms require an independent authentication service report before processing any claim. That service costs money, takes time, and the outcome is not guaranteed. The badge looked like protection. The process is something else.' },
+
+      { type:'ed-step', section:'What actually protects you', counter:'The real method',
+        ghost:'✓',
+        headline:'Cross-platform price comparison is a better first line than any badge.',
+        sub:'A listing priced 40% below the sold-price floor on three other platforms is flagging itself. That discrepancy predicts authenticity problems more reliably than a platform badge does.' },
+
+      { type:'manifesto',
+        text:'A guarantee is<br>the platform\'s opinion.<br><span class="hl">Comps are<br>the market\'s verdict.</span>' },
+
+      { type:'cta', tag:'MYTH-BUSTING',
+        headline:'Know what real sold prices look like before trusting any listing.',
+        closing:'The strongest protection is always seeing what the item actually sells for everywhere else. Wise buyers build that picture before they buy, not after the guarantee does not come through.' },
+    ]
+  },
+
+];
+
+// ─── STATE + NAV ──────────────────────────────────────────────────────────────
+let pi = 0, si = 0;
+
+function render() {
+  const post = posts[pi];
+  const frame = document.getElementById('frame');
+  frame.className = `frame ${post.fontClass}`;
+  frame.innerHTML = post.slides.map((s, i) =>
+    `<div class="slide${i === si ? ' on' : ''}">${buildSlideHTML(s, post)}</div>`
+  ).join('');
+  document.getElementById('plabel').textContent = post.label;
+  document.getElementById('sctr').textContent = `${si + 1} / ${post.slides.length}`;
+
+  const sel = document.getElementById('sel');
+  if (!sel.children.length) {
+    posts.forEach((p, i) => {
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = `Post ${i + 1}: ${p.ptitle}`;
+      sel.appendChild(o);
+    });
+  }
+  sel.value = pi;
+  document.getElementById('pp').disabled = pi === 0;
+  document.getElementById('np').disabled = pi === posts.length - 1;
+  document.getElementById('ps').disabled = si === 0;
+  document.getElementById('ns').disabled = si === post.slides.length - 1;
+}
+
+function changeSlide(d) { const n = si + d; if (n >= 0 && n < posts[pi].slides.length) { si = n; render(); } }
+function changePost(d)  { const n = pi + d; if (n >= 0 && n < posts.length) { pi = n; si = 0; render(); } }
+function jumpPost(v)    { pi = +v; si = 0; render(); }
+function gotoSlide(v)   { si = +v; render(); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') changeSlide(1);
+  if (e.key === 'ArrowLeft')  changeSlide(-1);
+  if (e.key === 'ArrowDown')  changePost(1);
+  if (e.key === 'ArrowUp')    changePost(-1);
+});
+
+render();
+</script>
+</body>
+</html>

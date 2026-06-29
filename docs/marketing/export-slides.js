@@ -39,7 +39,7 @@ const height = 1350;
 
 // --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
 const batchArg = process.argv.find(a => a.startsWith('--batch='));
-const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-25';
+const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-29';
 
 // Number of slides per post for this batch (cover + steps + cta)
 // Update this array when creating a new batch.
@@ -51,6 +51,8 @@ const BATCH = batchArg ? batchArg.split('=')[1] : '2026-06-25';
 // grid posts 3,5,7 consolidate the 4 facts into one grid-panel slide = cover+grid+interstitial+2 extra+cta = 6)
 // 2026-06-25: [7,7,7,7,7,7,7,7] (every post = cover + 4 body + 1 interstitial + cta = 7;
 // layouts number-left/visual-hero/myth, all 4-body so uniform 7)
+// 2026-06-29: [7,7,7,7,7,7,7,7] (8 posts × 7 slides each = cover + 4-5 body + cta;
+// new corner-block covers, ledger/checklist/editorial-step layouts, 3 new font pairings)
 const SLIDE_COUNTS = [7, 7, 7, 7, 7, 7, 7, 7];
 
 const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');

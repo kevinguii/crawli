@@ -1,6 +1,49 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-29 (Session 2 prep: reseller-pivot n8n content-brief edits + batch plan, batch build deferred).
+**Last updated:** 2026-06-29 (10 new blog posts written and published).
+
+**Latest change (2026-06-29 — 10 new blog posts written and published):**
+
+User pasted a 10-brief content email (fashion history, maker deep-dives, material guides, category guides, platform deep-dives, opinion pieces, case study). Ran the standard pipeline: dedup-checked all 10 against `content_history` (all had `posted = false`, none dropped), verified key facts via WebSearch, wrote all 10 as full 1,400-1,700 word AEO-structured posts (direct-answer lede, 4-5 FAQ each, comparison table or numbered list, Crawli CTA without URL per the reseller-pivot obfuscate rule).
+
+**New files (10 posts + 10 covers):**
+- `content/blog/fisherman-sweater-history.md` + `fisherman-sweater-cover.svg` (`#164e63`)
+- `content/blog/vintage-barbour-jacket-guide.md` + `barbour-jacket-cover.svg` (`#1a2e05`)
+- `content/blog/viyella-fabric-guide.md` + `viyella-fabric-cover.svg` (`#3b0764`)
+- `content/blog/y2k-backlash-trend-2026.md` + `y2k-backlash-cover.svg` (`#0f172a`)
+- `content/blog/m65-field-jacket-guide.md` + `m65-field-jacket-cover.svg` (`#451a03`)
+- `content/blog/best-marketplaces-for-luxury-items.md` + `luxury-resale-platforms-cover.svg` (`#292524`)
+- `content/blog/how-resale-platform-authentication-works.md` + `resale-authentication-cover.svg` (`#1e1b4b`)
+- `content/blog/poshmark-bundling-strategy.md` + `poshmark-bundling-cover.svg` (`#042f2e`)
+- `content/blog/how-to-buy-vintage-levis-501s-online.md` + `vintage-levis-sizing-cover.svg` (`#172554`)
+- `content/blog/cross-platform-flip-case-study.md` + `pendleton-crosslist-cover.svg` (`#431407`)
+
+**Supabase:** all 10 `content_history` rows flipped to `posted = true`; 10 `published_posts` rows inserted (ids 46-55). Zero em-dashes. TypeScript clean.
+
+**Fact corrections during writing:**
+- Viyella: original 55/45 formula; Barrowford mill demolished 1999; current licensed product is 80/20 cotton/wool.
+- Barbour: 3 royal warrants (1974, 1982, 1987); Bedale + Beaufort introduced 1980s by Dame Margaret Barbour.
+- M-65: DSA contract two-digit year code confirmed; chrome-alloy zippers 1965-1971; DSA renamed DLA 1977.
+- Grailed fees: 9% flat + ~3.49% processing = ~12.5-13.5% total. RealReal clothing: 20% payout on items under $100.
+- Vestiaire: 10% digital rejection rate (2024); 99.93% counterfeit accuracy (platform-stated).
+
+---
+
+**Latest change (2026-06-29 — Day 8 carousel batch: full build + export):**
+
+Completed the full 2026-06-29 TikTok carousel batch. 8 posts × 7 slides = 56 slides. All exported, spot-checked (no blank/undersized frames, covers 2.7-5.3MB, inner slides 537KB-1.1MB). All 8 topic_keys marked `posted=true` in Supabase `content_history`.
+
+**Batch summary:**
+- Topics sourced from the 2026-06-29 DeepSeek content brief (first brief under the reseller-pivot prompt) — cross-checked against Supabase `content_history`, 2 near-duplicates dropped (`cross-platform-price-authenticity`, `lesser-known-luxury-platforms`).
+- **Obfuscate-CI compliance:** no URL, no "search Crawli," no "download," no "link in bio" on any slide or caption. Crawli mentioned (soft/implicit, each phrased differently) in closing text of 4 posts; only 2 posts (3, 5) have `· CRAWLI` in CTA tag. 4 posts have zero Crawli mention.
+- **Visual diversity** (all 3 axes differ from 2026-06-25 AND 2026-06-23):
+  - Font pairings: Space Grotesk+DM Sans (posts 1,4,7), Calistoga+Inter (posts 3,5), Archivo Black+Spectral (posts 2,6,8) — all new to project
+  - Text placement: corner-block (new — solid opaque accent panel bottom-left, photo fills frame) — differs from all prior placements
+  - Inner layouts: ledger / checklist / editorial-step — all new, none from prior 2 batches
+- **Covers:** all ai-raster (gpt-image-2 `--style photo --quality medium`). Posts 7+8 hit OpenAI 5/min limit; retried with 15s stagger, both OK.
+- **CTA pattern (new standard):** `renderCTA(s, post)` takes `s.tag`, `s.headline`, `s.closing` — NO url div, NO thecrawli.com. This is now the standard. The old explicit-URL CTA template is retired.
+- **Files shipped:** `2026-06-29/content-posts-slides.html`, `ai-images/post-0{1-8}-cover.png`, `exports/carousel/` (56 PNGs), `post-captions.md`, `visual-history.json` (8 entries appended), `POSTS_README.md` (Day 8 index + breakdown), `export-slides.js` (default batch = 2026-06-29).
+- **8 topic_keys marked posted:** `misspelling-search-technique`, `rise-measurement-fit`, `flight-jacket-lining-history`, `fake-rayban-wayfarer-check`, `shearling-authentication`, `2026-leather-blazer-trend`, `poshmark-sales-not-algorithm`, `authenticity-guarantee-limits`
 
 **Latest change (2026-06-29 — Session 2 prep: content-brief reseller pivot deployed; carousel batch planned + deferred):**
 

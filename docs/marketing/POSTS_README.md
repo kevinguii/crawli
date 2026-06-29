@@ -12,6 +12,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-22 | `2026-06-22/content-posts-slides.html` | `2026-06-22/post-captions.md` | `2026-06-22/exports/carousel/` | 8 carousel posts (posts 1-2 approved by user mid-batch, feedback applied to posts 3-8 the same session) — see Post Breakdown — Day 5 |
 | 2026-06-23 | `2026-06-23/content-posts-slides.html` | `2026-06-23/post-captions.md` | `2026-06-23/exports/carousel/` | 8 carousel posts, all creative decisions pre-specified — new split/grid layouts, new Anton+Epilogue and Cormorant+Montserrat font pairings, Brutalism/Glassmorphism style movements, side-rail text placement, 5 of 8 covers feature a human subject — see Post Breakdown — Day 6 |
 | 2026-06-25 | `2026-06-25/content-posts-slides.html` | `2026-06-25/post-captions.md` | `2026-06-25/exports/carousel/` | 8 carousel posts (56 slides) — number-left/visual-hero/myth layouts, four new font pairings (Poiret One+Didact Gothic, Newsreader+Roboto, Bebas Neue+Source Sans 3, Noto Serif JP+Noto Sans JP), Neumorphism style movement (first use) on the three light-background posts, centered/top/bottom cover placements, flat colored clipart object illustrations on inner slides — see Post Breakdown — Day 7 |
+| 2026-06-29 | `2026-06-29/content-posts-slides.html` | `2026-06-29/post-captions.md` | `2026-06-29/exports/carousel/` | 8 carousel posts (56 slides, 7 each) — first reseller-pivot batch under the obfuscate-CI rule (no URL/CTA on any slide, Crawli mentioned subtly/variably on select final slides only). Three new font pairings (Space Grotesk+DM Sans, Calistoga+Inter, Archivo Black+Spectral), new corner-block cover placement (solid accent panel bottom-left), new ledger/checklist/editorial-step inner layouts. All covers ai-raster (gpt-image-2). Topics sourced from 2026-06-29 DeepSeek brief + dedup against Supabase content_history — see Post Breakdown — Day 8 |
 
 **Folder structure:**
 ```
@@ -214,6 +215,35 @@ Every post is cover + 4 body + 1 interstitial (manifesto / pull-quote / stat) + 
 | 8 | Sell Where the Buyer Is | Fashionistas | luxury-resale-platform-demographics | myth | Newsreader + Roboto | Neumorphism | top-anchor | ai-raster cover |
 
 Parked for a future batch (passed dedup, not built this round): `#1940s-vintage-styling-guide`, `#convertible-clothing-history`.
+
+---
+
+## Post Breakdown — Day 8 (2026-06-29)
+
+Topics sourced from the 2026-06-29 DeepSeek content brief (first brief generated under the reseller-pivot prompt). Cross-checked against Supabase `content_history` `posted=true`. Two brief ideas dropped as near-duplicates: `#cross-platform-price-authenticity` (overlaps posted `cross-platform-price-fake-check` + `luxury-price-discrepancy-cross-platform`) and `#lesser-known-luxury-platforms` (overlaps posted `luxury-resale-platform-demographics`). The 8 built are all genuinely new `topic_key`s.
+
+**Obfuscate-CI rule (first batch under this rule):** No URL, no "search Crawli," no "download," no "link in bio" on any slide or in any caption. Crawli mentioned in the CTA slide of posts 3 and 5 only (soft, implicit aside), and as `RESELLER INTEL · CRAWLI` tag on those two CTA slides. All other 6 posts have no Crawli mention at all. Caption Crawli references: posts 1, 3, 5, 6 — each phrased differently, never the same line.
+
+**New this batch (per `check-visual-diversity.js`, all differing from the 2026-06-25 AND 2026-06-23 batches on font_pairing AND text_placement AND layout):**
+- **Three brand-new font pairings, none used in the previous 1-2 batches:** Space Grotesk + DM Sans (posts 1, 4, 7), Calistoga + Inter (posts 3, 5), Archivo Black + Spectral (posts 2, 6, 8).
+- **New cover text placement: corner-block** — solid-colored accent panel anchored to the bottom-left of the frame, photo fills the upper area and right side. The panel uses the post's `--accent` color as a hard-edged opaque block, not a gradient scrim overlay. Every post in this batch uses corner-block (consistent treatment across the batch, differentiating from last two batches' varied top/center/bottom/side-rail placements).
+- **Three new inner-slide layouts:** `ledger` (horizontal-striped rows: number column left, content column right — posts 1, 6), `editorial-step` (text-dominant, large ghost element, no icon dependency — posts 2, 3, 7), `checklist` (numbered items stacked vertically with circle number badges — posts 4, 5, 8). None of these were used in any prior batch.
+- **No style movement** — clean treatment as deliberate contrast to Neumorphism (2026-06-25) and Brutalism/Glassmorphism (2026-06-23). Clean dark gradients + clean white text throughout.
+- **Imagery: covers all ai-raster (gpt-image-2), inner slides all symbol** — large ghost typographic elements, structural dividers, and typographic hierarchy are the "visual" on inner slides. No SVG clipart library needed for this batch's layouts. Symbol sits at 0/20 under target per diversity check — this batch moves it.
+- **8 distinct unused colors**, all verified against prior palette table.
+
+Every post: cover + 4-5 body slides + cta = 7 slides. `SLIDE_COUNTS = [7,7,7,7,7,7,7,7]` (56 slides total).
+
+| # | Title | Category | topic_key | Layout | Font pairing | Cover placement | Imagery |
+|---|-------|----------|-----------|--------|--------------|-----------------|---------|
+| 1 | Misspelling Search Arbitrage | Resellers | misspelling-search-technique | ledger | Space Grotesk + DM Sans | corner-block | ai-raster cover, symbol inner |
+| 2 | Rise Measurement Standard | Resellers | rise-measurement-fit | editorial-step | Archivo Black + Spectral | corner-block | ai-raster cover, symbol inner |
+| 3 | MA-1 Orange Lining History | Vintage Community | flight-jacket-lining-history | editorial-step | Calistoga + Inter | corner-block | ai-raster cover, symbol inner |
+| 4 | Fake Ray-Ban Wayfarer Check | All | fake-rayban-wayfarer-check | checklist | Space Grotesk + DM Sans | corner-block | ai-raster cover, symbol inner |
+| 5 | Shearling Authentication | All | shearling-authentication | checklist | Calistoga + Inter | corner-block | ai-raster cover, symbol inner |
+| 6 | 2026 Leather Blazer Trend | Resellers | 2026-leather-blazer-trend | ledger | Archivo Black + Spectral | corner-block | ai-raster cover, symbol inner |
+| 7 | Poshmark Migration Reality | Resellers | poshmark-sales-not-algorithm | editorial-step | Space Grotesk + DM Sans | corner-block | ai-raster cover, symbol inner |
+| 8 | Authenticity Guarantee Limits | All | authenticity-guarantee-limits | checklist | Archivo Black + Spectral | corner-block | ai-raster cover, symbol inner |
 
 ---
 

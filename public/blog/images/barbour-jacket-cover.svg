@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#1a2e05"/>
+  <!-- Herringbone-like diagonal pattern -->
+  <line x1="0" y1="0" x2="200" y2="630" stroke="#2d4a0f" stroke-width="40" opacity="0.5"/>
+  <line x1="180" y1="0" x2="380" y2="630" stroke="#243b0a" stroke-width="40" opacity="0.5"/>
+  <line x1="360" y1="0" x2="560" y2="630" stroke="#2d4a0f" stroke-width="40" opacity="0.5"/>
+  <line x1="540" y1="0" x2="740" y2="630" stroke="#243b0a" stroke-width="40" opacity="0.5"/>
+  <line x1="720" y1="0" x2="920" y2="630" stroke="#2d4a0f" stroke-width="40" opacity="0.5"/>
+  <line x1="900" y1="0" x2="1100" y2="630" stroke="#243b0a" stroke-width="40" opacity="0.5"/>
+  <line x1="1080" y1="0" x2="1280" y2="630" stroke="#2d4a0f" stroke-width="40" opacity="0.5"/>
+  <!-- Royal warrant crown -->
+  <path d="M575 115 L590 85 L600 100 L610 75 L620 100 L635 85 L625 115Z" fill="#d4af37" opacity="0.8"/>
+  <rect x="572" y="115" width="56" height="8" rx="2" fill="#d4af37" opacity="0.8"/>
+  <!-- Wax texture circles -->
+  <circle cx="200" cy="500" r="80" fill="none" stroke="#3f6212" stroke-width="2" opacity="0.3"/>
+  <circle cx="1000" cy="150" r="60" fill="none" stroke="#3f6212" stroke-width="2" opacity="0.3"/>
+  <!-- Text -->
+  <text x="600" y="250" font-family="Georgia, serif" font-size="50" font-weight="700" fill="#f0fdf4" text-anchor="middle" letter-spacing="-1">Vintage Barbour Jackets</text>
+  <text x="600" y="315" font-family="Georgia, serif" font-size="28" fill="#86efac" text-anchor="middle">Aren't Just Waxed Cotton.</text>
+  <text x="600" y="370" font-family="Georgia, serif" font-size="28" fill="#86efac" text-anchor="middle">They're a British Rural Class Marker.</text>
+  <text x="600" y="430" font-family="system-ui, sans-serif" font-size="20" fill="#bbf7d0" text-anchor="middle" opacity="0.8">Bedale · Beaufort · Liddesdale · Dating Guide</text>
+  <!-- Crawli badge -->
+  <rect x="530" y="545" width="140" height="36" rx="18" fill="#166534" opacity="0.7"/>
+  <text x="600" y="568" font-family="system-ui, sans-serif" font-size="14" fill="#dcfce7" text-anchor="middle" font-weight="600">thecrawli.com</text>
+</svg>

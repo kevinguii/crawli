@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#451a03"/>
+  <!-- Camo-like patches -->
+  <ellipse cx="150" cy="150" rx="120" ry="80" fill="#713f12" opacity="0.4"/>
+  <ellipse cx="1050" cy="480" rx="100" ry="70" fill="#78350f" opacity="0.4"/>
+  <ellipse cx="900" cy="120" rx="90" ry="55" fill="#713f12" opacity="0.35"/>
+  <ellipse cx="200" cy="520" rx="140" ry="60" fill="#92400e" opacity="0.3"/>
+  <!-- OG-107 olive drab texture stripes -->
+  <rect x="0" y="0" width="1200" height="4" fill="#4d2d00" opacity="0.5"/>
+  <rect x="0" y="30" width="1200" height="3" fill="#4d2d00" opacity="0.3"/>
+  <rect x="0" y="60" width="1200" height="4" fill="#4d2d00" opacity="0.4"/>
+  <!-- Pocket outline (M-65 cargo pocket shape) -->
+  <rect x="80" y="380" width="120" height="100" rx="4" stroke="#fb923c" stroke-width="2.5" fill="none" opacity="0.5"/>
+  <line x1="80" y1="440" x2="200" y2="440" stroke="#fb923c" stroke-width="1.5" opacity="0.5"/>
+  <rect x="1000" y="380" width="120" height="100" rx="4" stroke="#fb923c" stroke-width="2.5" fill="none" opacity="0.5"/>
+  <line x1="1000" y1="440" x2="1120" y2="440" stroke="#fb923c" stroke-width="1.5" opacity="0.5"/>
+  <!-- DSA tag detail -->
+  <rect x="520" y="95" width="160" height="60" rx="3" fill="#3d1600" stroke="#fb923c" stroke-width="1.5" opacity="0.7"/>
+  <text x="600" y="122" font-family="monospace" font-size="11" fill="#fb923c" text-anchor="middle" opacity="0.9">DSA-100-68-C-0644</text>
+  <text x="600" y="140" font-family="monospace" font-size="10" fill="#fdba74" text-anchor="middle" opacity="0.8">ALPHA INDUSTRIES</text>
+  <!-- Main text -->
+  <text x="600" y="270" font-family="Georgia, serif" font-size="52" font-weight="700" fill="#fff7ed" text-anchor="middle">The M-65 Field Jacket</text>
+  <text x="600" y="335" font-family="Georgia, serif" font-size="29" fill="#fed7aa" text-anchor="middle">Was Designed to Kill.</text>
+  <text x="600" y="385" font-family="Georgia, serif" font-size="29" fill="#fed7aa" text-anchor="middle">Now It's the Most Versatile Vintage Piece</text>
+  <text x="600" y="430" font-family="Georgia, serif" font-size="29" fill="#fed7aa" text-anchor="middle">in Your Closet.</text>
+  <!-- Crawli badge -->
+  <rect x="530" y="545" width="140" height="36" rx="18" fill="#78350f" opacity="0.8"/>
+  <text x="600" y="568" font-family="system-ui, sans-serif" font-size="14" fill="#fed7aa" text-anchor="middle" font-weight="600">thecrawli.com</text>
+</svg>

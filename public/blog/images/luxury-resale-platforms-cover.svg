@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#292524"/>
+  <!-- Gold accent bar -->
+  <rect x="0" y="0" width="1200" height="6" fill="#d4af37" opacity="0.9"/>
+  <rect x="0" y="624" width="1200" height="6" fill="#d4af37" opacity="0.9"/>
+  <!-- Fee comparison visual: three columns -->
+  <rect x="120" y="380" width="200" height="140" rx="4" fill="#1c1917" opacity="0.8" stroke="#d4af37" stroke-width="1.5"/>
+  <text x="220" y="415" font-family="Georgia, serif" font-size="14" fill="#d4af37" text-anchor="middle" opacity="0.8">The RealReal</text>
+  <rect x="124" y="430" width="192" height="80" rx="2" fill="#7c2d12" opacity="0.5"/>
+  <text x="220" y="480" font-family="system-ui, sans-serif" font-size="32" font-weight="700" fill="#fca5a5" text-anchor="middle">45%</text>
+  <text x="220" y="505" font-family="system-ui, sans-serif" font-size="12" fill="#fca5a5" text-anchor="middle">taken on $800 item</text>
+
+  <rect x="500" y="420" width="200" height="100" rx="4" fill="#1c1917" opacity="0.8" stroke="#d4af37" stroke-width="1.5"/>
+  <text x="600" y="455" font-family="Georgia, serif" font-size="14" fill="#d4af37" text-anchor="middle" opacity="0.8">Grailed</text>
+  <rect x="504" y="465" width="192" height="46" rx="2" fill="#14532d" opacity="0.5"/>
+  <text x="600" y="495" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#86efac" text-anchor="middle">~13%</text>
+
+  <rect x="880" y="440" width="200" height="80" rx="4" fill="#1c1917" opacity="0.8" stroke="#d4af37" stroke-width="1.5"/>
+  <text x="980" y="472" font-family="Georgia, serif" font-size="14" fill="#d4af37" text-anchor="middle" opacity="0.8">Catawiki</text>
+  <text x="980" y="500" font-family="system-ui, sans-serif" font-size="18" font-weight="700" fill="#86efac" text-anchor="middle">12.5%</text>
+
+  <!-- Arrow: more money -->
+  <path d="M330 450 L490 450" stroke="#d4af37" stroke-width="2.5" marker-end="url(#arrow)" opacity="0.7"/>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3z" fill="#d4af37"/>
+    </marker>
+  </defs>
+
+  <!-- Main text -->
+  <text x="600" y="140" font-family="Georgia, serif" font-size="46" font-weight="700" fill="#fafaf9" text-anchor="middle">The Luxury Platform</text>
+  <text x="600" y="200" font-family="Georgia, serif" font-size="46" font-weight="700" fill="#fafaf9" text-anchor="middle">That Pays You More</text>
+  <text x="600" y="260" font-family="Georgia, serif" font-size="28" fill="#d6d3d1" text-anchor="middle">Is Not The RealReal.</text>
+  <text x="600" y="310" font-family="Georgia, serif" font-size="22" fill="#a8a29e" text-anchor="middle">It's the site that takes a flat fee instead of a percentage.</text>
+  <!-- Crawli badge -->
+  <rect x="530" y="575" width="140" height="34" rx="17" fill="#44403c" opacity="0.8"/>
+  <text x="600" y="597" font-family="system-ui, sans-serif" font-size="14" fill="#e7e5e4" text-anchor="middle" font-weight="600">thecrawli.com</text>
+</svg>
