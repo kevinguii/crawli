@@ -19,12 +19,16 @@ Every time you push new code to GitHub and want the server to run it:
 
 ```bash
 ssh root@5.78.187.97
-cd /opt/crawli && git pull && npm run build && npm install && systemctl restart crawli-next
+cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next
 ```
 
-**Order matters:** build first, restart after. Restarting before the build completes loads the old code.
+**Order matters:** install dependencies first, then build, then restart. Restarting before the build completes loads the old code.
 
 `npm install` only needed when `package.json` changed. Safe to always run — fast if nothing changed.
+
+**Requires `unzip` on the server** — Puppeteer's postinstall downloads a Chrome binary and needs `unzip` to extract it. If missing, `npm install` fails with "Extraction failed: Required native binary ... was not found in the system PATH" (confirmed already installed via `apt-get install -y unzip` on 2026-06-29 — flagging here in case of a fresh box).
+
+**If `npm install` fails with "The browser folder ... exists but the executable ... is missing":** a prior failed extraction left a stale partial folder, and npm skips re-downloading because the folder already exists. Fix: `rm -rf /root/.cache/puppeteer && npm install`. Known upstream bug (extract-zip silently aborting mid-extraction) — see [puppeteer/puppeteer#15119](https://github.com/puppeteer/puppeteer/issues/15119).
 
 If Python sidecar code changed (`crawl4ai-service/`):
 ```bash

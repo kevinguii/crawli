@@ -80,6 +80,11 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-06-29 — Deploy fix: `unzip` required on server + npm install/build order corrected**
+- Fixed deploy order in `docs/SERVER_REFERENCE.md`: `npm install` must run before `npm run build` (was reversed)
+- Server was missing `unzip`, breaking Puppeteer's Chrome download during `npm install`; installed via apt
+- See `docs/PITFALLS.md` Infrastructure section for the stale-cache symptom and fix
+
 **2026-06-29 — Session 4: Avenue A migration + alias matching**
 - All 8 native platforms now on Avenue A (vestiaire, vinted, poshmark, stockx extractors added to `search_page_extractors.py`)
 - `lib/queryExpansion.ts` + alias-aware `parse.ts` anchoring (bape→A Bathing Ape etc.)

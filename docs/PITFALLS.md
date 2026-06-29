@@ -84,6 +84,9 @@ The app sets `data-theme="dark"` on `<html>`. Tailwind's `dark:` variant uses `p
 **n8n `Run on demand` trigger is required for CLI testing**
 n8n 2.8.4's `n8n execute --id` fails with "Missing node to start execution" unless the workflow also has an `Execute Workflow Trigger` node (not just the schedule trigger). Add one to any workflow you want to CLI-test.
 
+**Server deploy `npm install` needs `unzip` (fixed 2026-06-29)**
+Puppeteer's postinstall downloads Chrome and extracts it with `unzip` — if missing, install fails with "Required native binary ... was not found in PATH". Already installed on the production box via `apt-get install -y unzip`; only relevant again on a fresh server. If `npm install` instead fails with "browser folder exists but executable is missing," a prior failed extraction left a stale partial cache — `rm -rf /root/.cache/puppeteer && npm install` to fix (upstream extract-zip bug, see `docs/SERVER_REFERENCE.md`).
+
 ---
 
 ## Content / marketing
