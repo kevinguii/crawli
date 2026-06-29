@@ -32,7 +32,7 @@ export default function AboutSection() {
             border: '1px solid var(--border)',
           }}
         >
-          <Stat value="7" label="Platforms" />
+          <Stat value="9" label="Platforms" />
           <Divider />
           <Stat value="1" label="Search" />
           <Divider />

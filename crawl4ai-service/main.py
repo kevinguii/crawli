@@ -325,6 +325,7 @@ def _mark_driver_dead(idx: int, error_message: str) -> None:
 # transient failures can retry; only successful, non-empty results land here.
 _scrape_cache: TTLCache = TTLCache(maxsize=500, ttl=1800)   # 30 min per URL
 _search_cache: TTLCache = TTLCache(maxsize=200, ttl=600)    # 10 min per (platform, query)
+_expand_cache: TTLCache = TTLCache(maxsize=2000, ttl=604800)  # 7 days per normalized query
 _cache_lock = threading.Lock()
 
 
@@ -596,6 +597,23 @@ class RefreshPriceResponse(BaseModel):
     isGone: bool = False  # True when HTTP 404 confirms the page no longer exists
 
 
+class ExpandQueryRequest(BaseModel):
+    query: str
+
+
+class ExpandedQueryNormalized(BaseModel):
+    brand: Optional[str] = None
+    color: Optional[str] = None
+    condition: Optional[str] = None
+    size: Optional[str] = None
+
+
+class ExpandQueryResponse(BaseModel):
+    # token (single word) -> alternate surface forms of the same brand
+    aliasesByToken: dict[str, list[str]] = {}
+    normalized: ExpandedQueryNormalized = ExpandedQueryNormalized()
+
+
 # ── Coercion ─────────────────────────────────────────────────────────────────
 
 _NUM_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
@@ -720,6 +738,26 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if search_page and platform == "depop":
         cfg_kwargs["wait_for"] = "css:a[href*='/products/']"
         cfg_kwargs["page_timeout"] = 60_000
+    # Vestiaire is CSR (~9s hydration). Products are fetched client-side after
+    # nav; __NEXT_DATA__ has an empty products array. Must wait for card anchors.
+    if search_page and platform == "vestiaire":
+        cfg_kwargs["wait_for"] = 'css:a[data-cy^="catalog__productCard__"]'
+        cfg_kwargs["page_timeout"] = 60_000
+        cfg_kwargs["delay_before_return_html"] = 2.0
+    # Vinted renders 96 cards synchronously — no wait_for needed, just a timeout
+    # generous enough for the CDN-heavy page to settle.
+    if search_page and platform == "vinted":
+        cfg_kwargs["wait_for"] = "css:a[href*='/items/']"
+        cfg_kwargs["page_timeout"] = 60_000
+    # Poshmark already has a per-platform block above (page_timeout=50_000,
+    # delay=6.0). Override page_timeout for search-page renders; keep the delay.
+    if search_page and platform == "poshmark":
+        cfg_kwargs["wait_for"] = "css:a.tile-grid-redesign__meta-link"
+        cfg_kwargs["page_timeout"] = 60_000
+    # StockX is CSR. Tiles hydrate after JS (~5s). 40 tiles on a typical query.
+    if search_page and platform == "stockx":
+        cfg_kwargs["wait_for"] = 'css:[data-testid="ProductTile"]'
+        cfg_kwargs["page_timeout"] = 60_000
 
     # Fail a blocked/anti-bot search page fast: cap the wait-for-selector wait
     # well below page_timeout so a render that will never hydrate (e.g. Mercari
@@ -830,6 +868,77 @@ async def health():
         # via `curl /health` while a search is in progress.
         "in_flight": _in_flight,
     }
+
+
+_EXPAND_PROMPT = (
+    "You normalize secondhand-fashion search queries. Given a user query, return "
+    "STRICT JSON with exactly two keys.\n"
+    '1. "aliasesByToken": an object mapping each BRAND-bearing token in the query '
+    "to a list of alternate surface forms of that SAME brand — include the brand's "
+    "full name and common abbreviations. Example: \"bape\" -> [\"a bathing ape\", "
+    '"bathing ape"]. Only include tokens that are brands; omit generic words like '
+    '"shirt" or colors. If there are no brands, use an empty object.\n'
+    '2. "normalized": an object with keys brand, color, condition, size (each a '
+    "lowercase string or null).\n"
+    "Return ONLY the JSON object, no prose."
+)
+
+
+def _normalize_expand_key(query: str) -> str:
+    toks = re.sub(r"[^a-z0-9\s]+", " ", query.lower()).split()
+    return " ".join(sorted(toks))
+
+
+@app.post("/expand-query", response_model=ExpandQueryResponse)
+async def expand_query(req: ExpandQueryRequest):
+    key = _normalize_expand_key(req.query)
+    if not key:
+        return ExpandQueryResponse()
+
+    with _cache_lock:
+        cached = _expand_cache.get(key)
+    if cached is not None:
+        return cached
+
+    llm = resolve_llm()
+    if llm is None:
+        empty = ExpandQueryResponse()
+        with _cache_lock:
+            _expand_cache[key] = empty
+        return empty
+
+    provider, api_token = llm
+    result = ExpandQueryResponse()
+    try:
+        import litellm
+
+        resp = await litellm.acompletion(
+            model=provider,
+            api_key=api_token,
+            messages=[
+                {"role": "system", "content": _EXPAND_PROMPT},
+                {"role": "user", "content": req.query},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+            timeout=12,
+        )
+        content = resp["choices"][0]["message"]["content"]
+        data = json.loads(content) if isinstance(content, str) else (content or {})
+        raw_aliases = data.get("aliasesByToken") or {}
+        result = ExpandQueryResponse(
+            aliasesByToken={
+                str(k).lower(): [str(v).lower() for v in (vals or []) if v]
+                for k, vals in raw_aliases.items()
+            },
+            normalized=ExpandedQueryNormalized(**(data.get("normalized") or {})),
+        )
+    except Exception as exc:  # noqa: BLE001 — expansion is best-effort enrichment
+        log.warning("[expand-query] failed for %r: %s", req.query, exc)
+
+    with _cache_lock:
+        _expand_cache[key] = result
+    return result
 
 
 # Helper for the three scrape endpoints. Returns a JSONResponse with HTTP 503

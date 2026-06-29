@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runSearchJob } from '@/lib/searchWorker';
+import { buildCacheKey, withListingsCache } from '@/lib/searchCache';
 import type { FilterState } from '@/lib/filterOptions';
 import type { Listing } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
@@ -125,18 +126,9 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   let listings: Awaited<ReturnType<typeof runSearchJob>> = [];
   try {
-    // SESSION-4 HANDOFF POINT: cross-user cache sharing (the COGS track) will
-    // sit HERE — between fetching listings and the criteria post-filter below.
-    // Today this is a live `runSearchJob`; later it may be served from a shared
-    // cache. Keep boolean-criteria matching decoupled from this call (it runs on
-    // the returned Listing[], never inside searchWorker) so the source can be
-    // swapped without touching match logic.
-    listings = await runSearchJob(
-      savedSearch.query,
-      platforms,
-      savedSearch.filters ?? undefined,
-      undefined,
-      nativeCap,
+    const cacheKey = buildCacheKey(savedSearch.query, platforms, savedSearch.filters ?? undefined);
+    listings = await withListingsCache(cacheKey, () =>
+      runSearchJob(savedSearch.query, platforms, savedSearch.filters ?? undefined, undefined, nativeCap),
     );
   } catch (err) {
     console.error(`[alertRunner] search failed for alert=${savedSearch.id}:`, err);

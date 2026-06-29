@@ -99,7 +99,7 @@ export default function SearchMock() {
                   color: 'var(--accent-text)',
                 }}
               >
-                8 platforms searched
+                9 platforms searched
               </span>
             </div>
 
@@ -188,13 +188,13 @@ export default function SearchMock() {
                     className="text-sm font-semibold"
                     style={{ color: 'var(--text)' }}
                   >
-                    Sign up to see all results across 8 platforms
+                    Sign up to see all results across 9 platforms
                   </p>
                   <p
                     className="mt-1 text-xs"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    Free · 10 searches a month, no card required
+                    Free · 3 searches per week, no card required
                   </p>
                   <Link
                     href="/login?tab=signup"

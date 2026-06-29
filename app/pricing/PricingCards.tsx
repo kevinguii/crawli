@@ -34,7 +34,7 @@ const NATIVE_TOOLTIP = (
     per search on every plan.
     <div style={{ marginTop: '6px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
-      Grailed, Depop, Mercari
+      Grailed, Depop, Mercari, ThredUp
     </div>
     <div style={{ marginTop: '4px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Other:</span>{' '}

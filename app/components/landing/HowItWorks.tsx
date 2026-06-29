@@ -2,7 +2,7 @@ const STEPS = [
   {
     n: '01',
     title: 'Check the comp',
-    body: 'Search once across 7 platforms to see what buyers are actually paying right now. No tab-switching, no spreadsheets, no guessing.',
+    body: 'Search once across 9 platforms to see what buyers are actually paying right now. No tab-switching, no spreadsheets, no guessing.',
   },
   {
     n: '02',

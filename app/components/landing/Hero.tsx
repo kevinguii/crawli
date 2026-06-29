@@ -106,7 +106,7 @@ export default function Hero() {
             className="mx-auto mt-5 max-w-2xl text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Search 7 resale platforms at once, see what the market is really paying, calculate your net flip profit after fees, and get alerted the moment underpriced inventory hits.
+            Search 9 resale platforms at once, see what the market is really paying, calculate your net flip profit after fees, and get alerted the moment underpriced inventory hits.
           </p>
 
           {/* Three value pillars */}

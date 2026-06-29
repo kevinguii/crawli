@@ -688,9 +688,384 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
     return results
 
 
+# ── Vestiaire Collective ─────────────────────────────────────────────────────
+
+VESTIAIRE_BASE = "https://us.vestiairecollective.com"
+_VESTIAIRE_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+
+
+def vestiaire_search_url(query: str) -> str:
+    """Build the Vestiaire US onsite search URL.
+
+    Vestiaire uses /search/?q=<urlencoded> on the us. subdomain (verified
+    2026-06-29 via probe). www. redirects to us. — we go direct to skip the
+    hop. The page is CSR: products load ~9s after nav via client fetch.
+    wait_for: css:a[data-cy^="catalog__productCard__"]
+    """
+    return f"{VESTIAIRE_BASE}/search/?q={quote(query.strip())}"
+
+
+def extract_vestiaire_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Vestiaire /search/?q= page.
+
+    Source: CSR-rendered anchors a[data-cy^="catalog__productCard__"]. The
+    page has no product data in __NEXT_DATA__ (empty array) — all products
+    are fetched client-side after hydration, so caller must wait_for the card
+    selector.
+
+    Card anatomy (verified 2026-06-29):
+        a[data-cy^="catalog__productCard__"]   → relative href to listing
+          [data-cy="productCard__text__brand"]  → brand in ALL-CAPS
+          [data-cy="productCard__text__name"]   → item type ("Jeans", "T-shirt")
+          [data-cy="productCard__text__size"]   → p with 2 spans:
+                                                  span.vc-d-none "Size:" + span with value
+          [data-cy="productCard__price"]        → "$161" price text
+          img                                   → imageUrl
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    cards = soup.select('a[data-cy^="catalog__productCard__"]')
+    if not cards:
+        log.warning("[vestiaire-grid] no productCard anchors found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    for card in cards:
+        href = card.get("href")
+        if not isinstance(href, str):
+            continue
+        url = urljoin(VESTIAIRE_BASE, href)
+
+        brand_el = card.select_one('[data-cy="productCard__text__brand"]')
+        brand = brand_el.get_text(strip=True).title() if brand_el else None
+
+        name_el = card.select_one('[data-cy="productCard__text__name"]')
+        name = name_el.get_text(strip=True) if name_el else None
+
+        title = None
+        if brand and name:
+            title = f"{brand} {name}"
+        elif brand:
+            title = brand
+        elif name:
+            title = name
+
+        size_el = card.select_one('[data-cy="productCard__text__size"]')
+        size = None
+        if size_el:
+            spans = size_el.find_all("span")
+            raw = (spans[-1].get_text(strip=True) if len(spans) > 1 else size_el.get_text(strip=True))
+            raw = raw.replace("\xa0", "").strip()
+            size = raw if raw and raw.lower() != "size:" else None
+
+        price_el = card.select_one('[data-cy="productCard__price"]')
+        price: Optional[float] = None
+        if price_el:
+            m = _VESTIAIRE_PRICE_RE.search(price_el.get_text(strip=True))
+            if m:
+                try:
+                    price = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    pass
+
+        img_el = card.find("img")
+        image = img_el.get("src") if img_el else None
+        if isinstance(image, str) and image.startswith("data:"):
+            image = None
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",
+            "isSold": False,
+            "condition": "Used",
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[vestiaire-grid] extracted %d listings (out of %d cards)", len(results), len(cards))
+    return results
+
+
+# ── Vinted ───────────────────────────────────────────────────────────────────
+
+VINTED_BASE = "https://www.vinted.com"
+_VINTED_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+_VINTED_META_RE = re.compile(
+    r"^(.+?),\s*brand:\s*(.+?),\s*condition:\s*(.+?),\s*size:\s*(.+?),", re.IGNORECASE
+)
+
+
+def vinted_search_url(query: str) -> str:
+    """Build the Vinted onsite search URL.
+
+    Verified 2026-06-29: /catalog?search_text=<urlencoded> returns the search
+    grid. 96 cards present in the initial page render (no wait needed).
+    """
+    return f"{VINTED_BASE}/catalog?search_text={quote(query.strip())}"
+
+
+def extract_vinted_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Vinted /catalog?search_text= page.
+
+    Source: DOM cards under div.new-item-box__container. The overlay anchor's
+    `title` attribute is a comma-structured metadata string:
+        "Listing title, brand: Brand, condition: Cond, size: Size, $price, ..."
+    Used as the primary parse target because it is stable across redesigns.
+
+    Card anatomy (verified 2026-06-29, 96 cards on typical query):
+        div.new-item-box__container
+          a.new-item-box__overlay[href="/items/<id>-<slug>?referrer=catalog"]
+            @title → structured metadata string
+          [data-testid$="--price-text"]     → "$35.00" price element
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    containers = soup.select("div.new-item-box__container")
+    if not containers:
+        log.warning("[vinted-grid] no new-item-box__container cards found")
+        return []
+
+    results: list[dict] = []
+    for container in containers:
+        overlay = container.select_one("a.new-item-box__overlay")
+        if not overlay:
+            continue
+        href = overlay.get("href", "")
+        if not href:
+            continue
+        url = urljoin(VINTED_BASE, href.split("?")[0])
+
+        title_attr = overlay.get("title", "")
+        listing_title: Optional[str] = None
+        condition: Optional[str] = None
+        size: Optional[str] = None
+        m = _VINTED_META_RE.match(title_attr)
+        if m:
+            listing_title = m.group(1).strip() or None
+            condition = m.group(3).strip() or None
+            size = m.group(4).strip() or None
+        else:
+            parts = re.split(r",\s*(?:brand:|condition:|\$)", title_attr)
+            listing_title = parts[0].strip() or None
+
+        price_el = container.find(attrs={"data-testid": re.compile(r"--price-text$")})
+        price: Optional[float] = None
+        if price_el:
+            m2 = _VINTED_PRICE_RE.search(price_el.get_text(strip=True))
+            if m2:
+                try:
+                    price = float(m2.group(1).replace(",", ""))
+                except ValueError:
+                    pass
+
+        img_el = container.find("img")
+        image = img_el.get("src") if img_el else None
+
+        results.append({
+            "url": url,
+            "title": listing_title,
+            "price": price,
+            "currency": "USD",
+            "isSold": False,
+            "condition": condition,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[vinted-grid] extracted %d listings (out of %d containers)", len(results), len(containers))
+    return results
+
+
+# ── Poshmark ─────────────────────────────────────────────────────────────────
+
+POSHMARK_BASE = "https://poshmark.com"
+_POSHMARK_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+
+
+def poshmark_search_url(query: str) -> str:
+    """Build the Poshmark search URL for listings.
+
+    Verified 2026-06-29: /search?query=<urlencoded>&type=listings returns the
+    listing grid. 96 cards present in the initial render (no JSON-LD).
+    """
+    return f"{POSHMARK_BASE}/search?query={quote(query.strip())}&type=listings"
+
+
+def extract_poshmark_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a Poshmark /search?type=listings page.
+
+    Source: DOM cards under div.tile-grid-redesign__media--wrapper. Each
+    wrapper contains two anchors: the image anchor (tile__covershot) and the
+    meta anchor (tile-grid-redesign__meta-link). No JSON-LD on search pages.
+
+    Card anatomy (verified 2026-06-29):
+        div.tile-grid-redesign__media--wrapper
+          a.tile__covershot                           → img (imageUrl)
+          a.tile-grid-redesign__meta-link[href="/listing/<id>"]
+            span.tile-grid-redesign__title            → title
+            span.tile-grid-redesign__price-current    → "$8"
+            div.tile-grid-redesign__size              → "OS", "M", etc.
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    wrappers = soup.select("div.tile-grid-redesign__media--wrapper")
+    if not wrappers:
+        log.warning("[poshmark-grid] no tile-grid-redesign__media--wrapper cards found")
+        return []
+
+    results: list[dict] = []
+    for wrapper in wrappers:
+        meta_link = wrapper.select_one("a.tile-grid-redesign__meta-link")
+        if not meta_link:
+            continue
+        href = meta_link.get("href", "")
+        if not href or "/listing/" not in href:
+            continue
+        url = urljoin(POSHMARK_BASE, href)
+
+        title_el = meta_link.select_one("span.tile-grid-redesign__title")
+        title = title_el.get_text(strip=True) if title_el else None
+
+        price_el = meta_link.select_one("span.tile-grid-redesign__price-current")
+        price: Optional[float] = None
+        if price_el:
+            m = _POSHMARK_PRICE_RE.search(price_el.get_text(strip=True))
+            if m:
+                try:
+                    price = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    pass
+
+        size_el = meta_link.select_one("div.tile-grid-redesign__size")
+        size = size_el.get_text(strip=True) if size_el else None
+
+        covershot = wrapper.select_one("a.tile__covershot")
+        img_el = covershot.find("img") if covershot else None
+        image = img_el.get("src") if img_el else None
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",
+            "isSold": False,
+            "condition": None,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[poshmark-grid] extracted %d listings (out of %d wrappers)", len(results), len(wrappers))
+    return results
+
+
+# ── StockX ───────────────────────────────────────────────────────────────────
+
+STOCKX_BASE = "https://stockx.com"
+_STOCKX_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+
+
+def stockx_search_url(query: str) -> str:
+    """Build the StockX search URL.
+
+    Verified 2026-06-29: /search?s=<urlencoded> returns the product grid.
+    The page is CSR — tiles hydrate after JS. 40 tiles on a typical query.
+    wait_for: css:[data-testid="ProductTile"]
+    """
+    return f"{STOCKX_BASE}/search?s={quote(query.strip())}"
+
+
+def extract_stockx_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from a StockX /search?s= page.
+
+    Source: CSR-rendered tiles under [data-testid="ProductTile"]. Each tile's
+    price is the Lowest Ask (not a completed sale), so isSold=False for all.
+    Size is not exposed on the search grid (variant-level detail only).
+
+    Card anatomy (verified 2026-06-29, 40 tiles on typical query):
+        [data-testid="ProductTile"]
+          a[data-testid="productTile-ProductSwitcherLink"][href="/<slug>"]
+            img                                          → imageUrl
+            [data-testid="product-tile-title"]           → title
+            [data-testid="product-tile-lowest-ask-amount"] → "$319"
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    tiles = soup.select('[data-testid="ProductTile"]')
+    if not tiles:
+        log.warning("[stockx-grid] no ProductTile elements found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    for tile in tiles:
+        link = tile.select_one('a[data-testid="productTile-ProductSwitcherLink"]')
+        if not link:
+            continue
+        href = link.get("href", "")
+        if not href:
+            continue
+        url = urljoin(STOCKX_BASE, href)
+
+        title_el = tile.select_one('[data-testid="product-tile-title"]')
+        title = title_el.get_text(strip=True) if title_el else None
+        if isinstance(title, str):
+            title = html_module.unescape(title)
+
+        price_el = tile.select_one('[data-testid="product-tile-lowest-ask-amount"]')
+        price: Optional[float] = None
+        if price_el:
+            m = _STOCKX_PRICE_RE.search(price_el.get_text(strip=True))
+            if m:
+                try:
+                    price = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    pass
+
+        img_el = link.find("img")
+        image = img_el.get("src") if img_el else None
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": "USD",
+            "isSold": False,
+            "condition": None,
+            "imageUrl": image,
+            "size": None,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info("[stockx-grid] extracted %d listings (out of %d tiles)", len(results), len(tiles))
+    return results
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────────
 
-SEARCH_PAGE_PLATFORMS = {"thredup", "realreal", "grailed", "mercari", "depop"}
+SEARCH_PAGE_PLATFORMS = {
+    "thredup", "realreal", "grailed", "mercari", "depop",
+    "vestiaire", "vinted", "poshmark", "stockx",
+}
 
 
 def search_url_for(platform: str, query: str) -> Optional[str]:
@@ -704,6 +1079,14 @@ def search_url_for(platform: str, query: str) -> Optional[str]:
         return mercari_search_url(query)
     if platform == "depop":
         return depop_search_url(query)
+    if platform == "vestiaire":
+        return vestiaire_search_url(query)
+    if platform == "vinted":
+        return vinted_search_url(query)
+    if platform == "poshmark":
+        return poshmark_search_url(query)
+    if platform == "stockx":
+        return stockx_search_url(query)
     return None
 
 
@@ -718,4 +1101,12 @@ def extract_search_grid(platform: str, html: str, *, limit: int = 24) -> list[di
         return extract_mercari_grid(html, limit=limit)
     if platform == "depop":
         return extract_depop_grid(html, limit=limit)
+    if platform == "vestiaire":
+        return extract_vestiaire_grid(html, limit=limit)
+    if platform == "vinted":
+        return extract_vinted_grid(html, limit=limit)
+    if platform == "poshmark":
+        return extract_poshmark_grid(html, limit=limit)
+    if platform == "stockx":
+        return extract_stockx_grid(html, limit=limit)
     return []

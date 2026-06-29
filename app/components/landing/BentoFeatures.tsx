@@ -89,7 +89,7 @@ function AlertPreview() {
     { label: 'Brand', value: 'Carhartt' },
     { label: 'Size', value: 'M' },
     { label: 'Max price', value: '$80' },
-    { label: 'Platforms', value: 'All 7' },
+    { label: 'Platforms', value: 'All 9' },
   ];
   return (
     <div
@@ -153,7 +153,7 @@ export default function BentoFeatures() {
             className="sm:col-span-3"
             hero
             title="Flip margin calculator"
-            body="Enter your sourcing price and target platform. See net profit, margin, and ROI after real seller-side fees before you spend a dollar. All 7 platforms covered."
+            body="Enter your sourcing price and target platform. See net profit, margin, and ROI after real seller-side fees before you spend a dollar. All 7 resale platforms covered."
             icon={
               <svg width="22" height="22" viewBox="0 0 24 24" {...stroke}>
                 <circle cx="12" cy="12" r="10" />
@@ -180,8 +180,8 @@ export default function BentoFeatures() {
           {/* Supporting features */}
           <Card
             className="sm:col-span-2"
-            title="7-platform search"
-            body="Grailed, Depop, Poshmark, Mercari, Vinted, StockX, and eBay searched at once. One query, every major resale platform, in seconds."
+            title="9-platform search"
+            body="Grailed, Depop, Poshmark, Mercari, Vinted, ThredUp, Vestiaire Collective, StockX, and eBay searched at once. One query, every major resale platform, in seconds."
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" {...stroke}>
                 <circle cx="11" cy="11" r="7" />

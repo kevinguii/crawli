@@ -1,6 +1,7 @@
 import { searchPlatform, scrapeListing, ScrapedListing } from '@/lib/firecrawl';
 import { SEARCH_PAGE_PLATFORMS, scrapeSearchPageViaSidecar } from '@/lib/scraper';
 import { filterListingUrls, parseScrapedListings } from '@/lib/parse';
+import { primeExpansion } from '@/lib/queryExpansion';
 import { Listing } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
@@ -87,6 +88,8 @@ export async function searchAndScrape(
   signal?: AbortSignal,
   nativeResultsCap: number = 10,
 ): Promise<Listing[]> {
+  await primeExpansion(query);
+
   if (SEARCH_PAGE_PLATFORMS.has(platform)) {
     const scraped = await scrapeSearchPageViaSidecar(platform, query, 100, 2, signal);
     const listings = parseScrapedListings(scraped, platform, query);

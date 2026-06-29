@@ -3,6 +3,11 @@ import { Listing } from './types';
 import { RawSearchResult, ScrapedListing } from './firecrawl';
 import { COMMON_WORDS } from './data/commonWords';
 import { extractColorFromTitle } from './colorFilter';
+import {
+  expandAliasesSync,
+  canonicalBrandOf,
+  detectBrandInText,
+} from './queryExpansion';
 
 // ── URL filtering ──────────────────────────────────────────────────────────
 // Only keep URLs that look like individual listing pages, not browse/category pages.
@@ -110,8 +115,29 @@ function titleMatchesQuery(title: string | null, queryTokens: Set<string>): bool
     const isAnchor = (t: string) => BRAND_ANCHOR_OVERRIDES.has(t) || !COMMON_WORDS.has(t);
     const anchors = queryText.filter(isAnchor);
 
+    // Padded, normalized title text for multi-word alias substring checks.
+    const titleNorm = ` ${title.toLowerCase().replace(/[^a-z0-9\s]+/g, ' ').replace(/\s+/g, ' ').trim()} `;
+    const titleBrand = detectBrandInText(title);
+
+    const anchorSatisfied = (t: string): boolean => {
+      if (titleTokens.has(t)) return true;
+      // Brand-to-brand: query token and title resolve to the same canonical brand.
+      const canon = canonicalBrandOf(t);
+      if (canon && titleBrand === canon) return true;
+      // Alias surface forms: single-word aliases match title tokens; multi-word
+      // aliases (e.g. "a bathing ape") match as a normalized substring.
+      for (const alias of expandAliasesSync(t)) {
+        if (alias.includes(' ')) {
+          if (titleNorm.includes(` ${alias} `)) return true;
+        } else if (titleTokens.has(alias)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     if (anchors.length > 0) {
-      if (!anchors.every((t) => titleTokens.has(t))) return false;
+      if (!anchors.every(anchorSatisfied)) return false;
     } else if (!queryText.some((t) => titleTokens.has(t))) {
       return false;
     }

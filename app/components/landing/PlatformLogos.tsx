@@ -6,6 +6,8 @@ const PLATFORMS = [
   'poshmark',
   'mercari',
   'vinted',
+  'thredup',
+  'vestiaire',
   'stockx',
   'ebay',
 ];
@@ -21,7 +23,7 @@ export default function PlatformLogos() {
           className="mb-6 text-center text-xs font-medium uppercase tracking-wider"
           style={{ color: 'var(--text-dim)' }}
         >
-          All 7 major resale platforms searched in one query
+          All 9 major resale platforms searched in one query
         </p>
 
         {/* Desktop: static row */}
