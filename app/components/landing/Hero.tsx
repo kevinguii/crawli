@@ -16,6 +16,33 @@ function dispatchMockSearch(detail: MockSearchEventDetail) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+const PILLARS = [
+  {
+    label: 'Cross-platform comp in seconds',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 17l6-6 4 4 7-8" /><path d="M14 7h6v6" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Net flip profit after fees',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Alerts the moment deals land',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
+];
+
 export default function Hero() {
   const [activeChipId, setActiveChipId] = useState<string | null>(null);
 
@@ -79,10 +106,25 @@ export default function Hero() {
             className="mx-auto mt-5 max-w-2xl text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Crawli searches Grailed, Depop, Poshmark, StockX, and more at once, so
-            you can find underpriced inventory and know the real cross-platform
-            comp and your flip margin before you spend a dollar.
+            Search 7 resale platforms at once, see what the market is really paying, calculate your net flip profit after fees, and get alerted the moment underpriced inventory hits.
           </p>
+
+          {/* Three value pillars */}
+          <div className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+            {PILLARS.map(({ icon, label }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span
+                  className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
+                  style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                >
+                  {icon}
+                </span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
 
           <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-3xl">
             <div

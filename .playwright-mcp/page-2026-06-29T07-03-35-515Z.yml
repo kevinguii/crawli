@@ -1,0 +1,343 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link "Crawli" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: Crawli
+        - generic [ref=e7]:
+          - link "Blog" [ref=e8] [cursor=pointer]:
+            - /url: /blog
+          - link "Pricing" [ref=e9] [cursor=pointer]:
+            - /url: /pricing?from=%2F
+          - link "Go to app" [ref=e10] [cursor=pointer]:
+            - /url: /search
+    - generic [ref=e13]:
+      - generic [ref=e14]: Sourcing intelligence for resellers
+      - heading "Stop guessing. Know your margin before you buy." [level=1] [ref=e16]
+      - paragraph [ref=e17]: Search 7 resale platforms at once, see what the market is really paying, calculate your net flip profit after fees, and get alerted the moment underpriced inventory hits.
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - img [ref=e21]
+          - generic [ref=e24]: Cross-platform comp in seconds
+        - generic [ref=e25]:
+          - img [ref=e27]
+          - generic [ref=e30]: Net flip profit after fees
+        - generic [ref=e31]:
+          - img [ref=e33]
+          - generic [ref=e36]: Alerts the moment deals land
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - img [ref=e40]
+          - textbox "Sample search query" [ref=e43]:
+            - /placeholder: Pick a sample search below ↓
+          - button "Search" [disabled] [ref=e44]
+        - generic [ref=e45]:
+          - button "Stussy hoodie" [ref=e46]
+          - button "Margiela Tabi 39" [ref=e47]
+          - button "FOG Essentials" [ref=e48]
+          - button "Nike basketball shorts" [ref=e49]
+          - button "Levi's 501" [ref=e50]
+          - button "Patagonia fleece" [ref=e51]
+        - paragraph [ref=e52]:
+          - text: Free to start · No credit card required ·
+          - link "See how it works" [ref=e53] [cursor=pointer]:
+            - /url: "#how-it-works"
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: One search. Every platform.
+        - heading "Live prices, side-by-side, ranked." [level=2] [ref=e58]
+      - generic [ref=e61]:
+        - generic [ref=e67]: thecrawli.com/search?q=fear+of+god+essentials+hoodie
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - paragraph [ref=e70]: Results for
+            - paragraph [ref=e71]: fear of god essentials hoodie
+          - generic [ref=e72]: 8 platforms searched
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - generic [ref=e76]:
+                - generic [ref=e77]: Lowest price
+                - generic [ref=e79]: Grailed
+              - generic [ref=e80]:
+                - paragraph [ref=e81]: Fear of God Essentials Hoodie — Iron
+                - generic [ref=e82]:
+                  - generic [ref=e83]: $82
+                  - generic [ref=e84]: Size M
+            - generic [ref=e85]:
+              - generic [ref=e88]: Depop
+              - generic [ref=e89]:
+                - paragraph [ref=e90]: Essentials Pullover Hoodie Black M
+                - generic [ref=e91]:
+                  - generic [ref=e92]: $95
+                  - generic [ref=e93]: Size M
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Poshmark
+              - generic:
+                - paragraph: FOG Essentials Hoodie SS22 Stretch Limo
+                - generic:
+                  - generic: $110
+                  - generic: Size M
+            - generic:
+              - generic:
+                - generic:
+                  - generic: StockX
+              - generic:
+                - paragraph: Fear of God Essentials Hoodie Iron
+                - generic:
+                  - generic: $128
+                  - generic: Size M
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Mercari
+              - generic:
+                - paragraph: Essentials Hoodie Stretch Limo Medium
+                - generic:
+                  - generic: $135
+                  - generic: Size M
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Vinted
+              - generic:
+                - paragraph: Fear of God Essentials Pullover Black
+                - generic:
+                  - generic: $142
+                  - generic: Size M
+          - generic [ref=e94]:
+            - paragraph [ref=e95]: Sign up to see all results across 8 platforms
+            - paragraph [ref=e96]: Free · 10 searches a month, no card required
+            - link "Try search now" [ref=e97] [cursor=pointer]:
+              - /url: /login?tab=signup
+    - generic [ref=e99]:
+      - paragraph [ref=e100]: All 7 major resale platforms searched in one query
+      - generic [ref=e101]:
+        - generic [ref=e102]: Grailed
+        - generic [ref=e103]: Depop
+        - generic [ref=e104]: Poshmark
+        - generic [ref=e105]: Mercari
+        - generic [ref=e106]: Vinted
+        - generic [ref=e107]: StockX
+        - generic [ref=e109]: eBay
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - heading "Your sourcing workflow, built in" [level=2] [ref=e113]
+        - paragraph [ref=e114]: From comp check to sourcing alert in under a minute.
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - generic [ref=e117]: "01"
+          - heading "Check the comp" [level=3] [ref=e118]
+          - paragraph [ref=e119]: Search once across 7 platforms to see what buyers are actually paying right now. No tab-switching, no spreadsheets, no guessing.
+        - generic [ref=e120]:
+          - generic [ref=e121]: "02"
+          - heading "Run the margin" [level=3] [ref=e122]
+          - paragraph [ref=e123]: Enter your sourcing price and pick the platform you plan to sell on. See net profit after real seller fees before you commit to buying.
+        - generic [ref=e124]:
+          - generic [ref=e125]: "03"
+          - heading "Set a sourcing alert" [level=3] [ref=e126]
+          - paragraph [ref=e127]: Save the search with your brand, size, and max-price criteria. Get notified the moment a matching listing hits any platform.
+    - generic [ref=e129]:
+      - generic [ref=e130]:
+        - heading "Built for resellers who buy to flip" [level=2] [ref=e131]
+        - paragraph [ref=e132]: Every feature exists to help you source underpriced inventory and protect your margin.
+      - generic [ref=e133]:
+        - generic [ref=e134]:
+          - img [ref=e136]
+          - heading "Flip margin calculator" [level=3] [ref=e139]
+          - paragraph [ref=e140]: Enter your sourcing price and target platform. See net profit, margin, and ROI after real seller-side fees before you spend a dollar. All 7 platforms covered.
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]: Source @ $40
+              - img [ref=e145]
+              - generic [ref=e147]: eBay @ $100
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - generic [ref=e150]: $46.35
+                - generic [ref=e151]: Net profit
+              - generic [ref=e152]:
+                - generic [ref=e153]: 46%
+                - generic [ref=e154]: Margin
+              - generic [ref=e155]:
+                - generic [ref=e156]: 116%
+                - generic [ref=e157]: ROI
+            - generic [ref=e158]: "eBay fees: 13.25% FVF + $0.40 per order · Rates verified 2026-06-28"
+        - generic [ref=e159]:
+          - img [ref=e161]
+          - heading "Precision sourcing alerts" [level=3] [ref=e164]
+          - paragraph [ref=e165]: Save a search with brand, size, and max-price criteria. Crawli rechecks every platform daily and notifies you only when a listing matches all your terms.
+          - generic [ref=e167]:
+            - generic [ref=e168]: Alert criteria
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - generic [ref=e171]: Brand
+                - generic [ref=e172]: Carhartt
+              - generic [ref=e173]:
+                - generic [ref=e174]: Size
+                - generic [ref=e175]: M
+              - generic [ref=e176]:
+                - generic [ref=e177]: Max price
+                - generic [ref=e178]: $80
+              - generic [ref=e179]:
+                - generic [ref=e180]: Platforms
+                - generic [ref=e181]: All 7
+            - generic [ref=e182]: Checks daily · Notifies only on new matches · AND logic across all criteria
+        - generic [ref=e183]:
+          - img [ref=e185]
+          - heading "7-platform search" [level=3] [ref=e188]
+          - paragraph [ref=e189]: Grailed, Depop, Poshmark, Mercari, Vinted, StockX, and eBay searched at once. One query, every major resale platform, in seconds.
+        - generic [ref=e190]:
+          - img [ref=e192]
+          - heading "Price intelligence" [level=3] [ref=e195]
+          - paragraph [ref=e196]: See low, average, and high prices across all results. Know what the market actually pays before you decide to source.
+        - generic [ref=e197]:
+          - img [ref=e199]
+          - heading "Smart filters" [level=3] [ref=e201]
+          - paragraph [ref=e202]: Filter by platform, size, condition, color, and price range. Narrow to exactly the inventory you source, without leaving the page.
+    - generic [ref=e204]:
+      - generic [ref=e205]:
+        - paragraph [ref=e206]: Be the first to know
+        - heading "Save a search. Get alerts when new listings appear." [level=2] [ref=e207]
+        - paragraph [ref=e208]: Crawli rechecks your saved searches every day and pings you the moment a matching listing hits any platform.
+      - generic [ref=e211]:
+        - generic [ref=e217]: thecrawli.com/alerts
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - generic [ref=e220]:
+              - generic [ref=e221]: "4"
+              - generic [ref=e222]:
+                - paragraph [ref=e223]: stussy world tour hoodie
+                - paragraph [ref=e224]: Grailed · Depop · Vinted · checked 12m ago
+            - generic [ref=e225]: 4 new
+          - generic [ref=e226]:
+            - generic [ref=e227]:
+              - generic [ref=e228]: "1"
+              - generic [ref=e229]:
+                - paragraph [ref=e230]: maison margiela tabi 39
+                - paragraph [ref=e231]: Grailed · Vestiaire · checked 1h ago
+            - generic [ref=e232]: 1 new
+          - generic [ref=e233]:
+            - generic [ref=e234]:
+              - img [ref=e236]
+              - generic [ref=e239]:
+                - paragraph [ref=e240]: arcteryx beta ar medium
+                - paragraph [ref=e241]: Grailed · eBay · Poshmark · checked 3h ago
+            - generic [ref=e242]: No new matches
+          - generic [ref=e243]:
+            - generic [ref=e244]: "Daily auto-check · Pro: 3 alerts · Max: 10 alerts"
+            - button [ref=e245]: + New alert
+    - generic [ref=e247]:
+      - generic [ref=e248]:
+        - paragraph [ref=e249]: Build your wishlist
+        - heading "Heart what you love. Organize what you keep." [level=2] [ref=e250]
+        - paragraph [ref=e251]: Save any listing across any platform. Sort into folders. Track price drops on the ones you’re still thinking about.
+      - generic [ref=e254]:
+        - generic [ref=e260]: thecrawli.com/saves
+        - generic [ref=e261]:
+          - generic [ref=e262]: All
+          - generic [ref=e263]: Outerwear
+          - generic [ref=e264]: Footwear
+          - generic [ref=e265]: Bags
+          - generic [ref=e266]: 4 saved
+        - generic [ref=e267]:
+          - generic [ref=e268]:
+            - generic [ref=e269]:
+              - generic [ref=e271]: Grailed
+              - img [ref=e273]
+            - generic [ref=e275]:
+              - paragraph [ref=e276]: Rick Owens DRKSHDW Geobasket
+              - paragraph [ref=e277]: $320
+          - generic [ref=e278]:
+            - generic [ref=e279]:
+              - generic [ref=e281]: Depop
+              - img [ref=e283]
+            - generic [ref=e285]:
+              - paragraph [ref=e286]: Carhartt Detroit Jacket — Hamilton Brown
+              - paragraph [ref=e287]: $140
+          - generic [ref=e288]:
+            - generic [ref=e289]:
+              - generic [ref=e291]: vestiaire
+              - img [ref=e293]
+            - generic [ref=e295]:
+              - paragraph [ref=e296]: Margiela 5AC Mini Bag
+              - paragraph [ref=e297]: $680
+          - generic [ref=e298]:
+            - generic [ref=e299]:
+              - generic [ref=e301]: StockX
+              - img [ref=e303]
+            - generic [ref=e305]:
+              - paragraph [ref=e306]: Air Jordan 1 Mocha — 10
+              - paragraph [ref=e307]: $295
+    - generic [ref=e309]:
+      - paragraph [ref=e310]: Why Crawli
+      - heading "Sourcing shouldn’t take eight tabs and a guess." [level=2] [ref=e311]
+      - paragraph [ref=e312]: Good flips come from buying below the real market, not from luck. Crawli pulls every resale marketplace into one search so you see the true cross-platform comp, then shows your net margin after each platform’s fees before you buy. The sourcing edge every serious reseller wishes they had.
+      - generic [ref=e313]:
+        - generic [ref=e314]:
+          - generic [ref=e315]: "7"
+          - generic [ref=e316]: Platforms
+        - generic [ref=e318]:
+          - generic [ref=e319]: "1"
+          - generic [ref=e320]: Search
+        - generic [ref=e322]:
+          - generic [ref=e323]: ~7s
+          - generic [ref=e324]: To best price
+    - generic [ref=e326]:
+      - generic [ref=e327]:
+        - paragraph [ref=e328]: FAQ
+        - heading "Frequently asked questions" [level=2] [ref=e329]
+      - generic [ref=e330]:
+        - group [ref=e331]:
+          - generic "What is Crawli and who is it for?" [ref=e332] [cursor=pointer]:
+            - text: What is Crawli and who is it for?
+            - img [ref=e334]
+        - group [ref=e336]:
+          - generic "How does the flip margin calculator work?" [ref=e337] [cursor=pointer]:
+            - text: How does the flip margin calculator work?
+            - img [ref=e339]
+        - group [ref=e341]:
+          - generic "How do sourcing alerts work?" [ref=e342] [cursor=pointer]:
+            - text: How do sourcing alerts work?
+            - img [ref=e344]
+        - group [ref=e346]:
+          - generic "Which platforms does Crawli search and how accurate are the fee rates?" [ref=e347] [cursor=pointer]:
+            - text: Which platforms does Crawli search and how accurate are the fee rates?
+            - img [ref=e349]
+        - group [ref=e351]:
+          - generic "What happens when I run out of included searches?" [ref=e352] [cursor=pointer]:
+            - text: What happens when I run out of included searches?
+            - img [ref=e354]
+        - group [ref=e356]:
+          - generic "Is Crawli free to use?" [ref=e357] [cursor=pointer]:
+            - text: Is Crawli free to use?
+            - img [ref=e359]
+    - generic [ref=e362]:
+      - heading "Start sourcing smarter today." [level=2] [ref=e363]
+      - paragraph [ref=e364]: Free to start. No credit card required.
+      - link "Create free account" [ref=e365] [cursor=pointer]:
+        - /url: /login?tab=signup
+    - generic [ref=e367]:
+      - paragraph [ref=e368]: “I used to cross-reference 7 tabs, a spreadsheet, and a gut feeling before every buy. Crawli exists so you can know the comp and your margin in seconds, not hours.”
+      - generic [ref=e369]:
+        - generic [ref=e370]: "- Kevin, Founder"
+        - generic [ref=e371]: ·
+        - link "Read the full story →" [ref=e372] [cursor=pointer]:
+          - /url: /blog/why-we-started-crawli
+    - generic [ref=e374]:
+      - generic [ref=e375]:
+        - generic [ref=e376]: Crawli
+        - generic [ref=e377]: © 2026 Crawli
+      - navigation [ref=e378]:
+        - link "Blog" [ref=e379] [cursor=pointer]:
+          - /url: /blog
+        - link "Privacy" [ref=e380] [cursor=pointer]:
+          - /url: /privacy
+        - link "Terms" [ref=e381] [cursor=pointer]:
+          - /url: /terms
+        - link "Contact" [ref=e382] [cursor=pointer]:
+          - /url: /contact
+  - button "Open Next.js Dev Tools" [ref=e388] [cursor=pointer]:
+    - img [ref=e389]

@@ -1,6 +1,27 @@
 # Crawli — Resale Price Aggregator — Consolidated Handoff
 
-**Last updated:** 2026-06-28 (B2B Session 1: margin calculator, debt-proof credit-pack overage, boolean alert criteria, reseller repositioning).
+**Last updated:** 2026-06-29 (B2B Session 3: landing page revamp for reseller audience).
+
+**Latest change (2026-06-29 — B2B Session 3: landing page revamp):**
+
+Full reseller-audience revamp of the public landing page. Positioning: sourcing intelligence, NOT cross-listing. Lead with the three things resellers care about: comp pricing, flip margin, real-time alerts. Source of truth for features was `docs/B2B_FEATURE_TRUTH.md` throughout.
+
+What shipped (all in `app/components/landing/*` and `app/pricing/*`):
+- **BentoFeatures.tsx** restructured: margin calculator and sourcing alerts are now equal-weight 3-col hero cards (each with a live preview widget) above 3 supporting 2-col cards. Margin preview shows verified real numbers ($40 source / eBay $100 = $46.35 net / 46% margin / 116% ROI). Alert preview shows criteria chip UI (Brand: Carhartt / Size: M / Max price: $80 / Platforms: All 7). "Save your finds" consumer card removed; replaced by the margin calc hero.
+- **HowItWorks.tsx** rewritten: 3 steps now map the sourcing workflow (Check the comp / Run the margin / Set a sourcing alert) instead of the old consumer shopping flow.
+- **faqData.ts** fully rewritten: 6 reseller-specific Q&As covering sourcing workflow, flip margin calculator mechanics (incl. real eBay example), alert AND logic and daily cadence, platform fee accuracy and verification date, credit pack overage mechanism, and free plan. No consumer shopping questions.
+- **Hero.tsx**: subhead updated to mention all 3 value props. Three value-pillar row added between subhead and search form (cross-platform comp / net flip profit after fees / alerts the moment deals land).
+- **PlatformLogos.tsx**: removed `vestiaire` from PLATFORMS array (Vestiaire URL discovery is broken per HANDOFF). Platform count label updated to "All 7 major resale platforms searched in one query."
+- **AboutSection.tsx**: stat updated from "8 Platforms" to "7 Platforms."
+- **CTASection.tsx**: copy changed from "Start finding better prices today" to "Start sourcing smarter today."
+- **FounderNote.tsx**: quote reframed from returning a $25 sweater to the reseller comp/margin workflow.
+- **PricingCards.tsx** (`app/pricing/`): NATIVE_TOOLTIP corrected (removed ThredUp and RealReal, which are not active platforms). Pro tagline changed from "More searches, more alerts" to "For active resellers." Max tagline changed from "For power users" to "For serious sourcing operations." Credit pack overage section added below the plan cards (explains prepaid mechanism without specific prices, since prices are pending owner sign-off).
+- **app/pricing/page.tsx**: metadata description updated to reseller framing. Hero subline updated to "Sourcing intelligence for resellers. Know your margin before you buy."
+- **mockSearches.ts**: replaced `vestiaire` platform in the Margiela Tabi mock result with `vinted`.
+
+NOT touched (per scope): `app/(protected)/*`, `lib/*`, `crawl4ai-service/`, `docs/marketing/`, `AlertsMock.tsx` (demo component, mock-only; Vestiaire reference there is illustrative, not a platform claim).
+
+Verified: `tsc --noEmit` clean; real browser tested light + dark mode; 0 console errors (pre-existing Python sidecar urllib3 warning is unrelated); 0 em/en-dashes in all edited files confirmed via grep.
 
 **Latest change (2026-06-28 — B2B Foundation Session 1: margin calculator + debt-proof pricing + boolean alerts):**
 

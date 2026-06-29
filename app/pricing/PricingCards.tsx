@@ -34,11 +34,11 @@ const NATIVE_TOOLTIP = (
     per search on every plan.
     <div style={{ marginTop: '6px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
-      Grailed, Depop, Mercari, ThredUp, RealReal
+      Grailed, Depop, Mercari
     </div>
     <div style={{ marginTop: '4px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Other:</span>{' '}
-      Poshmark, Vinted, eBay, Vestiaire, StockX
+      Poshmark, Vinted, eBay, StockX
     </div>
   </>
 );
@@ -48,7 +48,7 @@ const PAID_TIERS: TierConfig[] = [
     tier: 'pro',
     name: 'Pro',
     icon: '✦',
-    tagline: 'More searches, more alerts',
+    tagline: 'For active resellers',
     weekly: 3,
     monthly: 10,
     yearly: 100,
@@ -65,7 +65,7 @@ const PAID_TIERS: TierConfig[] = [
     tier: 'max',
     name: 'Max',
     icon: '★',
-    tagline: 'For power users',
+    tagline: 'For serious sourcing operations',
     weekly: 10,
     monthly: 30,
     yearly: 300,
@@ -252,9 +252,28 @@ export function PricingCards({
           className="inline-flex items-center gap-1.5 text-xs"
           style={{ color: 'var(--text-dim)' }}
         >
-          What's a native platform?
+          What&rsquo;s a native platform?
           <InfoTooltip content={NATIVE_TOOLTIP} label="What is a native platform?" />
         </span>
+      </div>
+
+      {/* Credit pack overage */}
+      <div
+        className="mt-10 rounded-2xl p-6 text-center"
+        style={{
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          Need more searches? Add credit packs anytime.
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          Once your included searches are used up, you can buy prepaid credit packs as a one-time purchase. No subscription, no surprise charges, no debt. One credit equals one search and rolls over until used.
+        </p>
+        <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
+          Credit packs coming soon · Included in all plans when available
+        </p>
       </div>
     </>
   );

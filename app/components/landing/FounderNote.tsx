@@ -14,8 +14,7 @@ export default function FounderNote() {
           className="text-base italic leading-relaxed sm:text-lg"
           style={{ color: 'var(--text-muted)' }}
         >
-          &ldquo;I spent hours across six different tabs and still ended up returning a
-          $25 sweater. Crawli exists so you don&rsquo;t have to.&rdquo;
+          &ldquo;I used to cross-reference 7 tabs, a spreadsheet, and a gut feeling before every buy. Crawli exists so you can know the comp and your margin in seconds, not hours.&rdquo;
         </p>
         <div className="mt-4 flex items-center justify-center gap-3">
           <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>

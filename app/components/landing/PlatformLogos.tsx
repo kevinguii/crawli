@@ -8,7 +8,6 @@ const PLATFORMS = [
   'vinted',
   'stockx',
   'ebay',
-  'vestiaire',
 ];
 
 export default function PlatformLogos() {
@@ -22,7 +21,7 @@ export default function PlatformLogos() {
           className="mb-6 text-center text-xs font-medium uppercase tracking-wider"
           style={{ color: 'var(--text-dim)' }}
         >
-          Compare secondhand prices across every resale platform you already use
+          All 7 major resale platforms searched in one query
         </p>
 
         {/* Desktop: static row */}

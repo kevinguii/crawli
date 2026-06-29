@@ -8,13 +8,13 @@ export default function CTASection() {
           className="text-2xl font-semibold tracking-tight sm:text-3xl"
           style={{ color: 'var(--text)' }}
         >
-          Start finding better prices today.
+          Start sourcing smarter today.
         </h2>
         <p
           className="mx-auto mt-3 text-sm sm:text-base"
           style={{ color: 'var(--text-muted)' }}
         >
-          Free forever. No credit card required.
+          Free to start. No credit card required.
         </p>
         <Link
           href="/login?tab=signup"

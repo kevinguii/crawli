@@ -37,7 +37,7 @@ export const POPULAR_SEARCHES: MockSearch[] = [
     results: [
       { platform: 'depop', title: 'Maison Margiela Tabi Mary Jane Black 39', price: '$420', size: '39', lowest: true },
       { platform: 'grailed', title: 'MM6 Margiela Tabi Ballet Flats EU 39', price: '$465', size: '39' },
-      { platform: 'vestiaire', title: 'Maison Margiela Tabi Leather Flats', price: '$520', size: '39' },
+      { platform: 'vinted', title: 'Maison Margiela Tabi Leather Flats 39', price: '$490', size: '39' },
       { platform: 'poshmark', title: 'Margiela Tabi Mary Jane Size 39 Black', price: '$540', size: '39' },
       { platform: 'ebay', title: 'Maison Margiela Tabi Split-Toe Flats 39', price: '$575', size: '39' },
       { platform: 'mercari', title: 'MM Tabi Mary Jane Black EU 39', price: '$610', size: '39' },

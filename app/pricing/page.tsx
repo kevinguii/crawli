@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'Crawli pricing. Start free with no credit card, or upgrade for more monthly searches, daily search alerts and higher result limits across all 8 resale marketplaces.',
+    'Crawli pricing for resellers. Start free with no credit card. Upgrade for more weekly searches, precision sourcing alerts with brand and size criteria, and the flip margin calculator across all 7 resale platforms.',
   alternates: { canonical: '/pricing' },
 };
 
@@ -73,7 +73,7 @@ export default async function PricingPage({
             Crawli
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base sm:text-lg" style={{ color: 'var(--text-muted)' }}>
-            Search every resale platform at once. Find{' '}
+            Sourcing intelligence for resellers. Know your{' '}
             <span
               style={{
                 background: 'linear-gradient(to right, #E24B4A, #D85A30, #EF9F27, #FAC775)',
@@ -83,9 +83,8 @@ export default async function PricingPage({
                 fontWeight: 600,
               }}
             >
-              the best price
+              margin before you buy.
             </span>
-            .
           </p>
         </div>
 

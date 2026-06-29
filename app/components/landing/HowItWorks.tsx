@@ -1,18 +1,18 @@
 const STEPS = [
   {
     n: '01',
-    title: 'Search once',
-    body: 'Type what you’re looking for. One query searches every platform at the same time.',
+    title: 'Check the comp',
+    body: 'Search once across 7 platforms to see what buyers are actually paying right now. No tab-switching, no spreadsheets, no guessing.',
   },
   {
     n: '02',
-    title: 'See all results',
-    body: 'Listings from 8 resale platforms appear side-by-side, sortable by price, condition, and more.',
+    title: 'Run the margin',
+    body: 'Enter your sourcing price and pick the platform you plan to sell on. See net profit after real seller fees before you commit to buying.',
   },
   {
     n: '03',
-    title: 'Save & track',
-    body: 'Heart listings you love. Watchlist anything you want to track for price drops and new arrivals.',
+    title: 'Set a sourcing alert',
+    body: 'Save the search with your brand, size, and max-price criteria. Get notified the moment a matching listing hits any platform.',
   },
 ];
 
@@ -25,13 +25,13 @@ export default function HowItWorks() {
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
             style={{ color: 'var(--text)' }}
           >
-            From query to checkout in seconds
+            Your sourcing workflow, built in
           </h2>
           <p
             className="mt-3 text-base sm:text-lg"
             style={{ color: 'var(--text-muted)' }}
           >
-            Three steps. No tab-switching. No price comparison spreadsheets.
+            From comp check to sourcing alert in under a minute.
           </p>
         </div>
 
