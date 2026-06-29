@@ -1,0 +1,362 @@
+[
+  {
+    "updatedAt": "2026-06-29T07:45:51.000Z",
+    "createdAt": "2026-06-23T00:36:15.104Z",
+    "id": "moMVEnr5L6kGgJTC",
+    "name": "crawli content brief (DeepSeek)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "url": "https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/seo_context?id=eq.1&select=keywords_json,updated_at",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_JWT"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_JWT"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "id": "1e3849aa-d271-43c6-a4b7-9e282c046c13",
+        "name": "Fetch SEO context",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          240,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// ---- SEO context (may be empty on first run) ----\nconst seoRows = $('Fetch SEO context').all();\nlet contextBlock = '';\nlet updatedAt = '';\nif (seoRows.length > 0 && seoRows[0].json) {\n  const kj = seoRows[0].json.keywords_json;\n  if (kj && kj.dailyContext) {\n    contextBlock = String(kj.dailyContext);\n    updatedAt = seoRows[0].json.updated_at || '';\n  }\n}\nconst hasCtx = contextBlock.length > 0;\n\n// ---- Recent topics for dedup (fetched inline; a separate node would break the\n// chain when content_history is empty, since 0 items stops downstream nodes) ----\nconst SUPA_KEY = 'REDACTED_JWT';\nlet recentRows = [];\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: 'GET',\n    url: `https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/content_history?select=title,kind,topic_key,posted&or=(posted.eq.true,created_at.gte.${new Date(Date.now()-21*24*60*60*1000).toISOString()})&order=created_at.desc&limit=400`,\n    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY },\n    json: true,\n  });\n  if (Array.isArray(resp)) recentRows = resp;\n} catch (e) { recentRows = []; }\nconst recentSocial = [];\nconst recentBlog = [];\nconst recentTopics = [];   // full rows forwarded to Build email for similarity flagging\nconst takenKeys = [];      // distinct topic_keys already used (controlled vocab signal)\nconst seenKey = {};\nfor (const j of recentRows) {\n  if (!j || !j.title) continue;\n  const tk = j.topic_key ? String(j.topic_key) : '';\n  recentTopics.push({ kind: j.kind === 'blog' ? 'blog' : 'social', title: String(j.title), topic_key: tk });\n  if (j.kind === 'blog') recentBlog.push(String(j.title));\n  else recentSocial.push(String(j.title));\n  if (tk && !seenKey[tk]) { seenKey[tk] = 1; takenKeys.push(tk); }\n}\nconst socialDedup = recentSocial.length\n  ? '\\n\\nAlready covered recently - do NOT repeat or closely echo these social topics. Pick genuinely fresh angles:\\n' + recentSocial.slice(0, 40).map(t => '- ' + t).join('\\n')\n  : '';\nconst blogDedup = recentBlog.length\n  ? '\\n\\nAlready covered recently - do NOT repeat or closely echo these blog topics or their keywords. Pick genuinely fresh angles:\\n' + recentBlog.slice(0, 40).map(t => '- ' + t).join('\\n')\n  : '';\nconst takenKeysBlock = takenKeys.length\n  ? '\\n\\nThese topic_key values are already used up. The subject behind each is taken, so do NOT reuse the key and do NOT cover the same subject under a new name:\\n' + takenKeys.slice(0, 60).map(k => '- ' + k).join('\\n')\n  : '';\n\n// ---- Published blog posts (hard dedup - never re-suggest a topic we have already written and published) ----\nlet publishedRows = [];\ntry {\n  const resp2 = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/published_posts?select=title&order=created_at.desc',\n    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY },\n    json: true,\n  });\n  if (Array.isArray(resp2)) publishedRows = resp2;\n} catch (e) { publishedRows = []; }\nconst publishedTitles = publishedRows.map(r => String(r.title || '')).filter(Boolean);\nconst blogPublishedDedup = publishedTitles.length\n  ? '\\n\\nALREADY PUBLISHED - these posts are live on the Crawli blog. Do NOT generate a brief covering the same topic, angle, or primary keyword. Pick genuinely different subjects:\\n' + publishedTitles.map(t => '- ' + t).join('\\n')\n  : '';\n\n// ---- Reddit pain-point research (may be empty before the first reddit research run) ----\nlet painRows = [];\ntry {\n  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);\n  const painResp = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/reddit_research?select=pain_point,summary,lead_score,run_date&run_date=gte.' + fourteenDaysAgo + '&order=lead_score.desc&limit=200',\n    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY },\n    json: true,\n  });\n  if (Array.isArray(painResp)) painRows = painResp;\n} catch (e) { painRows = []; }\n\nconst painCounts = {};\nconst painExamples = {};\nfor (const r of painRows) {\n  if (!r || !r.pain_point || r.pain_point === 'other') continue;\n  painCounts[r.pain_point] = (painCounts[r.pain_point] || 0) + 1;\n  if ((r.lead_score || 0) >= 7 && r.summary) {\n    const arr = painExamples[r.pain_point] = painExamples[r.pain_point] || [];\n    if (arr.length < 2 && !arr.includes(r.summary)) arr.push(r.summary);\n  }\n}\nconst topPains = Object.entries(painCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);\nconst redditPainBlock = topPains.length\n  ? topPains.map(([k, c]) => '- ' + k + ' (' + c + ' threads)' + ((painExamples[k] || []).length ? ': ' + painExamples[k].join('; ') : '')).join('\\n')\n  : '';\nconst redditPainSummary = topPains.map(([k, c]) => ({ pain_point: k, threadCount: c }));\nconst redditUpdatedAt = painRows.reduce((max, r) => (r.run_date && (!max || r.run_date > max)) ? r.run_date : max, '');\n\n// ---- TikTok performance signal (qualitative - no topic_key join exists yet,\n// tiktok-auto-post.json isn't live, so this is free text like reddit_research,\n// not a structured match) ----\nlet tiktokRows = [];\ntry {\n  const tkResp = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/tiktok_performance?select=content_snippet,hashtags,media_type,views,likes,comments,shares,engagement_rate&order=engagement_rate.desc&limit=50',\n    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY },\n    json: true,\n  });\n  if (Array.isArray(tkResp)) tiktokRows = tkResp;\n} catch (e) { tiktokRows = []; }\n\nconst TIKTOK_VIEW_FLOOR = 20;\nconst TIKTOK_MIN_ROWS = 8;\nconst tkQualifying = tiktokRows.filter(function(r) { return (r.views || 0) >= TIKTOK_VIEW_FLOOR; });\nconst renderTkRow = function(r) {\n  return '\"' + String(r.content_snippet || '').slice(0, 140) + '\" [' + (r.media_type || 'unknown') + ', ' + (r.hashtags || []).slice(0, 4).join(' ') + '] - ' + (Math.round((r.engagement_rate || 0) * 1000) / 10) + '% engagement, ' + (r.views || 0) + ' views';\n};\n\nlet tiktokPerfBlock = '';\nlet tiktokPerfSummary = [];\nif (tkQualifying.length >= TIKTOK_MIN_ROWS) {\n  const tkSorted = tkQualifying.slice().sort(function(a, b) { return (b.engagement_rate || 0) - (a.engagement_rate || 0); });\n  const tkTop5 = tkSorted.slice(0, 5);\n  const tkBottom5 = tkSorted.slice(-5).reverse();\n  tiktokPerfBlock = 'Top performing TikToks (highest engagement rate):\\n' + tkTop5.map(function(r) { return '  ' + renderTkRow(r); }).join('\\n')\n    + '\\n\\nLowest performing TikToks (for contrast, avoid repeating these patterns):\\n' + tkBottom5.map(function(r) { return '  ' + renderTkRow(r); }).join('\\n');\n  tiktokPerfSummary = tkTop5.map(function(r) { return { content_snippet: r.content_snippet, engagement_rate: r.engagement_rate }; });\n}\nconst tiktokPerfSocialSection = tiktokPerfBlock\n  ? '\\n\\nReal TikTok performance data from recent posts (use to inform tone, hook style, and hashtag territory for 2-3 of the 15 ideas, not a hard rule):\\n' + tiktokPerfBlock + '\\n\\nLean into hook/format/hashtag patterns associated with the top performers above. Avoid patterns associated with the lowest performers.'\n  : '';\n\n// ---- SEO keyword injection ----\nconst socialSeoSection = hasCtx\n  ? '\\n\\nSEO keyword context this week (use for 4-5 of the 15 ideas when the angle is genuine):\\n' + contextBlock + '\\n\\nOnly weave a keyword in when it leads to a specific, useful idea. Do not force keywords into weak ideas.'\n  : '';\nconst redditPainSocialSection = redditPainBlock\n  ? '\\n\\nReal audience pain points from Reddit research this period (use for 2-3 of the 15 ideas, only where the connection is genuine, do not force it):\\n' + redditPainBlock + '\\n\\nThese are real frustrations with OTHER platforms (Depop, Vinted, Poshmark, Mercari) - fees, scams, shipping, fakes. Crawli is sourcing search, cross-platform comp pricing, a flip-margin calculator, and saved-search sourcing alerts. It does NOT cross-list, ship, escrow, handle disputes or refunds, or authenticate. Use a pain point as a hook into a relevant angle Crawli genuinely supports (seller trust fear -> how to vet a listing before buying, platform fees -> compare comps and net flip margin across platforms, counterfeit risk -> how to spot fakes, sizing inconsistency -> how to check measurements before buying, search or discovery -> set a sourcing alert instead of hunting manually). Never imply Crawli solves shipping speed, handles disputes or refunds, or verifies authenticity itself. Be careful with words like credible or trustworthy around listings, Crawli aggregates, price-compares, and computes flip margins, it does not vet or authenticate sellers. REQUIRED: for any idea whose hook or angle was inspired by one of the pain points listed above, set pain_point_source to the exact pain point string (e.g. \"shipping speed\"). Do not leave it empty for an idea that clearly responds to one of these problems.'\n  : '';\nconst blogSeoSection = hasCtx\n  ? \"\\n\\nThis week's SEO keyword priorities (from Monday's research):\\n\" + contextBlock + '\\n\\nLean toward these for 4-6 of the 10 briefs. Pick the ones with the strongest angle, not just because they are on the list.'\n  : '';\nconst redditPainBlogSection = redditPainBlock\n  ? '\\n\\nReal audience pain points from Reddit research this period (use for 1-2 of the 10 briefs, only where the connection is genuine, do not force it):\\n' + redditPainBlock + '\\n\\nThese are real frustrations with OTHER platforms (Depop, Vinted, Poshmark, Mercari) - fees, scams, shipping, fakes. Crawli is sourcing search, cross-platform comp pricing, a flip-margin calculator, and saved-search sourcing alerts. It does NOT cross-list, ship, escrow, handle disputes or refunds, or authenticate. Use a pain point as a hook into a relevant angle Crawli genuinely supports. Never imply Crawli solves shipping speed, handles disputes or refunds, or verifies authenticity itself. Be careful with words like credible or trustworthy around listings, Crawli aggregates, price-compares, and computes flip margins, it does not vet or authenticate sellers. REQUIRED: for any brief whose hook or angle was inspired by one of the pain points listed above, set pain_point_source to the exact pain point string. Do not leave it empty for a brief that clearly responds to one of these problems.'\n  : '';\n\n// ============================ SOCIAL PROMPT ============================\nconst socialIntro = `You write content ideas for Crawli, a sourcing-intelligence tool for resellers that searches secondhand fashion marketplaces (Depop, Poshmark, Vestiaire Collective, eBay, ThredUp, The RealReal, Grailed, Mercari, Vinted) at once, so a reseller can find underpriced inventory and know the real cross-platform comp and flip margin before buying. Crawli does not cross-list, ship, or authenticate. The person behind the account genuinely sources, prices, and resells secondhand.\n\nGenerate 15 content ideas, ranked 1 (best) to 15, built for TikTok photo carousels (4:5, 1080x1350). The surface of every post is education or entertainment native to the vintage and reselling community, never an ad.\n\nMOST IMPORTANT RULE: these are broadly useful posts that ANY follower can find valuable. They are NOT one-off personal finds. Never write an idea that depends on a specific item the creator happened to buy (no \"I found this exact Prada bag for 400\"). A specific price or item may appear only as an example inside a broader lesson, never as the whole post.\n\nSECOND RULE, JUST AS IMPORTANT: operational how-to and tips (\"how to price\", \"how to spot fakes\", \"how to optimise your Depop\") are already heavily covered and keep repeating. So do not let the set pile up on tips, but there is no fixed ratio: pick the most genuinely interesting and fresh idea for each slot. Lean on the educational and story pillars (clothing history, makers, materials, culture) because they are underused and have the most range, not because of a quota.\n\nTHIRD RULE, NON-NEGOTIABLE - OBFUSCATE COMMERCIAL INTENT: slides must read as pure education or entertainment for the vintage and reseller community (for example \"how to date 1990s Nike tags\", \"why true vintage Carhartt is skyrocketing\", \"identifying authentic shell cordovan\"). NO slide may contain \"search Crawli\", \"download\", \"link in bio\", \"thecrawli.com\", a URL, or any direct call to action. A subtle, in-passing reference to Crawli is fine and even good, but only on the final slide, only as a soft implicit aside (never an instruction, never a link), worded differently every time and NOT present in every post. The final slide teases that there is a faster way as a natural part of the story, the kind of line that makes a viewer curious enough to ask in the comments. The goal is comment inquiries, not clicks. Never name the website on a slide.\n\nContent pillars below are a palette, not quotas. Draw from whichever group fits the strongest idea, leaning on the educational and story pillars since they are underused.\n\nOPERATIONAL:\n- tips / lists: practical edges most people miss (sourcing, sizing, negotiating, shipping)\n- how-to / workflow: step-by-step methods, including reseller workflows (research, list, track, reprice)\n- myth-busting / POV: a contrarian take backed by reasoning\n- item-hunt: how to find a TYPE of thing (good band tees, real leather boots, an era of denim)\n\nEDUCATIONAL AND STORY (underused, the most range):\n- fashion-history: how a garment, style, or trend came to be (origin of the trench coat, why Levi's 501s have rivets, how band tees became collectible, workwear becoming everyday fashion, the industrial revolution and ready-to-wear)\n- maker-and-craft: designers, houses, and construction (who shaped a label, what selvedge denim is, Goodyear welt vs glued soles, what makes a garment well made)\n- culture-and-scene: a subculture or scene explained (Japanese denim culture, Ivy and prep, archive fashion, gorpcore, Americana vs European vintage)\n- material-and-construction: fabrics, leather, hardware, dyes, and how to read what a piece is actually made of\n- era-guide: decade by decade, what defined the look and how to date a piece by its tags, fonts, and cuts\n- people-and-stories: a profile, short interview style, or success story of a reseller, dealer, or collector and what they did differently\n- trend-and-news: something real happening in fashion or resale right now\n\nVary across the 15 so no two ideas share a subject, and spread across all three audience segments.\n\ntopic_key rule: every idea carries a topic_key, a 2 to 4 word lowercase hyphenated slug naming the core SUBJECT, not the framing or format. The same subject always gets the same key. Examples: japanese-denim, trench-coat-history, selvedge-construction, vintage-sizing, depop-profile, spotting-fakes. If a subject already appears in the recent topics or the taken topic_key list above, it is used up, so pick a genuinely different subject and a different key.\n\nThree audience segments, label each idea:\n- fashionistas: brand-conscious, smart luxury buys, aspirational but careful with money\n- vintage community: the hunt, slow fashion, character over newness\n- resellers: profit-focused, want practical sourcing and pricing edges`;\n\nconst socialTail = `\n\nEvery idea must include enough detail to actually make the post:\n- slides: a slide-by-slide breakdown. Each entry is one short line describing what is on that slide (the on-screen text or the point). Carousels 5 to 8 slides, reels 4 to 6 beats, single image or text post 1 to 3.\n- visual_direction: one sentence on what to film, photograph, or show.\n- cta_slide: the final slide. It closes the story and may tease that there is a faster way to do this, but with NO url, NO \"download\", NO \"search Crawli\", and NO call to action. Never write \"thecrawli.com\" or any link. Any Crawli mention is a soft, implicit, curiosity-building aside that invites a question, worded differently every time, never a stock line, and not present in every post. Aim for a closing line that makes an interested reseller comment to ask how, rather than telling them where to go. Let the comments do the work.\n- caption_angle and the eventual post caption or description follow the same rule: any Crawli reference there is subtle and varied too, never an explicit \"go to thecrawli.com\" or \"download\", and never the same line across posts.\n\nTone rules, CRITICAL, enforced:\n- NO exclamation marks anywhere. A period ends a sentence.\n- NO em dashes. Use a comma or restructure.\n- NO marketing language: not \"game-changing\", not \"discover\", not \"curated\", not \"ultimate\", not \"amazing finds\".\n- NO hype openers: not \"Check out\", not \"You won't believe\", not \"Omg\".\n- Sound like a real person who buys secondhand, not a brand performing enthusiasm.\n- Lead with the specific useful thing, not a setup.\n\nWRONG tiktok_hook: \"Here is how to spot a fake designer bag\"\nRIGHT tiktok_hook: \"the stitching on a real LV bag is always slightly uneven. here is the first thing to check.\"\n\nReturn only a JSON array of exactly 15 objects, no markdown, no explanation:\n[{\"rank\":1,\"format\":\"carousel|reel|single image|text post\",\"segment\":\"fashionistas|vintage community|resellers|all\",\"pillar\":\"tips|how-to|myth-busting|item-hunt|fashion-history|maker-and-craft|culture-and-scene|material-and-construction|era-guide|people-and-stories|trend-and-news\",\"topic_key\":\"2-4 word lowercase hyphenated subject slug\",\"title\":\"short internal label for this post\",\"caption_angle\":\"1-2 sentences, the actual point of the post\",\"tiktok_hook\":\"first thing said or shown, lands in 2 seconds\",\"slide_count\":6,\"slides\":[\"slide 1 text\",\"slide 2 text\",\"slide 3 text\"],\"visual_direction\":\"one sentence on what to film or show\",\"cta_slide\":\"final slide: a useful closing line then one soft Crawli CTA sentence\",\"hashtag_direction\":\"3-5 words describing the hashtag territory\",\"tiktok_format\":\"one sentence on the video style\",\"pain_point_source\":\"the Reddit pain point this idea responds to (e.g. seller trust/scam fear), empty string if not applicable\"}]`;\n\nconst socialPrompt = socialIntro + socialSeoSection + redditPainSocialSection + tiktokPerfSocialSection + takenKeysBlock + socialDedup + socialTail;\n\n// ============================ BLOG PROMPT ============================\nconst blogIntro = `You write SEO and AEO content briefs for Crawli's blog. Crawli is a free tool that searches secondhand fashion marketplaces (Depop, Poshmark, Vestiaire Collective, eBay, ThredUp, The RealReal) at once. Readers shop or sell secondhand: bargain hunters, resellers, luxury buyers going preloved, vintage fans.\n\nGenerate 10 blog post briefs. Specific, opinionated, grounded, written like someone who has used these platforms and known these clothes for years. Not generic beginner guides.\n\nIMPORTANT: operational and best-sites posts (\"how to price\", \"best places to sell\", \"how to optimise your profile\") are already heavily covered and keep repeating. At least HALF of the 10 briefs MUST be educational or explainer pieces about clothing itself: its history, its makers, its materials, the culture around it. These rank for evergreen informational queries and get cited by AI answer engines, and they are where we have the most untapped room.\n\nThese briefs are built to get cited by AI answer engines (ChatGPT, Perplexity, Google AI Overviews), not only to rank on Google. That changes what each brief must contain:\n- direct_answer: a 1 to 2 sentence, definition-style answer to the question the title implies, written to sit at the very top of the post. AI engines extract this as the canonical answer.\n- key_stat: one specific, citable statistic with its real source named. Do NOT invent precise figures and do NOT attribute made-up numbers to real companies. If you are not certain of the exact number, give an approximate range, name the source the writer should check, and end the stat with \"(verify)\". Stats with named sources are the single biggest driver of AI citations, but one fabricated stat destroys trust, so flag anything you are not certain of.\n- structure_element: one comparison table or numbered list the post must include. Pages with a table or numbered list are far more likely to be cited.\n- people_also_ask: 4 to 6 real questions people actually ask on this topic, the kind that show up in Google's People Also Ask box. The post answers each in a short, direct, extractable question-and-answer block.\n\nContent pillars. Use the OPERATIONAL group for at most half the briefs; lean on the EDUCATIONAL group for the rest.\n\nOPERATIONAL (at most ~5 of 10):\n- best-sites: best sites to buy or sell a given thing\n- reseller-workflow: research on one tool, list on another, track in Crawli\n- item-guide: how to find a TYPE of item (good band tees, authentic designer bags, winter coats under 100)\n- case-study: a realistic worked example with numbers\n- platform-deepdive: how authentication, fees, or flagging actually works\n- opinion: a contrarian, defensible take\n\nEDUCATIONAL AND EXPLAINER (aim for ~5 of 10, large untapped range):\n- fashion-history: the origin story of a garment, brand, or trend (the trench coat, the Breton stripe, the band tee, denim itself)\n- maker-deep-dive: a designer, house, or craft tradition explained for buyers\n- material-guide: a fabric, leather, hardware, or construction method explained so a buyer can judge quality\n- culture-explainer: a scene or movement (Japanese denim, archive fashion, prep, workwear, gorpcore)\n- era-guide: how to date and understand a decade of clothing\n- category-deep-guide: a thorough buyer's education on one category (selvedge jeans, leather jackets, wool overcoats, mechanical-era band tees)\n\ntopic_key rule: every brief carries a topic_key, a 2 to 4 word lowercase hyphenated slug naming the core SUBJECT, not the framing. The same subject always gets the same key. Examples: japanese-denim, trench-coat-history, vestiaire-authentication, selvedge-jeans-guide. If a subject already appears in the recent topics, the taken topic_key list, or the already-published list above, it is used up, so pick a genuinely different subject and key.`;\n\nconst blogTail = `\n\ncrawli_angle: end every post with a soft, natural bridge to Crawli. Keep it subtle and vary the wording every brief, never the same CTA formula twice. A blog post may name the site once since it is owned content, but it should read as a genuine aside not an ad, and some briefs should reference Crawli only implicitly or not at all rather than forcing it. Genuine information first, no banner language, no repeated stock line.\n\nTone rules, CRITICAL:\n- NO exclamation marks. NO em dashes.\n- NO listicle-cliche titles (\"10 ways to\", \"The ultimate guide to\").\n- NO preamble hooks (\"Navigating the world of\", \"In today's world\", \"Whether you are a beginner or expert\").\n- hook_sentence opens with the specific interesting thing: a fact, a take, a counterintuitive observation.\n- Angles are opinionated or counterintuitive, not \"comprehensive\".\n\nWRONG title: \"How to effectively sell on Depop for beginners\"\nRIGHT title: \"Why your Depop listings are not selling, and it is probably not the price\"\nWRONG hook: \"Navigating secondhand luxury can be daunting without the right tools.\"\nRIGHT hook: \"Vestiaire Collective rejects roughly 30% of items submitted for authentication. Here is what actually gets flagged.\"\n\nReturn only a JSON array of exactly 10 objects, no markdown, no explanation:\n[{\"title\":\"direct, specific, not a how-to\",\"angle\":\"1 sentence, the opinionated or counterintuitive point\",\"audience\":\"who specifically this is for\",\"pillar\":\"best-sites|reseller-workflow|item-guide|case-study|platform-deepdive|opinion|fashion-history|maker-deep-dive|material-guide|culture-explainer|era-guide|category-deep-guide\",\"topic_key\":\"2-4 word lowercase hyphenated subject slug\",\"primary_keyword\":\"main search query to rank for\",\"secondary_keywords\":[\"3-4 related terms\"],\"direct_answer\":\"1-2 sentence definition-style answer for the top of the post\",\"hook_sentence\":\"opening sentence, a specific fact or take, no warmup\",\"key_stat\":\"one real citable statistic with its source named, end with (verify) if you are not certain of the exact number\",\"structure_element\":\"the table or numbered list the post must include, described in one line\",\"supporting_points\":[\"4 concrete things the post must cover\"],\"people_also_ask\":[\"question 1\",\"question 2\",\"question 3\",\"question 4\"],\"crawli_angle\":\"soft bridge plus one explicit Crawli CTA sentence for the end\",\"x_post\":\"1-3 sentences, same take, personal, no exclamation marks, no em dashes\",\"pain_point_source\":\"the Reddit pain point this brief responds to, empty string if not applicable\"}]`;\n\nconst blogPrompt = blogIntro + blogSeoSection + redditPainBlogSection + blogPublishedDedup + takenKeysBlock + blogDedup + blogTail;\n\nreturn [{ json: { socialPrompt, blogPrompt, hasCtx, updatedAt, recentTopics, publishedTitles, redditPainSummary, redditUpdatedAt, tiktokPerfSummary } }];\n\n"
+        },
+        "id": "eeb3e6fb-a508-4b9c-b1ad-40206569f5b1",
+        "name": "Extract context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "model": "deepseek-v4-pro",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+        "typeVersion": 1,
+        "position": [
+          880,
+          480
+        ],
+        "id": "c9c88fe1-d9a6-46bb-8cd7-63324e4338aa",
+        "name": "DeepSeek Chat Model (Social)",
+        "credentials": {
+          "deepSeekApi": {
+            "id": "FUrEBZCzPE8YYARU",
+            "name": "DeepSeek account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Extract context').first().json.socialPrompt }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          880,
+          304
+        ],
+        "id": "a674f099-8f4f-4f0e-b2a6-033c212c9611",
+        "name": "Generate social ideas (DeepSeek)"
+      },
+      {
+        "parameters": {
+          "model": "deepseek-v4-pro",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+        "typeVersion": 1,
+        "position": [
+          1168,
+          480
+        ],
+        "id": "aef3a5eb-49e6-4196-ab2d-62cfcb02ccf2",
+        "name": "DeepSeek Chat Model (Blog)",
+        "credentials": {
+          "deepSeekApi": {
+            "id": "FUrEBZCzPE8YYARU",
+            "name": "DeepSeek account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Extract context').first().json.blogPrompt }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          1168,
+          304
+        ],
+        "id": "aa994b6d-8022-4417-9960-aae3cd051a35",
+        "name": "Generate blog briefs (DeepSeek)"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse social ideas\nlet socialText = $('Generate social ideas (DeepSeek)').first().json.text.trim();\nsocialText = socialText.replace(/^```json\\s*/i,'').replace(/^```\\s*/,'').replace(/\\s*```$/,'').trim();\nlet socialIdeas = [];\ntry { socialIdeas = JSON.parse(socialText); } catch(e) { socialIdeas = []; }\n\n// Parse blog briefs\nlet blogText = $('Generate blog briefs (DeepSeek)').first().json.text.trim();\nblogText = blogText.replace(/^```json\\s*/i,'').replace(/^```\\s*/,'').replace(/\\s*```$/,'').trim();\nlet blogBriefs = [];\ntry { blogBriefs = JSON.parse(blogText); } catch(e) { blogBriefs = []; }\n\nconst sanitize = (s) => String(s||'')\n  .replace(/!+/g, '.')\n  .replace(/—/g, ',')\n  .replace(/ – /g, ', ')\n  .replace(/\\.{2,}/g, '.')\n  .replace(/,\\s*,/g, ',')\n  .trim();\n\nconst sanitizeObj = (obj) => {\n  if (!obj || typeof obj !== 'object') return obj;\n  const out = {};\n  for (const [k, v] of Object.entries(obj)) {\n    if (typeof v === 'string') out[k] = sanitize(v);\n    else if (Array.isArray(v)) out[k] = v.map(x => typeof x === 'string' ? sanitize(x) : x);\n    else out[k] = v;\n  }\n  return out;\n};\n\nsocialIdeas = socialIdeas.map(sanitizeObj);\nblogBriefs = blogBriefs.map(sanitizeObj);\n\nconst esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst today = new Date().toISOString().slice(0,10);\n\n// ===================== DEDUP DETECTION (flag likely repeats) =====================\n// Recent history (content_history) + published blog titles, forwarded by Extract context.\nconst recentTopics = $('Extract context').first().json.recentTopics || [];\nconst publishedTitles = $('Extract context').first().json.publishedTitles || [];\nconst recentSocialT = recentTopics.filter(r => r.kind !== 'blog');\nconst recentBlogT = recentTopics.filter(r => r.kind === 'blog')\n  .concat(publishedTitles.map(t => ({ kind: 'blog', title: t, topic_key: '' })));\n\n// Generic words stripped before measuring title overlap, so two unrelated posts\n// do not look similar just because both say \"vintage\" or \"secondhand\".\nconst STOP = new Set(('the a an of for to and or in on at by with your you it its this that as is are be how why what when where which who do does your top best ways way tips tricks guide secondhand vintage fashion resale reseller clothes clothing item items piece pieces style styles buy buying sell selling shop shopping online store stores').split(' '));\nconst toks = (s) => { const set = new Set(); for (const w of String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\\s+/)) { if (w.length > 2 && !STOP.has(w)) set.add(w); } return set; };\nconst jac = (a, b) => { const A = toks(a), B = toks(b); if (!A.size || !B.size) return 0; let inter = 0; for (const x of A) if (B.has(x)) inter++; return inter / (A.size + B.size - inter); };\nconst normKey = (s) => String(s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');\nconst SIM = 0.5; // title-overlap threshold for \"likely repeat\"\n\n// item = the new idea/brief; history = prior list; batchSoFar = already-accepted items this run\nfunction dupCheck(item, history, batchSoFar) {\n  const key = normKey(item.topic_key);\n  const text = [item.title, item.caption_angle, item.angle, item.primary_keyword].filter(Boolean).join(' ');\n  for (const r of history) {\n    if (key && r.topic_key && normKey(r.topic_key) === key) return { dupe: true, why: 'same topic as a recent or published post (' + esc(r.title) + ')' };\n  }\n  for (const r of batchSoFar) {\n    if (key && normKey(r.topic_key) === key) return { dupe: true, why: 'repeats another idea in this batch (' + esc(r.title) + ')' };\n  }\n  // canonical topic_key contained in a prior title: catches verbose new titles vs\n  // short history, and history rows that have no topic_key (e.g. published_posts).\n  const keyToks = toks(String(item.topic_key||'').replace(/-/g,' '));\n  if (keyToks.size >= 2) {\n    const containedCount = (title) => { const T = toks(title); let inter = 0; for (const x of keyToks) if (T.has(x)) inter++; return inter; };\n    const need = Math.ceil(keyToks.size * 0.6);\n    for (const r of history) { if (containedCount(r.title) >= need) return { dupe: true, why: 'topic matches an earlier post (' + esc(r.title) + ')' }; }\n    for (const r of batchSoFar) { if (containedCount(r.title) >= need) return { dupe: true, why: 'topic matches another idea in this batch (' + esc(r.title) + ')' }; }\n  }\n  let best = 0, bestT = '';\n  for (const r of history) { const s = jac(text, r.title); if (s > best) { best = s; bestT = r.title; } }\n  for (const r of batchSoFar) { const s = jac(text, (r.title || '') + ' ' + (r.caption_angle || r.angle || '')); if (s > best) { best = s; bestT = r.title; } }\n  if (best >= SIM) return { dupe: true, why: 'very similar to \"' + esc(bestT) + '\" (' + Math.round(best * 100) + '% word overlap)' };\n  return { dupe: false };\n}\n\n// SEO context badge\nconst hasCtx = $('Extract context').first().json.hasCtx;\nconst ctxUpdatedAt = $('Extract context').first().json.updatedAt || '';\nconst ctxBadge = hasCtx\n  ? `<p style=\"margin:0 0 8px;font-size:12px;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:6px 10px;border-radius:4px;display:inline-block\">SEO keyword context active, updated ${esc(ctxUpdatedAt.slice(0,10))}</p>`\n  : `<p style=\"margin:0 0 8px;font-size:12px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;padding:6px 10px;border-radius:4px;display:inline-block\">No SEO context yet, run the weekly brief on Monday to activate</p>`;\nconst redditPainSummary = $('Extract context').first().json.redditPainSummary || [];\nconst redditUpdatedAt = $('Extract context').first().json.redditUpdatedAt || '';\nconst redditBadge = redditPainSummary.length\n  ? `<p style=\"margin:0 0 24px;font-size:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;display:inline-block\">Reddit research active, updated ${esc(redditUpdatedAt)}, ${redditPainSummary.length} pain point(s) this period (${esc(redditPainSummary.map(p => p.pain_point).join(', '))})</p>`\n  : `<p style=\"margin:0 0 24px;font-size:12px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;padding:6px 10px;border-radius:4px;display:inline-block\">No Reddit research yet</p>`;\n\nconst fmtColor = (f) => ({\n  'carousel':'#5B6CF9','reel':'#DC2626','reel concept':'#DC2626','single image':'#059669','text post':'#D97706'\n})[f] || '#6B7280';\n\nconst segEmoji = (s) => ({\n  'fashionistas':'✨','vintage community':'🧶','resellers':'💰','all':'👥'\n})[s] || '';\n\nconst dupBadge = (why) => `<p style=\"margin:0 0 8px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;padding:6px 10px;border-radius:4px\">⚠ Possible repeat: ${why}. Review before using.</p>`;\nconst painBadge = (pp) => pp ? `<p style=\"margin:0 0 8px;font-size:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:6px 10px;border-radius:4px;display:inline-block\">\\ud83d\\udd25 responds to: ${esc(pp)}</p>` : '';\n\n// ---------------- social ----------------\nsocialIdeas.sort((a,b)=>(a.rank||99)-(b.rank||99));\nconst socialAccepted = [];\nfor (const idea of socialIdeas) { idea._dup = dupCheck(idea, recentSocialT, socialAccepted); socialAccepted.push(idea); }\nconst socialClean = socialIdeas.filter(i => !i._dup.dupe);\nconst socialFlagged = socialIdeas.filter(i => i._dup.dupe);\nconst socialOrdered = socialClean.concat(socialFlagged);\n\nconst renderIdea = (idea) => {\n  const col = fmtColor(idea.format);\n  const slides = Array.isArray(idea.slides) ? idea.slides : [];\n  const slidesHtml = slides.length\n    ? `<p style=\"margin:8px 0 3px;font-size:13px\"><strong>Slides (${idea.slide_count || slides.length}):</strong></p><ol style=\"margin:0 0 8px;padding-left:18px;font-size:13px\">${slides.map(s=>`<li style=\"margin-bottom:2px\">${esc(s)}</li>`).join('')}</ol>`\n    : '';\n  const border = idea._dup && idea._dup.dupe ? '#fdba74' : '#e5e7eb';\n  return `<div style=\"margin-bottom:18px;padding:14px;border:1px solid ${border};border-radius:8px\">\n  ${idea._dup && idea._dup.dupe ? dupBadge(idea._dup.why) : ''}\n  ${painBadge(idea.pain_point_source)}\n  <p style=\"margin:0 0 8px\">\n    <span style=\"background:${col};color:#fff;padding:2px 8px;border-radius:4px;font-size:12px\">${esc(idea.format)}</span>\n    <span style=\"margin-left:8px;color:#6B7280;font-size:12px\">${segEmoji(idea.segment)} ${esc(idea.segment)}</span>\n    ${idea.pillar ? `<span style=\"margin-left:8px;color:#9CA3AF;font-size:11px\">${esc(idea.pillar)}</span>` : ''}\n    ${idea.topic_key ? `<span style=\"margin-left:8px;color:#9CA3AF;font-size:11px\">#${esc(idea.topic_key)}</span>` : ''}\n  </p>\n  <p style=\"margin:0 0 5px\"><strong>Angle:</strong> ${esc(idea.caption_angle)}</p>\n  ${slidesHtml}\n  ${idea.visual_direction ? `<p style=\"margin:0 0 5px;font-size:13px\"><strong>Visuals:</strong> ${esc(idea.visual_direction)}</p>` : ''}\n  ${idea.cta_slide ? `<p style=\"margin:0 0 8px;font-size:13px;color:#5B6CF9\"><strong>Final slide / CTA:</strong> ${esc(idea.cta_slide)}</p>` : ''}\n  <p style=\"margin:0 0 8px;font-size:12px;color:#6B7280\"><strong>Hashtag territory:</strong> ${esc(idea.hashtag_direction)}</p>\n  <div style=\"background:#fafafa;padding:10px;border-radius:6px\">\n    <p style=\"margin:0 0 4px;font-size:13px\"><strong style=\"color:#DC2626\">TikTok hook:</strong> ${esc(idea.tiktok_hook)}</p>\n    <p style=\"margin:0;font-size:13px;color:#6B7280\">${esc(idea.tiktok_format)}</p>\n  </div>\n</div>`;\n};\n\nlet socialHtml = `<h2 style=\"margin-bottom:6px;font-size:18px;color:#111\">Social content ideas</h2>\n<p style=\"color:#6B7280;margin-top:0;margin-bottom:20px;font-size:14px\">15 ideas, broadly useful tips and stories. TikTok carousel posts. You post manually.${socialFlagged.length ? ` <strong style=\"color:#9a3412\">${socialFlagged.length} flagged as possible repeats (shown last).</strong>` : ''}</p>`;\nif (!socialIdeas.length) {\n  socialHtml += '<p>No ideas generated.</p>';\n} else {\n  socialHtml += socialClean.map(renderIdea).join('');\n  if (socialFlagged.length) {\n    socialHtml += `<p style=\"margin:24px 0 10px;font-size:13px;font-weight:700;color:#9a3412\">Possible repeats (review before using)</p>` + socialFlagged.map(renderIdea).join('');\n  }\n}\n\n// ---------------- blog ----------------\nconst blogAccepted = [];\nfor (const brief of blogBriefs) { brief._dup = dupCheck(brief, recentBlogT, blogAccepted); blogAccepted.push(brief); }\nconst blogClean = blogBriefs.filter(b => !b._dup.dupe);\nconst blogFlagged = blogBriefs.filter(b => b._dup.dupe);\n\nconst renderBrief = (brief, i) => {\n  const paa = Array.isArray(brief.people_also_ask) ? brief.people_also_ask : [];\n  const paaHtml = paa.length\n    ? `<p style=\"margin:8px 0 3px;font-size:13px\"><strong>People Also Ask (answer each as a short Q&amp;A, becomes the FAQ):</strong></p><ul style=\"margin:0 0 8px;padding-left:18px;font-size:13px\">${paa.map(q=>`<li style=\"margin-bottom:2px\">${esc(q)}</li>`).join('')}</ul>`\n    : '';\n  const border = brief._dup && brief._dup.dupe ? '#fdba74' : '#e5e7eb';\n  return `<div style=\"margin-bottom:22px;padding:14px;border:1px solid ${border};border-radius:8px\">\n  ${brief._dup && brief._dup.dupe ? dupBadge(brief._dup.why) : ''}\n  ${painBadge(brief.pain_point_source)}\n  <h3 style=\"margin:0 0 3px;font-size:15px\">${i+1}. ${esc(brief.title)}</h3>\n  <p style=\"margin:0 0 8px;color:#6B7280;font-size:13px\">${esc(brief.audience)}${brief.pillar ? ` &middot; ${esc(brief.pillar)}` : ''}${brief.topic_key ? ` &middot; #${esc(brief.topic_key)}` : ''}</p>\n  <p style=\"margin:0 0 5px\"><strong>Angle:</strong> ${esc(brief.angle)}</p>\n  ${brief.direct_answer ? `<div style=\"background:#f0fdf4;padding:9px;border-radius:6px;border-left:3px solid #16a34a;margin:0 0 8px\"><p style=\"margin:0;font-size:13px\"><strong>Direct answer (put at very top, for AI):</strong> ${esc(brief.direct_answer)}</p></div>` : ''}\n  <p style=\"margin:0 0 5px\"><strong>Primary keyword:</strong> <code style=\"background:#f3f4f6;padding:1px 5px;border-radius:3px\">${esc(brief.primary_keyword)}</code></p>\n  <p style=\"margin:0 0 5px\"><strong>Also target:</strong> ${(brief.secondary_keywords||[]).map(k=>`<code style=\"background:#f3f4f6;padding:1px 5px;border-radius:3px;margin-right:4px\">${esc(k)}</code>`).join(' ')}</p>\n  <p style=\"margin:0 0 5px\"><strong>Hook:</strong> ${esc(brief.hook_sentence)}</p>\n  ${brief.key_stat ? `<p style=\"margin:0 0 5px;font-size:13px\"><strong>Cite this stat:</strong> ${esc(brief.key_stat)}</p>` : ''}\n  ${brief.structure_element ? `<p style=\"margin:0 0 5px;font-size:13px\"><strong>Must include:</strong> ${esc(brief.structure_element)}</p>` : ''}\n  <p style=\"margin:6px 0 3px\"><strong>Outline:</strong></p>\n  <ul style=\"margin:0 0 8px;padding-left:18px\">${(brief.supporting_points||[]).map(p=>`<li style=\"margin-bottom:3px\">${esc(p)}</li>`).join('')}</ul>\n  ${paaHtml}\n  ${brief.crawli_angle ? `<div style=\"background:#eef2ff;padding:9px;border-radius:6px;border-left:3px solid #5B6CF9;margin:0 0 8px\"><p style=\"margin:0;font-size:13px\"><strong>Crawli tie-in + CTA (end of post):</strong> ${esc(brief.crawli_angle)}</p></div>` : ''}\n  <div style=\"background:#eff6ff;padding:10px;border-radius:6px;border-left:3px solid #3b82f6\">\n    <p style=\"margin:0;font-size:13px\"><strong>X post:</strong> ${esc(brief.x_post)}</p>\n  </div>\n</div>`;\n};\n\nlet blogHtml = `<h2 style=\"margin-bottom:6px;font-size:18px;color:#111\">Blog briefs</h2>\n<p style=\"color:#6B7280;margin-top:0;margin-bottom:20px;font-size:14px\">10 briefs built to rank on Google and get cited by AI. You write the full post.${blogFlagged.length ? ` <strong style=\"color:#9a3412\">${blogFlagged.length} flagged as possible repeats (shown last).</strong>` : ''}</p>`;\nif (!blogBriefs.length) {\n  blogHtml += '<p>No briefs generated.</p>';\n} else {\n  let n = 0;\n  blogHtml += blogClean.map((b) => renderBrief(b, n++)).join('');\n  if (blogFlagged.length) {\n    blogHtml += `<p style=\"margin:24px 0 10px;font-size:13px;font-weight:700;color:#9a3412\">Possible repeats (review before using)</p>` + blogFlagged.map((b) => renderBrief(b, n++)).join('');\n  }\n}\n\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head>\n<body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;padding:24px;color:#111\">\n  <h1 style=\"font-size:20px;margin-bottom:4px\">[DeepSeek] Crawli content brief, ${today}</h1>\n  <p style=\"color:#6B7280;margin-top:0;margin-bottom:12px\">Twice-weekly ideas for TikTok and blog. Everything is a draft, post what feels right.</p>\n  ${ctxBadge}\n  ${redditBadge}\n  ${socialHtml}\n  <hr style=\"border:none;border-top:1px solid #e5e7eb;margin:28px 0\">\n  ${blogHtml}\n</body></html>`;\n\n// Topics to log for dedup (next runs avoid repeating these). Includes topic_key now.\nconst newTopics = [];\nfor (const idea of socialIdeas) {\n  const t = idea.title || idea.caption_angle;\n  if (t) newTopics.push({ kind: 'social', title: String(t).slice(0, 200), topic_key: String(idea.topic_key||'').slice(0, 80) });\n}\nfor (const brief of blogBriefs) {\n  if (brief.title) newTopics.push({ kind: 'blog', title: String(brief.title).slice(0, 200), topic_key: String(brief.topic_key||'').slice(0, 80) });\n}\n\nreturn [{ json: { html, subject: `[DeepSeek] Crawli content brief, ${today}`, newTopics } }];\n\n"
+        },
+        "id": "55ef1c1c-574a-45bc-b9fc-2fd39004c194",
+        "name": "Build email",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1408,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "fromEmail": "owner@example.com",
+          "toEmail": "owner@example.com",
+          "subject": "={{ $json.subject }}",
+          "html": "={{ $json.html }}",
+          "options": {}
+        },
+        "id": "03f497cb-1ebd-44af-aded-527028a704f8",
+        "name": "Send email",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          1648,
+          304
+        ],
+        "webhookId": "9f529f4f-9471-4a4c-a73d-c1b306d81586",
+        "credentials": {
+          "smtp": {
+            "id": "m3Zfuf10aGoLQhov",
+            "name": "Gmail SMTP 587"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://peyqxfijdrziqfjkxjsn.supabase.co/rest/v1/content_history",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_JWT"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_JWT"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($('Build email').first().json.newTopics) }}",
+          "options": {}
+        },
+        "id": "4c5ae053-0335-401d-93cd-560adfc7952c",
+        "name": "Save topics",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1888,
+          304
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "week",
+                "weekday": [
+                  "Monday",
+                  "Thursday"
+                ],
+                "triggerAtHour": 7
+              }
+            ]
+          }
+        },
+        "id": "f5913cb6-b647-4e01-baee-1ce10951b5bd",
+        "name": "Monday & Thursday 7am PT",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          304
+        ]
+      }
+    ],
+    "connections": {
+      "Fetch SEO context": {
+        "main": [
+          [
+            {
+              "node": "Extract context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract context": {
+        "main": [
+          [
+            {
+              "node": "Generate social ideas (DeepSeek)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate social ideas (DeepSeek)": {
+        "main": [
+          [
+            {
+              "node": "Generate blog briefs (DeepSeek)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate blog briefs (DeepSeek)": {
+        "main": [
+          [
+            {
+              "node": "Build email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DeepSeek Chat Model (Social)": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Generate social ideas (DeepSeek)",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DeepSeek Chat Model (Blog)": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Generate blog briefs (DeepSeek)",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build email": {
+        "main": [
+          [
+            {
+              "node": "Send email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send email": {
+        "main": [
+          [
+            {
+              "node": "Save topics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Monday & Thursday 7am PT": {
+        "main": [
+          [
+            {
+              "node": "Fetch SEO context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "America/Los_Angeles",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": {},
+    "versionId": "67789621-8e43-43d6-9134-8ef99b3ea427",
+    "activeVersionId": "67789621-8e43-43d6-9134-8ef99b3ea427",
+    "versionCounter": 54,
+    "triggerCount": 1,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-06-23T00:36:15.109Z",
+        "createdAt": "2026-06-23T00:36:15.109Z",
+        "role": "workflow:owner",
+        "workflowId": "moMVEnr5L6kGgJTC",
+        "projectId": "zgajejG551ATJTZn",
+        "project": {
+          "updatedAt": "2026-06-08T01:17:50.401Z",
+          "createdAt": "2026-06-08T01:15:56.613Z",
+          "id": "zgajejG551ATJTZn",
+          "name": "Kevin Gui <owner@example.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "e7d23e78-535d-4420-86a5-a3b245876419"
+        }
+      }
+    ]
+  }
+]

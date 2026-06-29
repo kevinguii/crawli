@@ -332,7 +332,7 @@ Each post needs two sections: TikTok Title, TikTok Description. (Instagram dropp
 **TikTok Description:**
 - 150-400 words. Longer descriptions rank better in TikTok search — treat it like a short article.
 - Repeat the key topic words naturally in the text (TikTok weights keywords in copy more than hashtags)
-- Structure: context/hook → bullet breakdown of each slide's point → Crawli tie-in line with `thecrawli.com`
+- Structure: context/hook → bullet breakdown of each slide's point → soft close. **Obfuscate commercial intent (reseller pivot, 2026-06-29):** the description must NOT contain `thecrawli.com`, a URL, "search Crawli", "download", or "link in bio". Any Crawli reference is a subtle, implicit aside, worded differently every post, and present in only some posts — never a stock CTA line, never in every caption. Let interested resellers ask in the comments. (Same rule the carousel slides follow — see Slide Format below.)
 - **Max 5 hashtags** at the end (TikTok deprioritizes hashtag-stuffed captions — pick the 5 best, keyword-rich ones)
 
 ---
@@ -403,9 +403,10 @@ Each PNG is saved at **2× DPR** (2160×2700px, 4:5). Script uses CSS `zoom` to 
 - Never reuse a color from the palette above without a strong reason
 - **Hashtags belong in the caption, NOT on the visual slides** — keep slides clean
 - **No dot/circle navigation** — use simple prev/next buttons + counter only
-- **Crawli logo** appears centered on every CTA slide (inline SVG, from `public/crawli.svg`)
-- **CTA layout** — Crawli logo centered, headline centered, description left-aligned, URL centered
-- **URL on CTA** is always `thecrawli.com`
+- **Obfuscate commercial intent (reseller pivot, 2026-06-29):** NO slide — including the CTA slide — may show `thecrawli.com`, a URL, "search Crawli", "download", or "link in bio". The final slide closes the story and may tease Crawli only as a subtle, implicit aside (varied wording every post, not in every post) that makes a reseller curious enough to ask in the comments. The old explicit-URL CTA below is superseded for new batches.
+- **Crawli logo** may appear centered on the final slide as a quiet brand mark (inline SVG, from `public/crawli.svg`), but with no URL or call-to-action text beside it.
+- ~~**CTA layout** — Crawli logo centered, headline centered, description left-aligned, URL centered~~ (pre-pivot; the URL is no longer shown on slides)
+- ~~**URL on CTA** is always `thecrawli.com`~~ (pre-pivot; superseded — no URL on slides)
 - Cover SVGs: white/transparent on post-color background, one concept, no text in SVGs
 - Step SVGs: white-background card (`vcrd` class) with post-accent colored symbol
 - **SVG text rules**: always use `text-anchor="middle"` + `dominant-baseline="central"` for text inside shapes; set `y` to the geometric center of the containing rect/circle; never rely on default baseline alignment
