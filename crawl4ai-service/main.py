@@ -82,30 +82,33 @@ SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_
 # kept well below page_timeout (60s). A legit grid hydrates fast (prod: Grailed
 # ~6s, Depop ~9s, Mercari ~5s when not blocked); 20s leaves ~2x headroom over
 # the slowest (Depop) even under concurrent-render CPU contention on 2 vCPU.
-# When a platform IP-blocks the datacenter (e.g. Mercari serves a 403 bot-wall
-# to the Hetzner IP), the grid selector never appears; without this cap the
+# When a platform IP-blocks the datacenter (e.g. Mercari/Depop intermittently
+# serve a 403 bot-wall to the Hetzner IP), the grid selector never appears; without this cap the
 # render burns the full 60s page_timeout AND the client then retries for
 # another ~60s. Capping the selector wait fails a blocked page fast instead.
 SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_MS", "20000")))
 
-# Platforms that anti-bot the datacenter IP (verified 2026-06-12: Mercari hard
-# 403 wall, Depop intermittent). When their NATIVE render fails (blocked), fall
-# back to Firecrawl — whose proxy infra isn't datacenter-IP blocked — to scrape
-# the search-page HTML, then run the same grid extractor on it. Costs ~1
-# Firecrawl credit per fallback. The fallback fires ONLY on native failure, so
-# Depop pays nothing on the searches where its native render succeeds, and a
-# platform that stops being blocked silently goes back to the free native path.
+# Platforms that anti-bot the datacenter IP (verified 2026-06-29: both Mercari
+# and Depop are INTERMITTENT — raw HTTP 403s the datacenter IP but real Chromium
+# usually renders). When their NATIVE render actually fails, fall back to
+# Firecrawl — whose proxy infra isn't datacenter-IP blocked — to scrape the
+# search-page HTML, then run the same grid extractor on it. Costs ~1 Firecrawl
+# credit per fallback. The fallback fires ONLY on native failure, so both pay
+# nothing on the searches where native succeeds, and a platform that stops being
+# blocked silently goes back to the free native path.
 FIRECRAWL_FALLBACK_PLATFORMS = {
     p.strip() for p in os.environ.get("FIRECRAWL_FALLBACK_PLATFORMS", "mercari,depop").split(",") if p.strip()
 }
-# HARD-blocked subset: the datacenter IP is blocked even for the real-Chromium
-# fingerprint, so a fast raw-HTTP 403 probe reliably predicts a native failure
-# and we skip the ~20s render entirely. Mercari qualifies. Depop does NOT —
-# its block is fingerprint-based: raw HTTP always 403s but the browser often
-# passes, so probing it would force paid Firecrawl when the free native path
-# would have worked. Depop therefore stays on try-native-then-fallback.
+# HARD-blocked subset: platforms blocked even for the real-Chromium fingerprint,
+# where a fast raw-HTTP 403 probe reliably predicts native failure so we skip the
+# ~20s render and go straight to Firecrawl. Default is EMPTY: as of 2026-06-29 no
+# platform qualifies. Mercari was here until verification showed its raw-HTTP 403
+# does NOT predict browser failure (real Chromium renders ~3/4 of the time) — so
+# probing it forced paid Firecrawl over a working free path. It now runs
+# native-first with Firecrawl fallback, exactly like Depop. Re-add a platform
+# here only if its block also defeats the real browser from the datacenter IP.
 FIRECRAWL_PROBE_PLATFORMS = {
-    p.strip() for p in os.environ.get("FIRECRAWL_PROBE_PLATFORMS", "mercari").split(",") if p.strip()
+    p.strip() for p in os.environ.get("FIRECRAWL_PROBE_PLATFORMS", "").split(",") if p.strip()
 }
 SEARCH_FIRECRAWL_FALLBACK = os.environ.get("SEARCH_FIRECRAWL_FALLBACK", "1").strip().lower() not in ("0", "false", "no", "")
 FIRECRAWL_SCRAPE_ENDPOINT = "https://api.firecrawl.dev/v2/scrape"
@@ -1125,15 +1128,17 @@ async def _firecrawl_search_fallback(platform: str, url: str, limit: int):
 async def _datacenter_block_probe(url: str) -> bool:
     """Fast check whether the datacenter IP is hard-blocked for `url` right now.
 
-    A plain HTTP GET — Mercari/Depop return a 403 bot-wall in ~20ms — so we can
-    route a known-blocked platform straight to Firecrawl instead of paying the
-    ~20s browser selector-wait. Returns True ONLY on a definite block (403/429);
-    any other status or a probe error returns False, so the platform falls
-    through to the free native render and automatically reclaims it if the block
-    is ever lifted. Only valid for FIRECRAWL_PROBE_PLATFORMS — platforms whose
-    block also defeats the real-Chromium fingerprint. Others (ThredUp, Depop)
-    raw-403 but often render fine via the real browser, so they must NOT be
-    probed (it would force paid Firecrawl over the free native path).
+    A plain HTTP GET returns a 403 bot-wall in ~20ms for an IP-blocked platform —
+    so we can route it straight to Firecrawl instead of paying the ~20s browser
+    selector-wait. Returns True ONLY on a definite block (403/429); any other
+    status or a probe error returns False, so the platform falls through to the
+    free native render and automatically reclaims it if the block is ever lifted.
+    Only valid for FIRECRAWL_PROBE_PLATFORMS — platforms whose block also defeats
+    the real-Chromium fingerprint. That set is currently EMPTY: ThredUp, Depop AND
+    Mercari all raw-403 but render fine via the real browser most of the time, so
+    none must be probed (it would force paid Firecrawl over the free native path).
+    Mercari was probed until 2026-06-29 when verification proved its raw-403 does
+    not predict browser failure.
     """
     import httpx  # local import mirrors the inline httpx use elsewhere in this module
     try:

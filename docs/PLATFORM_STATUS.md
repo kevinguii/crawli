@@ -11,8 +11,8 @@ All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-sea
 | Platform | Avenue | Method | Wait / Notes | Results/page | Status |
 |---|---|---|---|---|---|
 | **Grailed** | A | `a[href*="/listings/"]` Algolia cards | `wait_for` 2.5s (CSR) | ~40 | ✅ Working |
-| **Depop** | A | `div[class*="productCard"]` cards | `wait_for` 2.5s; Firecrawl fallback if IP-blocked (intermittent fingerprint block) | ~24 | ✅ Working (with fallback) |
-| **Mercari** | A | `div[data-testid="Item"]` | Raw-HTTP probe → always Firecrawl (hard datacenter block); ~$0.004 Std/search | ~30 | ✅ Working (Firecrawl fallback always-on) |
+| **Depop** | A | `div[class*="productCard"]` cards | `wait_for` 2.5s; native tried first always (never pre-probed — block is fingerprint-based, not IP); Firecrawl fallback only if native render actually fails (intermittent) | ~24 | ✅ Working (with fallback) |
+| **Mercari** | A | `div[data-testid="ItemContainer"]` (`data-productid` → URL, `ItemName`, `ProductThumbItemPrice`) | Native-first + Firecrawl fallback, like Depop. Verified 2026-06-29: raw HTTP 403s the Hetzner IP but real Chromium renders ~3/4 of searches; the misclassifying probe was removed (`FIRECRAWL_PROBE_PLATFORMS` now empty), so most searches are free and Firecrawl fires only on an actual render miss | ~16 native / ~24 via fallback | ✅ Working (native-first) |
 | **ThredUp** | A | JSON-LD `Product` array + DOM href merge | 3s SSR wait | ~100 | ✅ Working |
 | **Vestiaire** | A | `a[data-cy^="catalog__productCard__"]` brand ALLCAPS→`.title()` | `wait_for` 2s, 60s timeout (CSR ~8s hydration) | ~15 | ✅ Working |
 | **Vinted** | A | `div.new-item-box__container` + overlay `title` attr CSV | 12s wait (SSR) | ~96 | ✅ Working |
@@ -64,6 +64,7 @@ Color is a **sort boost** (never a hard drop). Structured color reorders results
 **Depop — intermittent Playwright fingerprint block**
 - Raw HTTP always 403s but real browser often passes, so native render is tried first.
 - Do NOT probe Depop before render (unlike Mercari) — probe would force paid Firecrawl over a working free path.
+- Confirmed in code 2026-06-29: `depop` is in `main.py`'s `FIRECRAWL_FALLBACK_PLATFORMS` but NOT in `FIRECRAWL_PROBE_PLATFORMS` — fallback only fires on an actual native-render failure, not a pre-check.
 
 **`_DRIVER_DEAD_PATTERNS` gap (semi-open)**
 - `"Target page, context or browser has been closed"` is NOT in the pattern list in `main.py`.

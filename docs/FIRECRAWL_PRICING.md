@@ -119,11 +119,28 @@ crawl4ai (our current scrape engine) has no provider-imposed concurrency cap —
 
 ## What this project uses today
 
-**As of 2026-05-22:**
+**⚠️ Superseded as of the 2026-06-29 Avenue A migration.** Everything below this point (Brave/hybrid routing, per-search dollar math) describes the **pre-migration** search-provider model and no longer reflects production traffic for 6 of 9 platforms. `lib/firecrawl.ts`'s `PLATFORM_STRATEGY`/`searchPlatform()` (Brave/hybrid) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar's `/scrape-search`, never touching `lib/firecrawl.ts`. See `docs/PLATFORM_STATUS.md` for the current per-platform routing and `docs/SYSTEM_DESIGN.md` §3/§6 for the up-to-date architecture. Kept below for historical reference only — do not use these dollar figures for planning.
+
+**As of 2026-05-22 (historical):**
 
 - **Search routes through a per-platform hybrid** ([lib/firecrawl.ts](../lib/firecrawl.ts) `searchPlatform()`). Default code path is still Firecrawl-only; production sets `SEARCH_PROVIDER=hybrid` in env to activate routing.
 - **No Firecrawl scrape.** All per-URL scraping runs through the crawl4ai sidecar ([crawl4ai-service/main.py](../crawl4ai-service/main.py) `POST /scrape`).
 - **ThredUp** and **The RealReal** (when re-enabled) bypass third-party search entirely — they use the sidecar's `/scrape-search` grid extraction.
+
+---
+
+## Current model (2026-06-29, Avenue A)
+
+Per-search third-party cost is now driven by the sidecar's native/Firecrawl-fallback split, not the Brave/hybrid router above:
+
+| Platforms | Cost path | Per-search cost |
+|---|---|---|
+| Grailed, ThredUp, Vestiaire, Vinted, Poshmark, StockX (6) | Native sidecar render only | $0 |
+| Depop | Native first; Firecrawl scrape only on intermittent fingerprint-block fallback | ~$0 (occasional $0.001–$0.005/URL when it falls back) |
+| Mercari | Native first (probe removed 2026-06-29); Firecrawl scrape only on the ~1/4 of searches where the native render misses | ~$0 (occasional ~$0.004/search Standard when it falls back) |
+| eBay | Firecrawl-only — no native extractor exists; URL discovery + per-listing scrape both via Firecrawl | ~$0.016/search (Standard ~$0.004) + ~$0.001 LLM fallback residual on Akamai 403s |
+
+LLM (OpenAI gpt-4o-mini) cost is now isolated to eBay's Akamai-403 fallback path — all other platforms (including Vestiaire) use deterministic JSON-LD/DOM Tier-1 extractors with zero LLM calls in the search hot path.
 
 ### Per-search cost — current (hybrid) vs alternatives
 

@@ -25,8 +25,8 @@ The old OR logic let Ronaldo jerseys through on "messi jersey" (shared "soccer" 
 
 ## Platform-specific gotchas
 
-**Mercari is always Firecrawl-fallback**
-Raw HTTP probe against Mercari always 403s on datacenter IPs. The sidecar does a fast probe before native render and immediately routes to Firecrawl. Do NOT disable the probe — it saves ~20s native render time that would fail anyway.
+**Mercari raw-403s but renders in a real browser — do NOT re-add it to the probe**
+Mercari's raw HTTP 403 on the datacenter IP does NOT predict native browser failure — same as Depop. Verified 2026-06-29 on the prod Hetzner IP: real Chromium rendered ~3/4 of searches; the rest fell back to Firecrawl. It was wrongly in `FIRECRAWL_PROBE_PLATFORMS`, which made the fast 403 probe skip the working native render and pay Firecrawl on EVERY search. The probe was removed (default now empty; `/opt/crawli/.env` sets `FIRECRAWL_PROBE_PLATFORMS=`). Mercari now runs native-first with Firecrawl fallback. Do NOT re-add it (or any platform) to the probe unless its block also defeats the real browser from the datacenter IP.
 
 **Depop is NOT probed**
 Depop's block is fingerprint-based: raw HTTP 403s but the real browser often passes. Probing would force paid Firecrawl over a working free path. Depop stays on try-native-then-fallback.

@@ -24,13 +24,14 @@
 
 ## Current state (2026-06-29)
 
-**Platforms: 9 total, 8 native (Avenue A), 1 Firecrawl (Avenue B)**
+**Platforms: 9 total, 8 native (Avenue A), 1 Firecrawl-only (Avenue B)**
+Note: Mercari and Depop are both native-first with a Firecrawl fallback — they raw-HTTP-403 the datacenter IP but real Chromium renders most searches, so they're free most of the time and only pay a Firecrawl credit on an actual render miss. (Mercari's misclassifying hard-block probe was removed 2026-06-29.) The other 6 native platforms are free always. eBay has no native path at all.
 
 | Platform | Avenue | Status |
 |---|---|---|
 | Grailed | A | ✅ |
-| Depop | A | ✅ (Firecrawl fallback if IP-blocked) |
-| Mercari | A | ✅ (always Firecrawl, hard datacenter block) |
+| Depop | A | ✅ (native-first, Firecrawl fallback on intermittent fingerprint block — never pre-probed) |
+| Mercari | A | ✅ (native-first, Firecrawl fallback on intermittent render miss — like Depop; probe removed 2026-06-29) |
 | ThredUp | A | ✅ |
 | Vestiaire | A | ✅ |
 | Vinted | A | ✅ |
@@ -79,6 +80,15 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-06-29 — Mercari reclaimed as native-first (probe removed)**
+- Verified on the prod Hetzner IP: Mercari raw-HTTP-403s but real Chromium renders ~3/4 of searches (`patagonia vest`, `carhartt jacket`, `levis 501`, `north face fleece` all hit `[mercari-grid]`; `nike windbreaker` fell back to Firecrawl). The "hard-block" probe was misclassifying it.
+- Removed Mercari from `FIRECRAWL_PROBE_PLATFORMS` (server `/opt/crawli/.env` set empty + repo `main.py` default changed `"mercari"`→`""` with corrected comments). Now native-first + Firecrawl fallback, like Depop — most searches free instead of paying Firecrawl every time.
+- **Deploy note:** the live server is already correct via `.env`; `git pull` + restart will ship the matching code default. Mercari is the only platform that was effectively non-native (besides eBay); nothing else to convert.
+
+**2026-06-29 — Docs corrected: Mercari/Depop routing distinction + Avenue A cost model**
+- HANDOFF.md, PLATFORM_STATUS.md, SYSTEM_DESIGN.md §3/§6, FIRECRAWL_PRICING.md updated to reflect post-Avenue-A reality (6 platforms fully $0, Mercari always Firecrawl via probe, Depop fingerprint-fallback only, eBay sole non-native)
+- FIRECRAWL_PRICING.md Brave/hybrid section marked historical; current ~$0.021/search baseline added
 
 **2026-06-29 — Deploy fix: `unzip` required on server + npm install/build order corrected**
 - Fixed deploy order in `docs/SERVER_REFERENCE.md`: `npm install` must run before `npm run build` (was reversed)

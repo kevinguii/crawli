@@ -139,10 +139,13 @@ The Next.js server is the **orchestrator**. The Python sidecar is the **browser 
 ### The three request paths
 
 ```
-PATH A — SEARCH (hot, expensive)
+PATH A — SEARCH (hot; cost depends on platform routing — see §6)
 Browser → POST /api/search
-       → Firecrawl (URL discovery, 4 credits × N platforms)
-       → Python sidecar /scrape (per URL, Playwright + maybe LLM)
+       → For NATIVE_PLATFORMS (Grailed/ThredUp/Vestiaire/Vinted/Poshmark/StockX/Depop/Mercari):
+             Python sidecar /scrape-search (Playwright grid render, $0 for 6; Mercari + Depop
+             native-first with intermittent Firecrawl fallback via main.py fallback logic)
+       → For non-native (eBay only):
+             Firecrawl URL discovery (4 credits) → Python sidecar /scrape per listing
        → NDJSON stream back to browser
        → NO Supabase writes (results are ephemeral)
 
@@ -268,8 +271,8 @@ depop         depop.com/search/?q=<q>                   div.styles_productCard__
               wait_for: div[class*="productCard"] 2.5s  title from URL slug; ~24 cards/page
               Firecrawl fallback if native IP-blocked    (intermittent Playwright fingerprint block)
 
-mercari       mercari.com/search/?keyword=<q>           div[data-testid="Item"] cards
-              wait_for: presence of price 2s             JSON-LD Product when available; ~30/page
+mercari       mercari.com/search/?keyword=<q>           div[data-testid="ItemContainer"] cards
+              native-first; Firecrawl fallback           data-productid→URL, ItemName, ProductThumbItemPrice; ~16/page
               Firecrawl fallback always (hard block)     raw-HTTP probe → skip native, go FC
 
 thredup       thredup.com/search/<hyphen-slug>           JSON-LD Product array (119 items/page)
@@ -646,65 +649,63 @@ EditProfileModal:
 
 ## 6. Cost Map
 
+> **Updated 2026-06-29 for the Avenue A migration.** The Brave/hybrid `SEARCH_PROVIDER` routing described in older revisions of this section (and still detailed historically in `docs/FIRECRAWL_PRICING.md`) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar, never calling `lib/firecrawl.ts`'s `searchPlatform()`. That file's `PLATFORM_STRATEGY` only still executes for eBay (the one non-native platform). Figures below reflect actual current routing, verified against `crawl4ai-service/main.py` and `lib/types.ts`.
+
 ### Per-search cost breakdown
 
 ```
-Scenario: 8 platforms (excluding ThredUp/RealReal which use Path A),
-          10 listings/platform returned
+9 platforms, each capped at the user's tier nativeResultsCap (10/30/60)
 
-URL DISCOVERY — depends on SEARCH_PROVIDER env
-  (see PLATFORM_STRATEGY in lib/firecrawl.ts; pricing in docs/FIRECRAWL_PRICING.md)
+Native sidecar render only (0 third-party cost):
+  Grailed, ThredUp, Vestiaire, Vinted, Poshmark, StockX  → $0 × 6 = $0
 
-Mode             Composition                                      $/search
-firecrawl Hobby  8 × Firecrawl ($0.016)                          $0.128
-firecrawl Std    8 × Firecrawl ($0.00396, $99/mo flat)           $0.032
-brave            8 × Brave ($0.005)                              $0.040 (but ~28% URL loss)
-hybrid (default) 6 × Brave + 2 × FC Hobby + ~0.66 fallback FC    ~$0.073
+Native-first, Firecrawl fallback only on actual render failure (intermittent,
+raw-HTTP-403s the datacenter IP but real Chromium usually renders, NOT pre-probed):
+  Depop   → ~$0 most searches; occasional Firecrawl scrape credit when it falls back
+  Mercari → ~$0 most searches (~3/4 render natively); Firecrawl credit on the ~1/4
+            that miss (probe removed 2026-06-29 — it was forcing Firecrawl every search)
 
-OPENAI (LLM fallback — Tier 2 only)
-All 9 platforms have Tier 1 structured extractors as of
-2026-05-21. LLM fires only when Tier 1 can't run, which
-in practice means:
-  • eBay fetch hits an Akamai 403 (~10% of /itm/ requests)
-  • Any platform changes its JSON-LD shape unannounced (rare)
-  • Stale or partial render on a flaky network
+No native extractor exists at all — Firecrawl handles both URL discovery
+and per-listing scrape every time:
+  eBay → ~$0.016/search (Standard ~$0.004) + ~$0.001 LLM fallback residual
+         on Akamai 403s (~1 in 5 listing scrapes)
 
-Estimate: ~1 LLM call per search on average (eBay residual).
-1 listing × ~$0.001                 = $0.001/search
+TOTAL PER SEARCH (typical, all 9 platforms selected, Standard plan):
+  6 native platforms:  $0
+  Depop:               ~$0 (occasional fallback cost)
+  Mercari:             ~$0 (occasional fallback cost; was ~$0.004 every search pre-2026-06-29)
+  eBay:                 ~$0.016 + ~$0.001 LLM residual
+  ─────────────────────────────────
+  Total:                ~$0.017/search
 
-TOTAL PER SEARCH (URL discovery + OpenAI residual)
-                 hybrid    firecrawl-Hobby  firecrawl-Standard
-URL discovery:   $0.073    $0.128           $0.032
-OpenAI LLM:      $0.001    $0.001           $0.001
-Infra:           ~$0       ~$0              ~$0
-                 ───────   ───────          ───────
-Total:           $0.074    $0.129           $0.033
+This is a >4× reduction from the pre-Avenue-A hybrid model (~$0.073-0.074/search,
+see FIRECRAWL_PRICING.md's historical section) — moving 6 of 9 platforms off
+third-party search providers entirely was the single biggest cost lever to date.
 ```
 
-**Switch point:** flip `SEARCH_PROVIDER=firecrawl` once on Firecrawl Standard (≥ ~$100 MRR justifies the $99/mo flat). At that point Standard's $0.033/search beats hybrid's $0.074 AND restores full coverage. No code change — env flip + plan upgrade.
-
-**Before C1 (2026-05-20):** total was $0.010 / $0.106 / $0.030 — eBay+Vestiaire forced 20 LLM calls per search. C1 (shipped 2026-05-21) drops the OpenAI line by ~10× because both platforms now skip the LLM on the happy path.
-
-**Before hybrid (2026-05-21):** every platform paid Firecrawl Hobby's $0.016/call → $0.128/search. Hybrid (2026-05-22) brings that to ~$0.073 by routing 3 platforms to Brave-only (no FC cost) and another 3 to Brave-first with FC fallback.
+**Historical baselines (superseded, kept for trend context):**
+- Pre-hybrid (before 2026-05-22): every platform on Firecrawl Hobby → $0.128/search.
+- Hybrid era (2026-05-22 to 2026-06-28): Brave/Firecrawl mix → ~$0.073-0.074/search.
+- Avenue A (2026-06-29 onward, current): ~$0.017/search, as above (Mercari probe removed).
 
 ### Cost by platform
 
 ```
-Platform      Tier 1 extractor?    LLM fires?    $/listing
-──────────────────────────────────────────────────────────
-Grailed       ✅ JSON-LD           Never         $0
-Depop         ✅ JSON-LD           Never         $0
-Poshmark      ✅ og+DOM            Never         $0
-Mercari       ✅ __NEXT_DATA__     Never         $0
-Vinted        ✅ RSC regex         Never         $0
-StockX        ✅ testid            Rarely        ~$0
-ThredUp       ✅ JSON-LD grid      Never         $0
-eBay          ✅ JSON-LD (C1)      On Akamai 403 ~$0
-Vestiaire     ✅ JSON-LD (C1)      Never         $0
-RealReal      gated/disabled       N/A           $0
+Platform      Routing today                      Tier 1 extractor?   LLM fires?       $/search
+─────────────────────────────────────────────────────────────────────────────────────────────────
+Grailed       Native only                        ✅ JSON-LD          Never            $0
+ThredUp       Native only                        ✅ JSON-LD grid     Never            $0
+Vestiaire     Native only                         ✅ JSON-LD          Never            $0
+Vinted        Native only                         ✅ RSC regex        Never            $0
+Poshmark      Native only                         ✅ og+DOM           Never            $0
+StockX        Native only                         ✅ testid           Never            $0
+Depop         Native-first, intermittent FC fallback ✅ JSON-LD       Never            ~$0
+Mercari       Native-first, intermittent FC fallback ✅ ItemContainer  Never            ~$0
+eBay          Firecrawl always (no native path)   ✅ JSON-LD          On Akamai 403    ~$0.016 + ~$0.001 LLM
+RealReal      Disabled                            gated/disabled     N/A              $0
 ```
 
-All 9 platforms have Tier 1 structured extractors. The remaining LLM cost comes from eBay's intermittent Akamai blocks — when the HTML fetch itself gets a 403, Tier 1 has nothing to parse and the cascade falls through to LLM on whatever partial content came back. Vestiaire never hit LLM in our verification (5/5 + 10/10 full searches landed in Tier 1).
+All 9 platforms have Tier 1 structured extractors — none of them route to LLM as their primary extraction path. The only platform that ever fires the LLM fallback is eBay, when an Akamai 403 leaves Tier 1 with nothing to parse and the cascade falls through to LLM on whatever partial content came back. Vestiaire has Tier 1 coverage too and effectively never reaches LLM.
 
 ### Cache impact
 
