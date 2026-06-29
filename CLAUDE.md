@@ -2,86 +2,96 @@
 
 **Read this file at the start of every session.**
 
-## Critical Rules
+## Documentation structure
 
-1. **Always read HANDOFF.md first** — source of truth for architecture, known issues, platform status, recent changes, and testing procedures.
+The project uses four focused docs. Read what's relevant to your task — don't read all four every session.
 
-2. **Never hallucinate or assume** — read files before editing; verify paths and function names; state assumptions explicitly; ask rather than guess.
+| File | What's in it | Read when |
+|---|---|---|
+| `HANDOFF.md` | Current platform state, open issues, recent changes, env setup | Every session |
+| `docs/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase |
+| `docs/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
+| `docs/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
 
-   **For n8n workflows and API integrations specifically:** never assume field names, output paths, node parameter keys, or API response shapes. These change between versions and are wrong more often than not. Always:
-   - Search the web or fetch official docs to verify the real field name
-   - Use MCP tools (n8n MCP, Zernio docs, etc.) to inspect live data
-   - Reference the gotchas already documented in AGENT_PLAN.md (e.g. OpenAI node output is `output[0].content[0].text`, not `message.content`)
-   - If unsure about any variable name or API shape, say so and look it up — do not guess and move on
+**Supporting docs:**
+- `docs/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
+- `docs/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
+- `docs/FIRECRAWL_PRICING.md` — Firecrawl credit costs
+- `docs/marketing/POSTS_README.md` — carousel batch operation
 
-3. **Test rigorously — every time**
-   - `npm run dev:all` to start Next.js + Python sidecar
-   - Verify in a real browser; check Network tab and console for errors
-   - Do not declare done based on type-checks alone
+## Critical rules
 
-4. **Update HANDOFF.md after every session — full sync, not just append**
-   - Add a "Latest change" block at the top with today's date (required)
-   - Include: what was done, what worked, what didn't, why
-   - **CRITICAL:** also update §2–§7 reference sections to reflect new reality — don't leave stale info below a current top
-   - Check if any lower-section assumptions are now wrong (e.g. "no auth yet")
-   - Example entry: `**Latest change (2026-05-16):** Implemented platform card colors. eBay: 4-color stripe. Others: solid bg + white text. Gotcha: Vestiaire uses black text. CSS variables > Tailwind classes for theme switching.`
+**1. Never hallucinate or assume.** Read files before editing. Verify paths and function names. For n8n and API integrations: never assume field names, output paths, or API response shapes. Always check `docs/PITFALLS.md` first — many wrong paths are already documented. The OpenAI n8n node output is `output[0].content[0].text`, not `message.content`.
 
-## Project Context
+**2. Test rigorously — every time.**
+- `npm run dev:all` to start Next.js + Python sidecar
+- Verify in a real browser; check Network tab and console
+- `npx tsc --noEmit` must be clean
+- Do not declare done based on type-checks alone
 
-**Tech stack:** Next.js 16.2.6 App Router + React 19 + Tailwind v4 + TypeScript · Python sidecar (crawl4ai + Playwright) at `crawl4ai-service/` · Firecrawl for search only
+**3. Update docs after every session — the right doc, not just HANDOFF.**
+- Did platform extraction change? → update `docs/PLATFORM_STATUS.md`
+- Did you hit a new gotcha or fix one? → update `docs/PITFALLS.md`
+- Did the architecture or data flow change? → update `docs/SYSTEM_DESIGN.md`
+- Always update `HANDOFF.md` "Current state" and "Recent changes" sections
 
-**Key files:**
-- `HANDOFF.md` — project status, architecture, known issues
-- `app/components/` — React components
-- `app/api/search/route.ts` — backend search endpoint
-- `lib/scraper.ts` — HTTP client for Python sidecar
-- `lib/types.ts` — TypeScript types
+**What NOT to do:** Don't append a big "Latest change (date): ..." block to HANDOFF.md. The new system is current-state only. Put details in the relevant doc, put a one-line bullet in "Recent changes".
 
-**Dev commands:** `npm run dev:all` (Next.js :3000 + sidecar :8000) · `npm run dev` (Next.js only) · `npm run dev:sidecar` (sidecar only)
-
-**Do NOT modify:**
+**4. Do NOT modify:**
 - `/api/` endpoints unless explicitly told (streaming NDJSON protocol is fragile)
 - `/lib/` utilities without understanding the full call chain
-- `crawl4ai-service/` Python code (separate session context)
+- `crawl4ai-service/` Python code without reading PLATFORM_STATUS.md first
+
+## Project context
+
+**Tech stack:** Next.js 16.2.6 App Router + React 19 + Tailwind v4 + TypeScript · Python sidecar (crawl4ai + Playwright) at `crawl4ai-service/` · Firecrawl for eBay search only (all other platforms use native Avenue A)
+
+**Key files:**
+- `HANDOFF.md` — current state hub
+- `lib/types.ts` — platform sets (NATIVE_PLATFORMS, PLATFORM_DOMAINS, etc.)
+- `lib/scraper.ts` — HTTP client for sidecar, SEARCH_PAGE_PLATFORMS set
+- `crawl4ai-service/search_page_extractors.py` — Avenue A grid extractors
+- `crawl4ai-service/main.py` — sidecar FastAPI app, wait_for configs, /expand-query
+- `lib/parse.ts` — relevance filtering + alias-aware anchoring
+- `lib/queryExpansion.ts` — brand alias map + primeExpansion
+- `app/api/search/route.ts` — backend search endpoint
+
+**Dev commands:** `npm run dev:all` · `npm run dev` · `npm run dev:sidecar`
 
 ## Social media content (TikTok carousels)
 
-When the user asks for social/marketing posts, a new carousel batch, or work in `docs/marketing/`, do these BEFORE generating ideas or designing slides — they are easy to forget and past sessions have:
+When the user asks for social/marketing posts, a new carousel batch, or work in `docs/marketing/`, do these BEFORE generating ideas or designing slides:
 
-1. **Source fresh topics with `/last30days`** — run it scoped to the niche (secondhand fashion, vintage, resale, thrifting, specific brands/eras) to pull what is actually being talked about now. Use those as the *positive* starting subjects, not just whatever feels familiar. Then cross-check candidate `topic_key`s against Supabase `content_history` (`posted = true` = already posted, never repeat; see SERVER_REFERENCE.md) so you do not re-pitch a covered subject. The n8n "crawli content brief" only emails idea-fodder twice a week — `/last30days` is the live freshness source at build time.
-2. **Run the `marketing-visual-diversity` skill** (it triggers on "new batch", "carousel post", etc.) — it runs `node check-visual-diversity.js`, which prints the previous batch's exact fonts/layout/placement to avoid. Each batch MUST differ from the last 1-2 on `font_pairing` AND `text_placement` AND `layout`.
-3. **Use the `ui-ux-pro-max` skill** for the actual design choices — pull a genuinely different font pairing (`typography.csv`, 57+), layout, and style movement from it each batch. It is the menu of options; `visual-history.json` is the record of what is used up.
+1. **Source fresh topics with `/last30days`** — scoped to the niche (secondhand fashion, vintage, resale). Cross-check against Supabase `content_history` (`posted = true` = already posted, never repeat).
+2. **Run the `marketing-visual-diversity` skill** — runs `node check-visual-diversity.js` to print what fonts/layout/placement to avoid. Each batch MUST differ from the last 1-2 on `font_pairing` AND `text_placement` AND `layout`.
+3. **Use the `ui-ux-pro-max` skill** for design choices — `typography.csv` (57+ pairings), `visual-history.json` (what's used up).
 
-TikTok-only now (IG fully dropped from prompts, schema, captions, and posting docs — 2026-06-19). **Default export is 4:5 (1080×1350, `export-slides.js`)** — the 9:16 full-screen format was tried and reverted on 2026-06-22 (TikTok compresses the image upward when captions overflow; `POSTS_README.md` is the operational source of truth on this). Keep headline/CTA text out of the bottom ~20% / right ~15% where TikTok's own UI sits. Cover slide is always a real `gpt-image-2` image; inner slides mix symbol-compositions and photographic `gpt-image-2` images. Blog posts keep their simple symbol system — this only applies to social.
+**TikTok-only.** Default export: 4:5 (1080×1350). Keep headline/CTA out of bottom ~20% / right ~15% (TikTok UI). Cover = gpt-image-2 always.
 
-**Reseller pivot + obfuscate commercial intent (2026-06-29):** Crawli is now a B2B sourcing-intelligence tool for resellers (find underpriced inventory; know real cross-platform comps and flip margin before buying — see `docs/B2B_FEATURE_TRUTH.md`). Carousels must read as pure education/entertainment native to the vintage and reseller community. **No slide and no caption/description may contain `thecrawli.com`, a URL, "search Crawli", "download", or "link in bio".** Crawli is teased only on the final slide as a subtle, implicit aside, worded differently every post and present in only some posts — the goal is comment inquiries, not clicks. This is baked into the live "crawli content brief (DeepSeek)" n8n prompt (id `moMVEnr5L6kGgJTC`); the gpt-4o duplicate (`FMf2nyTQIZNCRa2L`) is deactivated. Blog `crawli_angle` is similarly softened to a subtle, varied reference (blogs are owned content so a single named mention is allowed, just not a repeated CTA formula).
+**Obfuscate commercial intent:** No `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere. Crawli teased only on final slide as subtle aside, worded differently each post, present in only some posts. Goal: comment inquiries, not clicks. See `docs/B2B_FEATURE_TRUTH.md` and live n8n brief `moMVEnr5L6kGgJTC`.
 
-## Testing Checklist
+## Common gotchas (quick reference — full list in docs/PITFALLS.md)
 
-Before declaring done:
-- [ ] No TypeScript errors (`npm run dev:all`)
+- **Streaming endpoints buffer in dev** — test `/api/search` with `curl -N`
+- **CSS theming** — `[data-theme="dark"]` on `<html>`, not Tailwind `dark:`
+- **SEARCH_PAGE_PLATFORMS is duplicated** — Python (`search_page_extractors.py`) AND TypeScript (`lib/scraper.ts`) — keep both in sync
+- **RLS alone 503s** — every new Supabase table needs explicit `GRANT ... TO authenticated, service_role`
+- **"tshirt" is a stopword** — platform titles write "t-shirt" which tokenizes differently; "tshirt" in queries is now a stopword in RELEVANCE_STOPWORDS
+- **Brand alias matching is live** — `lib/queryExpansion.ts` handles bape/A Bathing Ape etc.; don't hand-add aliases to BRAND_ANCHOR_OVERRIDES
+
+## Before starting any task
+
+1. Read `HANDOFF.md` — what's the current state? Any open issues that affect my task?
+2. Read the relevant doc (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN) based on what I'm touching
+3. What files do I actually need to modify?
+4. What does success look like, and how will I verify it before saying done?
+
+## Testing checklist
+
+- [ ] `npx tsc --noEmit` clean
 - [ ] Feature works in a real browser
 - [ ] Light + dark mode correct
 - [ ] No console errors; network requests succeed
 - [ ] Behavior matches task description exactly
-- [ ] HANDOFF.md updated
-
-## Common Gotchas
-
-- **Streaming endpoints buffer in dev mode** — test `/api/search` streaming with `curl -N` to bypass dev proxy buffering
-- **CSS theming** — use `[data-theme="dark"]` on `<html>`, not Tailwind `dark:` variant
-- **Platform colors are specific** — verify exact hex codes, not approximations
-- **eBay is broken** — known issue, don't debug; document unexpected behavior
-- **Vestiaire URL discovery broken** — search + scraping work; URL-finding is blocked. Don't fix.
-- **ThredUp brand queries return garbage (§7 L)** — ThredUp's catalog is mass-market basics; luxury/streetwear brands like BAPE are absent. ThredUp's fuzzy search falls back to matching on descriptor words ("shirt", "hoodie") when the brand isn't in inventory. Combined with `titleMatchesQuery` requiring only 1 of N tokens, irrelevant results slip through. Fix: use ThredUp's `brand` JSON-LD field (already extracted) to require brand match. See §7 L in HANDOFF.md. Do NOT fix without user approval — it's a multi-file change touching the extractor + parse step.
-
-## Before Starting
-
-1. Have I read HANDOFF.md fully?
-2. Do I understand the current architecture?
-3. Are there known issues related to this task?
-4. What files do I actually need to modify?
-5. What does success look like?
-6. How will I verify before saying it's done?
-
-If you can't answer these, stop and read HANDOFF.md again.
+- [ ] Relevant doc updated (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN)
+- [ ] HANDOFF.md "Current state" + "Recent changes" updated

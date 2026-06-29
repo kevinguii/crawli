@@ -227,69 +227,71 @@ Each platform_done → emit event → UI snaps row to "Done — N results"
           ┌───────────────┴────────────────┐
           │                                │
    in SEARCH_PAGE_PLATFORMS?         normal platform?
-   (currently: thredup)         (grailed, depop, poshmark,
-          │                      stockx, mercari, vinted,
-          │                      ebay, vestiaire)
+   (as of 2026-06-29: grailed,    (ebay only — all others
+    depop, mercari, thredup,        migrated to Avenue A)
+    vestiaire, vinted, poshmark,
+    stockx)
           ▼                                ▼
    PATH A: Search-page            PATH B: Firecrawl
    extraction                     URL discovery
    (bypass Firecrawl)
 ```
 
-**Path B — Search-provider URL discovery (8 platforms — was Firecrawl-only, now env-routed):**
+**Path B — Search-provider URL discovery (eBay only as of 2026-06-29):**
+
+All 8 native platforms migrated to Avenue A (Path A). eBay remains on Path B — Akamai blocking makes a single native search-page render non-viable.
 
 ```
-searchPlatform(platform, query)
+searchPlatform(platform, query)   [eBay only]
   ↓
-  env SEARCH_PROVIDER decides:
-     "firecrawl"  → Firecrawl.search("site:<domain> <query>")     ← code default
-     "brave"      → Brave.search("site:<domain> <query>")
-     "hybrid"     → per-platform routing (PLATFORM_STRATEGY table):
-                     vinted, stockx, poshmark  → Brave only
-                     depop, grailed, vestiaire → Brave first,
-                                                 Firecrawl fallback
-                                                 if listings < BRAVE_HYBRID_THRESHOLD (5)
-                     mercari, ebay             → Firecrawl only
-                                                 (Brave too unreliable)
-
+  Firecrawl.search("site:ebay.com <query>")
   → returns ~20 candidate URLs (RawSearchResult[])
-  → filterListingUrls() — per-platform regex keeps only listing pages
-      grailed:   /listings/\d+/
-      depop:     /products/\w+/
-      stockx:    /products/\w+/
-      poshmark:  /listing/\w+/
-      mercari:   /item/\w+/
-      vinted:    /items/\d+/
-      vestiaire: /\d{5,}/ (numeric trailing id)
-      ebay:      /itm/
+  → filterListingUrls() — keeps only /itm/ URLs
   → dedupe
-  → ~5–18 clean listing URLs (varies by platform + search-engine index density)
+  → ~5–10 clean listing URLs
   → scrape each (Step 3)
 
-Cost (hybrid mode, default in production):
-  Brave call:     $0.005 each (BRAVE_ONLY + HYBRID platforms always)
-  Firecrawl call: $0.016 (Hobby) / $0.00396 (Standard) — FC_ONLY + hybrid fallback
-  Expected per-search total: ~$0.073 hybrid Hobby / $0.128 pure Firecrawl Hobby
-
-Logging:
-  Each search emits: [search] platform=X provider=brave|firecrawl strategy=...
-                     urls=N listings=M [threshold=K] [brave_listings=N]
+Cost (eBay): ~4 Firecrawl credits/search Standard (~$0.016 Standard). Firecrawl is the only avenue for eBay.
 ```
 
-**Path A — Search-page extraction (ThredUp):**
+**Path A — Search-page extraction (all 8 native platforms, as of 2026-06-29):**
+
+Each platform: `POST /scrape-search` → sidecar builds the search URL, renders once with Chromium, extracts grid → returns `ScrapedListing[]`. Cost: 0 Firecrawl credits. 1 render. No LLM.
 
 ```
-Build onsite URL: thredup.com/search/<hyphen-slug>
-      → POST /scrape-search to sidecar
-      → Render search results page (1 Chromium render)
-      → extract_thredup_grid():
-          reads JSON-LD Product array (119 items/page)
-          merges with DOM href map (JSON-LD has no URL field)
-          returns up to 100 ScrapedListing dicts
-      → size post-filter (sizeFilter.ts)
-      → up to 10 clean listings
+Platform      Search URL pattern                        Extractor / selector
+──────────────────────────────────────────────────────────────────────────────
+grailed       grailed.com/shop?query=<q>                a[href*="/listings/"] Algolia card
+              wait_for: a[href*="/listings/"] 2.5s      ~40 cards/page (SSR+Algolia hydration)
 
-Cost: 0 Firecrawl credits. 1 render. No LLM.
+depop         depop.com/search/?q=<q>                   div.styles_productCard__* cards
+              wait_for: div[class*="productCard"] 2.5s  title from URL slug; ~24 cards/page
+              Firecrawl fallback if native IP-blocked    (intermittent Playwright fingerprint block)
+
+mercari       mercari.com/search/?keyword=<q>           div[data-testid="Item"] cards
+              wait_for: presence of price 2s             JSON-LD Product when available; ~30/page
+              Firecrawl fallback always (hard block)     raw-HTTP probe → skip native, go FC
+
+thredup       thredup.com/search/<hyphen-slug>           JSON-LD Product array (119 items/page)
+              wait_for: script[type="application/       merges with DOM href map (JSON-LD no URL)
+                ld+json"] 3s                            up to 100 ScrapedListing dicts
+
+vestiaire     us.vestiairecollective.com/search/?q=<q>  a[data-cy^="catalog__productCard__"]
+              wait_for: same selector 2s                brand from ALL-CAPS → .title()
+              page_timeout: 60s (CSR ~8s hydration)     ~15 cards/page
+
+vinted        vinted.com/catalog?search_text=<q>        div.new-item-box__container
+              wait_for: a[href*="/items/"] 12s           overlay title attr CSV parse
+                                                         ~96 cards/page
+
+poshmark      poshmark.com/search?query=<q>&type=       div.tile-grid-redesign__media--wrapper
+                listings                                dual-anchor: meta+price wrapper
+              wait_for: a.tile-grid-redesign__meta-link ~48 cards/page
+
+stockx        stockx.com/search?s=<q>                   [data-testid="ProductTile"]
+              wait_for: same selector 12s               [data-testid="product-tile-lowest-
+              page_timeout: 60s (CSR heavy)               ask-amount"] for price
+                                                         ~40 tiles/page
 ```
 
 ### Step 3 — Inside the sidecar (per listing URL)
@@ -398,10 +400,13 @@ ScrapedListing[] (raw from sidecar)
       │
       ├─ 1. Drop sold listings (isSold=true)
       │
-      ├─ 2. Title relevance filter
-      │      tokenize query + title, remove stopwords
-      │      require ≥1 shared substantive token
-      │      (catches cross-platform junk matches)
+      ├─ 2. Title relevance filter (alias-aware, Session 4 2026-06-29)
+      │      tokenize query + title, remove stopwords (incl. "tshirt")
+      │      anchor tokens (not in COMMON_WORDS) must ALL be present —
+      │        direct match OR brand alias (expandAliasesSync) OR
+      │        canonical brand match (detectBrandInText/canonicalBrandOf)
+      │      "bape" matches "A Bathing Ape" titles via alias map
+      │      LLM alias enrichment via primeExpansion() before dispatch
       │
       ├─ 3. Size filter (ALL platforms)
       │      check listing.size (structured field) first

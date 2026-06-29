@@ -52,7 +52,7 @@ const RELEVANCE_STOPWORDS = new Set([
   // clothing item types — too generic on a fashion resale platform to distinguish
   // one brand/query from another. A query like "bape t shirt" → tokens {"bape"},
   // so generic-only queries ("t shirt", "basketball shorts") → empty tokens → all pass.
-  'shirt', 'tee', 'hoodie', 'hoody', 'sweatshirt', 'crewneck',
+  'shirt', 'tshirt', 'tee', 'hoodie', 'hoody', 'sweatshirt', 'crewneck',
   'shorts', 'pants', 'jeans', 'denim', 'leggings',
   'jacket', 'coat', 'blazer', 'vest',
   'sweater', 'cardigan', 'pullover',

@@ -1,0 +1,80 @@
+# Platform Status
+
+> **Maintenance rule:** update this table any time a platform's extraction method, viability, or known issues change. This is the single source of truth for per-platform state. Do not duplicate it in HANDOFF.md.
+
+Last verified: 2026-06-29
+
+## Search extraction (per-platform)
+
+All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-search`, 0 Firecrawl credits). Only eBay uses **Avenue B** (Firecrawl URL discovery + per-listing scrape).
+
+| Platform | Avenue | Method | Wait / Notes | Results/page | Status |
+|---|---|---|---|---|---|
+| **Grailed** | A | `a[href*="/listings/"]` Algolia cards | `wait_for` 2.5s (CSR) | ~40 | ✅ Working |
+| **Depop** | A | `div[class*="productCard"]` cards | `wait_for` 2.5s; Firecrawl fallback if IP-blocked (intermittent fingerprint block) | ~24 | ✅ Working (with fallback) |
+| **Mercari** | A | `div[data-testid="Item"]` | Raw-HTTP probe → always Firecrawl (hard datacenter block); ~$0.004 Std/search | ~30 | ✅ Working (Firecrawl fallback always-on) |
+| **ThredUp** | A | JSON-LD `Product` array + DOM href merge | 3s SSR wait | ~100 | ✅ Working |
+| **Vestiaire** | A | `a[data-cy^="catalog__productCard__"]` brand ALLCAPS→`.title()` | `wait_for` 2s, 60s timeout (CSR ~8s hydration) | ~15 | ✅ Working |
+| **Vinted** | A | `div.new-item-box__container` + overlay `title` attr CSV | 12s wait (SSR) | ~96 | ✅ Working |
+| **Poshmark** | A | `div.tile-grid-redesign__media--wrapper` dual-anchor | `wait_for` `a.tile-grid-redesign__meta-link` 11s | ~48 | ✅ Working |
+| **StockX** | A | `[data-testid="ProductTile"]` + `product-tile-lowest-ask-amount` | `wait_for` 12s, 60s timeout (CSR heavy) | ~40 | ✅ Working |
+| **eBay** | B | Firecrawl `site:ebay.com` → JSON-LD Product per-listing | Akamai intermittently 403s (~1 in 5 listings); structured extractor handles hits | ~8 | ✅ Working (intermittent Akamai blocks) |
+| **RealReal** | — | Disabled | PerimeterX press-and-hold blocks headless render; returns 0 silently | — | ❌ Disabled |
+
+## Per-listing extraction (for Avenue B / watchlist refresh)
+
+| Platform | Tier 1 extractor | Notes |
+|---|---|---|
+| Grailed | JSON-LD `Product` block | |
+| Depop | JSON-LD `Product` block | |
+| StockX | `data-testid="trade-box-buy-amount"` | Stale SSR vs live price possible; see PITFALLS.md |
+| Poshmark | `og:title` + `og:image` + `<p class="h1"><span>` price | |
+| Mercari | `__NEXT_DATA__.serverState[ItemDetail]` price in cents ÷ 100 | |
+| Vinted | Regex over escaped RSC payload | |
+| eBay | JSON-LD `Product` block | Intermittent Akamai 403; LLM fallback on failure |
+| Vestiaire | JSON-LD `Product` block (`ImageObject.contentUrl` for image) | |
+| ThredUp | JSON-LD `Product` block (via `/scrape`, not used in search path) | |
+
+## Color extraction coverage
+
+| Platform | Structured color? | Source | Fallback |
+|---|---|---|---|
+| ThredUp | ✅ | JSON-LD `Product.color` on grid card | title-text |
+| Poshmark | ✅ | JSON-LD per-listing | title-text |
+| eBay | ✅ (4/5) | JSON-LD per-listing | title-text |
+| StockX | ✅ | JSON-LD per-listing (official colorway e.g. "Diffused Blue") | title-text |
+| Vinted | ✅ | JSON-LD per-listing (`"Blue"` etc.) | title-text |
+| Mercari | Partial | Title text only on native-grid path | title-text |
+| Depop | ❌ | No color in JSON-LD | title-text |
+| Grailed | ❌ | No color in JSON-LD | title-text |
+| Vestiaire | Unverified | — | title-text |
+
+Color is a **sort boost** (never a hard drop). Structured color reorders results within the cap; it never removes a listing.
+
+## Open platform issues
+
+**eBay — intermittent Akamai blocks**
+- `[structured] crawl failed` logged when 403. Cascade falls to LLM tier on partial response.
+- Options (none implemented): residential proxy; eBay Browse API (requires OAuth); paid unlocker.
+
+**StockX — SSR vs live price drift**
+- Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
+- User decision: leave as-is; add "scraped at" timestamp if it becomes a complaint.
+
+**Depop — intermittent Playwright fingerprint block**
+- Raw HTTP always 403s but real browser often passes, so native render is tried first.
+- Do NOT probe Depop before render (unlike Mercari) — probe would force paid Firecrawl over a working free path.
+
+**`_DRIVER_DEAD_PATTERNS` gap (semi-open)**
+- `"Target page, context or browser has been closed"` is NOT in the pattern list in `main.py`.
+- Consequence: if Playwright context is killed by antibot, the pool member stays broken instead of auto-recovering.
+- Fix: add that string to `_DRIVER_DEAD_PATTERNS`. Not yet done.
+
+## Adding a new platform
+
+Follow the Avenue A survey playbook in `docs/SYSTEM_DESIGN.md §Path A`. Key checklist:
+1. Probe the search page HTML — is it SSR or CSR? Does it have JSON-LD array, `__NEXT_DATA__`, or DOM cards?
+2. Add extractor to `crawl4ai-service/search_page_extractors.py` + `wait_for` in `main.py`
+3. Add to `SEARCH_PAGE_PLATFORMS` in **both** `crawl4ai-service/search_page_extractors.py` AND `lib/scraper.ts`
+4. Add to `NATIVE_PLATFORMS` in `lib/types.ts`
+5. Update this table and HANDOFF.md current-state block

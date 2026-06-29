@@ -1,0 +1,111 @@
+# Pitfalls & Lessons Learned
+
+> **Maintenance rule:** this file is for lessons that are STILL RELEVANT — things a future session could get wrong. When a problem is fully resolved and the fix is obvious from the code, remove or summarize the entry. Do not log historical explorations here; put them in git commit messages.
+
+---
+
+## Relevance filtering
+
+**`tshirt` as anchor kills results (fixed 2026-06-29)**
+Users type "bape japan tshirt" (one word). Platform titles write "t-shirt" → tokenizes to "shirt" (a stopword). "tshirt" is not in COMMON_WORDS so it becomes an anchor that never matches. Fix: added "tshirt" to `RELEVANCE_STOPWORDS`. If you add more garment-type synonyms to stopwords, keep them as *type* words only — specific items like "puffer" that could narrow results should stay as anchors.
+
+**Brand alias matching is now in `lib/queryExpansion.ts`**
+"bape" must match "A Bathing Ape" titles. The static alias map in `queryExpansion.ts` covers well-known streetwear brands. The LLM expansion path (sidecar `/expand-query`) enriches the long tail. `primeExpansion(query)` is called in `searchWorker.ts` before dispatch — this is the only LLM call in the search hot path. Do not add inline LLM calls in `parse.ts` (it's synchronous).
+
+**"japan" is in COMMON_WORDS (~rank 4700)**
+So it is NOT an anchor. "bape japan tshirt" → only anchor is "bape". This is correct — "japan" alone should never block a result. Check `lib/data/commonWords.json` before assuming a word is uncommon.
+
+**Anchor-AND logic: all anchors must match**
+The old OR logic let Ronaldo jerseys through on "messi jersey" (shared "soccer" token). AND logic was intentional — don't revert. If a user reports too-strict results, the first check is: which token became an unexpected anchor? Is it in COMMON_WORDS? Add it to RELEVANCE_STOPWORDS if it's a garment type.
+
+**Clothing type words must be stopwords**
+"shirt", "hoodie", "sneakers", etc. are in RELEVANCE_STOPWORDS. These are too generic to distinguish brand queries. If ThredUp returns garbage for a brand query, first check: is there a clothing-type token slipping through as an anchor?
+
+---
+
+## Platform-specific gotchas
+
+**Mercari is always Firecrawl-fallback**
+Raw HTTP probe against Mercari always 403s on datacenter IPs. The sidecar does a fast probe before native render and immediately routes to Firecrawl. Do NOT disable the probe — it saves ~20s native render time that would fail anyway.
+
+**Depop is NOT probed**
+Depop's block is fingerprint-based: raw HTTP 403s but the real browser often passes. Probing would force paid Firecrawl over a working free path. Depop stays on try-native-then-fallback.
+
+**ThredUp fires fine with raw HTTP probe but you must NOT probe it**
+Same reasoning as Depop — raw-403 from ThredUp does not predict native browser failure.
+
+**Vestiaire is CSR with ~8s hydration**
+The `wait_for` selector on Vestiaire needs the full `a[data-cy^="catalog__productCard__"]` — if you change this, the extractor will get empty HTML. `page_timeout=60_000` is necessary.
+
+**StockX is also heavy CSR**
+`[data-testid="ProductTile"]` needs 12s+ wait. `page_timeout=60_000`. If the testid changes (StockX deploys regularly), extraction silently returns 0 listings.
+
+**RealReal is disabled — do not re-enable without a proxy solution**
+PerimeterX press-and-hold blocks all headless approaches including UndetectedAdapter + managed profile cookies. The extractor code is scaffolded in `search_page_extractors.py` but `NATIVE_PLATFORMS` in `lib/types.ts` excludes it. The Python `SEARCH_PAGE_PLATFORMS` includes it — so you'd also need `main.py` wait_for config and to uncomment `lib/types.ts`.
+
+**SEARCH_PAGE_PLATFORMS is duplicated**
+The set lives in BOTH `crawl4ai-service/search_page_extractors.py` AND `lib/scraper.ts`. Keep them in sync. If a platform is in the Python set but not the TS set, Next.js routes it through Avenue B (Firecrawl) while the sidecar doesn't know to extract its grid.
+
+**`PLATFORM_STRATEGY[platform]` in `lib/firecrawl.ts` is now inert for all Avenue A platforms**
+The route checks `SEARCH_PAGE_PLATFORMS.has(platform)` first. The entries are kept as fallbacks in case a search-page extractor breaks later. Do not delete them.
+
+---
+
+## Payments + Supabase
+
+**RLS alone is not enough**
+Every public table also needs explicit `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated, service_role`. Without GRANTs, every request returns Postgres `42501 permission denied` — not a helpful error message. This applies to any new table you create.
+
+**Admin client vs user client**
+`createAdminClient()` uses the service role key and bypasses RLS entirely. Use it only in server-side routes and cron jobs. Never expose service role key to client components.
+
+**Credit pack prices are provisioned in Stripe by the owner**
+`STRIPE_PRICE_PACK_SMALL/MEDIUM/LARGE` env vars must be set. If unset, the credits route returns 503 (dormant, no broken checkout). Don't create Stripe prices yourself — the owner provisions them and signs off on the dollar amounts in `lib/creditPacks.ts`.
+
+---
+
+## Infrastructure
+
+**Streaming endpoints buffer in dev mode**
+Test `/api/search` streaming with `curl -N http://localhost:3000/api/search` to bypass Next.js dev proxy buffering. The browser works fine; the proxy is dev-only.
+
+**CSS theming: use `[data-theme="dark"]` not Tailwind `dark:`**
+The app sets `data-theme="dark"` on `<html>`. Tailwind's `dark:` variant uses `prefers-color-scheme` by default and won't respond to the attribute without config changes. All dark-mode CSS must use `[data-theme="dark"] .class { ... }`.
+
+**sidecar TTL caches**
+- `/scrape` (per URL): 30 min TTL
+- `/scrape-search` (per `platform::query`): 10 min TTL
+- `_expand_cache` (query expansion, per normalized query): 7 day TTL
+- Only successful, non-empty results land in cache; failures retry next time.
+
+**n8n on the server is the real edit path**
+`n8n MCP` tools are read-only and only see a subset of workflows. All real workflow edits go via SSH. See `docs/SERVER_REFERENCE.md` for the SSH workflow edit pattern. After editing: export → patch → import + `--active=true` → `systemctl restart n8n`.
+
+**n8n `Run on demand` trigger is required for CLI testing**
+n8n 2.8.4's `n8n execute --id` fails with "Missing node to start execution" unless the workflow also has an `Execute Workflow Trigger` node (not just the schedule trigger). Add one to any workflow you want to CLI-test.
+
+---
+
+## Content / marketing
+
+**No em/en dashes in any caption or slide**
+The platform rule: no em dashes (—), en dashes (–), or punctuation hyphens used as sentence separators. Use line breaks or plain commas instead. This applies to all generated content in `docs/marketing/`.
+
+**Obfuscate commercial intent in TikTok content**
+No `thecrawli.com`, no URL, no "search Crawli", no "download", no "link in bio" on any slide or caption. Crawli is teased as a subtle aside on the final slide only, worded differently each post, present in only some posts. Goal is comment inquiries not clicks. This is baked into the live n8n content brief (`moMVEnr5L6kGgJTC`).
+
+**visual-history.json and POSTS_README.md are the source of truth for batch history**
+Before generating a new carousel batch: run `marketing-visual-diversity` skill to read `check-visual-diversity.js` output. Each batch must differ from the last 1-2 on font pairing AND text placement AND layout. These are in `docs/marketing/visual-history.json`.
+
+---
+
+## LLM / sidecar
+
+**OpenAI node output shape in n8n**
+The output path is `output[0].content[0].text`, not `message.content`. This has bitten multiple sessions. Verify with the MCP tools or live execution before wiring up an AI node.
+
+**LLM expansion is fire-and-forget for the first request**
+`primeExpansion(query)` is awaited in `searchWorker.ts` which means it blocks the search until expansion resolves (or times out at 5s). The timeout is intentional — first-request latency is bounded. Subsequent searches for the same query hit the in-memory cache instantly.
+
+**Do not add per-listing LLM calls**
+The only LLM calls in the search hot path are: (1) expansion via `/expand-query` (once per unique query, cached 7d), (2) Tier 2 fallback extraction when Tier 1 structured fails. Adding LLM calls per-listing would make a 9-platform search cost $0.009 × 90 listings = $0.81/search. Check COGS before adding any new LLM call.
