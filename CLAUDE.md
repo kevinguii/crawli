@@ -95,3 +95,4 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 - [ ] Behavior matches task description exactly
 - [ ] Relevant doc updated (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN)
 - [ ] HANDOFF.md "Current state" + "Recent changes" updated
+- [ ] Ports 3000 and 8000 freed before finishing (see `docs/CLEANUP.md`)
