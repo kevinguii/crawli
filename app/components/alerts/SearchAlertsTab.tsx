@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import SavedSearchCard from './SavedSearchCard';
 import CreateAlertModal from './CreateAlertModal';
+import AlertMatchesModal from './AlertMatchesModal';
 
 export interface SavedSearch {
   id: string;
@@ -32,6 +33,8 @@ export default function SearchAlertsTab() {
   const [alerts, setAlerts] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingAlert, setEditingAlert] = useState<SavedSearch | null>(null);
+  const [viewingAlert, setViewingAlert] = useState<SavedSearch | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
 
   useEffect(() => {
@@ -149,11 +152,9 @@ export default function SearchAlertsTab() {
     }
   }
 
-  async function handleMarkSeen(id: string) {
-    await fetch(`/api/saved-searches/${id}/mark-seen`, { method: 'POST' });
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, unread_match_count: 0 } : a)),
-    );
+  function handleUpdated(updated: SavedSearch) {
+    setAlerts((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setEditingAlert(null);
   }
 
   if (loading) {
@@ -208,7 +209,8 @@ export default function SearchAlertsTab() {
               alert={alert}
               onDelete={handleDelete}
               onTogglePause={handleTogglePause}
-              onMarkSeen={handleMarkSeen}
+              onEdit={(a) => setEditingAlert(a)}
+              onViewMatches={(a) => setViewingAlert(a)}
             />
           ))}
         </div>
@@ -222,6 +224,22 @@ export default function SearchAlertsTab() {
             setBilling((b) => (b ? { ...b, used: b.used + 1 } : b));
             setShowCreate(false);
           }}
+        />
+      )}
+
+      {editingAlert && (
+        <CreateAlertModal
+          editingAlert={editingAlert}
+          onClose={() => setEditingAlert(null)}
+          onCreated={() => {}}
+          onUpdated={handleUpdated}
+        />
+      )}
+
+      {viewingAlert && (
+        <AlertMatchesModal
+          alert={viewingAlert}
+          onClose={() => setViewingAlert(null)}
         />
       )}
     </div>

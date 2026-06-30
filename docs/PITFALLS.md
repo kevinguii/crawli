@@ -56,6 +56,12 @@ The route checks `SEARCH_PAGE_PLATFORMS.has(platform)` first. The entries are ke
 **RLS alone is not enough**
 Every public table also needs explicit `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated, service_role`. Without GRANTs, every request returns Postgres `42501 permission denied` — not a helpful error message. This applies to any new table you create.
 
+**Realtime subscriptions need the table in the publication**
+A new table is NOT automatically streamed over Supabase Realtime. A client `.on('postgres_changes', …)` subscription silently never fires until you `ALTER PUBLICATION supabase_realtime ADD TABLE public.<table>`. The initial `.select()` load still works, so the symptom is "data is right on refresh but the badge/list never updates live." `notifications` was added 2026-06-30 for the nav bell; `saved_searches` was already in it. Check with `select tablename from pg_publication_tables where pubname='supabase_realtime'`.
+
+**Alert recurrence is a server crontab line, not Vercel Cron**
+The app is self-hosted (systemd on Hetzner), so `/api/cron/run-alerts` has nothing triggering it unless a crontab line on `5.78.187.97` calls it. It was missing for ~28 days → every alert's `next_run_at` froze in the past and the UI showed a stale "next check" date (looked like a frontend/timezone bug; it was an ops gap). The line: `*/15 * * * * curl -sf -H "Authorization: Bearer <CRON_SECRET>" https://thecrawli.com/api/cron/run-alerts >> /var/log/crawli-alerts.log 2>&1`. If alerts look stuck, `crontab -l` first.
+
 **Admin client vs user client**
 `createAdminClient()` uses the service role key and bypasses RLS entirely. Use it only in server-side routes and cron jobs. Never expose service role key to client components.
 

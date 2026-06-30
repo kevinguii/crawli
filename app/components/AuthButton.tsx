@@ -15,32 +15,26 @@ function useTotalUnreadAlerts(userId: string | undefined) {
     if (!userId) return;
     const supabase = createClient();
 
-    // Initial load
-    supabase
-      .from('saved_searches')
-      .select('unread_match_count')
-      .eq('user_id', userId)
-      .then(({ data }) => {
-        const total = (data ?? []).reduce((s, r) => s + (r.unread_match_count ?? 0), 0);
-        setUnread(total);
-      });
+    // Badge = count of unseen notifications. Each alert run creates one
+    // notification (daily, regardless of new matches), so the bell lights up
+    // when an alert has run since the user last visited /alerts.
+    const load = () => {
+      supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('seen', false)
+        .then(({ count }) => setUnread(count ?? 0));
+    };
+    load();
 
-    // Realtime: update badge whenever any saved_search row changes for this user
+    // Realtime: refresh the badge when notifications arrive or get marked seen.
     const channel = supabase
       .channel('alert-badge')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'saved_searches', filter: `user_id=eq.${userId}` },
-        () => {
-          supabase
-            .from('saved_searches')
-            .select('unread_match_count')
-            .eq('user_id', userId)
-            .then(({ data }) => {
-              const total = (data ?? []).reduce((s, r) => s + (r.unread_match_count ?? 0), 0);
-              setUnread(total);
-            });
-        },
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        load,
       )
       .subscribe();
 

@@ -17,23 +17,36 @@ interface Props {
   onCreated: (alert: SavedSearch) => void;
   // Pre-filled from "Save as alert" CTA on search results
   prefill?: { query: string; platforms: string[] };
+  // When set, the modal edits this alert (PATCH) instead of creating one (POST).
+  editingAlert?: SavedSearch;
+  onUpdated?: (alert: SavedSearch) => void;
 }
 
 type Step = 'configure' | 'confirm';
 
-export default function CreateAlertModal({ onClose, onCreated, prefill }: Props) {
+function critField(criteria: Record<string, unknown> | null | undefined, key: string): string {
+  const v = criteria?.[key];
+  if (v == null) return '';
+  if (Array.isArray(v)) return v.join(', ');
+  return String(v);
+}
+
+export default function CreateAlertModal({ onClose, onCreated, prefill, editingAlert, onUpdated }: Props) {
+  const isEditing = !!editingAlert;
   const [step, setStep] = useState<Step>('configure');
-  const [query, setQuery] = useState(prefill?.query ?? '');
+  const [query, setQuery] = useState(editingAlert?.query ?? prefill?.query ?? '');
   const [platforms, setPlatforms] = useState<string[]>(
-    prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p)) ?? ['grailed', 'mercari', 'depop'],
+    editingAlert?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p))
+      ?? prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p))
+      ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence] = useState<24>(24);
   // Optional AND-only sourcing criteria — narrows matches to brand AND size AND
   // price<X. Empty fields are omitted (no-op).
-  const [brand, setBrand] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [critSize, setCritSize] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [brand, setBrand] = useState(critField(editingAlert?.criteria, 'brand'));
+  const [keywords, setKeywords] = useState(critField(editingAlert?.criteria, 'keywordsAll'));
+  const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size'));
+  const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -74,8 +87,51 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
     return Object.keys(criteria).length ? criteria : undefined;
   }
 
+  // When editing, did the user change a baseline field (query/platforms/criteria)?
+  // If so the edit re-runs the search and costs 1 search, mirroring the backend.
+  const sameJson = (a: unknown, b: unknown) =>
+    JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const baselineChanged = isEditing && (
+    query !== editingAlert!.query ||
+    !sameJson(platforms, editingAlert!.platforms) ||
+    !sameJson(buildCriteria() ?? null, editingAlert!.criteria)
+  );
+
   async function handleConfirm() {
     setSubmitting(true);
+
+    if (isEditing) {
+      try {
+        const res = await fetch(`/api/saved-searches/${editingAlert!.id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query,
+            platforms,
+            criteria: buildCriteria() ?? null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.message ?? 'Failed to update alert.');
+          setSubmitting(false);
+          return;
+        }
+        // A baseline-changing edit charges 1 search and re-runs in the background.
+        if (baselineChanged) {
+          window.dispatchEvent(new CustomEvent('crawli:search-started'));
+          toast.success('Alert updated! Re-running search in the background.');
+        } else {
+          toast.success('Alert updated.');
+        }
+        onUpdated?.(data as SavedSearch);
+      } catch {
+        toast.error('Something went wrong.');
+        setSubmitting(false);
+      }
+      return;
+    }
+
     // Optimistically decrement nav search counter — the first run is charged 1 search.
     window.dispatchEvent(new CustomEvent('crawli:search-started'));
     try {
@@ -118,7 +174,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
         {step === 'configure' ? (
           <>
             <h2 className="text-lg font-semibold mb-5" style={{ color: 'var(--text)' }}>
-              Create search alert
+              {isEditing ? 'Edit search alert' : 'Create search alert'}
             </h2>
 
             {/* Query */}
@@ -251,10 +307,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
         ) : (
           <>
             <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>
-              Confirm alert
+              {isEditing ? 'Confirm changes' : 'Confirm alert'}
             </h2>
             <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Review your alert before creating it.
+              {isEditing ? 'Review your changes before saving.' : 'Review your alert before creating it.'}
             </p>
 
             {/* Summary */}
@@ -305,23 +361,37 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
               </div>
             </div>
 
-            {/* Quota warning */}
-            <div
-              className="rounded-xl p-4 mb-5 text-sm"
-              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
-            >
-              <p style={{ color: 'var(--text)' }}>
-                <strong>1 search will be used</strong> to set up this alert.
-              </p>
-              {searchesRemaining !== null && (
-                <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
-                  You have {searchesRemaining} search{searchesRemaining !== 1 ? 'es' : ''} remaining this month.
+            {/* Quota warning — a baseline-changing edit (or a fresh create) costs
+                1 search. An edit that doesn't touch query/platforms/filters is free. */}
+            {(!isEditing || baselineChanged) ? (
+              <div
+                className="rounded-xl p-4 mb-5 text-sm"
+                style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
+              >
+                <p style={{ color: 'var(--text)' }}>
+                  {isEditing
+                    ? <><strong>1 search will be used.</strong> Changing the query, platforms, or filters resets your baseline and re-runs the search.</>
+                    : <><strong>1 search will be used</strong> to set up this alert.</>}
                 </p>
-              )}
-              <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                The first run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
-              </p>
-            </div>
+                {searchesRemaining !== null && (
+                  <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
+                    You have {searchesRemaining} search{searchesRemaining !== 1 ? 'es' : ''} remaining this month.
+                  </p>
+                )}
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  The {isEditing ? 're-' : 'first '}run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
+                </p>
+              </div>
+            ) : (
+              <div
+                className="rounded-xl p-4 mb-5 text-sm"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              >
+                <p style={{ color: 'var(--text-muted)' }}>
+                  No changes to the query, platforms, or filters — this won&apos;t use a search.
+                </p>
+              </div>
+            )}
 
             {/* Notification delivery info */}
             {userEmail && (
@@ -343,10 +413,12 @@ export default function CreateAlertModal({ onClose, onCreated, prefill }: Props)
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={submitting || searchesRemaining === 0}
+                disabled={submitting || ((!isEditing || baselineChanged) && searchesRemaining === 0)}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
-                {submitting ? 'Creating…' : 'Confirm & create'}
+                {isEditing
+                  ? (submitting ? 'Saving…' : 'Save changes')
+                  : (submitting ? 'Creating…' : 'Confirm & create')}
               </button>
             </div>
           </>

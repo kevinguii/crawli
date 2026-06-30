@@ -168,16 +168,73 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
     })
     .eq('id', savedSearch.id);
 
-  // First run: never notify — just seed the URL set
-  if (isFirstRun || newUrls.length === 0) return 0;
+  // First run seeds the baseline silently — no notification, no email.
+  if (isFirstRun) return 0;
 
-  // Notify: in-app (Supabase Realtime fires automatically on the UPDATE above)
-  // + email for pro users
-  void sendAlertEmail(savedSearch, newUrls.length, listings.filter((l) =>
-    newUrls.includes(l.url),
-  ));
+  const newListings = listings.filter((l) => newUrls.includes(l.url));
+
+  // Every (non-first) run produces an in-app notification, even with 0 new
+  // matches. This is the "your alert ran today" signal the nav bell badge
+  // counts — users wanted confirmation the alert is alive regardless of result.
+  const { data: notif } = await admin
+    .from('notifications')
+    .insert({
+      user_id: savedSearch.user_id,
+      alert_id: savedSearch.id,
+      new_count: newUrls.length,
+    })
+    .select('id')
+    .single();
+
+  // No new matches: the notification above is the whole story. No email.
+  if (newUrls.length === 0) return 0;
+
+  // Persist the new listings so they can be browsed in-app (click alert → see
+  // matches), then prune to the most recent 100 per alert to bound growth.
+  await admin.from('alert_matches').insert(
+    newListings.map((l) => ({
+      user_id: savedSearch.user_id,
+      alert_id: savedSearch.id,
+      notification_id: notif?.id ?? null,
+      url: l.url,
+      title: l.title,
+      price: l.price,
+      currency: l.currency,
+      image: l.image,
+      platform: l.platform,
+      seller: l.seller,
+      size: l.size,
+      condition: l.condition,
+      color: l.color,
+    })),
+  );
+  await pruneAlertMatches(admin, savedSearch.id);
+
+  // Email only when there are new matches.
+  void sendAlertEmail(savedSearch, newUrls.length, newListings);
 
   return newUrls.length;
+}
+
+/**
+ * Keep only the most recent `keep` matches per alert so the table doesn't grow
+ * unbounded (mirrors the 500-URL cap on saved_searches.last_seen_urls).
+ */
+async function pruneAlertMatches(
+  admin: ReturnType<typeof createAdminClient>,
+  alertId: string,
+  keep = 100,
+): Promise<void> {
+  const { data } = await admin
+    .from('alert_matches')
+    .select('id')
+    .eq('alert_id', alertId)
+    .order('found_at', { ascending: false })
+    .range(keep, keep + 1000);
+  const stale = (data ?? []).map((r) => r.id);
+  if (stale.length) {
+    await admin.from('alert_matches').delete().in('id', stale);
+  }
 }
 
 async function sendAlertEmail(

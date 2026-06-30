@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import WatchlistTab from '@/app/components/profile/WatchlistTab';
 import SearchAlertsTab from './SearchAlertsTab';
 
@@ -23,6 +23,12 @@ export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
   const [active, setActive] = useState<Tab>(initialTab);
 
   const activeTab = TABS.find((t) => t.id === active)!;
+
+  // Visiting the alerts area = the user has seen the bell. Clear unseen
+  // notifications so the nav badge resets (Realtime then updates the bell).
+  useEffect(() => {
+    void fetch('/api/notifications/mark-seen', { method: 'POST' });
+  }, []);
 
   return (
     <div>

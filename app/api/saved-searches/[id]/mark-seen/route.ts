@@ -17,5 +17,15 @@ export async function POST(
     .eq('user_id', user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Also mark this alert's stored matches as seen so the in-app match view
+  // reflects that the user has reviewed them.
+  await supabase
+    .from('alert_matches')
+    .update({ seen: true })
+    .eq('alert_id', id)
+    .eq('user_id', user.id)
+    .eq('seen', false);
+
   return new Response(null, { status: 204 });
 }

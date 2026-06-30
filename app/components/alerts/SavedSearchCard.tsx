@@ -19,10 +19,11 @@ interface Props {
   alert: SavedSearch;
   onDelete: (id: string) => void;
   onTogglePause: (alert: SavedSearch) => void;
-  onMarkSeen: (id: string) => void;
+  onEdit: (alert: SavedSearch) => void;
+  onViewMatches: (alert: SavedSearch) => void;
 }
 
-export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMarkSeen }: Props) {
+export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit, onViewMatches }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isInitializing = !alert.last_run_at;
   const isLive = !isInitializing && !alert.paused;
@@ -77,10 +78,10 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMark
         ) : alert.unread_match_count > 0 ? (
           <button
             type="button"
-            onClick={() => onMarkSeen(alert.id)}
+            onClick={() => onViewMatches(alert)}
             className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
             style={{ background: '#E24B4A' }}
-            title="Mark as seen"
+            title="View new matches"
           >
             {alert.unread_match_count > 99 ? '99+' : alert.unread_match_count}
           </button>
@@ -109,8 +110,12 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMark
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
+      {/* Content — clickable to open this alert's matched listings */}
+      <div
+        className={`flex-1 min-w-0 ${!isInitializing ? 'cursor-pointer' : ''}`}
+        onClick={!isInitializing ? () => onViewMatches(alert) : undefined}
+        title={!isInitializing ? 'View matched listings' : undefined}
+      >
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="font-semibold text-sm truncate" style={{ color: 'var(--text)' }}>
             {alert.query}
@@ -203,6 +208,22 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onMark
             </>
           ) : (
             <>
+              <button
+                type="button"
+                onClick={() => onEdit(alert)}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium"
+                style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--accent)';
+                  e.currentTarget.style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                }}
+              >
+                Edit
+              </button>
               <button
                 type="button"
                 onClick={() => onTogglePause(alert)}

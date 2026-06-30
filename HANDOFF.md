@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-06-29
+**Last updated:** 2026-06-30
 
 ## How to use this file
 
@@ -55,10 +55,14 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 
 **Alert cache (lib/searchCache.ts):** `withListingsCache` wraps `runSearchJob` in `alertRunner.ts`. 50 users watching same query = 1 scrape fanned out.
 
+**Alerts pipeline (recurrence is server cron, NOT Vercel):** the app is self-hosted on Hetzner via systemd — there is no Vercel Cron. `/api/cron/run-alerts` (Bearer `CRON_SECRET`) is driven by a crontab line on `5.78.187.97` (`*/15 * * * *`, logs `/var/log/crawli-alerts.log`). It selects `saved_searches` where `next_run_at <= now()` and `paused=false` (all users, ≤20/tick), runs each via `runAlert`, reschedules `next_run_at` to next 9 AM in the owner's tz. Each non-first run inserts a `notifications` row (daily, even 0 new) + `alert_matches` rows when new; email only when new. **Without that crontab line nothing recurs** — this was the 28-day silent-alerts bug (next_run_at frozen in the past).
+
 **Supabase tables (must exist in prod):**
 - `search_listings_cache(key text pk, listings jsonb, expires_at timestamptz)`
 - `query_expansion_cache(query_norm text pk, payload jsonb, expires_at timestamptz)`
-- Both need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role`
+- `notifications(id, user_id, alert_id, new_count, seen, created_at)` — one row per alert run; drives the nav bell badge (count of `seen=false`). In the `supabase_realtime` publication.
+- `alert_matches(id, user_id, alert_id, notification_id, url, title, price, currency, image, platform, seller, size, condition, color, seen, found_at)` — the new listings per run; powers "click alert → view matches". Pruned to ~100/alert.
+- All need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role` (see `docs/migrations/alert-notifications.sql`)
 
 **Landing page:** 9 platforms (all updated 2026-06-29). Margin calculator copy says "7 platforms" — correct, intentional.
 
@@ -81,6 +85,12 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-06-30 — Alerts recurrence fixed + edit + in-app notifications**
+- **Root cause of "alerts stuck on a past date":** `/api/cron/run-alerts` was never triggered in prod (no Vercel Cron — app is systemd-hosted; crontab had only smoke + credits jobs). Added `*/15 * * * *` crontab line on `5.78.187.97` hitting the endpoint with `CRON_SECRET`. Verified: first tick processed the 1 due alert, 70 backlog matches.
+- **Edit alerts:** `PATCH /api/saved-searches/[id]` now supports editing query/platforms/criteria — baseline-invalidating edits reset `last_seen_urls`/`unread_match_count`, drop stale `alert_matches`, charge 1 search, and re-run immediately (mirrors creation). Pause/no-op edits stay free. `CreateAlertModal` reused via `editingAlert` prop; Edit button on `SavedSearchCard`.
+- **In-app notifications:** new `notifications` + `alert_matches` tables (migration `docs/migrations/alert-notifications.sql`). Each non-first run inserts a notification (daily regardless of new matches) → nav bell badge = unseen notification count (repointed from summing `unread_match_count`); email only when new. Click an alert → `AlertMatchesModal` renders stored matches via `ListingCard`. Visiting /alerts marks notifications seen; opening matches marks that alert's matches seen.
+- **Security check (no change needed):** verified all `(protected)` pages 307→/login and all sensitive APIs 401 when logged out (three layers: layout `getUser()`, per-route checks, RLS).
 
 **2026-06-29 — Mercari reclaimed as native-first (probe removed)**
 - Verified on the prod Hetzner IP: Mercari raw-HTTP-403s but real Chromium renders ~3/4 of searches (`patagonia vest`, `carhartt jacket`, `levis 501`, `north face fleece` all hit `[mercari-grid]`; `nike windbreaker` fell back to Firecrawl). The "hard-block" probe was misclassifying it.
@@ -124,11 +134,6 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 - `lib/marketplaceFees.ts` (7 sell-on platforms, all rates verified)
 - `applyCriteria()` in `alertRunner.ts` (brand AND size AND price AND-only post-filter)
 - Prepaid credit pack overage path (`profiles.search_credits`, Stripe one-time checkout)
-
-**2026-06-21 — Color sort boost**
-- `resolveColorKey()` + `sortByColorMatch()` in `lib/colorFilter.ts`
-- Structured color from JSON-LD on ThredUp, Poshmark, eBay, StockX, Vinted
-- Sort boost only — color never drops a listing (§7 J design decision, still holds)
 
 ---
 

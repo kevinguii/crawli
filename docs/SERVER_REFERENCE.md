@@ -195,6 +195,13 @@ crontab -l
 ```
 This restarts the sidecar automatically when the smoke test fails — no human needed for the common pool-poisoning case. Check the log occasionally: `cat /var/log/crawli-smoke.log`
 
+**Search-alerts cron (required — this is what makes alerts recur):**
+```bash
+# Crontab line on 5.78.187.97 (added 2026-06-30):
+*/15 * * * * curl -sf -H "Authorization: Bearer <CRON_SECRET>" https://thecrawli.com/api/cron/run-alerts >> /var/log/crawli-alerts.log 2>&1
+```
+There is **no Vercel Cron** — the app is systemd-hosted, so without this line `/api/cron/run-alerts` is never called and every saved search's `next_run_at` freezes in the past (the 2026-06-30 silent-alerts bug). The endpoint processes all users' due alerts (≤20/tick), so one line covers everyone. `<CRON_SECRET>` is in `/opt/crawli/.env`. Check the log: `cat /var/log/crawli-alerts.log`.
+
 **If UptimeRobot still fires after the cron restart:** the sidecar can't recover on its own (Chromium crashed hard). SSH in and investigate:
 ```bash
 systemctl status crawli-sidecar
