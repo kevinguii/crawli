@@ -50,6 +50,20 @@ function useTotalUnreadAlerts(userId: string | undefined) {
   return unread;
 }
 
+function useBillingPlan(userId: string | undefined) {
+  const [plan, setPlan] = useState<'free' | 'pro' | 'max' | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch('/api/billing/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.plan) setPlan(d.plan); })
+      .catch(() => {});
+  }, [userId]);
+
+  return plan;
+}
+
 // Module-level flag so the settings page sign-out (a separate component) can
 // also suppress the "session expired" toast when it calls supabase.auth.signOut().
 export function markIntentionalSignOut() { _intentionalSignOut = true; }
@@ -108,6 +122,7 @@ export default function AuthButton() {
   }
 
   const unreadAlerts = useTotalUnreadAlerts(user?.id);
+  const plan = useBillingPlan(user?.id);
 
   if (loading) {
     return (
@@ -136,6 +151,15 @@ export default function AuthButton() {
     <div className="flex items-center gap-3">
       {/* Disabled 2026-06-20 — redundant with SearchForm's inline "last search" notice on /search; kept for possible reuse on other pages. */}
       {/* <SubscriptionBadge /> */}
+      {plan === 'free' && (
+        <Link
+          href={`/pricing?from=${encodeURIComponent(pathname)}`}
+          className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-85"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+        >
+          Upgrade
+        </Link>
+      )}
       <Link
         href="/alerts"
         aria-label="Alerts"

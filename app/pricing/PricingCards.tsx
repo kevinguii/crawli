@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Tier } from '@/lib/stripe';
+import { CREDIT_PACKS } from '@/lib/creditPacks';
 import InfoTooltip from '@/app/components/InfoTooltip';
 
 const ALERT_EMAIL_TOOLTIP = (
@@ -97,6 +98,7 @@ export function PricingCards({
 }) {
   const [cycle, setCycle] = useState<Cycle>('weekly');
   const [loading, setLoading] = useState<string | null>(null);
+  const [buyingPack, setBuyingPack] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleSubscribe(tier: PaidTier) {
@@ -122,6 +124,31 @@ export function PricingCards({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(null);
+    }
+  }
+
+  async function handleBuyCredits(packId: string) {
+    if (!isSignedIn) {
+      router.push('/login?next=/pricing');
+      return;
+    }
+    setBuyingPack(packId);
+    try {
+      const res = await fetch('/api/billing/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack: packId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        toast.error(data.message ?? 'Could not start checkout');
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setBuyingPack(null);
     }
   }
 
@@ -271,8 +298,22 @@ export function PricingCards({
         <p className="mt-1.5 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           Once your included searches are used up, you can buy prepaid credit packs as a one-time purchase. No subscription, no surprise charges, no debt. One credit equals one search and rolls over until used.
         </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {CREDIT_PACKS.map((pack) => (
+            <button
+              key={pack.id}
+              type="button"
+              onClick={() => handleBuyCredits(pack.id)}
+              disabled={buyingPack !== null}
+              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+            >
+              {buyingPack === pack.id ? 'Redirecting…' : `${pack.searches.toLocaleString()} searches · $${pack.priceUsd}`}
+            </button>
+          ))}
+        </div>
         <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
-          Credit packs coming soon · Included in all plans when available
+          Included in all plans
         </p>
       </div>
     </>

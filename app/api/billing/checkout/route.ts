@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { stripe, priceIdForTier, type BillingCycle, type Tier } from '@/lib/stripe';
+import { stripe, priceIdForTier, resolveStripeCustomerId, type BillingCycle, type Tier } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -38,15 +38,12 @@ export async function POST(req: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  let customerId = profile?.stripe_customer_id ?? null;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email ?? profile?.email ?? undefined,
-      metadata: { supabase_user_id: user.id },
-    });
-    customerId = customer.id;
-    await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
-  }
+  const customerId = await resolveStripeCustomerId(
+    admin,
+    user.id,
+    user.email ?? profile?.email,
+    profile?.stripe_customer_id,
+  );
 
   const origin = req.headers.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
