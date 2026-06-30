@@ -125,6 +125,7 @@ function AlertPreview() {
 export default function BentoFeatures() {
   return (
     <section
+      id="how-it-works"
       className="py-20 sm:py-28"
       style={{
         background:
