@@ -955,7 +955,10 @@ def extract_poshmark_grid(html: str, *, limit: int = 24) -> list[dict]:
 
         covershot = wrapper.select_one("a.tile__covershot")
         img_el = covershot.find("img") if covershot else None
-        image = img_el.get("src") if img_el else None
+        # Cards are lazy-loaded (IntersectionObserver swaps data-src -> src as
+        # they scroll into view); main.py's js_code scrolls the page first,
+        # but data-src is a fallback in case a card's swap hadn't landed yet.
+        image = img_el.get("src") or img_el.get("data-src") if img_el else None
 
         results.append({
             "url": url,
@@ -979,6 +982,11 @@ def extract_poshmark_grid(html: str, *, limit: int = 24) -> list[dict]:
 
 STOCKX_BASE = "https://stockx.com"
 _STOCKX_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
+# Lazy-loaded tiles ship this generic gray-X graphic as `src` until the real
+# image swaps in on scroll; main.py's js_code scrolls the page first, but if
+# a tile's swap hasn't landed (slow CDN, scroll cap hit) this is a dead give-
+# away the "image" is StockX's own placeholder, not the product photo.
+_STOCKX_PLACEHOLDER_IMAGE = "Product-Placeholder-Default"
 
 
 def stockx_search_url(query: str) -> str:
@@ -1041,6 +1049,8 @@ def extract_stockx_grid(html: str, *, limit: int = 24) -> list[dict]:
 
         img_el = link.find("img")
         image = img_el.get("src") if img_el else None
+        if image and _STOCKX_PLACEHOLDER_IMAGE in image:
+            image = None
 
         results.append({
             "url": url,

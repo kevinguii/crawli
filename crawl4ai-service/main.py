@@ -669,6 +669,25 @@ def coerce_listing(url: str, raw: dict) -> ScrapedListing:
 
 _POSHMARK_NAV_ERROR = "Unable to retrieve content because the page is navigating"
 
+# Poshmark and StockX grid cards lazy-load their <img src> via an
+# IntersectionObserver: cards below the fold ship with no src (Poshmark,
+# swaps in from data-src) or a placeholder src (StockX gray-X graphic) until
+# scrolled into view. crawl4ai's wait_for only waits for the first card to
+# exist, not for off-screen images to swap in. This runs as `js_code`, which
+# executes after wait_for and before HTML capture, so it walks the page in
+# viewport-sized steps to trigger every card's lazy-load before we snapshot
+# the DOM. Capped at 20 steps / ~6s so it can't blow the page_timeout budget.
+_LAZY_IMAGE_SCROLL_JS = """
+const distance = Math.max(window.innerHeight, 600);
+for (let i = 0; i < 20; i++) {
+    window.scrollBy(0, distance);
+    await new Promise(r => setTimeout(r, 300));
+    if (window.scrollY + window.innerHeight >= document.body.scrollHeight) break;
+}
+window.scrollTo(0, 0);
+await new Promise(r => setTimeout(r, 300));
+"""
+
 
 def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1, scope_to_target: bool = False, search_page: bool = False):
     """Build a CrawlerRunConfig with platform-specific tuning.
@@ -757,10 +776,12 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if search_page and platform == "poshmark":
         cfg_kwargs["wait_for"] = "css:a.tile-grid-redesign__meta-link"
         cfg_kwargs["page_timeout"] = 60_000
+        cfg_kwargs["js_code"] = _LAZY_IMAGE_SCROLL_JS
     # StockX is CSR. Tiles hydrate after JS (~5s). 40 tiles on a typical query.
     if search_page and platform == "stockx":
         cfg_kwargs["wait_for"] = 'css:[data-testid="ProductTile"]'
         cfg_kwargs["page_timeout"] = 60_000
+        cfg_kwargs["js_code"] = _LAZY_IMAGE_SCROLL_JS
 
     # Fail a blocked/anti-bot search page fast: cap the wait-for-selector wait
     # well below page_timeout so a render that will never hydrate (e.g. Mercari

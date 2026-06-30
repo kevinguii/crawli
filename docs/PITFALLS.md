@@ -40,6 +40,9 @@ The `wait_for` selector on Vestiaire needs the full `a[data-cy^="catalog__produc
 **StockX is also heavy CSR**
 `[data-testid="ProductTile"]` needs 12s+ wait. `page_timeout=60_000`. If the testid changes (StockX deploys regularly), extraction silently returns 0 listings.
 
+**Poshmark/StockX grid cards lazy-load images — must scroll before capturing HTML**
+Both platforms swap in the real `<img>` only when a card scrolls into the viewport (IntersectionObserver). `wait_for` only confirms the *first* card exists, so any card below the fold gets captured mid-lazy-load: Poshmark leaves `src` empty (real URL sits in `data-src`), StockX leaves `src` pointing at its own placeholder (`Product-Placeholder-Default-*.jpg` — the gray-X graphic). `main.py`'s `_LAZY_IMAGE_SCROLL_JS` runs as `js_code` (executes after `wait_for`, before HTML capture) to scroll the page and trigger every card's lazy-load first. If you touch the Poshmark/StockX `_build_run_cfg` blocks, keep `js_code` wired — removing it silently brings back missing/placeholder images on every card past the first screenful.
+
 **RealReal is disabled — do not re-enable without a proxy solution**
 PerimeterX press-and-hold blocks all headless approaches including UndetectedAdapter + managed profile cookies. The extractor code is scaffolded in `search_page_extractors.py` but `NATIVE_PLATFORMS` in `lib/types.ts` excludes it. The Python `SEARCH_PAGE_PLATFORMS` includes it — so you'd also need `main.py` wait_for config and to uncomment `lib/types.ts`.
 
