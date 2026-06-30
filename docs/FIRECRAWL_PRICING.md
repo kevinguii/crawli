@@ -136,11 +136,12 @@ Per-search third-party cost is now driven by the sidecar's native/Firecrawl-fall
 | Platforms | Cost path | Per-search cost |
 |---|---|---|
 | Grailed, ThredUp, Vestiaire, Vinted, Poshmark, StockX (6) | Native sidecar render only | $0 |
-| Depop | Native first; Firecrawl scrape only on intermittent fingerprint-block fallback | ~$0 (occasional $0.001–$0.005/URL when it falls back) |
-| Mercari | Native first (probe removed 2026-06-29); Firecrawl scrape only on the ~1/4 of searches where the native render misses | ~$0 (occasional ~$0.004/search Standard when it falls back) |
-| eBay | Firecrawl-only — no native extractor exists; URL discovery + per-listing scrape both via Firecrawl | ~$0.016/search (Standard ~$0.004) + ~$0.001 LLM fallback residual on Akamai 403s |
+| Depop, Mercari | Native first; ~1-credit Firecrawl search-page scrape only on an intermittent datacenter-IP 403 render miss (~1 in 4 searches). Mercari's misclassifying probe was removed 2026-06-29 — it now matches Depop. | ~$0 most searches; ~$0.0002 (Std) / ~$0.001 (Hobby) expected per platform |
+| eBay | Firecrawl-only — no native extractor exists; 4-credit URL discovery every search; per-listing scrape via crawl4ai ($0) | ~$0.005/search (Standard; ~$0.017 Hobby) incl. ~$0.001 LLM fallback residual on Akamai 403s |
 
 LLM (OpenAI gpt-4o-mini) cost is now isolated to eBay's Akamai-403 fallback path — all other platforms (including Vestiaire) use deterministic JSON-LD/DOM Tier-1 extractors with zero LLM calls in the search hot path.
+
+**Total per search (all 9 platforms): ~$0.006 (Firecrawl Standard) / ~$0.019 (Hobby).** eBay is the only material per-search cost; Depop + Mercari contribute only their expected ~1-in-4 fallback fraction (~1 credit each). This supersedes the earlier ~$0.021 figure, which priced Mercari as always-Firecrawl.
 
 ### Per-search cost — current (hybrid) vs alternatives
 

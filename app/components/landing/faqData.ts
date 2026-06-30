@@ -39,6 +39,6 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Is Crawli free to use?",
     answer:
-      "Yes. Crawli is free to start with 3 searches per week and 1 sourcing alert. No credit card required. Paid plans add more weekly searches, more simultaneous alerts with precise criteria, and higher result counts per platform. The flip margin calculator is available on all plans including free.",
+      "Yes. Crawli is free to start with 5 searches per week and 2 sourcing alerts. No credit card required. Paid plans add more weekly searches, more simultaneous alerts with precise criteria, and higher result counts per platform. The flip margin calculator is available on all plans including free.",
   },
 ];

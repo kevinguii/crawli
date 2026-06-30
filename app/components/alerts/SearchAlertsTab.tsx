@@ -22,9 +22,10 @@ export interface SavedSearch {
 }
 
 interface BillingStatus {
-  plan: 'free' | 'pro';
+  plan: 'free' | 'pro' | 'max';
   used: number;
   cap: number;
+  alertsCap: number;
 }
 
 export default function SearchAlertsTab() {
@@ -52,28 +53,28 @@ export default function SearchAlertsTab() {
   useEffect(() => {
     fetch('/api/billing/status')
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d) setBilling({ plan: d.plan, used: d.used, cap: d.cap }); })
+      .then((d) => { if (d) setBilling({ plan: d.plan, used: d.used, cap: d.cap, alertsCap: d.caps?.alerts ?? 2 }); })
       .catch(() => {});
   }, []);
 
   function handleNewAlertClick() {
-    const isPro = billing?.plan === 'pro';
-    const maxAlerts = isPro ? 5 : 1;
+    const isFree = billing?.plan === 'free';
+    const maxAlerts = billing?.alertsCap ?? 2;
     // Paused alerts don't count toward the limit — only active ones occupy a slot.
     const activeAlerts = alerts.filter((a) => !a.paused).length;
 
     // Check alert quota first — more specific reason than search quota.
     if (activeAlerts >= maxAlerts) {
       toast.error(
-        isPro
-          ? `You've reached your limit of ${maxAlerts} active alerts. Pause or delete one to create a new one.`
-          : 'Free plan allows 1 active search alert. Pause or delete it, or upgrade to Pro for up to 5.',
-        isPro
-          ? { duration: 6000 }
-          : {
+        isFree
+          ? `Free plan allows ${maxAlerts} active search alert${maxAlerts === 1 ? '' : 's'}. Pause or delete one, or upgrade for more.`
+          : `You've reached your limit of ${maxAlerts} active alerts. Pause or delete one to create a new one.`,
+        isFree
+          ? {
               action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing?from=/alerts'; } },
               duration: 8000,
-            },
+            }
+          : { duration: 6000 },
       );
       return;
     }
@@ -81,9 +82,7 @@ export default function SearchAlertsTab() {
     // Then search quota (creation costs 1 search).
     if (billing && billing.used >= billing.cap) {
       toast.error(
-        isPro
-          ? 'You have used all 100 searches for this billing period. Creating search alerts requires 1 credit.'
-          : 'You have used all 10 free searches this month. Creating search alerts requires 1 credit.',
+        `You've used all ${billing.cap} searches for this period. Creating a search alert uses 1 search.`,
         {
           action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
           duration: 8000,

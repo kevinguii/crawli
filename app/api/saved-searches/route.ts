@@ -78,11 +78,11 @@ export async function POST(request: Request) {
   // Check tier cap
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status, searches_used_this_period, searches_period_start, max_saved_searches, min_alert_cadence_hours')
+    .select('subscription_status, searches_used_this_period, searches_period_start, max_searches_per_period, max_saved_searches, min_alert_cadence_hours')
     .eq('id', user.id)
     .single();
 
-  const maxAlerts = profile?.max_saved_searches ?? 1;
+  const maxAlerts = profile?.max_saved_searches ?? 2;
   const minCadence = profile?.min_alert_cadence_hours ?? 24;
   const isPro = profile?.subscription_status === 'active' || profile?.subscription_status === 'past_due';
 
@@ -114,33 +114,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Quota check — first run costs 1 search
-  const FREE_SEARCH_CAP = 10;
-  const PRO_SEARCH_CAP = 100;
-  const FREE_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
-  const cap = isPro ? PRO_SEARCH_CAP : FREE_SEARCH_CAP;
+  // Quota check — first run costs 1 search. Cap + weekly reset mirror the main
+  // search route: cap is max_searches_per_period (from TIER_CAPS) and the period
+  // is a 7-day rolling window for every tier.
+  const cap = profile?.max_searches_per_period ?? 5;
+  const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
   let used = profile?.searches_used_this_period ?? 0;
 
-  if (!isPro) {
-    const periodStartMs = profile?.searches_period_start
-      ? new Date(profile.searches_period_start).getTime()
-      : 0;
-    if (Date.now() - periodStartMs > FREE_PERIOD_MS) {
-      await admin.from('profiles').update({
-        searches_used_this_period: 0,
-        searches_period_start: new Date().toISOString(),
-      }).eq('id', user.id);
-      used = 0;
-    }
+  const periodStartMs = profile?.searches_period_start
+    ? new Date(profile.searches_period_start).getTime()
+    : 0;
+  if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
+    await admin.from('profiles').update({
+      searches_used_this_period: 0,
+      searches_period_start: new Date().toISOString(),
+    }).eq('id', user.id);
+    used = 0;
   }
 
   if (used >= cap) {
     return NextResponse.json(
       {
         error: 'search_quota_exceeded',
-        message: isPro
-          ? 'You have used all 100 searches for this billing period.'
-          : 'You have used all 10 free searches this month.',
+        message: `You have used all ${cap} searches for this period.`,
         used,
         cap,
       },

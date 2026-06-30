@@ -12,7 +12,7 @@ import { TIER_CAPS } from '@/lib/stripe';
 export const dynamic = 'force-dynamic';
 
 const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;  // 7 days for weekly reset
-const DEFAULT_FREE_CAP = 3;         // fallback if profile column null (pre-migration)
+const DEFAULT_FREE_CAP = 5;         // fallback if profile column null (pre-migration); mirrors TIER_CAPS.free
 
 const VALID_PLATFORMS = Object.keys(PLATFORM_DOMAINS) as [string, ...string[]];
 

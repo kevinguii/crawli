@@ -44,7 +44,7 @@ export default function SearchProgress({ platforms, statuses, errors, counts, na
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {settled === total
             ? 'Search complete'
-            : `Searching platforms… (up to ${nativeResultsCap ?? 10} per native platform)`}
+            : `Searching platforms… (up to ${nativeResultsCap ?? 15} per native platform)`}
         </p>
         <div className="flex items-center justify-between gap-3 sm:justify-end">
           {isSearching && onCancel && (

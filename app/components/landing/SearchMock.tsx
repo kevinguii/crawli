@@ -194,7 +194,7 @@ export default function SearchMock() {
                     className="mt-1 text-xs"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    Free · 3 searches per week, no card required
+                    Free · 5 searches per week, no card required
                   </p>
                   <Link
                     href="/login?tab=signup"

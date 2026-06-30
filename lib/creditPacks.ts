@@ -7,11 +7,13 @@
  * cash is collected BEFORE consumption — we never deliver searches we haven't
  * been paid for.
  *
- * TUNABLE DIAL: `searches` and `priceUsd` below are PROPOSED starting numbers.
- * Per the cost model (HANDOFF §9 / scripts/cogs-per-search.mjs), marginal cost
- * is ~$0.05 (Standard) to ~$0.22 (Hobby) per search, so every pack price here
- * sits above marginal cost. The owner sets the final numbers and provisions the
- * matching one-time prices in Stripe — DO NOT treat these as shipped prices.
+ * TUNABLE DIAL: `searches` and `priceUsd` below are the shipped numbers.
+ * Per the Avenue A cost model (docs/FIRECRAWL_PRICING.md / scripts/cogs-per-search.mjs),
+ * marginal cost is ~$0.006 (Standard) to ~$0.019 (Hobby) per search, so every
+ * pack price here sits comfortably above worst-case marginal cost. `priceUsd`
+ * is DISPLAY ONLY — the actual charge is whatever the Stripe one-time price ID
+ * (env var) is set to, so the owner MUST provision matching Stripe prices
+ * ($10 / $25 / $60) or the displayed and charged amounts will diverge.
  *
  * The Stripe price IDs live in env vars (not created by code) so prod and dev
  * can point at different one-time prices without code changes.
@@ -25,13 +27,13 @@ export interface CreditPack {
   priceIdEnv: string; // env var name holding the Stripe one-time price ID
 }
 
-// Proposed defaults are priced ABOVE the worst-case marginal cost (~$0.28/search
-// at Hobby, max tier — see scripts/cogs-per-search.mjs). Modest volume discount
-// per tier while staying debt-proof. Owner adjusts + provisions before launch.
+// Priced ABOVE the worst-case marginal cost (~$0.019/search at Hobby — see
+// scripts/cogs-per-search.mjs). Volume discount per tier while staying debt-proof.
+// Owner must provision the matching Stripe one-time prices ($10/$25/$60).
 export const CREDIT_PACKS: CreditPack[] = [
-  { id: 'small', label: '50 extra searches', searches: 50, priceUsd: 20, priceIdEnv: 'STRIPE_PRICE_PACK_SMALL' },
-  { id: 'medium', label: '150 extra searches', searches: 150, priceUsd: 50, priceIdEnv: 'STRIPE_PRICE_PACK_MEDIUM' },
-  { id: 'large', label: '500 extra searches', searches: 500, priceUsd: 150, priceIdEnv: 'STRIPE_PRICE_PACK_LARGE' },
+  { id: 'small', label: '100 extra searches', searches: 100, priceUsd: 10, priceIdEnv: 'STRIPE_PRICE_PACK_SMALL' },
+  { id: 'medium', label: '300 extra searches', searches: 300, priceUsd: 25, priceIdEnv: 'STRIPE_PRICE_PACK_MEDIUM' },
+  { id: 'large', label: '1,000 extra searches', searches: 1000, priceUsd: 60, priceIdEnv: 'STRIPE_PRICE_PACK_LARGE' },
 ];
 
 export function packById(id: string): CreditPack | undefined {

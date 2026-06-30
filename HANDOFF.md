@@ -42,11 +42,12 @@ Note: Mercari and Depop are both native-first with a Firecrawl fallback — they
 
 Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md)
 
-**Tier caps (lib/stripe.ts — single source of truth):**
-- Free: 3 searches/wk, 1 alert, 10 native results/search
-- Pro: 30 searches/wk, 5 alerts, 30 native results/search
-- Max: 100 searches/wk, 20 alerts, 60 native results/search
-- Overage: prepaid credit packs (`profiles.search_credits`), drawn down after period cap. Prices in Stripe, owner provisions. Pack config in `lib/creditPacks.ts`.
+**Tier caps (lib/stripe.ts — single source of truth; revised 2026-06-29 to pass through Avenue A cost savings):**
+- Free: 5 searches/wk, 2 alerts, 50 tracked listings, 15 native results/search
+- Pro: 40 searches/wk, 8 alerts, 500 tracked listings, 60 native results/search
+- Max: 120 searches/wk, 20 alerts, unlimited tracked listings, 100 native results/search
+- Caps are stored on `profiles` columns (`max_searches_per_period`, `max_saved_searches`, `max_tracked_listings`, `native_results_cap`) AND derived in `TIER_CAPS`. Enforcement reads DB-first, so a TIER_CAPS change needs a `profiles` backfill for existing users (done 2026-06-29 for the 19 current free users). `nativeResultsCap` is the exception — always read live from TIER_CAPS.
+- Overage: prepaid credit packs (`lib/creditPacks.ts`): 100/$10, 300/$25, 1000/$60. `priceUsd` is display-only — owner must provision matching Stripe one-time prices ($10/$25/$60) or charged ≠ displayed. Drawn from `profiles.search_credits` after the period cap.
 
 **Margin calculator (lib/marketplaceFees.ts):** covers 7 sell-on platforms (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX). ThredUp is source-from only — not in the fee calc. All rates verified 2026-06-28.
 
@@ -86,9 +87,16 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 - Removed Mercari from `FIRECRAWL_PROBE_PLATFORMS` (server `/opt/crawli/.env` set empty + repo `main.py` default changed `"mercari"`→`""` with corrected comments). Now native-first + Firecrawl fallback, like Depop — most searches free instead of paying Firecrawl every time.
 - **Deploy note:** the live server is already correct via `.env`; `git pull` + restart will ship the matching code default. Mercari is the only platform that was effectively non-native (besides eBay); nothing else to convert.
 
-**2026-06-29 — Docs corrected: Mercari/Depop routing distinction + Avenue A cost model**
-- HANDOFF.md, PLATFORM_STATUS.md, SYSTEM_DESIGN.md §3/§6, FIRECRAWL_PRICING.md updated to reflect post-Avenue-A reality (6 platforms fully $0, Mercari always Firecrawl via probe, Depop fingerprint-fallback only, eBay sole non-native)
-- FIRECRAWL_PRICING.md Brave/hybrid section marked historical; current ~$0.021/search baseline added
+**2026-06-29 — Tier caps raised (Avenue A savings passed to users)**
+- `TIER_CAPS` (lib/stripe.ts): searches 3/20/70→5/40/120, alerts 1/3/10→2/8/20, tracked 50/200/1000→50/500/unlimited (1,000,000 sentinel), native results 10/40/80→15/60/100. Credit packs: 50/$20·150/$50·500/$150 → 100/$10·300/$25·1000/$60.
+- Backfilled all 19 existing `profiles` rows to the new caps (all free tier). Enforcement fallbacks bumped (search DEFAULT_FREE_CAP, saved-searches route, SearchProgress). Aligned the alert-creation route's divergent quota model (was hardcoded 10/100 + 30-day period) to the DB column + weekly reset.
+- Frontend copy synced: PricingCards, landing SearchMock + faqData, SearchAlertsTab (now reads real caps from billing API). Native-platform tooltip corrected to 8 native / eBay-only "other".
+- **Owner action:** provision Stripe one-time pack prices ($10/$25/$60). Subscription prices unchanged ($10 Pro / $30 Max) — see note below if you want the $12/$29 from the cost analysis.
+
+**2026-06-29 — Cost model corrected for Mercari native-first**
+- SYSTEM_DESIGN §6, FIRECRAWL_PRICING (current model), and `scripts/cogs-per-search.mjs` corrected: per-search ~$0.006 (Firecrawl Standard) / ~$0.019 (Hobby), down from the stale ~$0.021 (which priced Mercari as always-Firecrawl). eBay is now the only material per-search cost.
+- cogs script rewritten to the Avenue A model (eBay 4-credit discovery + ~1-in-4 fallback on Depop/Mercari; OpenAI residual $0.001); it was still modelling 8 Firecrawl platforms + $0.019 LLM.
+- FIRECRAWL_PRICING.md Brave/hybrid section remains historical.
 
 **2026-06-29 — Deploy fix: `unzip` required on server + npm install/build order corrected**
 - Fixed deploy order in `docs/SERVER_REFERENCE.md`: `npm install` must run before `npm run build` (was reversed)

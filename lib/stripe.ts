@@ -25,10 +25,19 @@ export interface TierCaps {
   nativeResultsCap: number;
 }
 
+// UNLIMITED is a large finite sentinel (not Infinity) so it serializes to JSON
+// and stores cleanly in the integer `max_tracked_listings` column. No real
+// watchlist approaches it. Render as "Unlimited" in the UI.
+export const UNLIMITED = 1_000_000;
+
+// Caps are weekly for searches. Revised 2026-06-29 to pass through the Avenue A
+// cost savings (per-search ~$0.006 Std / ~$0.019 Hobby — see
+// scripts/cogs-per-search.mjs): more searches/alerts/tracked + deeper native
+// results, metered hardest on the one axis with real unit cost (searches).
 export const TIER_CAPS: Record<Tier, TierCaps> = {
-  free: { maxSearchesPerPeriod: 3,   maxSavedSearches: 1,  maxTrackedListings: 50,   nativeResultsCap: 10 },
-  pro:  { maxSearchesPerPeriod: 20,  maxSavedSearches: 3,  maxTrackedListings: 200,  nativeResultsCap: 40 },
-  max:  { maxSearchesPerPeriod: 70,  maxSavedSearches: 10, maxTrackedListings: 1000, nativeResultsCap: 80 },
+  free: { maxSearchesPerPeriod: 5,   maxSavedSearches: 2,  maxTrackedListings: 50,        nativeResultsCap: 15 },
+  pro:  { maxSearchesPerPeriod: 40,  maxSavedSearches: 8,  maxTrackedListings: 500,       nativeResultsCap: 60 },
+  max:  { maxSearchesPerPeriod: 120, maxSavedSearches: 20, maxTrackedListings: UNLIMITED, nativeResultsCap: 100 },
 };
 
 export function tierFromPriceId(priceId: string | null | undefined): Tier {

@@ -30,15 +30,15 @@ interface TierConfig {
 const NATIVE_TOOLTIP = (
   <>
     <strong style={{ color: 'var(--text)' }}>Native platforms</strong> support
-    higher result counts on Pro and Max plans. Other platforms return up to 10
-    per search on every plan.
+    higher result counts on Pro and Max plans. eBay returns up to 10 per search
+    on every plan.
     <div style={{ marginTop: '6px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
-      Grailed, Depop, Mercari, ThredUp
+      Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX
     </div>
     <div style={{ marginTop: '4px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Other:</span>{' '}
-      Poshmark, Vinted, eBay, StockX
+      eBay
     </div>
   </>
 );
@@ -53,10 +53,10 @@ const PAID_TIERS: TierConfig[] = [
     monthly: 10,
     yearly: 100,
     features: [
-      '20 searches per week',
-      '3 search alerts',
-      '200 tracked listings',
-      'Up to 40 results per native platform',
+      '40 searches per week',
+      '8 search alerts',
+      '500 tracked listings',
+      'Up to 60 results per native platform',
       'Email + in-app alert notifications',
     ],
     highlight: true,
@@ -70,10 +70,10 @@ const PAID_TIERS: TierConfig[] = [
     monthly: 30,
     yearly: 300,
     features: [
-      '70 searches per week',
-      '10 search alerts',
-      '1,000 tracked listings',
-      'Up to 80 results per native platform',
+      '120 searches per week',
+      '20 search alerts',
+      'Unlimited tracked listings',
+      'Up to 100 results per native platform',
       'Email + in-app alert notifications',
       'Alert health sparkline',
     ],
@@ -81,10 +81,10 @@ const PAID_TIERS: TierConfig[] = [
 ];
 
 const FREE_FEATURES: string[] = [
-  '3 searches per week',
-  '1 search alert',
+  '5 searches per week',
+  '2 search alerts',
   '50 tracked listings',
-  'Up to 10 results per native platform',
+  'Up to 15 results per native platform',
   'Email + in-app alert notifications',
 ];
 

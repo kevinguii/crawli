@@ -39,7 +39,7 @@ export async function PATCH(
       .select('max_saved_searches')
       .eq('id', user.id)
       .single();
-    const maxAlerts = profile?.max_saved_searches ?? 1;
+    const maxAlerts = profile?.max_saved_searches ?? 2;
 
     const { count } = await supabase
       .from('saved_searches')

@@ -272,8 +272,8 @@ depop         depop.com/search/?q=<q>                   div.styles_productCard__
               Firecrawl fallback if native IP-blocked    (intermittent Playwright fingerprint block)
 
 mercari       mercari.com/search/?keyword=<q>           div[data-testid="ItemContainer"] cards
-              native-first; Firecrawl fallback           data-productid→URL, ItemName, ProductThumbItemPrice; ~16/page
-              Firecrawl fallback always (hard block)     raw-HTTP probe → skip native, go FC
+              native-first; ~1-cr FC fallback on 403     data-productid→URL, ItemName, ProductThumbItemPrice; ~16/page
+              (probe removed 2026-06-29; matches Depop)
 
 thredup       thredup.com/search/<hyphen-slug>           JSON-LD Product array (119 items/page)
               wait_for: script[type="application/       merges with DOM href map (JSON-LD no URL)
@@ -654,7 +654,7 @@ EditProfileModal:
 ### Per-search cost breakdown
 
 ```
-9 platforms, each capped at the user's tier nativeResultsCap (10/30/60)
+9 platforms, each capped at the user's tier nativeResultsCap (10/40/80, per lib/stripe.ts)
 
 Native sidecar render only (0 third-party cost):
   Grailed, ThredUp, Vestiaire, Vinted, Poshmark, StockX  → $0 × 6 = $0
@@ -665,28 +665,29 @@ raw-HTTP-403s the datacenter IP but real Chromium usually renders, NOT pre-probe
   Mercari → ~$0 most searches (~3/4 render natively); Firecrawl credit on the ~1/4
             that miss (probe removed 2026-06-29 — it was forcing Firecrawl every search)
 
-No native extractor exists at all — Firecrawl handles both URL discovery
-and per-listing scrape every time:
-  eBay → ~$0.016/search (Standard ~$0.004) + ~$0.001 LLM fallback residual
-         on Akamai 403s (~1 in 5 listing scrapes)
+No native extractor exists at all — Firecrawl handles URL discovery (4-credit
+search) every time; per-listing scrape is crawl4ai ($0):
+  eBay → ~$0.005/search (Standard; ~$0.017 Hobby) incl. ~$0.001 LLM fallback
+         residual on Akamai 403s (~1 in 5 listing scrapes)
 
-TOTAL PER SEARCH (typical, all 9 platforms selected, Standard plan):
+TOTAL PER SEARCH (typical, all 9 platforms selected):
   6 native platforms:  $0
-  Depop:               ~$0 (occasional fallback cost)
-  Mercari:             ~$0 (occasional fallback cost; was ~$0.004 every search pre-2026-06-29)
-  eBay:                 ~$0.016 + ~$0.001 LLM residual
+  Depop + Mercari:     ~$0.0004 (Std) / ~$0.002 (Hobby) — expected fallback only
+                       (Mercari was ~$0.004 every search pre-2026-06-29)
+  eBay:                ~$0.005 (Std) / ~$0.017 (Hobby), incl. ~$0.001 LLM
   ─────────────────────────────────
-  Total:                ~$0.017/search
+  Total:               ~$0.006/search (Standard) · ~$0.019/search (Hobby)
 
-This is a >4× reduction from the pre-Avenue-A hybrid model (~$0.073-0.074/search,
-see FIRECRAWL_PRICING.md's historical section) — moving 6 of 9 platforms off
-third-party search providers entirely was the single biggest cost lever to date.
+This is a >10× reduction from the pre-Avenue-A hybrid model (~$0.073-0.074/search,
+see FIRECRAWL_PRICING.md's historical section). Removing Mercari's probe
+(native-first, like Depop) on 2026-06-29 cut the last always-on Firecrawl
+platform to occasional-fallback, leaving eBay as the only material per-search cost.
 ```
 
 **Historical baselines (superseded, kept for trend context):**
 - Pre-hybrid (before 2026-05-22): every platform on Firecrawl Hobby → $0.128/search.
 - Hybrid era (2026-05-22 to 2026-06-28): Brave/Firecrawl mix → ~$0.073-0.074/search.
-- Avenue A (2026-06-29 onward, current): ~$0.017/search, as above (Mercari probe removed).
+- Avenue A + Mercari native-first (2026-06-29 onward, current): ~$0.006/search (Standard), ~$0.019 (Hobby).
 
 ### Cost by platform
 
@@ -701,7 +702,7 @@ Poshmark      Native only                         ✅ og+DOM           Never    
 StockX        Native only                         ✅ testid           Never            $0
 Depop         Native-first, intermittent FC fallback ✅ JSON-LD       Never            ~$0
 Mercari       Native-first, intermittent FC fallback ✅ ItemContainer  Never            ~$0
-eBay          Firecrawl always (no native path)   ✅ JSON-LD          On Akamai 403    ~$0.016 + ~$0.001 LLM
+eBay          Firecrawl always (no native path)   ✅ JSON-LD          On Akamai 403    ~$0.005 Std / ~$0.017 Hobby
 RealReal      Disabled                            gated/disabled     N/A              $0
 ```
 
