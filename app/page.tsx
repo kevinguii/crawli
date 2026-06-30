@@ -5,11 +5,11 @@ import SearchMock from '@/app/components/landing/SearchMock';
 import PlatformLogos from '@/app/components/landing/PlatformLogos';
 import BentoFeatures from '@/app/components/landing/BentoFeatures';
 import AlertsMock from '@/app/components/landing/AlertsMock';
-import SavesMock from '@/app/components/landing/SavesMock';
 import AboutSection from '@/app/components/landing/AboutSection';
-import FAQ from '@/app/components/landing/FAQ';
-import CTASection from '@/app/components/landing/CTASection';
+import SavesMock from '@/app/components/landing/SavesMock';
 import FounderNote from '@/app/components/landing/FounderNote';
+import CTASection from '@/app/components/landing/CTASection';
+import FAQ from '@/app/components/landing/FAQ';
 import Footer from '@/app/components/landing/Footer';
 import StructuredData from '@/app/components/StructuredData';
 
@@ -27,11 +27,11 @@ export default async function LandingPage() {
       <PlatformLogos />
       <BentoFeatures />
       <AlertsMock />
-      <SavesMock />
       <AboutSection />
-      <FAQ />
-      <CTASection />
+      <SavesMock />
       <FounderNote />
+      <CTASection />
+      <FAQ />
       <Footer />
     </main>
   );
