@@ -53,16 +53,10 @@ export default function CompareSection() {
             <Link
               key={item.slug}
               href={`/compare/${item.slug}`}
-              className="group flex flex-col gap-3 rounded-2xl p-4 transition-all hover:scale-[1.02]"
+              className="compare-card group flex flex-col gap-3 rounded-2xl p-4 transition-all hover:scale-[1.02]"
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
               }}
             >
               {/* Category chip */}
