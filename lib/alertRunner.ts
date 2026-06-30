@@ -5,6 +5,7 @@ import type { FilterState } from '@/lib/filterOptions';
 import type { Listing } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
 import { Resend } from 'resend';
+import { buildAlertEmailHtml } from '@/lib/email/alertEmailTemplate';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
 import { nextAnchoredRunAt } from '@/lib/alertSchedule';
 import { TIER_CAPS, type Tier } from '@/lib/stripe';
@@ -276,6 +277,12 @@ async function sendAlertEmail(
       ``,
       `— Crawli`,
     ].join('\n'),
+    html: buildAlertEmailHtml({
+      query: savedSearch.query,
+      newCount,
+      listings: newListings.slice(0, 5),
+      totalNewCount: newListings.length,
+    }),
   }).catch((err) => {
     console.error(`[alertRunner] email failed for alert=${savedSearch.id}:`, err);
   });

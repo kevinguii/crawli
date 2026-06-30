@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Resend } from 'resend';
+import { buildAlertEmailHtml } from '@/lib/email/alertEmailTemplate';
+import type { Listing } from '@/lib/types';
 
 export async function POST() {
   const supabase = await createClient();
@@ -20,10 +22,22 @@ export async function POST() {
 
   const resend = new Resend(resendKey);
 
-  const sampleListings = [
-    { title: 'Nike Air Jordan 1 Chicago', price: 280, url: 'https://thecrawli.com' },
-    { title: 'Supreme Box Logo Hoodie', price: 420, url: 'https://thecrawli.com' },
-    { title: 'Levi\'s 501 Vintage Denim', price: 95, url: 'https://thecrawli.com' },
+  const sampleListings: Listing[] = [
+    {
+      id: 'sample-1', title: 'Nike Air Jordan 1 Chicago', price: 280, currency: 'USD',
+      condition: 'Used - Good', size: '10', color: 'Red/White', seller: null,
+      url: 'https://thecrawli.com', image: 'https://thecrawli.com/crawli-icon-120x120.svg', platform: 'grailed',
+    },
+    {
+      id: 'sample-2', title: 'Supreme Box Logo Hoodie', price: 420, currency: 'USD',
+      condition: 'Used - Excellent', size: 'L', color: 'Black', seller: null,
+      url: 'https://thecrawli.com', image: null, platform: 'depop',
+    },
+    {
+      id: 'sample-3', title: "Levi's 501 Vintage Denim", price: 95, currency: 'USD',
+      condition: null, size: '32x32', color: null, seller: null,
+      url: 'https://thecrawli.com', image: null, platform: 'ebay',
+    },
   ];
 
   const listingLines = sampleListings.map((l) =>
@@ -47,6 +61,12 @@ export async function POST() {
       ``,
       `Crawli`,
     ].join('\n'),
+    html: buildAlertEmailHtml({
+      query: 'Nike Air Jordan 1',
+      newCount: sampleListings.length,
+      listings: sampleListings,
+      totalNewCount: sampleListings.length,
+    }),
   });
 
   return NextResponse.json({ ok: true, sentTo: email });
