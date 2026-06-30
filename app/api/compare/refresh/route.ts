@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 const DISPLAY_LIMIT = 6;   // listings stored per platform for page display
-const SCRAPE_LIMIT  = 30;  // listings requested from sidecar per platform
-const CONCURRENCY   = 3;   // platforms scraped in parallel per slug
+const SCRAPE_LIMIT  = 10;  // listings requested from sidecar per platform (kept low — single browser pool)
+const CONCURRENCY   = 4;   // platforms scraped in parallel per slug
 
 function computeStats(listings: Listing[]): {
   minPriceUsd: number | null;
