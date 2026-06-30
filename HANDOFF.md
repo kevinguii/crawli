@@ -86,6 +86,11 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-06-30 — Landing page reorder: proof before CTA, redundancy cut**
+- Removed `HowItWorks` (fully redundant with `BentoFeatures` hero cards); anchor `#how-it-works` now lives on `BentoFeatures`
+- New section order: Hero → SearchMock → PlatformLogos → BentoFeatures → AlertsMock → AboutSection → SavesMock → FounderNote → CTASection → FAQ → Footer
+- `FounderNote` (trust) now precedes `CTASection` (was reversed); `SavesMock` de-emphasized vs `AlertsMock`; gradient-text signature reserved for Hero headline only
+
 **2026-06-30 — Alert matches grouped by run date in UI**
 `AlertMatchesModal` now fetches `GET /api/saved-searches/[id]/history` (one row per `notifications` entry, up to 365) alongside the existing `/matches` query and groups matches by `notification_id` under a date header (e.g. "Jun 30, 2026 · 11 new"). Days whose `new_count > 0` but whose matches have since been pruned (beyond the 100/alert cap) show "No longer available" instead of silently disappearing. The 100-match cap itself is unchanged — this only adds visibility into run history, which was already being recorded but never surfaced.
 
