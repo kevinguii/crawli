@@ -60,8 +60,8 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 **Supabase tables (must exist in prod):**
 - `search_listings_cache(key text pk, listings jsonb, expires_at timestamptz)`
 - `query_expansion_cache(query_norm text pk, payload jsonb, expires_at timestamptz)`
-- `notifications(id, user_id, alert_id, new_count, seen, created_at)` — one row per alert run; drives the nav bell badge (count of `seen=false`). In the `supabase_realtime` publication.
-- `alert_matches(id, user_id, alert_id, notification_id, url, title, price, currency, image, platform, seller, size, condition, color, seen, found_at)` — the new listings per run; powers "click alert → view matches". Pruned to ~100/alert.
+- `notifications(id, user_id, alert_id, new_count, seen, created_at)` — one row per alert run; drives the nav bell badge (count of `seen=false`). In the `supabase_realtime` publication. Never pruned — also powers the per-alert run-history view (`GET /api/saved-searches/[id]/history`).
+- `alert_matches(id, user_id, alert_id, notification_id, url, title, price, currency, image, platform, seller, size, condition, color, seen, found_at)` — the new listings per run; powers "click alert → view matches", grouped by `notification_id` into per-day sections. Pruned to ~100/alert, so older days may show a run-history entry with no cards.
 - All need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role` (see `docs/migrations/alert-notifications.sql`)
 
 **Landing page:** 9 platforms (all updated 2026-06-29). Margin calculator copy says "7 platforms" — correct, intentional.
@@ -85,6 +85,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-06-30 — Alert matches grouped by run date in UI**
+`AlertMatchesModal` now fetches `GET /api/saved-searches/[id]/history` (one row per `notifications` entry, up to 365) alongside the existing `/matches` query and groups matches by `notification_id` under a date header (e.g. "Jun 30, 2026 · 11 new"). Days whose `new_count > 0` but whose matches have since been pruned (beyond the 100/alert cap) show "No longer available" instead of silently disappearing. The 100-match cap itself is unchanged — this only adds visibility into run history, which was already being recorded but never surfaced.
 
 **2026-06-30 — Poshmark/StockX grid images fixed (lazy-load scroll)**
 Cards below the fold on both grids were missing/wrong images (Poshmark: "No image"; StockX: gray-X placeholder graphic) because both lazy-swap images via IntersectionObserver and the scraper captured HTML before scrolling. Added a scroll script (`js_code`, runs after `wait_for`) in `main.py` for both platforms; extractors also fall back to `data-src` (Poshmark) and null out the StockX placeholder URL if it's still unswapped. See `docs/PITFALLS.md` → "Poshmark/StockX grid cards lazy-load images".

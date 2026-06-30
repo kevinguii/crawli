@@ -18,6 +18,21 @@ interface AlertMatch {
   condition: string | null;
   color: string | null;
   found_at: string;
+  notification_id: string | null;
+}
+
+interface HistoryEntry {
+  id: string;
+  new_count: number;
+  created_at: string;
+}
+
+function formatRunDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 // Stored matches are a flat snapshot — adapt to the Listing shape ListingCard
@@ -45,19 +60,37 @@ interface Props {
 
 export default function AlertMatchesModal({ alert, onClose }: Props) {
   const [matches, setMatches] = useState<AlertMatch[] | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const res = await fetch(`/api/saved-searches/${alert.id}/matches`);
-      const data = res.ok ? await res.json() : [];
-      if (!cancelled) setMatches(data);
+      const [matchesRes, historyRes] = await Promise.all([
+        fetch(`/api/saved-searches/${alert.id}/matches`),
+        fetch(`/api/saved-searches/${alert.id}/history`),
+      ]);
+      const matchesData = matchesRes.ok ? await matchesRes.json() : [];
+      const historyData = historyRes.ok ? await historyRes.json() : [];
+      if (!cancelled) {
+        setMatches(matchesData);
+        setHistory(historyData);
+      }
     })();
     // Opening the view = the user has reviewed these matches. Clears the per-alert
     // unread badge (Realtime then syncs the card).
     void fetch(`/api/saved-searches/${alert.id}/mark-seen`, { method: 'POST' });
     return () => { cancelled = true; };
   }, [alert.id]);
+
+  // Matches accumulate (deduped against last_seen_urls, not by run) but are
+  // pruned to the most recent 100 — group by the run that found them so a run
+  // with new_count > 0 whose matches have since been pruned still shows in
+  // history, just without cards.
+  const matchesByRun = (matches ?? []).reduce<Record<string, AlertMatch[]>>((acc, m) => {
+    if (!m.notification_id) return acc;
+    (acc[m.notification_id] ??= []).push(m);
+    return acc;
+  }, {});
 
   return (
     <div
@@ -86,21 +119,44 @@ export default function AlertMatchesModal({ alert, onClose }: Props) {
           </button>
         </div>
 
-        {matches === null ? (
+        {matches === null || history === null ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-56 rounded-2xl animate-pulse" style={{ background: 'var(--surface)' }} />
             ))}
           </div>
-        ) : matches.length === 0 ? (
+        ) : history.length === 0 ? (
           <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            No matches stored yet. New listings will appear here after the next daily check finds them.
+            No checks run yet. This alert runs daily — results will appear here after the next check.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {matches.map((m) => (
-              <ListingCard key={m.id} listing={toListing(m)} />
-            ))}
+          <div className="space-y-6">
+            {history.map((run) => {
+              const runMatches = matchesByRun[run.id] ?? [];
+              return (
+                <div key={run.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                      {formatRunDate(run.created_at)}
+                    </h3>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {run.new_count === 0 ? 'No new matches' : `${run.new_count} new`}
+                    </span>
+                  </div>
+                  {runMatches.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {runMatches.map((m) => (
+                        <ListingCard key={m.id} listing={toListing(m)} />
+                      ))}
+                    </div>
+                  ) : run.new_count > 0 ? (
+                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                      No longer available — beyond the most recent 100 matches stored.
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

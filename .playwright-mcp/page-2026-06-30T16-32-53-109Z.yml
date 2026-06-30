@@ -1,0 +1,31 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - link "Crawli home" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - text: Crawli
+    - heading "Welcome to Crawli" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Log in to save searches and track listings.
+    - generic [ref=e7]:
+      - button "Log in" [ref=e9]
+      - button "Sign up" [ref=e10]
+    - generic [ref=e11]: Your session expired. Please sign in again.
+    - generic [ref=e12]:
+      - textbox "you@example.com" [ref=e13]
+      - generic [ref=e14]:
+        - textbox "•••••••••••" [ref=e15]
+        - button "Show password" [ref=e16]:
+          - img [ref=e17]
+      - link "Forgot password?" [ref=e21] [cursor=pointer]:
+        - /url: /forgot-password
+      - button "Log in" [disabled] [ref=e22]
+    - generic [ref=e25]: or
+    - button "Continue with Google" [ref=e27]:
+      - img [ref=e28]
+      - text: Continue with Google
+    - paragraph [ref=e33]:
+      - text: By continuing you agree to our
+      - link "Terms" [ref=e34] [cursor=pointer]:
+        - /url: /terms
+      - text: and
+      - link "Privacy Policy" [ref=e35] [cursor=pointer]:
+        - /url: /privacy
