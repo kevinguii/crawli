@@ -86,6 +86,11 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-06-30 — Mobile overflow fixes (settings, profile, alerts)**
+- Three real horizontal-overflow culprits on protected pages at ≤375px (all public pages were already clean): settings `Row` didn't stack so the long email + fixed `w-48` quota bars pushed off-screen; profile `RecentSearches` platform list collided with the timestamp; alerts `SavedSearchCard` squeezed the title/platforms into a sliver beside 3 fixed action buttons.
+- Fixes: settings `Row` now `flex-col … sm:flex-row` (value wraps under label on mobile) + email `break-all`; `RecentSearches` platform list `hidden sm:inline` + `truncate max-w-[45%]`; `SavedSearchCard` actions drop to their own row on mobile (`flex-col … sm:flex-row`, actions `flex-wrap`). Desktop layout unchanged. Verified at 360/375px and 1280px via a throwaway harness rendering the real components with worst-case data (long email, all 9 platforms). See `docs/PITFALLS.md` → "Mobile horizontal overflow".
+- Also: search-history row actions ("Search again" / delete) were hover-only (`opacity-0 group-hover:opacity-100`) and thus invisible on touch devices — now always visible at every width (dropped the now-dead `group` + opacity classes).
+
 **2026-06-30 — Alerts recurrence fixed + edit + in-app notifications**
 - **Root cause of "alerts stuck on a past date":** `/api/cron/run-alerts` was never triggered in prod (no Vercel Cron — app is systemd-hosted; crontab had only smoke + credits jobs). Added `*/15 * * * *` crontab line on `5.78.187.97` hitting the endpoint with `CRON_SECRET`. Verified: first tick processed the 1 due alert, 70 backlog matches.
 - **Edit alerts:** `PATCH /api/saved-searches/[id]` now supports editing query/platforms/criteria — baseline-invalidating edits reset `last_seen_urls`/`unread_match_count`, drop stale `alert_matches`, charge 1 search, and re-run immediately (mirrors creation). Pause/no-op edits stay free. `CreateAlertModal` reused via `editingAlert` prop; Edit button on `SavedSearchCard`.

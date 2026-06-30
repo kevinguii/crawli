@@ -43,14 +43,14 @@ function Section({ title, description, children }: { title: string; description?
 function Row({ label, sublabel, children }: { label: string; sublabel?: string; children: React.ReactNode }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-3"
+      className="flex flex-col gap-1.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
       style={{ borderTop: '1px solid var(--border)' }}
     >
-      <div>
+      <div className="min-w-0">
         <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{label}</div>
         {sublabel && <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{sublabel}</div>}
       </div>
-      {children}
+      <div className="min-w-0 sm:text-right">{children}</div>
     </div>
   );
 }
@@ -309,7 +309,7 @@ export default function SettingsPage() {
         {/* ── Account ── */}
         <Section title="Account">
           <Row label="Email" sublabel="Your sign-in address">
-            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-sm break-all" style={{ color: 'var(--text-muted)' }}>
               {email ?? '-'}
             </span>
           </Row>

@@ -114,7 +114,7 @@ function RecentSearches() {
                   <span className="truncate text-sm font-medium" style={{ color: 'var(--text)' }}>
                     {item.query}
                   </span>
-                  <span className="shrink-0 text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                  <span className="hidden shrink-0 truncate text-[11px] sm:inline" style={{ color: 'var(--text-dim)', maxWidth: '45%' }}>
                     {item.platforms.map((p) => PLATFORM_NAMES[p] ?? p).join(', ')}
                   </span>
                 </span>

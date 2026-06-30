@@ -78,6 +78,9 @@ Test `/api/search` streaming with `curl -N http://localhost:3000/api/search` to 
 **CSS theming: use `[data-theme="dark"]` not Tailwind `dark:`**
 The app sets `data-theme="dark"` on `<html>`. Tailwind's `dark:` variant uses `prefers-color-scheme` by default and won't respond to the attribute without config changes. All dark-mode CSS must use `[data-theme="dark"] .class { ... }`.
 
+**Mobile horizontal overflow comes from `justify-between` label/value rows, not the page shell**
+The page shells (`mx-auto max-w-* px-6` + nav) are all mobile-safe; public pages never overflow. Offenders are inner `flex items-center justify-between` rows where one side can't shrink: a long unbroken string (email — needs `break-all`), a fixed-width control (`w-48` quota bars), or a `shrink-0` text run (the profile recent-search platform list) colliding with a sibling. Fix pattern: stack the row on mobile (`flex-col gap-… sm:flex-row sm:items-center sm:justify-between`), give the text side `min-w-0`, and either `break-all`/`truncate` long strings or `hidden sm:inline` secondary text. Detect by loading at 360px and checking `document.documentElement.scrollWidth > clientWidth` — `scrollWidth` over viewport = real overflow; per-element `right > vw` inside an `overflow-x:auto`/marquee container is by-design (Hero search chips, platform logo marquee). Protected pages need auth to view; a throwaway routable page (NOT `_`-prefixed — Next treats `_dir` as private/404) rendering the real prop-driven components with worst-case data verifies them without logging in.
+
 **sidecar TTL caches**
 - `/scrape` (per URL): 30 min TTL
 - `/scrape-search` (per `platform::query`): 10 min TTL

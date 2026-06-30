@@ -78,7 +78,7 @@ export default function SearchHistoryPage() {
             {items.map((item) => (
               <li
                 key={item.id}
-                className="group rounded-xl p-4 transition-colors"
+                className="rounded-xl p-4 transition-colors"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -101,7 +101,7 @@ export default function SearchHistoryPage() {
                       {format(new Date(item.searched_at), 'MMM d, yyyy · h:mm a')}
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
                       onClick={() => rerun(item)}

@@ -43,7 +43,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
 
   return (
     <div
-      className="rounded-xl p-4 flex items-start gap-4 transition-all"
+      className="rounded-xl p-4 flex flex-col gap-3 transition-all sm:flex-row sm:items-start sm:gap-4"
       style={{
         background: 'var(--surface)',
         border: isInitializing
@@ -54,6 +54,8 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
         opacity: alert.paused ? 0.6 : 1,
       }}
     >
+      {/* Status + content group — keeps the icon beside the text on every width */}
+      <div className="flex min-w-0 flex-1 items-start gap-4">
       {/* Status indicator / unread badge */}
       <div className="flex-shrink-0 mt-0.5">
         {isInitializing ? (
@@ -182,10 +184,11 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
           </div>
         )}
       </div>
+      </div>
 
       {/* Actions */}
       {!isInitializing && (
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0 sm:self-start">
           {confirmDelete ? (
             <>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Delete?</span>
