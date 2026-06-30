@@ -18,7 +18,7 @@ const FOLDERS = ['All', 'Outerwear', 'Footwear', 'Bags'];
 
 export default function SavesMock() {
   return (
-    <section className="py-20 sm:py-24">
+    <section className="py-14 sm:py-16">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p
