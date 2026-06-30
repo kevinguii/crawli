@@ -9,7 +9,6 @@ import AuthButton, { markIntentionalSignOut } from '@/app/components/AuthButton'
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
 import { createClient } from '@/lib/supabase/client';
-import { CREDIT_PACKS } from '@/lib/creditPacks';
 import Wordmark from '@/app/components/landing/Wordmark';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
@@ -171,9 +170,6 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Credit packs
-  const [buyingPack, setBuyingPack] = useState<string | null>(null);
-
   useEffect(() => {
     if (searchParams.get('billing') === 'success') {
       toast.success("Subscription active!", {
@@ -244,27 +240,6 @@ export default function SettingsPage() {
       setTimeout(() => setPrefSaved(false), 2500);
     } finally {
       setPrefSaving(false);
-    }
-  }
-
-  async function handleBuyCredits(packId: string) {
-    setBuyingPack(packId);
-    try {
-      const res = await fetch('/api/billing/credits', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pack: packId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.message ?? 'Credit packs are not available yet.');
-        return;
-      }
-      window.location.assign(data.url);
-    } catch {
-      toast.error('Something went wrong.');
-    } finally {
-      setBuyingPack(null);
     }
   }
 
@@ -420,28 +395,6 @@ export default function SettingsPage() {
                       })()}
                     </Row>
                     <Row
-                      label="Overage credits"
-                      sublabel="Extra searches used after your weekly quota runs out"
-                    >
-                      <span className="text-sm tabular-nums font-medium" style={{ color: 'var(--text)' }}>
-                        {billing.credits ?? 0}
-                      </span>
-                    </Row>
-                    <div className="flex flex-wrap items-center gap-2 pb-3">
-                      {CREDIT_PACKS.map((pack) => (
-                        <button
-                          key={pack.id}
-                          type="button"
-                          onClick={() => handleBuyCredits(pack.id)}
-                          disabled={buyingPack !== null}
-                          className="rounded-xl px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
-                          style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
-                        >
-                          {buyingPack === pack.id ? 'Redirecting…' : `${pack.searches} searches · $${pack.priceUsd}`}
-                        </button>
-                      ))}
-                    </div>
-                    <Row
                       label="Search alerts remaining"
                       sublabel={`Up to ${alertCap} alert${alertCap === 1 ? '' : 's'}, checks every 24h`}
                     >
@@ -463,6 +416,14 @@ export default function SettingsPage() {
                           </div>
                         );
                       })()}
+                    </Row>
+                    <Row
+                      label="Overage credits"
+                      sublabel="Extra searches used after your weekly quota runs out"
+                    >
+                      <span className="text-xs tabular-nums font-medium" style={{ color: 'var(--text-muted)' }}>
+                        {billing.credits ?? 0}
+                      </span>
                     </Row>
 
                     {isPaid && billing.periodEnd && (
@@ -495,6 +456,18 @@ export default function SettingsPage() {
                         }}
                       >
                         {isPaid ? 'Manage' : 'Upgrade'}
+                      </Link>
+                    </Row>
+                    <Row
+                      label="Buy more credits"
+                      sublabel="One-time credit packs, no subscription"
+                    >
+                      <Link
+                        href="/pricing?from=/settings#credits"
+                        className="text-sm font-medium underline underline-offset-2 transition-colors"
+                        style={{ color: 'var(--text-dim)' }}
+                      >
+                        View packs →
                       </Link>
                     </Row>
                   </>

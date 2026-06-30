@@ -182,8 +182,17 @@ export default function WatchlistTab() {
     return best;
   }, [rows]);
 
+  const activeCount = useMemo(() => rows.filter((r) => !r.is_sold).length, [rows]);
+  const soldCount = rows.length - activeCount;
+
   return (
     <div className="space-y-5">
+      {!loading && rows.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {rows.length} tracked listing{rows.length !== 1 ? 's' : ''}
+          {soldCount > 0 && ` · ${activeCount} active · ${soldCount} no longer available`}
+        </p>
+      )}
       <div className="flex items-center gap-3">
         <input
           type="text"
@@ -319,7 +328,7 @@ export default function WatchlistTab() {
           {refreshSummary.sold.map((title, i) => (
             <div key={i} className="flex items-center justify-between gap-2">
               <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }} title={title}>{title}</span>
-              <span className="text-xs font-medium" style={{ color: '#E24B4A' }}>Gone</span>
+              <span className="text-xs font-medium" style={{ color: '#E24B4A' }}>No longer available</span>
             </div>
           ))}
           {refreshSummary.failed > 0 && (
@@ -437,7 +446,11 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
       target="_blank"
       rel="noopener noreferrer"
       className="group flex flex-col overflow-hidden rounded-2xl transition-all hover:opacity-90 hover:scale-[1.02]"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      style={{
+        background: 'var(--surface)',
+        border: row.is_sold ? '1px solid var(--border)' : '1px solid var(--border)',
+        opacity: row.is_sold ? 0.6 : 1,
+      }}
     >
       <div
         className="relative aspect-square w-full overflow-hidden"
@@ -449,6 +462,7 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
             src={row.image_url}
             alt={row.title}
             className="h-full w-full object-cover"
+            style={row.is_sold ? { filter: 'grayscale(1)' } : undefined}
             onError={() => setImgFailed(true)}
           />
         ) : (
@@ -464,14 +478,14 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
           <>
             <div
               className="absolute inset-0"
-              style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+              style={{ background: 'rgba(0, 0, 0, 0.35)' }}
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <span
-                className="rounded-full px-4 py-2 text-lg font-semibold uppercase tracking-wide"
-                style={{ background: '#1f1f1f', color: '#ffffff' }}
+                className="rounded-full px-4 py-1.5 text-sm font-bold uppercase tracking-wider shadow-lg"
+                style={{ background: '#E24B4A', color: '#ffffff' }}
               >
-                Gone
+                Sold
               </span>
             </div>
           </>
@@ -523,17 +537,33 @@ function WatchCard({ row, onRemove }: { row: Watchlist; onRemove: () => void }) 
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <PlatformBadge platform={row.platform} className="self-start" />
+        <div className="flex items-center justify-between gap-2">
+          <PlatformBadge platform={row.platform} className="self-start" />
+          {row.is_sold && (
+            <span
+              className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+              style={{ background: 'rgba(226, 75, 74, 0.12)', color: '#E24B4A' }}
+            >
+              No longer available
+            </span>
+          )}
+        </div>
         <p
           className="line-clamp-2 text-[13px] leading-snug"
-          style={{ color: 'var(--text)' }}
+          style={{ color: row.is_sold ? 'var(--text-dim)' : 'var(--text)' }}
           title={row.title}
         >
           {row.title}
         </p>
         <div className="mt-auto flex items-baseline gap-2 pt-1">
           {cur !== null ? (
-            <span className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+            <span
+              className="text-lg font-semibold"
+              style={{
+                color: row.is_sold ? 'var(--text-dim)' : 'var(--text)',
+                textDecoration: row.is_sold ? 'line-through' : 'none',
+              }}
+            >
               {formatPrice(cur, row.currency)}
             </span>
           ) : at !== null ? (

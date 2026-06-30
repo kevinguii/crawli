@@ -84,8 +84,8 @@ body {
 }
 
 @keyframes loading-shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
 }
 
 @keyframes dot-pulse {
@@ -93,10 +93,15 @@ body {
   50% { opacity: 1; transform: scale(1.1); }
 }
 
+@keyframes row-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--row-glow-color, var(--border)), 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 1px var(--row-glow-color, var(--border)), 0 0 18px -2px var(--row-glow-color, transparent); }
+}
+
 .bar-track {
   position: relative;
   width: 100%;
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
   background: var(--track);
   overflow: hidden;
@@ -105,42 +110,62 @@ body {
 .bar-fill-queued {
   position: absolute;
   inset: 0;
+  border-radius: 999px;
   background: var(--accent-soft);
   animation: queued-pulse 1.8s ease-in-out infinite;
 }
 
-.bar-fill-loading {
+.bar-fill-loading,
+.bar-fill-done,
+.bar-fill-failed {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--row-color, var(--accent)) 18%, transparent);
+  width: 100%;
+  border-radius: 999px;
+  transform: scaleX(var(--fill, 1));
+  transform-origin: left center;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.bar-fill-loading {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--row-color, var(--accent)) 55%, transparent) 0%,
+    color-mix(in srgb, var(--row-color, var(--accent)) 80%, transparent) 100%
+  );
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--row-color, var(--accent)) 60%, transparent);
 }
 .bar-fill-loading::after {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: 999px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--row-color, var(--accent)) 50%,
+    color-mix(in srgb, white 70%, var(--row-color, var(--accent))) 50%,
     transparent 100%
   );
-  animation: loading-shimmer 1.4s linear infinite;
+  filter: blur(3px);
+  opacity: 0.8;
+  animation: loading-shimmer 1.8s ease-in-out infinite;
 }
 
 .bar-fill-done {
-  position: absolute;
-  inset: 0;
   background: var(--row-color, var(--accent));
 }
 
 .bar-fill-failed {
-  position: absolute;
-  inset: 0;
   background: var(--danger);
 }
 
 .dot-loading {
   animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.row-glow {
+  animation: row-glow-pulse 2.2s ease-in-out infinite;
 }
 
 /* Hide scrollbars but keep scrolling functional (e.g. horizontal tab strip). */
@@ -176,6 +201,26 @@ body {
   background: var(--surface-hover);
 }
 .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Credit pack / overage buttons — pricing page + settings */
+.btn-credit-pack {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.btn-credit-pack:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.btn-credit-pack:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn-credit-pack:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

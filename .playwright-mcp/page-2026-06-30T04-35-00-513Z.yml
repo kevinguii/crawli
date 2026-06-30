@@ -1,0 +1,141 @@
+- generic [active] [ref=f1e1]:
+  - main [ref=f1e2]:
+    - link "Close" [ref=f1e4] [cursor=pointer]:
+      - /url: /
+      - img [ref=f1e5]
+    - generic [ref=f1e7]:
+      - generic [ref=f1e8]:
+        - generic [ref=f1e9]: Simple, transparent pricing
+        - heading "Crawli" [level=1] [ref=f1e11]
+        - paragraph [ref=f1e12]: Sourcing intelligence for resellers. Know your margin before you buy.
+      - generic [ref=f1e14]:
+        - button "Weekly" [ref=f1e15]
+        - button "Monthly" [ref=f1e16]
+        - button "Yearly Best value" [ref=f1e17]:
+          - text: Yearly
+          - generic [ref=f1e18]: Best value
+      - generic [ref=f1e19]:
+        - generic [ref=f1e20]:
+          - generic [ref=f1e21]:
+            - img [ref=f1e23]
+            - generic [ref=f1e25]: Free
+            - generic [ref=f1e26]: Current plan
+          - paragraph [ref=f1e27]: Get started at no cost
+          - separator [ref=f1e28]
+          - generic [ref=f1e29]:
+            - generic [ref=f1e30]: $0
+            - generic [ref=f1e31]: /mo
+          - button "Current plan" [disabled] [ref=f1e33]
+          - paragraph [ref=f1e34]: No credit card required
+          - list [ref=f1e35]:
+            - listitem [ref=f1e36]:
+              - img [ref=f1e37]
+              - generic [ref=f1e39]: 5 searches per week
+            - listitem [ref=f1e40]:
+              - img [ref=f1e41]
+              - generic [ref=f1e43]: 2 search alerts
+            - listitem [ref=f1e44]:
+              - img [ref=f1e45]
+              - generic [ref=f1e47]: 50 tracked listings
+            - listitem [ref=f1e48]:
+              - img [ref=f1e49]
+              - generic [ref=f1e51]: Up to 15 results per native platform
+            - listitem [ref=f1e52]:
+              - img [ref=f1e53]
+              - generic [ref=f1e55]:
+                - text: Email + in-app alert notifications
+                - generic [ref=f1e56]:
+                  - 'button "More info: Email + in-app alert notifications" [ref=f1e57]': i
+                  - tooltip "Emails only send when new listings are found. Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.":
+                    - strong: Emails only send when new listings are found.
+                    - text: Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+        - generic [ref=f1e58]:
+          - generic [ref=f1e59]: Most popular
+          - generic [ref=f1e60]:
+            - generic [ref=f1e61]: ✦
+            - generic [ref=f1e62]: Pro
+          - paragraph [ref=f1e63]: For active resellers
+          - separator [ref=f1e64]
+          - generic [ref=f1e65]:
+            - generic [ref=f1e66]: $3
+            - generic [ref=f1e67]: /wk
+          - button "Subscribe" [ref=f1e69] [cursor=pointer]
+          - paragraph [ref=f1e70]: Cancel anytime
+          - list [ref=f1e71]:
+            - listitem [ref=f1e72]:
+              - img [ref=f1e73]
+              - generic [ref=f1e75]: 40 searches per week
+            - listitem [ref=f1e76]:
+              - img [ref=f1e77]
+              - generic [ref=f1e79]: 8 search alerts
+            - listitem [ref=f1e80]:
+              - img [ref=f1e81]
+              - generic [ref=f1e83]: 500 tracked listings
+            - listitem [ref=f1e84]:
+              - img [ref=f1e85]
+              - generic [ref=f1e87]: Up to 60 results per native platform
+            - listitem [ref=f1e88]:
+              - img [ref=f1e89]
+              - generic [ref=f1e91]:
+                - text: Email + in-app alert notifications
+                - generic [ref=f1e92]:
+                  - 'button "More info: Email + in-app alert notifications" [ref=f1e93]': i
+                  - tooltip "Emails only send when new listings are found. Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.":
+                    - strong: Emails only send when new listings are found.
+                    - text: Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+        - generic [ref=f1e94]:
+          - generic [ref=f1e95]:
+            - generic [ref=f1e96]: ★
+            - generic [ref=f1e97]: Max
+          - paragraph [ref=f1e98]: For serious sourcing operations
+          - separator [ref=f1e99]
+          - generic [ref=f1e100]:
+            - generic [ref=f1e101]: $10
+            - generic [ref=f1e102]: /wk
+          - button "Subscribe" [ref=f1e104] [cursor=pointer]
+          - paragraph [ref=f1e105]: Cancel anytime
+          - list [ref=f1e106]:
+            - listitem [ref=f1e107]:
+              - img [ref=f1e108]
+              - generic [ref=f1e110]: 120 searches per week
+            - listitem [ref=f1e111]:
+              - img [ref=f1e112]
+              - generic [ref=f1e114]: 20 search alerts
+            - listitem [ref=f1e115]:
+              - img [ref=f1e116]
+              - generic [ref=f1e118]: Unlimited tracked listings
+            - listitem [ref=f1e119]:
+              - img [ref=f1e120]
+              - generic [ref=f1e122]: Up to 100 results per native platform
+            - listitem [ref=f1e123]:
+              - img [ref=f1e124]
+              - generic [ref=f1e126]:
+                - text: Email + in-app alert notifications
+                - generic [ref=f1e127]:
+                  - 'button "More info: Email + in-app alert notifications" [ref=f1e128]': i
+                  - tooltip "Emails only send when new listings are found. Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.":
+                    - strong: Emails only send when new listings are found.
+                    - text: Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+            - listitem [ref=f1e129]:
+              - img [ref=f1e130]
+              - generic [ref=f1e132]: Alert health sparkline
+      - generic [ref=f1e134]:
+        - text: What’s a native platform?
+        - generic [ref=f1e135]:
+          - button "What is a native platform?" [ref=f1e136]: i
+          - 'tooltip "Native platforms support higher result counts on Pro and Max plans. eBay returns up to 10 per search on every plan. Native: Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX Other: eBay"':
+            - strong: Native platforms
+            - text: support higher result counts on Pro and Max plans. eBay returns up to 10 per search on every plan.
+            - generic: "Native: Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX"
+            - generic: "Other: eBay"
+      - generic [ref=f1e137]:
+        - paragraph [ref=f1e138]: Need more searches? Add credit packs anytime.
+        - paragraph [ref=f1e139]: Once your included searches are used up, you can buy prepaid credit packs as a one-time purchase. No subscription, no surprise charges, no debt. One credit equals one search and rolls over until used.
+        - generic [ref=f1e140]:
+          - button "100 searches · $10" [ref=f1e141]
+          - button "300 searches · $25" [ref=f1e142]
+          - button "1,000 searches · $60" [ref=f1e143]
+        - paragraph [ref=f1e144]: Included in all plans
+      - paragraph [ref=f1e146]: Cancel anytime. Searches reset weekly.
+  - button "Open Next.js Dev Tools" [ref=f1e152] [cursor=pointer]:
+    - img [ref=f1e153]

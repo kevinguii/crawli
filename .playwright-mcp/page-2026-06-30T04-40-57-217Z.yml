@@ -1,0 +1,92 @@
+- generic [active] [ref=f4e1]:
+  - main [ref=f4e2]:
+    - navigation [ref=f4e3]:
+      - link "Crawli" [ref=f4e5] [cursor=pointer]:
+        - /url: /search
+        - generic [ref=f4e6]: Crawli
+    - generic [ref=f4e9]:
+      - generic [ref=f4e10]:
+        - heading "Settings" [level=1] [ref=f4e11]
+        - paragraph [ref=f4e12]: Manage your preferences and account.
+      - generic [ref=f4e13]:
+        - heading "Account" [level=2] [ref=f4e15]
+        - generic [ref=f4e16]:
+          - generic [ref=f4e17]:
+            - generic [ref=f4e18]: Email
+            - generic [ref=f4e19]: Your sign-in address
+          - generic [ref=f4e20]: "-"
+      - generic [ref=f4e21]:
+        - generic [ref=f4e22]:
+          - heading "Billing" [level=2] [ref=f4e23]
+          - paragraph [ref=f4e24]: Manage your plan and search quota.
+        - generic [ref=f4e25]: Loading…
+      - generic [ref=f4e26]:
+        - generic [ref=f4e27]:
+          - heading "Appearance" [level=2] [ref=f4e28]
+          - paragraph [ref=f4e29]: Choose how Crawli looks on this device.
+        - generic [ref=f4e30]:
+          - generic [ref=f4e31]:
+            - generic [ref=f4e32]: Theme
+            - generic [ref=f4e33]: Light, dark, or match your system setting
+          - generic [ref=f4e34]:
+            - button "Light" [ref=f4e35]:
+              - img [ref=f4e36]
+              - text: Light
+            - button "System" [ref=f4e39]:
+              - img [ref=f4e40]
+              - text: System
+            - button "Dark" [ref=f4e43]:
+              - img [ref=f4e44]
+              - text: Dark
+      - generic [ref=f4e46]:
+        - generic [ref=f4e47]:
+          - heading "Preferences" [level=2] [ref=f4e48]
+          - paragraph [ref=f4e49]: Default platforms pre-selected when you start a new search.
+        - button "Save preferences" [disabled] [ref=f4e56]
+      - generic [ref=f4e57]:
+        - heading "Legal" [level=2] [ref=f4e59]
+        - generic [ref=f4e60]:
+          - generic [ref=f4e61]:
+            - generic [ref=f4e62]: Privacy Policy
+            - generic [ref=f4e63]: How we collect and use your data
+          - link "View" [ref=f4e64] [cursor=pointer]:
+            - /url: /privacy
+        - generic [ref=f4e65]:
+          - generic [ref=f4e66]:
+            - generic [ref=f4e67]: Terms of Service
+            - generic [ref=f4e68]: Rules for using Crawli
+          - link "View" [ref=f4e69] [cursor=pointer]:
+            - /url: /terms
+      - generic [ref=f4e70]:
+        - generic [ref=f4e71]:
+          - heading "Support" [level=2] [ref=f4e72]
+          - paragraph [ref=f4e73]: Questions, feedback, or bugs? We'd love to hear from you.
+        - generic [ref=f4e74]:
+          - generic [ref=f4e75]:
+            - generic [ref=f4e76]: Contact us
+            - generic [ref=f4e77]: Send feedback or get help
+          - link "Get in touch" [ref=f4e78] [cursor=pointer]:
+            - /url: /contact
+      - generic [ref=f4e79]:
+        - heading "Notifications" [level=2] [ref=f4e81]
+        - generic [ref=f4e83]:
+          - generic [ref=f4e84]:
+            - generic [ref=f4e85]: Price drop alerts
+            - generic [ref=f4e86]: Coming soon
+          - generic [ref=f4e87]: Get emailed when a watchlist item drops in price
+      - generic [ref=f4e89]:
+        - heading "Session & account" [level=2] [ref=f4e91]
+        - generic [ref=f4e92]:
+          - generic [ref=f4e93]:
+            - generic [ref=f4e94]: Sign out
+            - generic [ref=f4e95]: Sign out of this device
+          - button "Sign out" [ref=f4e96]
+        - generic [ref=f4e97]:
+          - generic [ref=f4e98]:
+            - generic [ref=f4e99]: Delete account
+            - generic [ref=f4e100]: Permanently delete your account and all data
+          - button "Delete account" [ref=f4e101]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f4e107] [cursor=pointer]:
+    - img [ref=f4e108]
+  - alert [ref=f4e111]

@@ -134,6 +134,10 @@ function PlatformRow({
         ? 'bar-fill-failed'
         : 'bar-fill-loading';
 
+  // Gradually fill the bar as fake stages progress, instead of jumping straight to full.
+  const loadingProgress = (stageIdx + 1) / STAGES.length;
+  const fillScale = status === 'loading' ? loadingProgress : 1;
+
   let label: string;
   if (status === 'done') {
     if (typeof count === 'number') {
@@ -152,12 +156,17 @@ function PlatformRow({
   const rowStyle: CSSProperties = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--border)',
-    // CSS var consumed by .bar-fill-loading for the shimmer color.
+    borderRadius: '0.75rem',
+    // CSS vars consumed by .bar-fill-* (shimmer color) and .row-glow (ambient glow color).
     ['--row-color' as string]: color,
+    ['--row-glow-color' as string]: color,
   };
 
   return (
-    <div className="rounded-xl p-3 transition-colors" style={rowStyle}>
+    <div
+      className={`rounded-xl p-3 transition-colors ${status === 'loading' ? 'row-glow' : ''}`}
+      style={rowStyle}
+    >
       <div className="flex items-center gap-3">
         <div className="flex shrink-0 items-center gap-2">
           <StatusDot status={status} color={color} />
@@ -166,7 +175,7 @@ function PlatformRow({
 
         <div className="flex-1 min-w-0">
           <div className="bar-track">
-            <div className={fillClass} />
+            <div className={fillClass} style={{ ['--fill' as string]: fillScale }} />
           </div>
           <p
             className="mt-1.5 truncate text-[11px]"

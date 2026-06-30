@@ -286,7 +286,8 @@ export function PricingCards({
 
       {/* Credit pack overage */}
       <div
-        className="mt-10 rounded-2xl p-6 text-center"
+        id="credits"
+        className="mt-10 scroll-mt-24 rounded-2xl p-6 text-center"
         style={{
           background: 'var(--bg-elevated)',
           border: '1px solid var(--border)',
@@ -305,8 +306,7 @@ export function PricingCards({
               type="button"
               onClick={() => handleBuyCredits(pack.id)}
               disabled={buyingPack !== null}
-              className="rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
-              style={{ background: 'var(--surface-hover)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              className="btn-credit-pack rounded-xl px-4 py-2 text-sm font-medium"
             >
               {buyingPack === pack.id ? 'Redirecting…' : `${pack.searches.toLocaleString()} searches · $${pack.priceUsd}`}
             </button>

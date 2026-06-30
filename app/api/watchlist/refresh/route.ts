@@ -29,7 +29,8 @@ export async function POST(_req: NextRequest) {
   const { data: rows, error: listErr } = await supabase
     .from('watchlist')
     .select('id, listing_url, platform')
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .eq('is_sold', false);
 
   if (listErr) {
     console.error('[/api/watchlist/refresh] list error', listErr);
