@@ -4,6 +4,7 @@ import Hero from '@/app/components/landing/Hero';
 import SearchMock from '@/app/components/landing/SearchMock';
 import PlatformLogos from '@/app/components/landing/PlatformLogos';
 import BentoFeatures from '@/app/components/landing/BentoFeatures';
+import CompareSection from '@/app/components/landing/CompareSection';
 import AlertsMock from '@/app/components/landing/AlertsMock';
 import AboutSection from '@/app/components/landing/AboutSection';
 import SavesMock from '@/app/components/landing/SavesMock';
@@ -26,6 +27,7 @@ export default async function LandingPage() {
       <SearchMock />
       <PlatformLogos />
       <BentoFeatures />
+      <CompareSection />
       <AlertsMock />
       <AboutSection />
       <SavesMock />
