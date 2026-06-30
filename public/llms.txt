@@ -1,0 +1,24 @@
+# Crawli
+
+> Crawli is a sourcing tool for resellers and secondhand-fashion shoppers. One search runs across nine resale marketplaces at once — Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, Vestiaire Collective, and ThredUp — so you can see the real cross-platform price (the "comp"), find underpriced inventory, and calculate your flip margin after each platform's fees before you buy.
+
+## What Crawli does
+
+- **Cross-platform price comparison**: a single query returns live listings from nine resale platforms side by side, so you know the true market price instead of guessing from one site.
+- **Find underpriced inventory**: surface listings priced below the cross-platform comp — the core sourcing use case for resellers.
+- **Flip margin calculator**: enter a sourcing price and destination platform to see net profit, margin %, and ROI after that platform's real seller fees (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX).
+- **Search alerts**: save a search and get notified (daily or weekly) when new matching listings appear, with optional brand / size / price criteria.
+- **Save and track listings**: keep a watchlist of items across platforms in one place.
+
+## Key facts
+
+- Crawli is a search and price-intelligence tool. It does NOT sell items, authenticate items, handle payments, or cross-list inventory for you.
+- Free to start; paid tiers raise search, alert, and tracking limits.
+- Covers US-facing resale marketplaces for clothing, streetwear, sneakers, and luxury fashion.
+
+## Pages
+
+- [Home](https://thecrawli.com/): product overview and live search.
+- [Pricing](https://thecrawli.com/pricing): free, Pro, and Max tiers.
+- [Blog](https://thecrawli.com/blog): guides on resale sourcing, authentication, sizing, and secondhand-fashion terminology.
+- [Contact](https://thecrawli.com/contact): get in touch.

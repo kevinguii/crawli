@@ -74,6 +74,12 @@ The app is self-hosted (systemd on Hetzner), so `/api/cron/run-alerts` has nothi
 **Credit pack prices are provisioned in Stripe by the owner**
 `STRIPE_PRICE_PACK_SMALL/MEDIUM/LARGE` env vars must be set. If unset, the credits route returns 503 (dormant, no broken checkout). Don't create Stripe prices yourself — the owner provisions them and signs off on the dollar amounts in `lib/creditPacks.ts`.
 
+**Stripe webhooks never reach localhost — credits won't grant in `npm run dev`**
+A test credit-pack purchase completes on Stripe but `profiles.search_credits` stays 0 in dev, because Stripe can't POST `checkout.session.completed` to `localhost`. Making the price $0 does NOT help — same undelivered webhook. Two ways to test billing locally: (1) `stripe listen --forward-to localhost:3000/api/webhooks/stripe`, copy the printed `whsec_…` into `.env` as `STRIPE_WEBHOOK_SECRET`, restart dev, then buy with test card `4242…`; or (2) deterministic, no browser: `node --env-file=.env scripts/test-credit-webhook.mjs <USER_ID> [small|medium|large]` posts a correctly-signed event straight to the webhook. Prod works because it has a real public URL + registered endpoint.
+
+**Stripe webhook is idempotent via `stripe_webhook_events`**
+The webhook claims each `event.id` (PK insert) before processing and skips duplicates (Stripe delivers at-least-once; the credit grant is a non-idempotent read-modify-write). On processing failure the claim is deleted so Stripe's retry re-runs. New table `public.stripe_webhook_events`, service_role-only. Migration: `docs/migrations/stripe-webhook-idempotency.sql`.
+
 ---
 
 ## Infrastructure

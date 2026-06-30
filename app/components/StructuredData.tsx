@@ -31,10 +31,21 @@ export default function StructuredData() {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
       name: "Crawli",
+      alternateName: "thecrawli",
       url: SITE_URL,
       logo: `${SITE_URL}/icon.svg`,
+      foundingDate: "2026",
       description:
         "Crawli is a resale price search engine that compares secondhand fashion listings across eight marketplaces in one search.",
+      // Linked profiles consolidate the brand entity in Google's Knowledge Graph
+      // and corroborate identity for AI answer engines. Kept in sync with the
+      // links rendered in landing/Footer.tsx.
+      sameAs: [
+        "https://x.com/thecrawli",
+        "https://www.tiktok.com/@thecrawli",
+        "https://www.instagram.com/thecrawli/",
+        "https://www.pinterest.com/thecrawli/",
+      ],
       contactPoint: {
         "@type": "ContactPoint",
         email: "hello@thecrawli.com",

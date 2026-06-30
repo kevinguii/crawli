@@ -28,6 +28,24 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // Idempotency: claim this event before processing. Stripe delivers at-least-once
+  // (retries on non-2xx + occasional duplicates), and the credit-pack grant is a
+  // non-idempotent read-modify-write, so a re-delivery must not double-grant. A
+  // duplicate insert hits the PK conflict (23505) and we skip. If processing fails
+  // below, we delete the claim so Stripe's retry can re-process.
+  const { error: claimErr } = await admin
+    .from('stripe_webhook_events')
+    .insert({ event_id: event.id, type: event.type });
+  if (claimErr) {
+    if (claimErr.code === '23505') {
+      console.log(`[stripe-webhook] duplicate ${event.type} ${event.id} — already processed, skipping`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    // Couldn't record the claim for some other reason — log and process anyway
+    // rather than wedging a legitimate event on a bookkeeping-table hiccup.
+    console.error('[stripe-webhook] event claim insert failed (processing anyway):', claimErr);
+  }
+
   try {
     console.log(`[stripe-webhook] received ${event.type}`);
     switch (event.type) {
@@ -110,6 +128,8 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`[stripe-webhook] handler failed for ${event.type}:`, err);
+    // Release the claim so Stripe's retry re-processes this event from scratch.
+    await admin.from('stripe_webhook_events').delete().eq('event_id', event.id);
     return NextResponse.json({ error: 'handler failed' }, { status: 500 });
   }
 

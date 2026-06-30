@@ -11,6 +11,7 @@
 - Gotchas and lessons learned → [`docs/PITFALLS.md`](docs/PITFALLS.md)
 - Server SSH, n8n, deployment → [`docs/SERVER_REFERENCE.md`](docs/SERVER_REFERENCE.md)
 - B2B feature scope and truth → [`docs/B2B_FEATURE_TRUTH.md`](docs/B2B_FEATURE_TRUTH.md)
+- **Growth/marketing gameplan (distribution + conversion roadmap)** → [`docs/GROWTH_PLAN.md`](docs/GROWTH_PLAN.md)
 - Cost model → [`docs/FIRECRAWL_PRICING.md`](docs/FIRECRAWL_PRICING.md) + `node scripts/cogs-per-search.mjs`
 - Marketing/carousel operation → [`docs/marketing/POSTS_README.md`](docs/marketing/POSTS_README.md)
 
@@ -62,6 +63,7 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 - `query_expansion_cache(query_norm text pk, payload jsonb, expires_at timestamptz)`
 - `notifications(id, user_id, alert_id, new_count, seen, created_at)` — one row per alert run; drives the nav bell badge (count of `seen=false`). In the `supabase_realtime` publication. Never pruned — also powers the per-alert run-history view (`GET /api/saved-searches/[id]/history`).
 - `alert_matches(id, user_id, alert_id, notification_id, url, title, price, currency, image, platform, seller, size, condition, color, seen, found_at)` — the new listings per run; powers "click alert → view matches", grouped by `notification_id` into per-day sections. Pruned to ~100/alert, so older days may show a run-history entry with no cards.
+- `stripe_webhook_events(event_id text pk, type text, processed_at timestamptz)` — idempotency ledger; webhook claims each `event.id` before processing, skips duplicates, deletes the claim on failure so retries re-run. service_role-only. (migration `docs/migrations/stripe-webhook-idempotency.sql`)
 - All need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role` (see `docs/migrations/alert-notifications.sql`)
 
 **Landing page:** 9 platforms (all updated 2026-06-29). Margin calculator copy says "7 platforms" — correct, intentional.
@@ -85,6 +87,12 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-06-30 — Growth gameplan doc + SEO/AEO entity signals**
+Wrote `docs/GROWTH_PLAN.md` — the full distribution/conversion roadmap (data diagnosis, phased plan, owner checklist) so any session can continue the marketing push. Shipped Phase 1 SEO code: `public/llms.txt`, Organization `sameAs`/`alternateName`/`foundingDate` in `StructuredData.tsx`, and social links in landing `Footer.tsx`. Next planned: Phase 2 public `/compare/[slug]` page (not built). On-page SEO was already strong; brand-rank gap is off-page (age/backlinks/entity).
+
+**2026-06-30 — Stripe webhook idempotency + local billing test**
+Added `stripe_webhook_events` ledger so a re-delivered `checkout.session.completed` can't double-grant credits (claim-with-rollback in `app/api/webhooks/stripe/route.ts`). Confirmed the credit-grant path is correct end-to-end via new `scripts/test-credit-webhook.mjs` (0→100 on grant, duplicate skipped, no double-grant). Root cause of "credits never granted in dev" was just that Stripe can't reach localhost without `stripe listen` — code was fine. See `docs/PITFALLS.md` → Payments.
 
 **2026-06-30 — Weekly cadence option for search alerts**
 Alerts could only check daily (`cadence_hours` hardcoded to `24` end-to-end). Added `168` (weekly) as a second valid value — floating 7-day interval, still anchored to 9 AM in the owner's timezone, no day-of-week picker. Fixed `nextAnchoredRunAt` in `lib/alertSchedule.ts`, which previously ignored `cadenceHours` entirely (always found "next 9 AM," which only worked for daily by coincidence) — see `docs/PITFALLS.md`. `CreateAlertModal` now has a real Daily/Weekly toggle and the edit flow actually persists cadence changes (it silently dropped `cadence_hours` from the PATCH body before). No schema migration, no cron change.
