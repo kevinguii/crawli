@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { PLATFORM_NAMES } from '@/lib/types';
-import { formatNextRun } from '@/lib/alertSchedule';
+import { formatNextRun, cadenceScheduleLabel } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
 
 function relativeTime(iso: string | null): string {
@@ -32,8 +32,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
     .map((p) => PLATFORM_NAMES[p] ?? p)
     .join(', ');
 
-  const scheduleLabel =
-    'Daily at 9 AM';
+  const scheduleLabel = cadenceScheduleLabel(alert.cadence_hours);
 
   const tz = alert.notify_timezone;
   const nextRunLabel =

@@ -38,7 +38,7 @@ const createSchema = z.object({
     .partial()
     .nullable()
     .optional(),
-  cadence_hours: z.literal(24),
+  cadence_hours: z.union([z.literal(24), z.literal(168)]),
   notify_timezone: z.string().max(64).optional(),
   next_run_at: z.string().datetime().optional(),
 });

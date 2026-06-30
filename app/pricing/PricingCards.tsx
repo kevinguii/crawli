@@ -9,7 +9,7 @@ import InfoTooltip from '@/app/components/InfoTooltip';
 
 const ALERT_EMAIL_TOOLTIP = (
   <>
-    <strong style={{ color: 'var(--text)' }}>Emails only send when new listings are found.</strong> Your alert checks on schedule (daily at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+    <strong style={{ color: 'var(--text)' }}>Emails only send when new listings are found.</strong> Your alert checks on schedule (daily or weekly, at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
   </>
 );
 

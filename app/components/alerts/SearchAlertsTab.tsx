@@ -13,7 +13,7 @@ export interface SavedSearch {
   platforms: string[];
   filters: Record<string, unknown> | null;
   criteria: Record<string, unknown> | null;
-  cadence_hours: 24;
+  cadence_hours: 24 | 168;
   last_run_at: string | null;
   next_run_at: string;
   unread_match_count: number;
@@ -182,7 +182,7 @@ export default function SearchAlertsTab() {
             How alerts work
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Alerts check daily at 9 AM in your timezone. You'll receive an email <strong>only when new listings are found</strong>. The first check establishes your baseline — no email then.
+            Alerts check on your chosen schedule (daily or weekly) at 9 AM in your timezone. You'll receive an email <strong>only when new listings are found</strong>. The first check establishes your baseline — no email then.
           </p>
         </div>
       )}

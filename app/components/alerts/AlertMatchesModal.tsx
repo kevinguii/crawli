@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ListingCard from '@/app/components/ListingCard';
 import type { Listing } from '@/lib/types';
 import type { SavedSearch } from './SearchAlertsTab';
+import { cadenceLabel } from '@/lib/alertSchedule';
 
 interface AlertMatch {
   id: string;
@@ -127,7 +128,7 @@ export default function AlertMatchesModal({ alert, onClose }: Props) {
           </div>
         ) : history.length === 0 ? (
           <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            No checks run yet. This alert runs daily — results will appear here after the next check.
+            No checks run yet. This alert runs {cadenceLabel(alert.cadence_hours).toLowerCase()} — results will appear here after the next check.
           </div>
         ) : (
           <div className="space-y-6">

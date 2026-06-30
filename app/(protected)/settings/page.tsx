@@ -396,7 +396,7 @@ export default function SettingsPage() {
                     </Row>
                     <Row
                       label="Search alerts remaining"
-                      sublabel={`Up to ${alertCap} alert${alertCap === 1 ? '' : 's'}, checks every 24h`}
+                      sublabel={`Up to ${alertCap} alert${alertCap === 1 ? '' : 's'}, checks daily or weekly`}
                     >
                       {(() => {
                         const alertRemaining = alertsUsedNow === null ? alertCap : Math.max(0, alertCap - alertsUsedNow);

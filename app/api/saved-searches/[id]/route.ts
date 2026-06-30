@@ -9,7 +9,7 @@ const patchSchema = z.object({
   platforms: z.array(z.string()).min(1),
   filters: z.record(z.string(), z.unknown()).nullable(),
   criteria: z.record(z.string(), z.unknown()).nullable(),
-  cadence_hours: z.literal(24),
+  cadence_hours: z.union([z.literal(24), z.literal(168)]),
   paused: z.boolean(),
 }).partial();
 

@@ -65,6 +65,9 @@ A new table is NOT automatically streamed over Supabase Realtime. A client `.on(
 **Alert recurrence is a server crontab line, not Vercel Cron**
 The app is self-hosted (systemd on Hetzner), so `/api/cron/run-alerts` has nothing triggering it unless a crontab line on `5.78.187.97` calls it. It was missing for ~28 days → every alert's `next_run_at` froze in the past and the UI showed a stale "next check" date (looked like a frontend/timezone bug; it was an ops gap). The line: `*/15 * * * * curl -sf -H "Authorization: Bearer <CRON_SECRET>" https://thecrawli.com/api/cron/run-alerts >> /var/log/crawli-alerts.log 2>&1`. If alerts look stuck, `crontab -l` first.
 
+**`nextAnchoredRunAt` ignored `cadenceHours` until 2026-06-30**
+`lib/alertSchedule.ts`'s `ANCHOR_HOURS` was `(_cadenceHours) => [9]` — the param was accepted but never used, so the function only ever found "the next occurrence of 9 AM" regardless of cadence. This produced correct daily behavior by coincidence (24h cadence = next-9AM is always right), but adding weekly (168h) would have silently fired it daily too. Fixed by computing a `daySpan = Math.round(cadenceHours / 24)` and rolling forward that many days before landing on 9 AM, instead of branching on hour-of-day alone. Lesson: a function whose parameter is silently unused is a landmine for the next cadence value — grep for params before assuming "it already handles N" just because the signature accepts N.
+
 **Admin client vs user client**
 `createAdminClient()` uses the service role key and bypasses RLS entirely. Use it only in server-side routes and cron jobs. Never expose service role key to client components.
 

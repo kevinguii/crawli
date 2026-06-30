@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { PLATFORM_NAMES } from '@/lib/types';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
 import { createClient } from '@/lib/supabase/client';
-import { nextAnchoredRunAt, formatNextRun } from '@/lib/alertSchedule';
+import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
 
 const ALERT_PLATFORMS = Object.entries(PLATFORM_NAMES)
@@ -40,7 +40,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ?? prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p))
       ?? ['grailed', 'mercari', 'depop'],
   );
-  const [cadence] = useState<24>(24);
+  const [cadence, setCadence] = useState<24 | 168>(editingAlert?.cadence_hours ?? 24);
   // Optional AND-only sourcing criteria — narrows matches to brand AND size AND
   // price<X. Empty fields are omitted (no-op).
   const [brand, setBrand] = useState(critField(editingAlert?.criteria, 'brand'));
@@ -109,6 +109,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
             query,
             platforms,
             criteria: buildCriteria() ?? null,
+            cadence_hours: cadence,
           }),
         });
         const data = await res.json();
@@ -275,13 +276,24 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 Check frequency
               </label>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{ background: 'var(--accent)', color: '#fff' }}
-                >
-                  Every 24h
-                </button>
+                {([24, 168] as const).map((h) => {
+                  const selected = cadence === h;
+                  return (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setCadence(h)}
+                      className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+                      style={
+                        selected
+                          ? { background: 'var(--accent)', color: '#fff' }
+                          : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
+                      }
+                    >
+                      {cadenceLabel(h)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -348,7 +360,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
                 <span style={{ color: 'var(--text)' }}>
-                  Daily at 9 AM
+                  {cadenceScheduleLabel(cadence)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -397,7 +409,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
             {userEmail && (
               <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>
                 You&apos;ll get a badge on the bell icon and an email to{' '}
-                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear (daily, approximately).
+                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear ({cadenceLabel(cadence).toLowerCase()}, approximately).
               </p>
             )}
 

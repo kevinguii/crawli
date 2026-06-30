@@ -78,3 +78,6 @@ docs/marketing/**/*.mov
 
 # Runtime logs
 token_usage.jsonl
+
+.playwright-mcp
+.superpowers/

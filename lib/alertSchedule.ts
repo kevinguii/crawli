@@ -2,16 +2,18 @@
 // All alerts anchor to 9 AM local time so we never email users at 3 AM.
 // Computation works from both client and server.
 
-const ANCHOR_HOURS = (_cadenceHours: number): number[] => [9];
+const ANCHOR_HOUR = 9;
 
 // Returns the next Date (UTC) when an alert with this cadence should fire in
 // the given IANA timezone, starting from `base`. Defaults to next 9 AM local.
+// cadenceHours determines how many days out to land: 24 -> next 9 AM (today
+// or tomorrow), 168 (weekly) -> 9 AM, 7 days from today's tz-local date.
 export function nextAnchoredRunAt(
   timezone: string,
   cadenceHours: number,
   base: Date = new Date(),
 ): Date {
-  const anchors = ANCHOR_HOURS(cadenceHours);
+  const daySpan = Math.max(1, Math.round(cadenceHours / 24));
 
   // Extract the current calendar parts as seen in the target timezone.
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -26,23 +28,43 @@ export function nextAnchoredRunAt(
   const day = Number(get('day'));
   const hour = Number(get('hour'));
 
-  // Find next anchor hour ≥ hour+1 (we never want "right now" — must be strictly future)
-  let targetHour = anchors.find((h) => h > hour) ?? null;
   let targetYear = year;
   let targetMonth = month;
   let targetDay = day;
+  let targetHour: number;
 
-  if (targetHour === null) {
-    targetHour = anchors[0];
-    // Advance one day in the target tz
-    const tomorrow = new Date(Date.UTC(year, month - 1, day + 1));
-    targetYear = tomorrow.getUTCFullYear();
-    targetMonth = tomorrow.getUTCMonth() + 1;
-    targetDay = tomorrow.getUTCDate();
+  if (daySpan === 1) {
+    // Daily: next 9 AM strictly in the future — today if still ahead, else tomorrow.
+    if (hour < ANCHOR_HOUR) {
+      targetHour = ANCHOR_HOUR;
+    } else {
+      targetHour = ANCHOR_HOUR;
+      const tomorrow = new Date(Date.UTC(year, month - 1, day + 1));
+      targetYear = tomorrow.getUTCFullYear();
+      targetMonth = tomorrow.getUTCMonth() + 1;
+      targetDay = tomorrow.getUTCDate();
+    }
+  } else {
+    // Multi-day cadence (e.g. weekly): always advance daySpan days, then 9 AM.
+    targetHour = ANCHOR_HOUR;
+    const future = new Date(Date.UTC(year, month - 1, day + daySpan));
+    targetYear = future.getUTCFullYear();
+    targetMonth = future.getUTCMonth() + 1;
+    targetDay = future.getUTCDate();
   }
 
   // Now convert that wall-clock-in-tz to a UTC Date.
   return zonedTimeToUtc(targetYear, targetMonth, targetDay, targetHour, 0, timezone);
+}
+
+// Human-readable cadence name, e.g. "Daily" / "Weekly".
+export function cadenceLabel(hours: number): string {
+  return hours === 168 ? 'Weekly' : 'Daily';
+}
+
+// e.g. "Daily at 9 AM" / "Weekly at 9 AM".
+export function cadenceScheduleLabel(hours: number): string {
+  return `${cadenceLabel(hours)} at 9 AM`;
 }
 
 // Convert a wall-clock time in the given IANA tz to a UTC Date.
