@@ -88,6 +88,12 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-06-30 — Phase 2 compare pages + GEO fixes**
+- 15 public `/compare/[slug]` pages (ISR, cached daily, no auth required) — `app/compare/[slug]/page.tsx`. Scrape cron: `POST /api/compare/refresh` (CRON_SECRET bearer) — add crontab line `0 6 * * *` on server before pages will show data. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.
+- GEO: `public/.well-known/ai.txt`, `public/ai/summary.json`, `/ai/faq.json`, `/ai/service.json`. RSS feed at `/feed.xml` + `<link rel="alternate">` in layout `<head>`.
+- Footer: brand-gradient top border, bigger padding + icons (22px), platform brand-color hover glow, Blog link removed.
+- Stripe idempotency migration applied to prod (previous session).
+
 **2026-06-30 — Growth gameplan doc + SEO/AEO entity signals**
 Wrote `docs/GROWTH_PLAN.md` — the full distribution/conversion roadmap (data diagnosis, phased plan, owner checklist) so any session can continue the marketing push. Shipped Phase 1 SEO code: `public/llms.txt`, Organization `sameAs`/`alternateName`/`foundingDate` in `StructuredData.tsx`, and social links in landing `Footer.tsx`. Next planned: Phase 2 public `/compare/[slug]` page (not built). On-page SEO was already strong; brand-rank gap is off-page (age/backlinks/entity).
 

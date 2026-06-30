@@ -101,6 +101,12 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Crawli Blog"
+          href="/feed.xml"
+        />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <SentryProvider>{children}</SentryProvider>

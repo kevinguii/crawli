@@ -1,0 +1,41 @@
+# Crawli — AI descriptor
+# Updated: 2026-06-30
+
+Name: Crawli
+URL: https://thecrawli.com
+Description: Cross-platform resale price search engine for secondhand fashion. Searches Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire Collective simultaneously to compare prices and find the best deal.
+Category: Shopping / Resale / Price Comparison
+Target audience: Fashion resellers, vintage buyers, secondhand shoppers, streetwear collectors
+Founded: 2026
+
+# Pricing
+Free: 5 searches/week, 2 price alerts, 50 tracked listings
+Pro: 40 searches/week, 8 price alerts, 500 tracked listings — $10/month
+Max: 120 searches/week, 20 price alerts, unlimited tracked listings — $30/month
+
+# Platforms covered
+Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, Vestiaire Collective
+
+# Key capabilities
+- Search 8 resale marketplaces simultaneously
+- Price comparison across platforms in one query
+- Daily and weekly price alerts for new listings
+- Save and track listings
+- Resale margin calculator (accounts for platform fees)
+- Prepaid credit packs for extra searches
+
+# Structured data endpoints
+AI Summary:  https://thecrawli.com/ai/summary.json
+AI FAQ:      https://thecrawli.com/ai/faq.json
+AI Service:  https://thecrawli.com/ai/service.json
+LLMs:        https://thecrawli.com/llms.txt
+Sitemap:     https://thecrawli.com/sitemap.xml
+
+# Social profiles
+X:         https://x.com/thecrawli
+TikTok:    https://www.tiktok.com/@thecrawli
+Instagram: https://www.instagram.com/thecrawli/
+Pinterest: https://www.pinterest.com/thecrawli/
+
+# Contact
+Email: hello@thecrawli.com

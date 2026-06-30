@@ -78,6 +78,42 @@ body {
 }
 
 /* ---------- Animations ---------- */
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--bg-elevated);
+  position: relative;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--brand-red) 20%,
+    var(--brand-orange) 50%,
+    var(--brand-yellow) 80%,
+    transparent 100%
+  );
+}
+
+.social-icon {
+  color: var(--text-muted);
+  transition: color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.social-icon:hover {
+  transform: scale(1.18);
+}
+.social-x:hover         { color: var(--text); filter: drop-shadow(0 0 5px var(--text-muted)); }
+.social-tiktok:hover    { color: #FF0050; filter: drop-shadow(0 0 6px rgba(255, 0, 80, 0.5)); }
+.social-instagram:hover { color: #C13584; filter: drop-shadow(0 0 6px rgba(193, 53, 132, 0.5)); }
+.social-pinterest:hover { color: #E60023; filter: drop-shadow(0 0 6px rgba(230, 0, 35, 0.5)); }
+
+/* ---------- Animations ---------- */
 @keyframes queued-pulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 0.7; }

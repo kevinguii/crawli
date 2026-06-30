@@ -1,0 +1,53 @@
+{
+  "name": "Crawli",
+  "tagline": "Search 8 resale marketplaces at once. Find underpriced inventory and know your flip margin.",
+  "description": "Crawli is a cross-platform resale price search engine for secondhand fashion. One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire Collective — compare prices, find the best deal, and set alerts for new listings.",
+  "url": "https://thecrawli.com",
+  "category": "Shopping / Resale / Price Comparison",
+  "founded": "2026",
+  "target_audience": [
+    "Fashion resellers",
+    "Vintage buyers",
+    "Secondhand shoppers",
+    "Streetwear and sneaker collectors"
+  ],
+  "platforms": [
+    "Grailed",
+    "Depop",
+    "Poshmark",
+    "StockX",
+    "Mercari",
+    "Vinted",
+    "eBay",
+    "Vestiaire Collective"
+  ],
+  "pricing": {
+    "free": {
+      "price_usd": 0,
+      "searches_per_week": 5,
+      "alerts": 2,
+      "tracked_listings": 50
+    },
+    "pro": {
+      "price_usd_per_month": 10,
+      "searches_per_week": 40,
+      "alerts": 8,
+      "tracked_listings": 500
+    },
+    "max": {
+      "price_usd_per_month": 30,
+      "searches_per_week": 120,
+      "alerts": 20,
+      "tracked_listings": "unlimited"
+    }
+  },
+  "contact": {
+    "email": "hello@thecrawli.com"
+  },
+  "social": {
+    "x": "https://x.com/thecrawli",
+    "tiktok": "https://www.tiktok.com/@thecrawli",
+    "instagram": "https://www.instagram.com/thecrawli/",
+    "pinterest": "https://www.pinterest.com/thecrawli/"
+  }
+}
