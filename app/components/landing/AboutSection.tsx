@@ -48,13 +48,7 @@ function Stat({ value, label }: { value: string; label: string }) {
     <div className="text-left">
       <div
         className="text-2xl font-bold leading-none"
-        style={{
-          background:
-            'linear-gradient(to right, #E24B4A, #E84D1D, #D85A30, #EF9F27, #FAC775)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}
+        style={{ color: 'var(--accent)' }}
       >
         {value}
       </div>
