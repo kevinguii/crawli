@@ -89,7 +89,7 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ## Recent changes
 
 **2026-06-30 — Phase 2 compare pages + GEO fixes**
-- 15 public `/compare/[slug]` pages (ISR, cached daily, no auth required) — `app/compare/[slug]/page.tsx`. Scrape cron: `POST /api/compare/refresh` (CRON_SECRET bearer) — add crontab line `0 6 * * *` on server before pages will show data. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.
+- 15 public `/compare/[slug]` pages (ISR, cached daily, no auth required) — `app/compare/[slug]/page.tsx`. Scrape cron `0 6 * * *` wired on server (`/var/log/crawli-compare.log`). Nginx `proxy_read_timeout 300s` added for `/api/compare/refresh`. First snapshot run triggered 2026-06-30. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.
 - GEO: `public/.well-known/ai.txt`, `public/ai/summary.json`, `/ai/faq.json`, `/ai/service.json`. RSS feed at `/feed.xml` + `<link rel="alternate">` in layout `<head>`.
 - Footer: brand-gradient top border, bigger padding + icons (22px), platform brand-color hover glow, Blog link removed.
 - Stripe idempotency migration applied to prod (previous session).
