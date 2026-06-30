@@ -22,7 +22,7 @@
 
 ---
 
-## Current state (2026-06-29)
+## Current state (2026-06-30)
 
 **Platforms: 9 total, 8 native (Avenue A), 1 Firecrawl-only (Avenue B)**
 Note: Mercari and Depop are both native-first with a Firecrawl fallback — they raw-HTTP-403 the datacenter IP but real Chromium renders most searches, so they're free most of the time and only pay a Firecrawl credit on an actual render miss. (Mercari's misclassifying hard-block probe was removed 2026-06-29.) The other 6 native platforms are free always. eBay has no native path at all.
