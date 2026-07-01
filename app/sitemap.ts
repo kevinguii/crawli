@@ -5,6 +5,12 @@ import { gitLastModified } from "@/lib/gitLastModified";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thecrawli.com";
 
+// Without this, Next.js treats the sitemap as fully static and freezes its
+// lastmod values (incl. compare pages' real scraped_at) until the next deploy.
+// 1h matches the /compare/[slug] pages' own ISR revalidate, so the sitemap
+// picks up the daily 6am compare-refresh cron the same day it runs.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Accurate <lastmod> per URL type — Bing/Google discount the freshness signal
   // when it always reads "now". Posts use their frontmatter dates, compare pages
