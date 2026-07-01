@@ -187,24 +187,6 @@ function PlatformCard({
   );
 }
 
-// ── eBay live link card ───────────────────────────────────────────────────────
-function EbayCard({ query }: { query: string }) {
-  const url = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sop=15&LH_BIN=1`;
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex flex-col gap-2 rounded-2xl p-4 transition-all hover:opacity-90"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-    >
-      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>eBay</span>
-      <p className="text-sm" style={{ color: 'var(--accent)' }}>View live listings →</p>
-      <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Not cached — click to see live</p>
-    </a>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default async function ComparePage({ params }: Props) {
   const { slug } = await params;
@@ -274,11 +256,13 @@ export default async function ComparePage({ params }: Props) {
 
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb — links back into the landing compare grid for a seamless loop */}
         <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: 'var(--text-dim)' }}>
-          <Link href="/" className="hover:opacity-80 transition-opacity">Home</Link>
+          <Link href="/" className="transition-opacity hover:opacity-80">Home</Link>
           <span>/</span>
-          <span>Price comparison</span>
+          <Link href="/#compare" className="transition-opacity hover:opacity-80" style={{ color: 'var(--accent-text)' }}>
+            All comparisons
+          </Link>
           <span>/</span>
           <span style={{ color: 'var(--text-muted)' }}>{item.name}</span>
         </nav>
@@ -326,7 +310,6 @@ export default async function ComparePage({ params }: Props) {
                   isCheapest={cheapest?.platform === platform}
                 />
               ))}
-              <EbayCard query={item.query} />
             </div>
           )}
         </section>

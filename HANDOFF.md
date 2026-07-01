@@ -66,7 +66,7 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 - `stripe_webhook_events(event_id text pk, type text, processed_at timestamptz)` — idempotency ledger; webhook claims each `event.id` before processing, skips duplicates, deletes the claim on failure so retries re-run. service_role-only. (migration `docs/migrations/stripe-webhook-idempotency.sql`)
 - All need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role` (see `docs/migrations/alert-notifications.sql`)
 
-**Landing page:** 9 platforms (all updated 2026-06-29). Margin calculator copy says "7 platforms" — correct, intentional.
+**Landing page:** reseller-first structure (2026-06-30). Order: Hero (live `FlipCalculator` widget in right column) → `CompareSection` (real cached-price slugs w/ "from $X" teasers, promoted to #2) → PlatformLogos → BentoFeatures (co-equal trio: margin · alerts · **tracked listings**) → AlertsMock → SavesMock (tracked listings, moved up) → About → Founder → CTA → FAQ → Footer. Both "fake searches" are gone: the read-only hero box and the blurred `SearchMock` gate are **deleted** (`SearchMock.tsx` + `mockSearches.ts` removed). The two real, no-login proofs are the hero calculator (`app/components/landing/FlipCalculator.tsx`, pure client, uses `netFlipProfit` from `lib/marketplaceFees.ts`) and the compare slugs. `CompareSection` is now data-driven from `getAllCompareItems()` + `getCompareTeasers()` (new in `lib/compare.ts`, best-effort). Below-fold sections fade in via `Reveal.tsx` (reduced-motion aware). Margin calculator copy says "7 platforms" — correct, intentional; 9 platforms elsewhere.
 
 ---
 
@@ -87,6 +87,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-06-30 — Landing page reseller revamp (killed the fake searches)**
+- Replaced both fake search elements with two real, no-login, interactive proofs: a live flip-margin calculator in the hero (`FlipCalculator.tsx`, real `netFlipProfit` math) and the promoted real compare slugs (`CompareSection` now data-driven w/ "from $X" teasers via new `getCompareTeasers()`). Deleted `SearchMock.tsx` + `mockSearches.ts`. Hero is now a two-column layout (copy left, calculator right). BentoFeatures elevates **tracked listings** into a co-equal hero card alongside margin + alerts; SavesMock reframed to price-drop tracking and moved up. Below-fold sections fade in via `Reveal.tsx` (reduced-motion aware). Compare `/[slug]` page: removed the eBay "not cached" card, breadcrumb now bridges to `/#compare`. Verified: `tsc` clean; no horizontal overflow at 375/768/1280; light + dark correct. Design spec: `docs/superpowers/specs/2026-06-30-landing-reseller-revamp-design.md`.
 
 **2026-06-30 — Phase 2 compare pages + GEO fixes**
 - 15 public `/compare/[slug]` pages (ISR, cached daily, no auth required) — `app/compare/[slug]/page.tsx`. Scrape cron `0 6 * * *` wired on server (`/var/log/crawli-compare.log`). Nginx `proxy_read_timeout 300s` added for `/api/compare/refresh`. First snapshot run triggered 2026-06-30. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.

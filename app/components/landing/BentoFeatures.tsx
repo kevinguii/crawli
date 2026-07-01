@@ -122,6 +122,43 @@ function AlertPreview() {
   );
 }
 
+function TrackedPreview() {
+  return (
+    <div
+      className="rounded-xl p-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div className="mb-3 text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+        Watching · price drop
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium" style={{ color: 'var(--text)' }}>
+            Arc&apos;teryx Beta AR — M
+          </p>
+          <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-dim)' }}>Grailed · tracked 6 days</p>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <span className="text-xs line-through tabular-nums" style={{ color: 'var(--text-dim)' }}>$240</span>
+          <span className="text-base font-bold tabular-nums" style={{ color: 'var(--text)' }}>$198</span>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold text-white"
+          style={{ background: 'var(--success)' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" />
+          </svg>
+          18% off
+        </span>
+        <span className="text-[10px]" style={{ color: 'var(--text-dim)' }}>notified 2h ago</span>
+      </div>
+    </div>
+  );
+}
+
 export default function BentoFeatures() {
   return (
     <section
@@ -149,12 +186,12 @@ export default function BentoFeatures() {
         </div>
 
         <div className="mt-12 grid gap-4 sm:grid-cols-6">
-          {/* Hero features — equal weight, large cards */}
+          {/* Hero trio — the reseller core: margin, alerts, tracked listings */}
           <Card
-            className="sm:col-span-3"
+            className="sm:col-span-2"
             hero
             title="Flip margin calculator"
-            body="Enter your sourcing price and target platform. See net profit, margin, and ROI after real seller-side fees before you spend a dollar. All 7 resale platforms covered."
+            body="Enter your sourcing price and target platform. See net profit, margin, and ROI after real seller-side fees before you spend a dollar."
             icon={
               <svg width="22" height="22" viewBox="0 0 24 24" {...stroke}>
                 <circle cx="12" cy="12" r="10" />
@@ -165,7 +202,7 @@ export default function BentoFeatures() {
             preview={<MarginPreview />}
           />
           <Card
-            className="sm:col-span-3"
+            className="sm:col-span-2"
             hero
             title="Precision sourcing alerts"
             body="Save a search with brand, size, and max-price criteria. Crawli rechecks every platform daily and notifies you only when a listing matches all your terms."
@@ -176,6 +213,18 @@ export default function BentoFeatures() {
               </svg>
             }
             preview={<AlertPreview />}
+          />
+          <Card
+            className="sm:col-span-2"
+            hero
+            title="Tracked listings & price drops"
+            body="Save the pieces you're still weighing across any platform. Crawli keeps watching and flags the moment one drops in price, so you strike at the low."
+            icon={
+              <svg width="22" height="22" viewBox="0 0 24 24" {...stroke}>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            }
+            preview={<TrackedPreview />}
           />
 
           {/* Supporting features */}

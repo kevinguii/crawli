@@ -5,13 +5,15 @@ type Saved = {
   platform: string;
   title: string;
   price: string;
+  oldPrice?: string;
+  drop?: string;
 };
 
 const SAVED: Saved[] = [
   { platform: 'grailed', title: 'Rick Owens DRKSHDW Geobasket', price: '$320' },
-  { platform: 'depop', title: 'Carhartt Detroit Jacket — Hamilton Brown', price: '$140' },
+  { platform: 'depop', title: 'Carhartt Detroit Jacket — Hamilton Brown', price: '$118', oldPrice: '$140', drop: '16%' },
   { platform: 'vestiaire', title: 'Margiela 5AC Mini Bag', price: '$680' },
-  { platform: 'stockx', title: 'Air Jordan 1 Mocha — 10', price: '$295' },
+  { platform: 'stockx', title: 'Air Jordan 1 Mocha — 10', price: '$268', oldPrice: '$295', drop: '9%' },
 ];
 
 const FOLDERS = ['All', 'Outerwear', 'Footwear', 'Bags'];
@@ -25,20 +27,21 @@ export default function SavesMock() {
             className="text-xs font-medium uppercase tracking-wider"
             style={{ color: 'var(--accent-text)' }}
           >
-            Build your wishlist
+            Never lose a deal
           </p>
           <h2
             className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl"
             style={{ color: 'var(--text)' }}
           >
-            Heart what you love. Organize what you keep.
+            Track listings. Catch every price drop.
           </h2>
           <p
             className="mt-3 text-base"
             style={{ color: 'var(--text-muted)' }}
           >
-            Save any listing across any platform. Sort into folders. Track
-            price drops on the ones you’re still thinking about.
+            Save any listing across any platform into folders. Crawli keeps
+            watching the ones you’re still deciding on and flags the moment the
+            price falls — so you buy at the low.
           </p>
         </div>
 
@@ -107,12 +110,24 @@ export default function SavesMock() {
                     >
                       {s.title}
                     </p>
-                    <p
-                      className="mt-2 text-lg font-bold"
-                      style={{ color: 'var(--text)' }}
-                    >
-                      {s.price}
-                    </p>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-lg font-bold tabular-nums" style={{ color: 'var(--text)' }}>
+                        {s.price}
+                      </span>
+                      {s.oldPrice && (
+                        <span className="text-xs line-through tabular-nums" style={{ color: 'var(--text-dim)' }}>
+                          {s.oldPrice}
+                        </span>
+                      )}
+                      {s.drop && (
+                        <span
+                          className="ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                          style={{ background: 'var(--success)' }}
+                        >
+                          ↓ {s.drop}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

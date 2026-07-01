@@ -62,6 +62,33 @@ export async function getComparePageData(slug: string): Promise<ComparePageData 
   };
 }
 
+/**
+ * Cheapest listed price (USD) per slug across all platforms — for landing-page
+ * "from $X" teasers on the compare grid. One query, best-effort: returns an
+ * empty map on any error so it can never break the landing page render.
+ */
+export async function getCompareTeasers(): Promise<Map<string, number>> {
+  const teasers = new Map<string, number>();
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from('compare_snapshots')
+      .select('slug, min_price_usd')
+      .not('min_price_usd', 'is', null);
+
+    for (const row of (data ?? []) as { slug: string; min_price_usd: number | null }[]) {
+      if (row.min_price_usd === null) continue;
+      const current = teasers.get(row.slug);
+      if (current === undefined || row.min_price_usd < current) {
+        teasers.set(row.slug, row.min_price_usd);
+      }
+    }
+  } catch {
+    // best-effort only
+  }
+  return teasers;
+}
+
 export function hoursAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));

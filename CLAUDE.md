@@ -18,6 +18,34 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 - `docs/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
 - `docs/FIRECRAWL_PRICING.md` — Firecrawl credit costs
 - `docs/marketing/POSTS_README.md` — carousel batch operation
+- `docs/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
+
+## Available MCP tools
+
+These MCP servers are connected in this project. Use them instead of manual API calls or guessing.
+
+| MCP | When to use |
+|---|---|
+| `mcp__gsc__*` | Fetch GSC search analytics, inspect URLs, list sitemaps, check indexing |
+| `mcp__google-seo-mcp__*` | CrUX/Core Web Vitals, GA4 traffic, Lighthouse audits, SERP checks, schema validation, sitemap diffs |
+| `mcp__geo-optimizer__*` | AEO/GEO audits — AI crawler access, llms.txt, citability, brand mention signals |
+| `mcp__supabase__*` | Run SQL, apply migrations, list tables, check logs — always use over guessing schema |
+| `mcp__n8n__*` | Search/trigger n8n workflows (content brief `moMVEnr5L6kGgJTC` is the TikTok carousel brief) |
+| `mcp__playwright__*` | Browser automation — navigate, screenshot, fill forms. Use for UI verification |
+| `mcp__claude_ai_Gmail__*` | Read/send email — only when user explicitly asks |
+| `mcp__claude_ai_Google_Calendar__*` | Calendar — only when user explicitly asks |
+
+**Service account** for GSC + GA4: `~/.config/crawli-sa.json`
+(`crawli-seo-mcp@fashion-crawler-c4ai.iam.gserviceaccount.com` — Full on GSC, Viewer on GA4)
+
+**SEO/analytics tasks:** reach for `mcp__gsc__get_search_analytics` or `mcp__google-seo-mcp__gsc_search_analytics` first — don't ask the user to copy-paste data you can fetch directly.
+
+**Supabase tasks:** use `mcp__supabase__list_tables` before writing any migration, and `mcp__supabase__execute_sql` to verify data rather than asking the user to check.
+
+**Skills that pair with MCPs:**
+- `/claude-seo:seo` or `/claude-seo:seo-audit` — full SEO audit, orchestrates the SEO MCP tools automatically
+- `/claude-seo:seo-geo` — AEO/GEO audit, uses `mcp__geo-optimizer__*`
+- `/claude-seo:seo-google` — CrUX + GSC + GA4 enriched report
 
 ## Critical rules
 
