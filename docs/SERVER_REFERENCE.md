@@ -9,7 +9,9 @@
 
 Both point to `5.78.187.97`. Without both, typing `www.thecrawli.com` would show a DNS error even if the root works. They're separate records because DNS treats them as separate names.
 
-Both should have **Proxied** (orange cloud) enabled so Cloudflare handles HTTPS for you — no SSL cert setup needed on the server.
+**TLS is terminated by nginx via Certbot/Let's Encrypt on the box** (`/etc/letsencrypt/live/thecrawli.com/`, cert covers both names). An earlier version of this doc said Cloudflare handles HTTPS with no server cert — that's stale; the origin has its own Certbot cert.
+
+**www must 301 to non-www** (canonicalization — avoids Bing/Google seeing duplicate content). The nginx `crawli` site has a dedicated `www.thecrawli.com` server block that `return 301 https://thecrawli.com$request_uri;` and the main block's `server_name` is `thecrawli.com` only. Verify: `curl -sI https://www.thecrawli.com/ | grep -i location` should show `https://thecrawli.com/`. If it returns 200 instead, the redirect block was lost — re-add it (see "www redirect" below).
 
 ---
 
@@ -20,9 +22,13 @@ Every time you push new code to GitHub and want the server to run it:
 ```bash
 ssh root@5.78.187.97
 cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next
+# Then notify Bing/Yandex/Naver of any new/changed pages (IndexNow, best-effort):
+curl -sf -X POST -H "Authorization: Bearer $(grep '^CRON_SECRET=' /opt/crawli/.env | cut -d= -f2)" https://thecrawli.com/api/indexnow/submit
 ```
 
 **Order matters:** install dependencies first, then build, then restart. Restarting before the build completes loads the old code.
+
+The final `curl` resubmits the full sitemap to IndexNow so Bing recrawls promptly instead of waiting. Safe to skip if a deploy changed no public pages — it's best-effort and never fails the deploy. Requires `INDEXNOW_KEY` in `/opt/crawli/.env` (must match `public/<key>.txt`). Compare pages are also auto-submitted by the daily refresh cron, so this curl mainly matters for new/edited blog posts.
 
 `npm install` only needed when `package.json` changed. Safe to always run — fast if nothing changed.
 
@@ -35,6 +41,34 @@ If Python sidecar code changed (`crawl4ai-service/`):
 systemctl restart crawli-sidecar
 # If port 8000 still in use: fuser -k 8000/tcp && systemctl restart crawli-sidecar
 ```
+
+### nginx: www → non-www redirect
+
+Config: `/etc/nginx/sites-enabled/crawli`. The `www` hostname must 301 to the bare domain (SEO canonicalization). Target state — a dedicated redirect-only block, and the main server block serving `thecrawli.com` only:
+```nginx
+# Redirect-only block for www (reuses the same Certbot cert, which covers www)
+server {
+    listen 443 ssl;
+    server_name www.thecrawli.com;
+    ssl_certificate     /etc/letsencrypt/live/thecrawli.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/thecrawli.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    return 301 https://thecrawli.com$request_uri;
+}
+# Main block: server_name thecrawli.com;   (drop www from this line)
+```
+Apply safely:
+```bash
+cp /etc/nginx/sites-enabled/crawli /root/crawli.nginx.bak-$(date +%Y%m%d%H%M%S)  # backup
+nano /etc/nginx/sites-enabled/crawli                                             # make the two edits
+nginx -t && systemctl reload nginx                                              # validate THEN zero-downtime reload
+curl -sI https://www.thecrawli.com/blog | grep -iE 'HTTP|location'              # expect 301 → https://thecrawli.com/blog
+```
+
+### IndexNow env var
+
+`INDEXNOW_KEY` in `/opt/crawli/.env` must exactly equal the filename+contents of `public/<key>.txt` (currently `421d3af41bc04a0439069010586fcb56`). It authorizes IndexNow submissions from `lib/indexnow.ts` and `/api/indexnow/submit`. Rotate by generating a new key, renaming the `public/*.txt` file to match, and updating the env — all three must stay in sync.
 
 ### After publishing a new blog post
 

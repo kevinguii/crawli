@@ -4,6 +4,16 @@
 
 ---
 
+## SEO / indexing
+
+**IndexNow key file must stay in `public/` (added 2026-07-01)**
+`public/421d3af41bc04a0439069010586fcb56.txt` is Bing's domain-ownership proof — its name AND contents must equal `INDEXNOW_KEY`. Delete it or change the env without updating both and IndexNow submissions silently 403. Submissions (`lib/indexnow.ts`) are **best-effort and never throw** — a failed ping must not break a deploy or the compare cron, so callers don't need try/catch. Locally you'll see `ok:false` / a 4xx in logs because the API rejects `localhost` URLs; that's expected, it works in prod. IndexNow is Bing/Yandex/Naver only — it does nothing for Google (Google indexing is driven via GSC, not code).
+
+**Sitemap `lastmod` must reflect real dates, not `new Date()` (fixed 2026-07-01)**
+`app/sitemap.ts` used to stamp every URL with "now", which makes Bing/Google distrust the freshness signal. It now derives real dates: posts `updated||date`, compare pages `scraped_at` (`getCompareLastUpdated()`), static pages last-git-commit (`lib/gitLastModified.ts`). The git helper shells out to `git log` and only works because prod is a persistent `git pull` clone — it falls back to build time if `.git` is absent. If you add a new static page to the sitemap, give it a `gitLastModified("app/<route>/page.tsx")` entry, not a bare `new Date()`.
+
+---
+
 ## Relevance filtering
 
 **`tshirt` as anchor kills results (fixed 2026-06-29)**

@@ -1,23 +1,26 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
-import { getAllCompareItems } from "@/lib/compare";
+import { getAllCompareItems, getCompareLastUpdated } from "@/lib/compare";
+import { gitLastModified } from "@/lib/gitLastModified";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thecrawli.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date();
-
+  // Accurate <lastmod> per URL type — Bing/Google discount the freshness signal
+  // when it always reads "now". Posts use their frontmatter dates, compare pages
+  // use real scrape times, static pages use their last git commit.
   const blogPosts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
-    lastModified: post.date ? new Date(post.date) : lastModified,
+    lastModified: new Date(post.updated || post.date || Date.now()),
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
 
   const compareItems = await getAllCompareItems();
+  const compareLastUpdated = await getCompareLastUpdated();
   const comparePages: MetadataRoute.Sitemap = compareItems.map((item) => ({
     url: `${SITE_URL}/compare/${item.slug}`,
-    lastModified,
+    lastModified: new Date(compareLastUpdated.get(item.slug) ?? Date.now()),
     changeFrequency: "daily" as const,
     priority: 0.85,
   }));
@@ -27,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: `${SITE_URL}/blog`,
-      lastModified,
+      lastModified: gitLastModified("app/blog/page.tsx"),
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -35,31 +38,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...comparePages,
     {
       url: `${SITE_URL}/`,
-      lastModified,
+      lastModified: gitLastModified("app/page.tsx"),
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${SITE_URL}/pricing`,
-      lastModified,
+      lastModified: gitLastModified("app/pricing/page.tsx"),
       changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/contact`,
-      lastModified,
+      lastModified: gitLastModified("app/contact/page.tsx"),
       changeFrequency: "yearly",
       priority: 0.5,
     },
     {
       url: `${SITE_URL}/privacy`,
-      lastModified,
+      lastModified: gitLastModified("app/privacy/page.tsx"),
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${SITE_URL}/terms`,
-      lastModified,
+      lastModified: gitLastModified("app/terms/page.tsx"),
       changeFrequency: "yearly",
       priority: 0.3,
     },

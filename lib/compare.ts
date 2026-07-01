@@ -89,6 +89,34 @@ export async function getCompareTeasers(): Promise<Map<string, number>> {
   return teasers;
 }
 
+/**
+ * Most-recent `scraped_at` (ISO string) per compare slug — the real last-updated
+ * time for each /compare/[slug] page, driven by the daily refresh cron. Used by
+ * the sitemap for accurate <lastmod>. Best-effort: returns an empty map on any
+ * error so the sitemap can never break. Mirrors getCompareTeasers()'s pattern.
+ */
+export async function getCompareLastUpdated(): Promise<Map<string, string>> {
+  const lastUpdated = new Map<string, string>();
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from('compare_snapshots')
+      .select('slug, scraped_at')
+      .not('scraped_at', 'is', null);
+
+    for (const row of (data ?? []) as { slug: string; scraped_at: string | null }[]) {
+      if (!row.scraped_at) continue;
+      const current = lastUpdated.get(row.slug);
+      if (current === undefined || row.scraped_at > current) {
+        lastUpdated.set(row.slug, row.scraped_at);
+      }
+    }
+  } catch {
+    // best-effort only
+  }
+  return lastUpdated;
+}
+
 export function hoursAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));

@@ -5,8 +5,11 @@ import { parseScrapedListings } from '@/lib/parse';
 import { convertToUSD } from '@/lib/currency';
 import { allSettledWithConcurrency } from '@/lib/searchWorker';
 import { NATIVE_PLATFORMS } from '@/lib/types';
+import { submitToIndexNow } from '@/lib/indexnow';
 import type { CompareItem } from '@/lib/compare';
 import type { Listing } from '@/lib/types';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
 
 export const dynamic = 'force-dynamic';
 // Long timeout: scraping 8 platforms × N slugs can take a while.
@@ -106,6 +109,10 @@ export async function POST(request: Request) {
     const result = await refreshSlug(item, admin);
     results.push(result);
   }
+
+  // Ping IndexNow with the just-refreshed compare pages so Bing recrawls the
+  // updated prices promptly. Best-effort — submitToIndexNow never throws.
+  await submitToIndexNow(results.map((r) => `${SITE_URL}/compare/${r.slug}`));
 
   const totalErrors = results.flatMap((r) => r.errors);
   return NextResponse.json({
