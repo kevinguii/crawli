@@ -9,7 +9,7 @@
 
 Both point to `5.78.187.97`. Without both, typing `www.thecrawli.com` would show a DNS error even if the root works. They're separate records because DNS treats them as separate names.
 
-**TLS is terminated by nginx via Certbot/Let's Encrypt on the box** (`/etc/letsencrypt/live/thecrawli.com/`, cert covers both names). An earlier version of this doc said Cloudflare handles HTTPS with no server cert — that's stale; the origin has its own Certbot cert.
+**Both Cloudflare AND the origin terminate TLS — it's not one or the other.** Cloudflare is actively proxying (confirmed live via `cf-ray`/`cf-cache-status`/`server: cloudflare` response headers on `curl -I https://thecrawli.com/`) and terminates the client-facing connection at the edge. Separately, nginx on the box also has its own Certbot/Let's Encrypt cert (`/etc/letsencrypt/live/thecrawli.com/`, covers both `thecrawli.com` and `www`) for the Cloudflare→origin hop — this is Cloudflare's "Full (strict)" SSL mode. An earlier version of this doc said Cloudflare handles HTTPS with no server cert at all, implying DNS-only (grey cloud) — that was wrong; treat Cloudflare as an active proxy layer in front of nginx, not just a DNS host.
 
 **www must 301 to non-www** (canonicalization — avoids Bing/Google seeing duplicate content). The nginx `crawli` site has a dedicated `www.thecrawli.com` server block that `return 301 https://thecrawli.com$request_uri;` and the main block's `server_name` is `thecrawli.com` only. Verify: `curl -sI https://www.thecrawli.com/ | grep -i location` should show `https://thecrawli.com/`. If it returns 200 instead, the redirect block was lost — re-add it (see "www redirect" below).
 

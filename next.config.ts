@@ -5,6 +5,24 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  async headers() {
+    // Baseline security headers (flagged by Bing's trust-signal guidance and a
+    // general gap — site had none). No CSP here: a strict policy risks silently
+    // breaking Stripe checkout, the Sentry tunnel (/monitoring), and GA4 without
+    // careful per-directive scoping — add separately once audited. No HSTS
+    // preload either — that's a one-way door via browser preload lists.
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {
