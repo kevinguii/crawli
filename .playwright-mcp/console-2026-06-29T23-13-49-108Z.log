@@ -1,2 +1,0 @@
-[    6380ms] [ERROR] A bad HTTP response code (404) was received when fetching the script. @ :0
-[   12941ms] [LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://u-web-assets.mercdn.net/builds/r-v3.104.46/_next/static/chunks/0udsebel-t9r~.js:9

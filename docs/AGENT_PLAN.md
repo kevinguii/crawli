@@ -102,7 +102,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 **Key details:**
 - Webhook URL: `https://n8n.thecrawli.com/webhook/16af4402-a997-4ad8-8ea0-286ea8ae6035`
-- Pinterest account ID: `6a2506e02b2567671a0b8721` (username: thecrawli)
+- Pinterest account ID: `6a454bd69d9472faae43601f` (username: thecrawli) — **changed 2026-07-01**, was `6a2506e02b2567671a0b8721` until the Zernio Pinterest connection was recreated (new connection = new Zernio account `_id`, even for the same Pinterest profile)
 - Board: "Second Hand Fashion Finds" — ID `1089308297311595703`
 - Image fallback: `https://thecrawli.com/opengraph-image` (for saves with no image_url)
 - Pin link: always `https://thecrawli.com`
@@ -112,6 +112,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 - OpenAI node output path: `output[0].content[0].text` (Responses API format, not `message.content`)
 - Use a Code node (not JSON template body) to build the Zernio payload — AI text contains newlines + quotes that break JSON templates
 - Zernio `POST /v1/posts` requires `accountId` inside the `platforms` array (not documented prominently)
+- **Zernio account IDs are not stable across reconnects.** If a platform account gets disconnected/reconnected in Zernio (even to the same profile), it gets a brand-new `_id` and the old one 403s with "One or more accounts do not belong to this user". Fix: decrypt the Zernio header-auth credential from `credentials_entity` (AES via `crypto-js`, key in `/root/.n8n/config`) and call `GET https://zernio.com/api/v1/accounts` to get the current ID, then update the hardcoded `accountId` in the workflow's Code node.
 - Set node expression mode doesn't evaluate in JSON mode — use Code node instead
 - n8n Code nodes use `.first()` not `.item` to reference other nodes
 
