@@ -338,9 +338,9 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 <span style={{ color: 'var(--text-muted)' }}>Query</span>
                 <span className="font-medium" style={{ color: 'var(--text)' }}>{query}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-4">
                 <span style={{ color: 'var(--text-muted)' }}>Platforms</span>
-                <span style={{ color: 'var(--text)' }}>
+                <span style={{ color: 'var(--text)', textAlign: 'right', wordBreak: 'break-word' }}>
                   {platforms.map((p) => PLATFORM_NAMES[p] ?? p).join(', ')}
                 </span>
               </div>
