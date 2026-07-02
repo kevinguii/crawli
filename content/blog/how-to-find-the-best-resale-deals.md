@@ -1,5 +1,5 @@
 ---
-title: "How to Find the Best Resale Deals Across the Second-Hand Marketplaces"
+title: "Finding the Best Resale Deals Across Second-Hand Marketplaces"
 description: "The same piece can cost wildly different amounts on Grailed, Depop, eBay, etc. Here's how to compare resale prices the smart way and never overpay again."
 date: "2026-06-02"
 updated: "2026-06-12"

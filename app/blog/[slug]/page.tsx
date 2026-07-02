@@ -157,7 +157,7 @@ export default async function BlogPost({ params }: Props) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={post.cover}
-              alt=""
+              alt={post.title}
               className="object-contain p-8"
               style={{ maxHeight: '380px', maxWidth: '100%' }}
             />
