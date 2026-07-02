@@ -13,6 +13,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-23 | `2026-06-23/content-posts-slides.html` | `2026-06-23/post-captions.md` | `2026-06-23/exports/carousel/` | 8 carousel posts, all creative decisions pre-specified — new split/grid layouts, new Anton+Epilogue and Cormorant+Montserrat font pairings, Brutalism/Glassmorphism style movements, side-rail text placement, 5 of 8 covers feature a human subject — see Post Breakdown — Day 6 |
 | 2026-06-25 | `2026-06-25/content-posts-slides.html` | `2026-06-25/post-captions.md` | `2026-06-25/exports/carousel/` | 8 carousel posts (56 slides) — number-left/visual-hero/myth layouts, four new font pairings (Poiret One+Didact Gothic, Newsreader+Roboto, Bebas Neue+Source Sans 3, Noto Serif JP+Noto Sans JP), Neumorphism style movement (first use) on the three light-background posts, centered/top/bottom cover placements, flat colored clipart object illustrations on inner slides — see Post Breakdown — Day 7 |
 | 2026-06-29 | `2026-06-29/content-posts-slides.html` | `2026-06-29/post-captions.md` | `2026-06-29/exports/carousel/` | 8 carousel posts (56 slides, 7 each) — first reseller-pivot batch under the obfuscate-CI rule (no URL/CTA on any slide, Crawli mentioned subtly/variably on select final slides only). Three new font pairings (Space Grotesk+DM Sans, Calistoga+Inter, Archivo Black+Spectral), new corner-block cover placement (solid accent panel bottom-left), new ledger/checklist/editorial-step inner layouts. All covers ai-raster (gpt-image-2). Topics sourced from 2026-06-29 DeepSeek brief + dedup against Supabase content_history — see Post Breakdown — Day 8 |
+| 2026-07-02 | `2026-07-02/content-posts-slides.html` | `2026-07-02/post-captions.md` | `2026-07-02/exports/carousel/` | 8 carousel posts (50 slides — 6 posts at 7 slides, 2 grid posts at 4) — 8 brand-new font pairings, split/number-left/visual-hero/grid/myth layouts (none of the 2026-06-29 batch's three), cover placement rotates top-anchor/side-rail/centered-stacked/bottom-anchor (no corner-block), Neumorphism on post 5. Topics sourced from 2026-07-02 DeepSeek brief, dedup against Supabase content_history caught 1 confirmed repeat (eBay Authenticity Guarantee ~= posted `authenticity-guarantee-limits`) — see Post Breakdown — Day 9 |
 
 **Folder structure:**
 ```
@@ -186,6 +187,14 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 | Day 7: Peacoat Built for Sea | Naval Navy | #172554 |
 | Day 7: Walked a Runway | Warm Stone | #44403c |
 | Day 7: Sell Where the Buyer Is | Crimson | #9f1239 |
+| Day 9: Quiet Luxury Price Gap | Dusty Navy | #2a4d69 |
+| Day 9: Seller Vetting Red Flags | Brick Red | #b91c1c |
+| Day 9: Aloha Shirt History | Terracotta | #e2725b |
+| Day 9: Denim Cinch History | Denim Ink | #2c3e70 |
+| Day 9: The Pinch Test | Wool Grey | #52525b |
+| Day 9: Band Tee Reprint Spotting | Oxblood | #5c1f2e |
+| Day 9: Varsity Jacket History | Leather Gold | #a8763e |
+| Day 9: Platform Pricing Psychology | Slate Teal | #3b5a6b |
 
 ---
 
@@ -244,6 +253,35 @@ Every post: cover + 4-5 body slides + cta = 7 slides. `SLIDE_COUNTS = [7,7,7,7,7
 | 6 | 2026 Leather Blazer Trend | Resellers | 2026-leather-blazer-trend | ledger | Archivo Black + Spectral | corner-block | ai-raster cover, symbol inner |
 | 7 | Poshmark Migration Reality | Resellers | poshmark-sales-not-algorithm | editorial-step | Space Grotesk + DM Sans | corner-block | ai-raster cover, symbol inner |
 | 8 | Authenticity Guarantee Limits | All | authenticity-guarantee-limits | checklist | Archivo Black + Spectral | corner-block | ai-raster cover, symbol inner |
+
+---
+
+## Post Breakdown — Day 9 (2026-07-02)
+
+Topics sourced from the 2026-07-02 DeepSeek content brief (15 ideas). Cross-checked against Supabase `content_history` `posted=true`. The brief self-flagged one possible repeat (Japanese luxury resale platforms vs the posted `luxury-resale-platform-demographics` "Best platforms for selling luxury") — confirmed as a real duplicate and dropped. A second, brief-missed duplicate was caught by this session's own check: "eBay's Authenticity Guarantee" overlapped the already-posted `authenticity-guarantee-limits` (2026-06-29, "An Authenticity Guarantee Is Not a Receipt of Truth") almost exactly and was dropped too. Also dropped as too close to already-saturated topics: "Platform Fee Blindspots" (a third fee-breakdown case study after `platform-fees-overview` and `luxury-selling-platform-fees-vs-speed`), "1970s Polyester Shirt Dating" (a fifth entry in the "date it by construction detail" pattern after union-label/hanger-appeal/peacoat/MA-1-lining), "Deadstock Term Explained", "Archive Fashion Investing", "Low-Rise Jeans 2026 Trend", and "Quiet Luxury Resale 2026" was kept (see below) while a near-duplicate angle was avoided. The 8 built are all genuinely new `topic_key`s, rebalanced across categories (Vintage Community 4, Fashionistas 2, Resellers 2) after the drops.
+
+**New this batch (per `check-visual-diversity.js`, all differing from the 2026-06-29 AND 2026-06-25 batches on font_pairing AND text_placement AND layout):**
+- **8 brand-new font pairings, none used anywhere in this project before:** EB Garamond + Lato, Crimson Pro + Atkinson Hyperlegible, Playfair Display SC + Karla, Cinzel + Josefin Sans, Bodoni Moda + Jost, Amatic SC + Cabin, Libre Baskerville + Barlow, Rubik + Nunito Sans — sourced from `ui-ux-pro-max`'s `typography.csv`, one per post, no shared heading or body font across posts.
+- **Five inner layouts, none of the 2026-06-29 batch's ledger/checklist/editorial-step:** `split` (posts 1, 8), `number-left` (posts 2, 6), `visual-hero` (post 3), `grid` (posts 4, 7), `myth` (post 5, first myth-layout use since Day 7).
+- **Cover text placement rotates four ways, no corner-block:** top-anchor (1, 5), side-rail (2, 6), centered-stacked (3, 7), bottom-anchor (4, 8) — even split, none repeated more than twice.
+- **Neumorphism (post 5 only)** — light grey background, soft dual-shadow raised elements, paired with the myth layout's "pinch test" reveal concept. The other seven posts use no style movement (clean dark gradients).
+- **Imagery shifted off the 2026-06-29 batch's all-symbol inner default:** 5 posts use custom flat clipart objects (posts 1, 2, 3, 6, 8 — new object illustrations, not the person-based Colored Clipart Build Kit), 2 posts use symbol/typographic-only grid panels (4, 7), 1 post (5, myth layout) carries only its ai-raster cover with no inner visual, matching the Day 7 precedent for myth posts. All 8 covers are ai-raster (`gpt-image-2`, `--style photo`).
+- **Fixed a dispatch bug carried over from the Day 7 batch's code:** the number-left/visual-hero renderer dispatch checked `post.layout` (a post-level field), but Day 7's post objects only ever set `layout` on the first slide object, never on the post itself, so `post.layout` was always `undefined` and every "number-left" post there silently rendered via the `visual-hero` fallback instead. This batch sets `layout` explicitly on the post object for posts 2, 3, and 6 and was verified against exported screenshots (ghost numbers and side-rail visual cards render correctly).
+
+Every post: cover + 4 body/facts + 1 interstitial + cta = 7 slides, except the two grid posts (4, 7) which consolidate their 4 facts into one grid-panel slide = cover + grid + interstitial + cta = 4 slides, same pattern as the 2026-06-23 grid posts. `SLIDE_COUNTS = [7,7,7,4,7,7,4,7]` (50 slides total). Export verified: no undersized/blank frames (smallest file 67KB, the light-background neumorphism stat slide — consistent with the lighter file sizes neumorphism posts produced in Day 7).
+
+| # | Title | Category | topic_key | Layout | Font pairing | Cover placement | Imagery |
+|---|-------|----------|-----------|--------|--------------|-----------------|---------|
+| 1 | The Quiet Luxury Price Gap | Fashionistas | quiet-luxury-resale-2026 | split | EB Garamond + Lato | top-anchor | ai-raster cover, clipart inner |
+| 2 | Seller Vetting Red Flags | Vintage Community | seller-vetting-red-flags | number-left | Crimson Pro + Atkinson Hyperlegible | side-rail | ai-raster cover, clipart inner |
+| 3 | The Aloha Shirt's $1,200 Secret | Vintage Community | aloha-shirt-history | visual-hero | Playfair Display SC + Karla | centered-stacked | ai-raster cover, clipart inner |
+| 4 | Why the Cinch Back Disappeared | Vintage Community | denim-jacket-cinch-history | grid | Cinzel + Josefin Sans | bottom-anchor | ai-raster cover, symbol inner |
+| 5 | The Pinch Test | Fashionistas | full-canvas-vs-fused | myth | Bodoni Moda + Jost | top-anchor | ai-raster cover only (Neumorphism) |
+| 6 | The Collar Tells You If It's Real | Resellers | band-tee-reprint-spotting | number-left | Amatic SC + Cabin | side-rail | ai-raster cover, clipart inner |
+| 7 | The Varsity Jacket Wasn't a Flex | Vintage Community | varsity-jacket-history | grid | Libre Baskerville + Barlow | centered-stacked | ai-raster cover, symbol inner |
+| 8 | Same Sweater, Two Platforms | Resellers | platform-pricing-psychology | split | Rubik + Nunito Sans | bottom-anchor | ai-raster cover, clipart inner |
+
+Dropped from the 2026-07-02 brief (duplicates or saturated angles): `japanese-luxury-resale-platforms` (duplicates posted `luxury-resale-platform-demographics`), `ebay-authentication-process` (duplicates posted `authenticity-guarantee-limits`), `platform-fee-blindspots` (third fee-breakdown post), `1970s-polyester-shirt-dating` (fifth "date by construction" post), `deadstock-term-explained`, `archive-fashion-investing`, `low-rise-jeans-2026`.
 
 ---
 
