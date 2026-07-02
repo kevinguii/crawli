@@ -1,17 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useSearchHistory } from '@/app/components/SearchHistoryProvider';
 import { platformColor } from '@/app/components/platformColors';
 import { PLATFORM_NAMES, type SearchHistoryItem } from '@/lib/types';
-import AuthButton from '@/app/components/AuthButton';
-import Wordmark from '@/app/components/landing/Wordmark';
 
-const PENDING_SEARCH_KEY = 'crawli_pending_search';
+// Prefill only (no auto-run) — matches the key SearchForm reads for prefill-only replays.
+const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 export default function SearchHistoryPage() {
   const { items, loading, deleteSearch, clearAll } = useSearchHistory();
@@ -20,29 +18,12 @@ export default function SearchHistoryPage() {
   const [showClearAll, setShowClearAll] = useState(false);
 
   function rerun(item: SearchHistoryItem) {
-    sessionStorage.setItem(PENDING_SEARCH_KEY, JSON.stringify(item));
+    sessionStorage.setItem(PREFILL_SEARCH_KEY, JSON.stringify(item));
     router.push('/search');
   }
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <nav
-        className="sticky top-0 z-20 backdrop-blur"
-        style={{
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
-          borderBottom: '1px solid rgba(226, 75, 74, 0.22)',
-        }}
-      >
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
-          <Link href="/search" className="flex items-center">
-            <Wordmark size={30} />
-          </Link>
-          <div className="flex items-center gap-3">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
-
+    <>
       <div className="mx-auto max-w-4xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -105,10 +86,33 @@ export default function SearchHistoryPage() {
                     <button
                       type="button"
                       onClick={() => rerun(item)}
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                      style={{ background: 'linear-gradient(to right, #E24B4A, #D85A30)' }}
+                      className="group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-shadow"
+                      style={{
+                        background: 'linear-gradient(to right, #E24B4A, #D85A30)',
+                        border: '1px solid transparent',
+                        boxShadow: '0 0 0 1px transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(226, 75, 74, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = '0 0 0 1px transparent';
+                      }}
                     >
                       Search again
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="hidden group-hover:inline-block"
+                      >
+                        <path d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
                     <button
                       type="button"
@@ -161,7 +165,7 @@ export default function SearchHistoryPage() {
           }}
         />
       )}
-    </main>
+    </>
   );
 }
 

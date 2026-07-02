@@ -29,13 +29,18 @@ interface BillingStatus {
   alertsCap: number;
 }
 
-export default function SearchAlertsTab() {
+export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => void } = {}) {
   const [alerts, setAlerts] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingAlert, setEditingAlert] = useState<SavedSearch | null>(null);
   const [viewingAlert, setViewingAlert] = useState<SavedSearch | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+
+  // Report the alert count up to the alerts tab bar (for its badge).
+  useEffect(() => {
+    if (!loading) onCount?.(alerts.length);
+  }, [alerts.length, loading, onCount]);
 
   useEffect(() => {
     let cancelled = false;

@@ -33,7 +33,7 @@ function relativeTime(iso: string | null): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function WatchlistTab() {
+export default function WatchlistTab({ onCount }: { onCount?: (n: number) => void } = {}) {
   const [rows, setRows] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -185,14 +185,13 @@ export default function WatchlistTab() {
   const activeCount = useMemo(() => rows.filter((r) => !r.is_sold).length, [rows]);
   const soldCount = rows.length - activeCount;
 
+  // Report the tracked count up to the alerts tab bar (for its badge).
+  useEffect(() => {
+    if (!loading) onCount?.(rows.length);
+  }, [rows.length, loading, onCount]);
+
   return (
-    <div className="space-y-5">
-      {!loading && rows.length > 0 && (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {rows.length} tracked listing{rows.length !== 1 ? 's' : ''}
-          {soldCount > 0 && ` · ${activeCount} active · ${soldCount} no longer available`}
-        </p>
-      )}
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
         <input
           type="text"
@@ -249,6 +248,15 @@ export default function WatchlistTab() {
           )}
         </button>
       </div>
+
+      {!loading && rows.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {rows.length} tracked
+          {` · ${activeCount} active`}
+          {soldCount > 0 && ` · ${soldCount} sold`}
+          {newestChecked && !refreshProgress && ` · refreshed ${relativeTime(newestChecked)}`}
+        </p>
+      )}
 
       {refreshProgress && (
         <div
@@ -335,12 +343,6 @@ export default function WatchlistTab() {
             <p className="text-xs" style={{ color: 'var(--text-dim)' }}>{refreshSummary.failed} listing{refreshSummary.failed > 1 ? 's' : ''} couldn&apos;t be checked.</p>
           )}
         </div>
-      )}
-
-      {rows.length > 0 && !refreshProgress && (
-        <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          Last refreshed: {newestChecked ? relativeTime(newestChecked) : 'never'}
-        </p>
       )}
 
       {loading && rows.length === 0 ? (

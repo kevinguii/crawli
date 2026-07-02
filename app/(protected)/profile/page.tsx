@@ -1,7 +1,4 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import AuthButton from '@/app/components/AuthButton';
-import Wordmark from '@/app/components/landing/Wordmark';
 import ProfileHeader from '@/app/components/profile/ProfileHeader';
 import ProfileDashboard from '@/app/components/profile/ProfileDashboard';
 import { createClient } from '@/lib/supabase/server';
@@ -26,25 +23,7 @@ export default async function ProfilePage({
     .single();
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <nav
-        className="sticky top-0 z-20 backdrop-blur"
-        style={{
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
-          borderBottom: '1px solid rgba(226, 75, 74, 0.22)',
-        }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <Link href="/search" className="flex items-center">
-            <Wordmark size={30} />
-          </Link>
-          <div className="flex items-center gap-3">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
-
-      <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
         <ProfileHeader
           profile={{
             id: user.id,
@@ -59,7 +38,6 @@ export default async function ProfilePage({
         <div className="mt-8">
           <ProfileDashboard />
         </div>
-      </div>
-    </main>
+    </div>
   );
 }

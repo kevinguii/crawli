@@ -2,33 +2,10 @@
 
 import Link from 'next/link';
 import SearchSection from '@/app/components/SearchSection';
-import AuthButton from '@/app/components/AuthButton';
-import Wordmark from '@/app/components/landing/Wordmark';
 
 export default function Home() {
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* Top nav */}
-      <nav
-        className="sticky top-0 z-20 backdrop-blur"
-        style={{
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
-          borderBottom: '1px solid rgba(226, 75, 74, 0.22)',
-        }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center">
-            <Link href={process.env.NEXT_PUBLIC_SITE_URL ?? '/'}>
-              <Wordmark size={30} />
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
-
-      <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1
@@ -62,6 +39,5 @@ export default function Home() {
 
         <SearchSection />
       </div>
-    </main>
   );
 }

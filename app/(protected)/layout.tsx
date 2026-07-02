@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { SavesProvider } from '@/app/components/SavesProvider';
 import { WatchlistProvider } from '@/app/components/WatchlistProvider';
 import { SearchHistoryProvider } from '@/app/components/SearchHistoryProvider';
+import AppShell from '@/app/components/shell/AppShell';
 
 export default async function ProtectedLayout({
   children,
@@ -21,7 +22,7 @@ export default async function ProtectedLayout({
     <SavesProvider>
       <WatchlistProvider>
         <SearchHistoryProvider>
-          {children}
+          <AppShell>{children}</AppShell>
           <Toaster position="bottom-right" theme="system" richColors closeButton />
         </SearchHistoryProvider>
       </WatchlistProvider>

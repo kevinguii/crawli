@@ -10,7 +10,7 @@ export async function GET() {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [savesResult, watchlistResult, searchesResult, platformsResult] = await Promise.all([
+  const [savesResult, watchlistResult, searchesResult, activeAlertsResult, platformsResult] = await Promise.all([
     supabase
       .from('saves')
       .select('id', { count: 'exact', head: true })
@@ -24,6 +24,12 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .gte('searched_at', startOfMonth.toISOString()),
+    // Active (non-paused) search alerts
+    supabase
+      .from('saved_searches')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('paused', false),
     // Fetch platform column from recent saves to compute top platforms
     supabase
       .from('saves')
@@ -47,6 +53,7 @@ export async function GET() {
     searchesThisMonth: searchesResult.count ?? 0,
     totalSaves: savesResult.count ?? 0,
     totalWatching: watchlistResult.count ?? 0,
+    activeAlerts: activeAlertsResult.count ?? 0,
     topPlatforms,
   });
 }

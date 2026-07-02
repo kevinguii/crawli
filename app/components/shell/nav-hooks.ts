@@ -68,8 +68,10 @@ export function useTotalUnreadAlerts(userId: string | undefined) {
     };
     load();
 
+    // Unique channel name per subscription avoids "cannot add callbacks after
+    // subscribe()" collisions if more than one consumer mounts the hook.
     const channel = supabase
-      .channel('alert-badge')
+      .channel(`alert-badge-${userId}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },

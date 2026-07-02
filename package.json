@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:sidecar": "cd crawl4ai-service && . venv/bin/activate && uvicorn main:app --port 8000",
+    "dev:sidecar": "cd crawl4ai-service && venv/bin/python -m uvicorn main:app --port 8000",
     "dev:all": "concurrently -n next,sidecar -c blue,green \"npm:dev\" \"npm:dev:sidecar\"",
     "build": "next build",
     "start": "next start",

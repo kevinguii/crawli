@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PLATFORM_NAMES } from '@/lib/types';
-import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
+import { ALERT_EXCLUDED_PLATFORMS, FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
 import { createClient } from '@/lib/supabase/client';
 import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
@@ -48,6 +48,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size'));
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [timezone] = useState<string>(
@@ -62,6 +63,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       .then((r) => r.json())
       .then((d) => {
         setSearchesRemaining(Math.max(0, (d.cap ?? 10) - (d.used ?? 0)));
+        setIsPaid(d.status === 'active' || d.status === 'past_due' || (d.tier && d.tier !== 'free'));
       })
       .catch(() => {});
 
@@ -88,7 +90,8 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   }
 
   // When editing, did the user change a baseline field (query/platforms/criteria)?
-  // If so the edit re-runs the search and costs 1 search, mirroring the backend.
+  // If so the edit re-runs the search to reset the baseline. This is free (no
+  // search credit); free tier is rate-limited by a per-alert cooldown server-side.
   const sameJson = (a: unknown, b: unknown) =>
     JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
   const baselineChanged = isEditing && (
@@ -118,9 +121,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
           setSubmitting(false);
           return;
         }
-        // A baseline-changing edit charges 1 search and re-runs in the background.
+        // A baseline-changing edit re-runs in the background. It's free (no
+        // search credit), so don't fire crawli:search-started — that would
+        // wrongly decrement the nav search counter.
         if (baselineChanged) {
-          window.dispatchEvent(new CustomEvent('crawli:search-started'));
           toast.success('Alert updated! Re-running search in the background.');
         } else {
           toast.success('Alert updated.');
@@ -373,17 +377,33 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </div>
             </div>
 
-            {/* Quota warning — a baseline-changing edit (or a fresh create) costs
-                1 search. An edit that doesn't touch query/platforms/filters is free. */}
-            {(!isEditing || baselineChanged) ? (
+            {/* A fresh create costs 1 search. A baseline-changing edit re-runs the
+                search but is free (free tier is rate-limited by a cooldown). An
+                edit that doesn't touch query/platforms/filters is free too. */}
+            {isEditing && baselineChanged ? (
+              <div
+                className="rounded-xl p-4 mb-5 text-sm"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              >
+                <p style={{ color: 'var(--text)' }}>
+                  <strong>This won&apos;t use a search.</strong> Changing the query, platforms, or filters resets your baseline and re-runs the search.
+                </p>
+                {!isPaid && (
+                  <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
+                    On the free plan you can change a saved alert&apos;s search once every {FREE_BASELINE_EDIT_COOLDOWN_HOURS} hours.
+                  </p>
+                )}
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  The re-run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
+                </p>
+              </div>
+            ) : !isEditing ? (
               <div
                 className="rounded-xl p-4 mb-5 text-sm"
                 style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
               >
                 <p style={{ color: 'var(--text)' }}>
-                  {isEditing
-                    ? <><strong>1 search will be used.</strong> Changing the query, platforms, or filters resets your baseline and re-runs the search.</>
-                    : <><strong>1 search will be used</strong> to set up this alert.</>}
+                  <strong>1 search will be used</strong> to set up this alert.
                 </p>
                 {searchesRemaining !== null && (
                   <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -391,7 +411,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   </p>
                 )}
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  The {isEditing ? 're-' : 'first '}run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
+                  The first run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
                 </p>
               </div>
             ) : (
@@ -425,7 +445,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={submitting || ((!isEditing || baselineChanged) && searchesRemaining === 0)}
+                disabled={submitting || (!isEditing && searchesRemaining === 0)}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
                 {isEditing

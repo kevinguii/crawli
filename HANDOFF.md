@@ -66,6 +66,8 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 - `stripe_webhook_events(event_id text pk, type text, processed_at timestamptz)` — idempotency ledger; webhook claims each `event.id` before processing, skips duplicates, deletes the claim on failure so retries re-run. service_role-only. (migration `docs/migrations/stripe-webhook-idempotency.sql`)
 - All need `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated, service_role` (see `docs/migrations/alert-notifications.sql`)
 
+**Protected app shell (2026-07-02):** all `(protected)/*` pages share one chrome via `app/components/shell/AppShell.tsx` (mounted in `(protected)/layout.tsx`). It renders a persistent, retractable left sidebar (`AppSidebar.tsx`) on `lg+` and a hamburger drawer below `lg`. Nav = Search · Alerts (unread badge) · Saves · History, plus footer Upgrade / Home (`/`) / account menu (Profile/Settings/Pricing/Sign out). Collapse state persists to `localStorage` (`crawli_sidebar_collapsed`). The old top-right `AuthButton` is gone — its hooks + `markIntentionalSignOut` now live in `app/components/shell/nav-hooks.ts`; unread/plan are fetched once in `AppShell` and passed to `AppSidebar` as props (do NOT re-call `useTotalUnreadAlerts` in a second mounted component — see PITFALLS realtime channel note). Per-page `<nav>`/`<AuthButton>` were removed from all 7 protected pages/layouts; pages now render a plain content `<div>`, not their own `<main>`.
+
 **Landing page:** reseller-first structure (2026-06-30). Order: Hero (live `FlipCalculator` widget in right column) → `CompareSection` (real cached-price slugs w/ "from $X" teasers, promoted to #2) → PlatformLogos → BentoFeatures (co-equal trio: margin · alerts · **tracked listings**) → AlertsMock → SavesMock (tracked listings, moved up) → About → Founder → CTA → FAQ → Footer. Both "fake searches" are gone: the read-only hero box and the blurred `SearchMock` gate are **deleted** (`SearchMock.tsx` + `mockSearches.ts` removed). The two real, no-login proofs are the hero calculator (`app/components/landing/FlipCalculator.tsx`, pure client, uses `netFlipProfit` from `lib/marketplaceFees.ts`) and the compare slugs. `CompareSection` is now data-driven from `getAllCompareItems()` + `getCompareTeasers()` (new in `lib/compare.ts`, best-effort). Below-fold sections fade in via `Reveal.tsx` (reduced-motion aware). Margin calculator copy says "7 platforms" — correct, intentional; 9 platforms elsewhere.
 
 ---
@@ -87,6 +89,15 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-07-02 — Alert query edits are free (cooldown-gated, not credit-charged)**
+- Baseline-changing alert edits (query/platforms/filters/criteria) no longer charge a search credit. They still reset the baseline and re-run in-house (eBay excluded from alerts → crawl4ai only, marginal cost). Free tier is gated by a per-alert cooldown (`FREE_BASELINE_EDIT_COOLDOWN_HOURS = 4` in `lib/alertConstants.ts`); paid tiers uncapped. New column `saved_searches.last_baseline_edit_at` tracks the last edit — deliberately NOT `last_run_at` (cron runs bump that too). PATCH now returns `429 edit_cooldown` for free-tier over-edits. Client (`CreateAlertModal`) no longer fires `crawli:search-started` on edits and messages the cooldown for free users.
+
+**2026-07-02 — Sidebar app shell + Alerts page revamp**
+- New shared `app/components/shell/` (AppShell + AppSidebar + nav-hooks); retractable left sidebar on desktop, hamburger drawer on mobile. Removed the per-page top navs and the old `AuthButton` (deleted). Spec: `docs/superpowers/specs/2026-07-02-sidebar-and-alerts-redesign-design.md`.
+- Alerts page: replaced the full-width 50/50 tab bar + centered description strip with compact segmented pill tabs that carry live count badges; consolidated `WatchlistTab`'s stacked count/last-refreshed rows into one status line.
+- Profile stats: added an "Active alerts" tile (`activeAlerts` = non-paused `saved_searches`) to `/api/profile/stats` + `ProfileDashboard` (now a 4-up strip).
+- Caught+fixed a realtime bug in the refactor (channel-name collision) — see PITFALLS.
 
 **2026-07-02 — New TikTok carousel batch (8 posts) + fixed a Day-7 rendering bug**
 - Built `docs/marketing/2026-07-02/` (8 posts, 50 slides — 2 grid posts consolidate to 4 slides each, `SLIDE_COUNTS = [7,7,7,4,7,7,4,7]`). 8 brand-new font pairings, split/number-left/visual-hero/grid/myth layouts, Neumorphism on one post, cover placement rotates top/side-rail/center/bottom. Full breakdown in `docs/marketing/POSTS_README.md` "Post Breakdown — Day 9".

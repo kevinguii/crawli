@@ -5,11 +5,10 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeSelector } from '@/app/components/ThemeToggle';
-import AuthButton, { markIntentionalSignOut } from '@/app/components/AuthButton';
+import { markIntentionalSignOut } from '@/app/components/shell/nav-hooks';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
 import { createClient } from '@/lib/supabase/client';
-import Wordmark from '@/app/components/landing/Wordmark';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
 const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS).sort((a, b) => {
@@ -270,7 +269,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <>
       {showDeleteModal && (
         <DeleteModal
           onConfirm={handleDeleteAccount}
@@ -278,23 +277,6 @@ export default function SettingsPage() {
           loading={deleteLoading}
         />
       )}
-
-      <nav
-        className="sticky top-0 z-20 backdrop-blur"
-        style={{
-          background: 'color-mix(in srgb, var(--bg) 80%, transparent)',
-          borderBottom: '1px solid rgba(226, 75, 74, 0.22)',
-        }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <Link href="/search" className="flex items-center">
-            <Wordmark size={30} />
-          </Link>
-          <div className="flex items-center gap-3">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
 
       <div className="mx-auto max-w-2xl px-6 py-10 space-y-6">
         <div>
@@ -657,6 +639,6 @@ export default function SettingsPage() {
           </Row>
         </Section>
       </div>
-    </main>
+    </>
   );
 }

@@ -1,28 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import WatchlistTab from '@/app/components/profile/WatchlistTab';
 import SearchAlertsTab from './SearchAlertsTab';
 
 type Tab = 'tracked' | 'search';
 
-const TABS: { id: Tab; label: string; description: string }[] = [
-  {
-    id: 'tracked',
-    label: 'Tracked listings',
-    description: 'Listings you\'re watching. Refresh anytime to see the latest price or sold status.',
-  },
-  {
-    id: 'search',
-    label: 'Search alerts',
-    description: 'Saved searches that run automatically and notify you when new listings appear.',
-  },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'tracked', label: 'Tracked listings' },
+  { id: 'search', label: 'Search alerts' },
 ];
 
 export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
   const [active, setActive] = useState<Tab>(initialTab);
-
-  const activeTab = TABS.find((t) => t.id === active)!;
+  const [counts, setCounts] = useState<{ tracked: number | null; search: number | null }>({
+    tracked: null,
+    search: null,
+  });
 
   // Visiting the alerts area = the user has seen the bell. Clear unseen
   // notifications so the nav badge resets (Realtime then updates the bell).
@@ -30,46 +24,61 @@ export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
     void fetch('/api/notifications/mark-seen', { method: 'POST' });
   }, []);
 
+  // Stable identity so the child's onCount effect only reruns when the
+  // count actually changes, not on every AlertsTabsClient render.
+  const onTrackedCount = useCallback((n: number) => {
+    setCounts((c) => (c.tracked === n ? c : { ...c, tracked: n }));
+  }, []);
+  const onSearchCount = useCallback((n: number) => {
+    setCounts((c) => (c.search === n ? c : { ...c, search: n }));
+  }, []);
+
   return (
     <div>
-      {/* Full-width tab bar — each tab takes 50% */}
+      {/* Segmented pill tabs with live count badges */}
       <div
-        className="flex w-full"
-        style={{ borderBottom: '2px solid var(--border)' }}
+        className="mb-6 inline-flex gap-1 rounded-xl p-1"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setActive(t.id)}
-            className="flex-1 px-5 py-3 text-sm font-medium transition-all text-center"
-            style={{
-              color: active === t.id ? 'var(--text)' : 'var(--text-muted)',
-              background: 'none',
-              border: 'none',
-              borderBottom: active === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-              marginBottom: '-2px',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const isActive = active === t.id;
+          const count = counts[t.id];
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActive(t.id)}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={{
+                color: isActive ? 'var(--text)' : 'var(--text-muted)',
+                background: isActive ? 'var(--bg-elevated)' : 'transparent',
+                boxShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.08)' : 'none',
+              }}
+            >
+              {t.label}
+              {count !== null && count > 0 && (
+                <span
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums"
+                  style={{
+                    background: isActive ? 'var(--accent-soft)' : 'var(--surface-hover)',
+                    color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                  }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Section header — description centered horizontally */}
-      <div
-        className="py-5 text-center"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        <p className="text-sm mx-auto max-w-2xl" style={{ color: 'var(--text-muted)' }}>
-          {activeTab.description}
-        </p>
+      {/* Both tabs stay mounted so their count badges populate up-front; we
+          toggle visibility instead of unmounting to preserve state. */}
+      <div style={{ display: active === 'tracked' ? 'block' : 'none' }}>
+        <WatchlistTab onCount={onTrackedCount} />
       </div>
-
-      {/* Content */}
-      <div className="pt-6">
-        {active === 'tracked' && <WatchlistTab />}
-        {active === 'search' && <SearchAlertsTab />}
+      <div style={{ display: active === 'search' ? 'block' : 'none' }}>
+        <SearchAlertsTab onCount={onSearchCount} />
       </div>
     </div>
   );

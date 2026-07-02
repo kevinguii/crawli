@@ -14,6 +14,7 @@ interface Stats {
   searchesThisMonth: number;
   totalSaves: number;
   totalWatching: number;
+  activeAlerts: number;
   topPlatforms: { platform: string; count: number }[];
 }
 
@@ -37,10 +38,11 @@ function StatCard({ label, value }: { label: string; value: number | null }) {
 
 function StatsStrip({ stats }: { stats: Stats | null }) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <StatCard label="Searches this month" value={stats?.searchesThisMonth ?? null} />
       <StatCard label="Items saved" value={stats?.totalSaves ?? null} />
       <StatCard label="Listings watched" value={stats?.totalWatching ?? null} />
+      <StatCard label="Active alerts" value={stats?.activeAlerts ?? null} />
     </div>
   );
 }

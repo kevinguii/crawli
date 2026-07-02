@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
+import { FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
 
 const patchSchema = z.object({
   query: z.string().min(1).max(200),
@@ -96,41 +97,38 @@ export async function PATCH(
     return NextResponse.json(data);
   }
 
-  // Baseline-invalidating edit: charge 1 search and re-run, mirroring creation
-  // (app/api/saved-searches/route.ts). The new query needs a fresh baseline so
-  // the next run doesn't flood the user with results that are only "new"
-  // relative to the OLD query.
+  // Baseline-invalidating edit: reset the baseline and re-run so the next
+  // scheduled run doesn't flood the user with results that are only "new"
+  // relative to the OLD query. No search credit is charged — the re-run is
+  // in-house crawl4ai only (eBay, the sole Firecrawl-metered platform, is
+  // excluded from alerts). Free tier is rate-limited by a per-alert cooldown;
+  // paid tiers are uncapped.
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from('profiles')
-    .select('searches_used_this_period, searches_period_start, max_searches_per_period')
+    .select('subscription_status')
     .eq('id', user.id)
     .single();
 
-  const cap = profile?.max_searches_per_period ?? 5;
-  const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
-  let used = profile?.searches_used_this_period ?? 0;
-  const periodStartMs = profile?.searches_period_start
-    ? new Date(profile.searches_period_start).getTime()
-    : 0;
-  if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
-    await admin.from('profiles').update({
-      searches_used_this_period: 0,
-      searches_period_start: new Date().toISOString(),
-    }).eq('id', user.id);
-    used = 0;
-  }
+  const isPro =
+    profile?.subscription_status === 'active' ||
+    profile?.subscription_status === 'past_due';
 
-  if (used >= cap) {
-    return NextResponse.json(
-      {
-        error: 'search_quota_exceeded',
-        message: `You have used all ${cap} searches for this period. Editing an alert's query uses 1 search.`,
-        used,
-        cap,
-      },
-      { status: 402 },
-    );
+  if (!isPro && current.last_baseline_edit_at) {
+    const elapsedMs =
+      Date.now() - new Date(current.last_baseline_edit_at).getTime();
+    const cooldownMs = FREE_BASELINE_EDIT_COOLDOWN_HOURS * 60 * 60 * 1000;
+    if (elapsedMs < cooldownMs) {
+      const hoursLeft = Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000));
+      return NextResponse.json(
+        {
+          error: 'edit_cooldown',
+          message: `You can change this alert's search again in ~${hoursLeft}h. Upgrade for unlimited edits.`,
+          retry_after_hours: hoursLeft,
+        },
+        { status: 429 },
+      );
+    }
   }
 
   // Apply the edit AND reset the baseline so runAlert treats this as a first run.
@@ -142,6 +140,7 @@ export async function PATCH(
       last_run_at: null,
       unread_match_count: 0,
       next_run_at: new Date().toISOString(),
+      last_baseline_edit_at: new Date().toISOString(),
     })
     .eq('id', id)
     .eq('user_id', user.id)
@@ -154,12 +153,6 @@ export async function PATCH(
   // The old query's stored matches are now stale — drop them so the user doesn't
   // see listings that don't match the new search.
   await admin.from('alert_matches').delete().eq('alert_id', id);
-
-  // Charge 1 search for the fresh baseline run.
-  await admin
-    .from('profiles')
-    .update({ searches_used_this_period: used + 1 })
-    .eq('id', user.id);
 
   // Re-run immediately (silent baseline seed — last_seen_urls is null).
   void runAlert(updated as SavedSearch);
