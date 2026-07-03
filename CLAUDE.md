@@ -107,6 +107,32 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 - **"tshirt" is a stopword** — platform titles write "t-shirt" which tokenizes differently; "tshirt" in queries is now a stopword in RELEVANCE_STOPWORDS
 - **Brand alias matching is live** — `lib/queryExpansion.ts` handles bape/A Bathing Ape etc.; don't hand-add aliases to BRAND_ANCHOR_OVERRIDES
 
+## Feature Implementation Workflow
+
+For medium tasks (3-4 hours of estimated work), always follow this workflow:
+
+1. **`/superpowers:brainstorming`** — explore requirements, propose 2-3 approaches, refine with user → outputs design spec
+2. **`/superpowers:writing-plans`** — break spec into bite-sized tasks → outputs implementation plan
+3. **`/superpowers:using-git-worktrees`** — create isolated feature branch (main stays clean)
+4. **`/superpowers:subagent-driven-development`** — execute: implementer subagent per task + task reviewer gate (spec compliance + code quality) + fix loop if issues found
+5. **`/superpowers:finishing-a-development-branch`** — merge back to main, verify
+6. **Learning review** (after merge):
+   - User writes 5-10 min explanation: what changed, why, how it works, key constraints/edge cases, what reviewer checked
+   - Send summary to Claude
+   - Claude corrects gaps only (not re-explain)
+7. **Cleanup** (Claude-owned, after learning review):
+   - Delete spec file: `docs/superpowers/specs/YYYY-MM-DD-*.md`
+   - Delete plan file: `docs/superpowers/plans/YYYY-MM-DD-*.md`
+   - Delete playwright artifacts: `.playwright-mcp/page-*.yml`, `.playwright-mcp/console-*.log`
+   - Claude commits: `git add -A && git commit -m "cleanup: remove spec/plan artifacts after <feature> merged"`
+
+**Key constraints:**
+- Never start on main — always use a worktree
+- Always spec → plan → execute (this order, every time)
+- Learning review is mandatory (happens after merge, before cleanup)
+- User owns commits/pushes and UI verification (manual, not Playwright by default)
+- Claude cleans up scaffolding (specs/plans/artifacts) automatically after learning review
+
 ## Before starting any task
 
 1. Read `HANDOFF.md` — what's the current state? Any open issues that affect my task?
