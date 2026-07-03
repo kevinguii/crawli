@@ -4,6 +4,7 @@ import { buildCacheKey, withListingsCache } from '@/lib/searchCache';
 import type { FilterState } from '@/lib/filterOptions';
 import type { Listing } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
+import { matchListingSize } from '@/lib/sizeFilter';
 import { Resend } from 'resend';
 import { buildAlertEmailHtml } from '@/lib/email/alertEmailTemplate';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
@@ -20,9 +21,7 @@ export { ALERT_EXCLUDED_PLATFORMS };
  * over already-fetched listings — NEVER inside searchWorker (Session-4 owns it).
  */
 export interface AlertCriteria {
-  brand?: string | null;       // must appear in listing.title (case-insensitive)
-  keywordsAll?: string[];      // every token must appear in listing.title
-  size?: string | null;        // must appear in listing.size or title
+  size?: string | null;        // SIZE_OPTIONS key (e.g. 'l', 'm7_5'); matched via matchListingSize
   minPrice?: number | null;    // listing price >= minPrice (USD-normalized)
   maxPrice?: number | null;    // listing price <= maxPrice (USD-normalized)
 }
@@ -49,20 +48,6 @@ function priceInUSD(listing: Listing): number | null {
   return convertToUSD(listing.price, listing.currency);
 }
 
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Size match: prefer the structured `size` field (substring is fine — values are
- * like 'm', 'm7_5'); fall back to a WHOLE-WORD match in the title so a
- * single-letter size like "M" doesn't false-match inside words like "atom".
- */
-function sizeMatches(listing: Listing, size: string): boolean {
-  if ((listing.size ?? '').toLowerCase().includes(size)) return true;
-  return new RegExp(`\\b${escapeRegExp(size)}\\b`, 'i').test(listing.title ?? '');
-}
-
 /**
  * AND-only post-filter for boolean sourcing criteria. Returns listings that
  * satisfy every populated criterion. A null/empty criteria object is a no-op
@@ -73,20 +58,12 @@ export function applyCriteria(
   criteria: AlertCriteria | null | undefined,
 ): Listing[] {
   if (!criteria) return listings;
-  const brand = criteria.brand?.trim().toLowerCase();
-  const keywords = (criteria.keywordsAll ?? [])
-    .map((k) => k.trim().toLowerCase())
-    .filter(Boolean);
   const size = criteria.size?.trim().toLowerCase();
   const { minPrice, maxPrice } = criteria;
   const hasPriceBound = minPrice != null || maxPrice != null;
 
   return listings.filter((l) => {
-    const title = (l.title ?? '').toLowerCase();
-
-    if (brand && !title.includes(brand)) return false;
-    if (keywords.length && !keywords.every((k) => title.includes(k))) return false;
-    if (size && !sizeMatches(l, size)) return false;
+    if (size && !matchListingSize(l.title, size, l.size)) return false;
 
     if (hasPriceBound) {
       const usd = priceInUSD(l);

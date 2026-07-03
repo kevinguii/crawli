@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PLATFORM_NAMES } from '@/lib/types';
+import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
 import { ALERT_EXCLUDED_PLATFORMS, FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
 import { createClient } from '@/lib/supabase/client';
 import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel } from '@/lib/alertSchedule';
@@ -41,11 +42,11 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence, setCadence] = useState<24 | 168>(editingAlert?.cadence_hours ?? 24);
-  // Optional AND-only sourcing criteria — narrows matches to brand AND size AND
-  // price<X. Empty fields are omitted (no-op).
-  const [brand, setBrand] = useState(critField(editingAlert?.criteria, 'brand'));
-  const [keywords, setKeywords] = useState(critField(editingAlert?.criteria, 'keywordsAll'));
-  const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size'));
+  // Optional AND-only sourcing criteria — narrows matches to size AND price<X.
+  // Empty fields are omitted (no-op). critSize stores a SIZE_OPTIONS key
+  // (e.g. 'l', 'm7_5'); lowercased on load so a pre-dropdown free-text value
+  // like "L" still pre-selects the matching option.
+  const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size').toLowerCase());
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [isPaid, setIsPaid] = useState(false);
@@ -80,9 +81,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
 
   function buildCriteria(): Record<string, unknown> | undefined {
     const criteria: Record<string, unknown> = {};
-    if (brand.trim()) criteria.brand = brand.trim();
-    const kw = keywords.split(',').map((s) => s.trim()).filter(Boolean);
-    if (kw.length) criteria.keywordsAll = kw;
     if (critSize.trim()) criteria.size = critSize.trim();
     const mp = parseFloat(maxPrice);
     if (!isNaN(mp) && mp > 0) criteria.maxPrice = mp;
@@ -234,25 +232,27 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 Sourcing filters <span style={{ color: 'var(--text-dim)' }}>(optional)</span>
               </label>
               <p className="text-[11px] mb-2" style={{ color: 'var(--text-dim)' }}>
-                Only notify when a listing matches all of these. e.g. brand AND size AND under $X.
+                Only notify when a listing matches all of these. e.g. size AND under $X.
               </p>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Brand (e.g. Arc'teryx)"
-                  className="rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                />
-                <input
-                  type="text"
+                <select
                   value={critSize}
                   onChange={(e) => setCritSize(e.target.value)}
-                  placeholder="Size (e.g. M, 10.5)"
                   className="rounded-lg px-3 py-2 text-sm outline-none"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                />
+                >
+                  <option value="">Any size</option>
+                  <optgroup label="Clothing">
+                    {CLOTHING_SIZE_OPTIONS.map((o) => (
+                      <option key={o.key} value={o.key}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Shoes">
+                    {SHOE_SIZE_OPTIONS.map((o) => (
+                      <option key={o.key} value={o.key}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                </select>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -260,14 +260,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="Max price ($)"
-                  className="rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                />
-                <input
-                  type="text"
-                  value={keywords}
-                  onChange={(e) => setKeywords(e.target.value)}
-                  placeholder="Keywords (comma sep.)"
                   className="rounded-lg px-3 py-2 text-sm outline-none"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 />
@@ -348,9 +340,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 const c = buildCriteria();
                 if (!c) return null;
                 const parts: string[] = [];
-                if (c.brand) parts.push(`brand: ${c.brand}`);
-                if (Array.isArray(c.keywordsAll)) parts.push(`has: ${(c.keywordsAll as string[]).join(' + ')}`);
-                if (c.size) parts.push(`size: ${c.size}`);
+                if (c.size) {
+                  const opt = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS].find((o) => o.key === c.size);
+                  parts.push(`size: ${opt?.label ?? c.size}`);
+                }
                 if (c.maxPrice != null) parts.push(`under $${c.maxPrice}`);
                 return (
                   <div className="flex justify-between gap-3">

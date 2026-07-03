@@ -25,12 +25,10 @@ const createSchema = z.object({
     .partial()
     .nullable()
     .optional(),
-  // AND-only boolean sourcing criteria (brand AND size AND price<X), applied as
+  // AND-only boolean sourcing criteria (size AND price<X), applied as
   // a post-filter in alertRunner. All fields optional; null/absent = no-op.
   criteria: z
     .object({
-      brand: z.string().max(80).nullable().optional(),
-      keywordsAll: z.array(z.string().max(40)).max(10).optional(),
       size: z.string().max(40).nullable().optional(),
       minPrice: z.number().nonnegative().nullable().optional(),
       maxPrice: z.number().nonnegative().nullable().optional(),
