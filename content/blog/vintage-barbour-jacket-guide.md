@@ -1,8 +1,8 @@
 ---
-title: "Why Vintage Barbour Jackets Aren't Just Waxed Cotton. They're a British Rural Class Marker."
+title: "Vintage Barbour Jacket Guide: History, Models, Value"
 description: "A vintage Barbour jacket is a waxed cotton outerwear piece originally made for British farmers, gamekeepers, and eventually royalty, with resale value hinging on royal warrants, model, and condition of the wax coating."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/barbour-jacket-cover.svg"
 tags: ["maker-deep-dive", "barbour-jacket-history", "vintage-outerwear"]
 faq:
@@ -68,4 +68,4 @@ A vintage Barbour jacket that has never been rewaxed but retains its original wa
 
 If the jacket needs rewaxing for practical use, use Barbour's own Thornproof Dressing, applied at room temperature. Never use a hairdryer or apply heat to speed the process: heat damages the waxed cotton fibres and can cause permanent discolouration. Work the wax in with your hands using a circular motion and allow it to cure for 24 hours in a cool, dry space. A jacket that has been rewaxed correctly with Barbour's own product retains its functional value; one that has been rewaxed with generic waterproofing sprays or non-Barbour waxes often has its resale value permanently reduced.
 
-If you are hunting for a specific 1990s Bedale in sage green, Crawli lets you check Depop, eBay, and Vestiaire simultaneously, so you can compare condition and price without toggling between tabs.
+If you are hunting for a specific 1990s Bedale in sage green, [Crawli](/) lets you check Depop, eBay, and Vestiaire simultaneously, so you can compare condition, wax coating, and price without toggling between tabs.

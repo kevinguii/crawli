@@ -1,8 +1,8 @@
 ---
-title: "Why Pricing Your Secondhand Items Right Is Harder Than It Looks"
+title: "Why Pricing Secondhand Items Right Is So Hard"
 description: "Underpricing isn't usually about not knowing the market. It's emotional attachment quietly overriding the data, and it costs resellers real profit on almost every listing."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-07-06"
 cover: "/blog/images/pricing-challenges-cover.svg"
 tags: ["resellers", "pricing", "selling-tips"]
 faq:
@@ -35,7 +35,7 @@ The quieter version is underpricing. Some sellers feel uncomfortable charging fu
 
 ## Why this actually matters for your bottom line
 
-Underpricing doesn't just mean a smaller profit on one item. It compounds. A reseller who consistently leaves 15 to 20% on the table across dozens of listings a month is giving up a meaningful chunk of total revenue to a problem that has nothing to do with market knowledge.
+Underpricing doesn't just mean a smaller profit on one item. It compounds. A reseller who consistently leaves money on the table across dozens of listings a month is giving up a meaningful chunk of total revenue to a problem that has nothing to do with market knowledge.
 
 Overpricing has its own compounding cost: items sit longer, tie up inventory space and cash, and often end up sold at a steeper discount later than if they'd been priced accurately from the start. Either direction, the fix is the same.
 

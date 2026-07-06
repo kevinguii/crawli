@@ -1,5 +1,5 @@
 ---
-title: "The Platform With the Highest Fees Is Rarely Where Your Luxury Bag Sells Fastest"
+title: "Luxury Resale Platform Fees vs Speed: Where to Sell Fastest"
 description: "Luxury sellers often confuse high commission with high performance. Here's how fees, authentication, and actual sell-through speed differ across eBay, Vestiaire, Poshmark, The RealReal, and Depop."
 date: "2026-06-23"
 updated: "2026-06-23"

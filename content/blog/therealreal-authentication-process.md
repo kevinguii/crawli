@@ -1,5 +1,5 @@
 ---
-title: "The RealReal Was Sued Over Who Actually Authenticates Your Bag. Here's What the Reporting Found."
+title: "TheRealReal Authentication: What the Reporting Found"
 description: "The RealReal's authenticity guarantee relies on a mix of trained specialists and lower-wage copywriters working under strict daily quotas. CNBC reporting and a subsequent shareholder lawsuit alleged the vast majority of items were reviewed only by copywriters, not brand specialists."
 date: "2026-07-02"
 updated: "2026-07-02"

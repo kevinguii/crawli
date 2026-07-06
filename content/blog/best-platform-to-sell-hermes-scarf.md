@@ -1,5 +1,5 @@
 ---
-title: "I Listed a Hermes Brides de Gala Scarf on Five Platforms. The One That Sold It Fastest Was the Smallest."
+title: "Best Platform to Sell a Vintage Hermes Scarf"
 description: "After cross-listing a vintage Hermes Brides de Gala silk scarf on eBay, Poshmark, Depop, Vestiaire Collective, and a specialist Hermes resale community, the scarf sold fastest and at the strongest price in the smallest, most specialized community, not the platform with the largest audience."
 date: "2026-07-02"
 updated: "2026-07-02"

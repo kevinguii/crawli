@@ -1,8 +1,8 @@
 ---
-title: "Schott Didn't Invent the Motorcycle Jacket. It Invented the Perfecto, and That Changed Everything."
+title: "Schott Perfecto Jacket History: The Original Biker Leather"
 description: "The Schott Perfecto 613/618, first produced in 1928, is the archetype of the asymmetrical-zip leather motorcycle jacket, and its unchanged heavy steerhide construction, Talon zippers, and star-studded lining make mid-century examples highly collectible and consistently appreciating in resale value."
 date: "2026-06-25"
-updated: "2026-06-25"
+updated: "2026-07-06"
 cover: "/blog/images/schott-perfecto-cover.svg"
 tags: ["maker-deep-dive", "schott-perfecto-history", "vintage-leather-jacket"]
 faq:
@@ -84,4 +84,4 @@ Vintage Schott Perfecto jackets appear scattered across eBay, Depop, and special
 
 Cross-searching the same jacket across multiple platforms reveals these price gaps. Crawli lets you see identical or near-identical Schott jackets listed on eBay, Depop, Poshmark, and Vestiaire simultaneously, so you can spot when one platform is offering a historic deal or when a seller is uninformed. That cross-platform transparency is how you find the steals on vintage Schott, look for the listings on smaller platforms (Depop, Etsy) where they might be underpriced compared to specialty vintage retailers.
 
-When you spot a Schott Perfecto jacket, check the label, zipper brand, and lining quality. Then search for the same jacket across all platforms at once. The more you see the range of pricing, the easier it is to recognize when you've found the real deal at the right price. Search free at [thecrawli.com](/).
+When you spot a Schott Perfecto jacket, check the label, zipper brand, and lining quality. Then search for the same jacket across all platforms at once. The more you see the range of pricing, the easier it is to recognize when you've found the real deal at the right price. For the broader test of whether any leather jacket, Schott or otherwise, is full-grain quality worth this kind of premium, see our guide to [identifying quality vintage leather](/blog/identifying-quality-vintage-leather). Search free at [thecrawli.com](/).

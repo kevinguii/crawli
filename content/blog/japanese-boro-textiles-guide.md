@@ -1,8 +1,8 @@
 ---
-title: "Before Visible Mending Was a Trend, It Was Japanese Boro. Now Collectors Pay Thousands."
+title: "Japanese Boro Textiles: A Guide to Authentic Vintage Boro"
 description: "Japanese Boro refers to patched and mended textile pieces, primarily indigo-dyed cotton, from the late 19th to early 20th century, created by rural Japanese communities out of necessity; today, authentic museum-quality boro garments are highly sought-after by collectors and can sell for over $1,000."
 date: "2026-06-25"
-updated: "2026-06-25"
+updated: "2026-07-06"
 cover: "/blog/images/japanese-boro-cover.svg"
 tags: ["culture-explainer", "japanese-boro-textiles", "vintage-textiles"]
 faq:
@@ -104,4 +104,4 @@ Authentic antique boro appears on specialized textile dealer sites, museum aucti
 
 When searching across secondhand platforms for affordable boro-inspired textiles, cross-platform searching reveals the price variation, modern reproductions might be listed at $150 on Etsy and $200 on Depop, which is a signal they are contemporary, not antique. Authentic museum pieces, when they appear, are typically exclusive to specialist dealers.
 
-Before assuming a boro listing is authentic, search the seller's other listings. A seller with many "authentic antique" boro pieces at varying price points is likely reselling reproductions. Genuine antique textile dealers typically have only a handful of pieces, carefully vetted, with detailed provenance information. You can cross-search boro across platforms free at [thecrawli.com](/) to compare pricing and seller context.
+Before assuming a boro listing is authentic, search the seller's other listings. A seller with many "authentic antique" boro pieces at varying price points is likely reselling reproductions. Genuine antique textile dealers typically have only a handful of pieces, carefully vetted, with detailed provenance information. These are the same seller-verification habits worth applying whenever you're [buying secondhand pieces that are hard to authenticate](/blog/how-to-spot-counterfeit-luxury-items), not just boro. You can cross-search boro across platforms free at [thecrawli.com](/) to compare pricing and seller context.

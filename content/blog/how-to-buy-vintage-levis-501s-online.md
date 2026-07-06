@@ -1,8 +1,8 @@
 ---
-title: "Stop Buying Vintage Levi's 501s Based on Tag Size. The Only Number That Matters Is the Waist Measurement."
+title: "Vintage Levi's 501 Sizing: Measure, Don't Trust the Tag"
 description: "When buying vintage Levi's 501s online, ignore the tag size because shrinkage, era differences, and wear alter the actual fit; instead, always request or look for the exact waist measurement laid flat, and compare to a pair you already own."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/vintage-levis-sizing-cover.svg"
 tags: ["item-guide", "vintage-levis-sizing", "denim-buying-guide"]
 faq:
@@ -62,4 +62,6 @@ The pattern that generates returns is consistent: buyers ask 'what size is it' i
 
 When you are comparing multiple listings for the same era and style, the measurement is the variable that differentiates them. A tagged 30-inch 501 from 1978 with a measured 29-inch waist and a 501 from 1983 with a measured 31-inch waist are not the same garment despite both being nominally 'size 30.' The year, the washing history, and individual variation in cutting all affect the actual measurement independently of the tag.
 
-Crawli saves you from scrolling three apps for a 1980s 501 with a measured 30-inch waist and an intact red tab: you search once and compare across platforms, finding the sellers who actually provided tape-measure documentation without having to check each app individually.
+[Crawli](/) saves you from scrolling three apps for a 1980s 501 with a measured 30-inch waist and an intact red tab: you search once and compare across platforms, finding the sellers who actually provided tape-measure documentation without having to check each app individually.
+
+Once you've found the right measurements and era markers, [see current 501 resale prices across platforms](/blog/levis-501-resale-price) to check whether the pair you're eyeing is priced fairly for an everyday wear or a genuinely rare collector piece.

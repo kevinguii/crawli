@@ -1,5 +1,5 @@
 ---
-title: "How to Tell a 1970s Vintage Band Tee From a 1990s Reprint in Under 60 Seconds"
+title: "How to Identify a Real Vintage Band Tee, Not a Reprint"
 description: "A genuine 1970s band tee typically has a single-stitch hem, a thin polyester-cotton blend, and a tag from a maker like Screen Stars or Brockum. Later reprints usually have double-stitch hems, heavier cotton, and tags from makers like Giant or later Fruit of the Loom."
 date: "2026-07-02"
 updated: "2026-07-02"
@@ -49,3 +49,5 @@ The construction difference is simple to check but easy to overlook if you don't
 A verified original 1970s single-stitch tour tee and a well-made 1990s double-stitch reprint of the exact same graphic can sell for wildly different prices, since collectors are paying specifically for the garment's actual age and rarity, not just the design printed on it. A reprint isn't worthless, it's simply a different, much more common object than the original it's copying, and pricing or buying it as though it were the original is the mistake this hem check exists to prevent.
 
 Next time you spot a promising band tee listing across multiple platforms, [Crawli](/) lets you search all at once and compare prices, so you don't overpay for a reprint when the genuine original is listed somewhere else for less.
+
+Once you've confirmed a tee is genuinely vintage, [check current band tee resale prices across platforms](/blog/vintage-band-tee-resale-price) to see whether the listing you found is actually underpriced.

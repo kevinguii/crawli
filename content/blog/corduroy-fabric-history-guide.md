@@ -1,8 +1,8 @@
 ---
-title: "Corduroy Is Not Velvet's Poor Cousin. It Was Sold to French Aristocrats Under a Fake Royal Name."
+title: "Corduroy Fabric History: The Myth of the King's Cord"
 description: "Corduroy is a durable cotton fabric with vertical ridges called wales. Its popular corde du roi origin story is a 19th-century marketing myth; the name most likely comes from cord plus duroy, an old English wool cloth, and the fabric became a working-class staple."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-07-06"
 cover: "/blog/images/corduroy-fabric-cover.svg"
 tags: ["material-guide", "corduroy-fabric-history", "vintage-textiles"]
 faq:
@@ -47,5 +47,7 @@ Wale count, the number of vertical ridges per inch, is the single most useful sp
 ## Why Older Corduroy Holds Up Better
 
 Vintage corduroy in high cotton content tends to resist the two things that ruin cheaper modern corduroy fastest: pile crushing and color fading. Heavier, denser weaves distribute wear more evenly across the pile, so the ridges stay defined instead of flattening into a smooth, worn-looking surface after repeated washing. Higher-quality dye processes used in earlier production runs also tend to hold color more consistently through decades of wear than the faster, cheaper dyeing common in contemporary fast-fashion corduroy.
+
+Knowing wale count and fiber content before you buy matters for more than corduroy specifically. It's the same skill covered in our guide to [understanding fabric composition in vintage clothing](/blog/understanding-fabric-composition-in-vintage-clothing), which is worth a read if you're buying secondhand by feel and label rather than by brand name alone.
 
 Searching for a vintage corduroy blazer with that rich 1970s wide wale texture means checking listings across a lot of different marketplaces, since wale quality and fiber content are rarely called out accurately in a title. [Crawli](/) lets you hunt across secondhand marketplaces at once so you don't miss the one with the perfect patina.

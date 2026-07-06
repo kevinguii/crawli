@@ -1,5 +1,5 @@
 ---
-title: "How to Accurately Price Your Secondhand Clothing for Faster Sales"
+title: "How to Price Secondhand Clothing for Faster Sales"
 description: "Most resellers overprice based on what they paid, not what the market will pay. Here's a practical framework for pricing secondhand clothing that sells."
 date: "2026-06-12"
 updated: "2026-06-12"

@@ -1,5 +1,5 @@
 ---
-title: "Why Vintage Designer Pieces Are Suddenly Everywhere on Red Carpets (and What It Means for Resale)"
+title: "Celebrity Archive Fashion Is Driving Resale Demand"
 description: "When a celebrity wears a 1996 Calvin Klein dress or a 2003 Jean Louis Scherrer gown, search demand for that exact era spikes within days. Here's how celebrity archive dressing is reshaping vintage resale prices."
 date: "2026-06-22"
 updated: "2026-06-22"

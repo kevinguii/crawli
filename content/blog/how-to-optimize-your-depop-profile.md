@@ -1,8 +1,8 @@
 ---
-title: "How to Build a Depop Profile That Actually Converts Browsers Into Buyers"
+title: "How to Optimize Your Depop Profile for More Sales"
 description: "Good photos aren't enough on their own. Here's how keyword-driven titles, a consistent visual style, and a real bio turn a Depop profile from ignored to followed."
 date: "2026-06-16"
-updated: "2026-06-16"
+updated: "2026-07-06"
 cover: "/blog/images/depop-profile-cover.svg"
 tags: ["resellers", "depop", "profile-optimization", "selling-tips"]
 faq:
@@ -18,7 +18,7 @@ faq:
 
 **Short answer:** A Depop profile that combines keyword-driven titles, consistent visual presentation, and a real bio converts noticeably better than one that's just good photos with no strategy behind them.
 
-Depop crossed $1 billion in gross merchandise sales in 2025, up around 60% in the U.S. alone, with roughly 3 million active sellers competing for the same 7 million active buyers, nearly 90% of whom are under 34. (eBay has agreed to acquire Depop from Etsy in a deal expected to close in Q2 2026, which hasn't changed how the marketplace itself works for sellers day to day.) That kind of seller density means a profile that's just "decent photos, no real plan" gets buried fast. The sellers who stand out treat their profile like a small shop, not a digital closet clean-out.
+Depop has grown into one of the largest resale marketplaces for younger buyers, with a large and still-growing pool of active sellers competing for the same audience. That kind of seller density means a profile that's just "decent photos, no real plan" gets buried fast. The sellers who stand out treat their profile like a small shop, not a digital closet clean-out.
 
 ## Why keywords matter more than people think
 

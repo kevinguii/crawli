@@ -1,8 +1,8 @@
 ---
-title: "The Birkin Bag Was Not a Marketing Stunt. It Was a Sketch on an Airsickness Bag."
+title: "Hermes Birkin Bag History: The True Origin Story"
 description: "The Hermes Birkin bag was born in 1983 when actress Jane Birkin complained to Hermes CEO Jean-Louis Dumas about not being able to find a practical leather weekend bag, and he sketched the design on an airsickness bag during their flight together."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-07-06"
 cover: "/blog/images/birkin-bag-history-cover.svg"
 tags: ["fashion-history", "hermes-birkin-history", "luxury-handbags"]
 faq:
@@ -47,7 +47,7 @@ Exact measurements vary slightly by production era and leather, and rare skins (
 
 ## Why the Waitlist Persists
 
-Hermes does not operate a public waitlist in the way outsiders imagine. There is no sign-up sheet. Bags are allocated by sales associates to clients with an established purchase history at the brand, a practice that has drawn criticism and, at times, legal scrutiny, but that Hermes has maintained largely unchanged. For buyers without that retail relationship, the resale market is often the only realistic path to owning one, which is a significant part of why platforms specializing in luxury resale have built entire verification and authentication infrastructures specifically around Birkin and Kelly bags.
+Hermes does not operate a public waitlist in the way outsiders imagine. There is no sign-up sheet. Bags are allocated by sales associates to clients with an established purchase history at the brand, a practice that has drawn criticism and, at times, legal scrutiny, but that Hermes has maintained largely unchanged. For buyers without that retail relationship, the resale market is often the only realistic path to owning one, which is a significant part of why platforms specializing in luxury resale have built entire verification and authentication infrastructures specifically around Birkin and Kelly bags. Those infrastructures aren't foolproof, and vintage Birkins with decades-old repairs or replaced hardware can trip up the same checks meant to catch fakes; see our breakdown of [how resale platform authentication actually works on bags like these](/blog/how-resale-platform-authentication-works) before you buy one secondhand.
 
 ## The Bag as an Investment Asset
 

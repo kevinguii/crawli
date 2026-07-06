@@ -1,8 +1,8 @@
 ---
-title: "When Vestiaire Collective Says 'Authenticated,' They Mean a Human Looked at Your Bag for 90 Seconds."
+title: "Resale Platform Authentication: Why Fakes Slip Through"
 description: "Most resale platforms' authenticity guarantees rely on a human authenticator visually inspecting an item for 60 to 120 seconds, checking stitching, hardware, and tags against a database, but the process often misses super fakes and can flag genuine vintage pieces with replaced parts."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/resale-authentication-cover.svg"
 tags: ["platform-deepdive", "vestiaire-authentication-process", "luxury-resale"]
 faq:
@@ -69,4 +69,4 @@ A successful dispute requires more than a feeling that something is wrong. Platf
 
 Independent authentication services, the specialists who work outside any single platform and can be hired by buyers or sellers, range from single-category experts to multi-category firms. Their reports carry more weight in disputes than any individual's assessment, and for items above approximately $2,000 their fee is usually justified by the protection it provides.
 
-Crawli cannot authenticate your purchases, but it can show you whether the same suspicious bag is listed simultaneously on three different platforms by three different sellers, which is often the earliest signal that something in the supply chain is wrong.
+[Crawli](/) cannot authenticate your purchases, but it can show you whether the same suspicious bag is listed simultaneously on three different platforms by three different sellers, which is often the earliest signal that something in the supply chain is wrong.

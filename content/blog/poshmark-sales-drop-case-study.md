@@ -1,5 +1,5 @@
 ---
-title: "I Tracked My Poshmark Closet Every Day for 30 Days. The Real Reason Sales Fell Was Not the Algorithm."
+title: "Poshmark Sales Drop: A 30-Day Sharing Timing Case Study"
 description: "After tracking daily Poshmark metrics for 30 days during a period of algorithm-driven visibility complaints, shifting sharing activity to the hour before peak evening browsing stabilized sales even as organic likes and visibility declined."
 date: "2026-07-02"
 updated: "2026-07-02"

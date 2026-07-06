@@ -1,5 +1,5 @@
 ---
-title: "If You See the Same Vintage Gucci Bag on Depop, Vinted, and eBay, One Seller Is a Scammer."
+title: "Cross-Platform Scam Spotting: How Resale Fraud Works"
 description: "When identical photos of a high-demand vintage item appear on two or more secondhand platforms from different usernames, it's almost always a fraud where the scammer uses stolen images to collect payments without shipping, and cross-platform searching immediately reveals the duplication."
 date: "2026-06-25"
 updated: "2026-06-25"

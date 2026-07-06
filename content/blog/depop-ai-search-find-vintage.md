@@ -1,5 +1,5 @@
 ---
-title: "Depop's New AI Search Thinks You Want Shein. Here's How to Actually Find Vintage."
+title: "Depop Vintage Search: How to Find Real Pieces AI Buries"
 description: "Depop's AI-driven search now personalizes results based on trending and brand affinity, often demoting true vintage in favor of mass-produced 'vintage style' items, but buyers can still find authentic pieces by using exact era, fabric, and brand keywords or by searching across platforms."
 date: "2026-06-25"
 updated: "2026-06-25"
@@ -104,4 +104,8 @@ When Depop's AI feeds you dropshipped "vintage," your best move is to search els
 
 The vintage is out there. Depop's algorithm just isn't built to show it to you. Search around it, and search across platforms.
 
-Crawli scans all the major secondhand platforms at once, so the vintage items that Depop's AI buries show up from wherever they actually exist. Instead of fighting one algorithm's preference for fast fashion, you see genuine vintage across eBay, Etsy, Poshmark, and more in a single search. Try it free at [thecrawli.com](/).
+## Once you find it, check whether it's actually priced right
+
+Finding a genuinely vintage piece buried under Depop's algorithm is only half the win. The seller listing it rarely knows what it's worth either, since low engagement on a listing doesn't just mean the algorithm buried it, it often means the seller priced it like an ordinary used item rather than the specific vintage piece it is. Before you buy, check what the same era, brand, and construction detail is going for on other platforms. A piece Depop's algorithm has buried and priced low is sometimes underpriced across the board, and sometimes it's just cheap on Depop specifically while the same piece runs higher on Grailed or Vestiaire.
+
+Crawli scans all the major secondhand platforms at once, so the vintage items that Depop's AI buries show up from wherever they actually exist, and you can see in one search whether the listing you found is a genuine deal or just average. Instead of fighting one algorithm's preference for fast fashion, you see genuine vintage across eBay, Etsy, Poshmark, and more in a single search. Try it free at [thecrawli.com](/).

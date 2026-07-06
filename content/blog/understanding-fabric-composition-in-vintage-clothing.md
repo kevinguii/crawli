@@ -1,8 +1,8 @@
 ---
-title: "Why Understanding Fabric Composition Matters for Vintage Buyers"
+title: "Fabric Composition in Vintage Clothing: A Buyer's Guide"
 description: "Aesthetic catches your eye first, but fabric composition determines whether a vintage piece lasts. Here's how to evaluate material quality before you buy."
 date: "2026-06-19"
-updated: "2026-06-19"
+updated: "2026-07-06"
 cover: "/blog/images/fabric-composition-cover.svg"
 tags: ["vintage", "buying-guide", "fabric", "quality"]
 faq:
@@ -42,5 +42,7 @@ Natural fibers like wool and cotton tend to be more durable over decades than ma
 ## Blends versus pure materials
 
 A garment tagged "70% wool, 30% nylon" behaves differently than 100% wool: the nylon adds durability and reduces wrinkling but changes the drape and breathability. Blends aren't inherently worse, they're a different trade-off. The key is knowing what trade-off you're buying. A pure silk blouse will need more careful handling than a silk-poly blend, but it will also drape and feel noticeably different. Read the full composition line, not just the dominant fiber, since a "wool" coat that's actually 60% wool and 40% acrylic will wear and feel meaningfully different from one that's pure wool.
+
+Fabric tags only tell part of the story on materials that get faked often. If you're buying vintage leather specifically, composition labels won't save you the way they do on woven fabric, so it's worth reading our [guide to telling real leather from bonded leather](/blog/identifying-quality-vintage-leather) before you buy.
 
 Comparing fabric composition across listings is easier when you can see multiple options side by side. [Crawli](/) lets you search for clothing across Depop, Poshmark, Grailed, eBay, and more at once, for free, so you can compare material details before you commit to a purchase.

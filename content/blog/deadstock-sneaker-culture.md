@@ -1,8 +1,8 @@
 ---
-title: "Why Are Deadstock Sneakers So Expensive? It's Not About Wearing Them"
+title: "Deadstock Sneakers: Why They Cost So Much to Own"
 description: "Deadstock sneaker prices don't track footwear value, they track time-capsule value. Here's how deadstock grading actually works, and why an untouched 1985 pair can outprice a 2020s release many times over."
 date: "2026-06-23"
-updated: "2026-06-23"
+updated: "2026-07-06"
 cover: "/blog/images/deadstock-sneaker-cover.svg"
 tags: ["guides", "sneakers", "deadstock", "collecting"]
 faq:
@@ -49,7 +49,7 @@ This is why serious collectors store deadstock pairs in stackable boxes, away fr
 
 ## Why mid-80s Jordan and Nike model-year runs outprice 2000s releases
 
-Scarcity from this era isn't manufactured the way it sometimes is today. Pairs from the mid-1980s simply don't have many survivors in any condition, let alone deadstock, because almost nobody at the time thought to preserve a sneaker. The Air Jordan 1 launched the category that made sneaker collecting a thing in the first place, which gives surviving deadstock pairs a kind of founding-document status among buyers. The most famous example of what cultural weight can do to a price: Michael Jordan's own signed, game-worn 1985 Air Jordan 1s sold at Sotheby's in 2020 for $560,000, a record for any pair of sneakers at the time. That pair was worn and signed, not deadstock, which is its own different kind of provenance premium. But it shows the ceiling this era can reach when scarcity and cultural significance line up. Plain deadstock pairs from the same year sell for a fraction of that figure, and still command multiples over comparable 2000s releases, because so few survived untouched.
+Scarcity from this era isn't manufactured the way it sometimes is today. Pairs from the mid-1980s simply don't have many survivors in any condition, let alone deadstock, because almost nobody at the time thought to preserve a sneaker. The Air Jordan 1 launched the category that made sneaker collecting a thing in the first place, which gives surviving deadstock pairs a kind of founding-document status among buyers. (If you're tracking the more everyday resale end of the same silhouette, [current Jordan 1 resale prices](/blog/jordan-1-resale-price) show how much of that founding-model premium still carries into modern retros.) The most famous example of what cultural weight can do to a price: Michael Jordan's own signed, game-worn 1985 Air Jordan 1s sold at Sotheby's in 2020 for $560,000, a record for any pair of sneakers at the time. That pair was worn and signed, not deadstock, which is its own different kind of provenance premium. But it shows the ceiling this era can reach when scarcity and cultural significance line up. Plain deadstock pairs from the same year sell for a fraction of that figure, and still command multiples over comparable 2000s releases, because so few survived untouched.
 
 ## Common tells that a "deadstock" pair has been re-laced or relisted
 

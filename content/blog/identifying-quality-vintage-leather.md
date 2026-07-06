@@ -1,8 +1,8 @@
 ---
-title: "How to Tell Real Leather From Bonded: A Buyer's Guide to Vintage Leather Quality"
+title: "How to Identify Quality Vintage Leather (Real vs Bonded)"
 description: "Quality vintage leather and bonded leather can look identical in a listing photo. Here's how to tell them apart before you buy, and why it matters for resale value."
 date: "2026-06-22"
-updated: "2026-06-22"
+updated: "2026-07-06"
 cover: "/blog/images/vintage-leather-cover.svg"
 tags: ["guides", "leather", "material-guide"]
 faq:
@@ -44,7 +44,7 @@ Bonded leather isn't fake leather exactly. It contains real leather fiber. But i
 
 With new leather goods, the trade-off is mostly price versus feel. With vintage, it's about whether the piece holds up at all. Full-grain leather is built to be re-conditioned and re-worn for decades, which is exactly why a well-cared-for vintage piece can still be excellent today. Bonded leather was never built for that timeline. A bonded jacket sold as "vintage" either isn't actually old, or it's already past the point where the coating is failing.
 
-This shows up constantly in vintage-buying communities. Threads on r/VintageClothing regularly ask the group to help date and authenticate a piece by exactly these signals: tag fonts, hardware stamping, stitching style. The same instinct that helps someone date a coat helps you grade its leather.
+This shows up constantly in vintage-buying communities. Threads on r/VintageClothing regularly ask the group to help date and authenticate a piece by exactly these signals: tag fonts, hardware stamping, stitching style. The same instinct that helps someone [date a vintage garment](/blog/lifecycle-of-vintage-clothing) helps you grade its leather.
 
 ## Real leather rewards maintenance. Bonded leather doesn't
 

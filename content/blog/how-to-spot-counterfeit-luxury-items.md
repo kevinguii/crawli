@@ -1,5 +1,5 @@
 ---
-title: "How to Spot Counterfeit Luxury Items: Nuances Every Buyer Should Know"
+title: "How to Spot Counterfeit Luxury Items When Buying Secondhand"
 description: "Counterfeits have gotten good enough that brand-specific checklists alone aren't reliable anymore. Here's the buyer-side verification habits that catch fakes regardless of which brand you're looking at."
 date: "2026-06-18"
 updated: "2026-06-18"

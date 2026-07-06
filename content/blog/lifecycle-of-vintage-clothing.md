@@ -1,5 +1,5 @@
 ---
-title: "Understanding the Lifecycle of Vintage Clothing (and How to Date It)"
+title: "The Lifecycle of Vintage Clothing (and How to Date It)"
 description: "Every vintage garment passes through manufacture, original sale, years of wear, and resale, and each stage leaves clues you can use to date and value it."
 date: "2026-06-19"
 updated: "2026-06-19"

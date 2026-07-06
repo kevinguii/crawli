@@ -2,7 +2,7 @@
 title: "How to Sell Secondhand Clothing That Is Not Moving"
 description: "Most sellers discount a listing the moment it stalls. The data says the more common problem is visibility, not price. Here's how to diagnose and fix unsold inventory before you touch the price tag."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-07-06"
 cover: "/blog/images/unsold-inventory-cover.svg"
 tags: ["resellers", "inventory", "selling-tips", "case-study"]
 faq:
@@ -28,7 +28,7 @@ The fastest way to tell the difference: check views against offers per listing. 
 
 ## The single biggest lever: cross-listing
 
-Sellers who list the same item across more than one platform at once see meaningfully faster sell-through (in the range of 60 to 80% faster) and meaningfully higher average sale prices (15 to 25% higher) compared to sellers who rely on a single platform. The logic is straightforward: an item that's invisible to Depop's audience might be exactly what a Mercari or Poshmark buyer is searching for that same week. Waiting on one platform to come through means leaving the other buyer pools untouched the entire time.
+Sellers who list the same item across more than one platform at once tend to see noticeably faster sell-through and higher average sale prices compared to sellers who rely on a single platform. The logic is straightforward: an item that's invisible to Depop's audience might be exactly what a Mercari or Poshmark buyer is searching for that same week. Waiting on one platform to come through means leaving the other buyer pools untouched the entire time.
 
 ## The checklist for moving stuck inventory
 

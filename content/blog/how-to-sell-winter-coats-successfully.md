@@ -2,7 +2,7 @@
 title: "How to Sell Winter Coats Successfully (Timing Beats Pricing)"
 description: "Most sellers cut the price when a coat sits unsold. The bigger lever is when you list it. Here's the actual seasonal timing that moves winter outerwear."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-07-06"
 cover: "/blog/images/winter-coats-timing-cover.svg"
 tags: ["resellers", "outerwear", "seasonal-selling", "selling-tips"]
 faq:
@@ -18,7 +18,7 @@ faq:
 
 **Short answer:** Winter coats sell fastest and for the most money when listed 4 to 6 weeks before peak cold hits your buyer's region, not whenever you happen to clean out your closet. Price is the second lever, not the first.
 
-Reseller sourcing guides regularly document the same pattern: a coat picked up for next to nothing during summer clearance can resell for ten times that once it's back in season. One commonly cited example has a reseller buying a coat at a thrift store in July for $8, holding it until October, and selling it within a week for $85. The coat didn't change. The calendar did.
+Reseller sourcing guides regularly document the same pattern: a coat picked up for next to nothing during summer clearance can resell for many times more once it's back in season. The coat doesn't change. The calendar does.
 
 ## Why timing outweighs price on outerwear specifically
 
@@ -43,7 +43,7 @@ A $20 t-shirt photo can get away with being mediocre. A $150 coat can't, because
 
 - **Show it closed and open.** Buyers want to see the silhouette buttoned up and the lining/interior tags when it's open.
 - **Lay it flat for one shot.** This is the photo buyers use to judge true size and shape, more than a hanger shot does.
-- **Name the fill and warmth level in the title.** "Down-filled," "wool blend," "shell only, no insulation" — these are the words buyers actually search.
+- **Name the fill and warmth level in the title.** "Down-filled," "wool blend," "shell only, no insulation": these are the words buyers actually search.
 - **Pick the right platform for the brand.** Technical and designer outerwear (Moncler, Canada Goose, Arc'teryx, The North Face higher-end lines) gets better traction on Grailed and Vestiaire Collective, where buyers are already shopping that category. Everyday coats and fast-fashion outerwear move faster on Poshmark and Depop's broader, more casual audience.
 
 ## The mistake most sellers make

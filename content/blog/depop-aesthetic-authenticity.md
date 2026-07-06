@@ -1,5 +1,5 @@
 ---
-title: "Why Depop Punishes Listings That Look Like They're Trying Too Hard"
+title: "Why Depop Rewards Authenticity Over Polish"
 description: "On Depop, a studio-polished listing can read as suspicious, not premium. Here's why a more casual, personal tone often converts better, and where the line is."
 date: "2026-06-23"
 updated: "2026-06-23"

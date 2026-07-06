@@ -1,8 +1,8 @@
 ---
-title: "The M-65 Field Jacket Was Designed to Kill. Now It's the Most Versatile Vintage Piece in Your Closet."
+title: "M-65 Field Jacket Guide: Dating and Buying Vintage"
 description: "The M-65 field jacket is a US military-issue outer garment introduced in 1965, characterized by its olive drab sateen, button-in liner, and four large pockets, which has become a civilian wardrobe staple and a resale category with high demand for Vietnam-era originals."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/m65-field-jacket-cover.svg"
 tags: ["category-deep-guide", "m65-field-jacket-guide", "vintage-military"]
 faq:
@@ -16,7 +16,7 @@ faq:
     answer: "Early contract M-65 jackets, particularly those from the 1965 to 1971 window when chrome-alloy zippers were standard, carry a specific military provenance that coincides with the height of US involvement in Vietnam. Collectors value these for their historical specificity, their OG-107 sateen fabric (heavier and more structured than later NYCO blends), and their chrome zippers, which are considered more desirable than the lighter hardware used from 1971 onward. Supply is finite: these jackets were not produced for civilian sale and the surviving stock in good condition diminishes each year."
 ---
 
-**Short answer:** The M-65 field jacket is a US military-issue outer garment introduced in 1965, characterised by its olive drab sateen, button-in liner, and four large cargo pockets, which has become a civilian wardrobe staple and a resale category with sustained demand for Vietnam-era originals. An M-65 manufactured in 1968 with a chrome-alloy zipper and OG-107 sateen commands triple the price of a 2000s reproduction, and the difference is encoded in a small contract tag that most sellers overlook.
+**Short answer:** The M-65 field jacket is a US military-issue outer garment introduced in 1965, characterised by its olive drab sateen, button-in liner, and four large cargo pockets, which has become a civilian wardrobe staple and a resale category with sustained demand for Vietnam-era originals. An M-65 manufactured in 1968 with a chrome-alloy zipper and OG-107 sateen commands a steep premium over a 2000s reproduction, and the difference is encoded in a small contract tag that most sellers overlook.
 
 The best M-65 I know of came from a Vinted seller who listed it as 'green army coat,' no brand, no date. The buyer paid thirty-five pounds for a 1970 Alpha Industries contract jacket. The seller had no idea what they had. That gap in knowledge is where informed resellers find their margin.
 
@@ -49,7 +49,7 @@ The quickest way to distinguish them by feel: OG-107 sateen has a smooth, slight
 | Fabric | OG-107 cotton sateen | OG-507 NYCO or cotton | Varies, often lighter |
 | Collar shape | Slightly wider, fuller fold | Narrower by late 1970s | Often approximated |
 | Pocket hardware | Brass snaps on early examples | Lighter snaps | Plastic or light alloy |
-| Typical resale price (good condition) | $150-$400 depending on size | $60-$120 | $40-$80 |
+| Relative resale value | Commands the highest prices | Sells for a moderate premium | Priced as new goods, not as vintage |
 
 ## Styling an M-65 Without Looking Like a Reenactor
 

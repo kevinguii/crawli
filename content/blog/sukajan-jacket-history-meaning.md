@@ -1,8 +1,8 @@
 ---
-title: "Your Vintage Souvenir Jacket Is Not Just a Souvenir. It Started as a GI Trade in Occupied Japan."
+title: "Sukajan Jacket History: From GI Souvenir to Streetwear"
 description: "Sukajan, or souvenir jackets, are silk or rayon bomber-style jackets with embroidered dragons, tigers, and eagles. They originated in post-WWII Yokosuka when American servicemen commissioned embellished jackets from local craftspeople, before Japanese youth subcultures adopted the style."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-07-06"
 cover: "/blog/images/sukajan-jacket-cover.svg"
 tags: ["culture-explainer", "sukajan-jacket-meaning", "japanese-streetwear-history"]
 faq:
@@ -43,5 +43,9 @@ The jacket's second life began once it moved beyond the American servicemen who 
 ## Distinguishing a Genuine Vintage Sukajan from a Modern Reissue
 
 Genuine 1950s and 1960s sukajan were hand-embroidered on higher-grade silk or rayon satin, with embroidery density and stitch precision that machine-produced modern reissues rarely replicate exactly. Vintage pieces typically show embroidery that sits slightly raised and dense enough to add real structure and weight to the fabric, alongside period-consistent construction details like the collar shape, zipper hardware, and ribbing style. Labels and tags from established makers like Kosho & Co./TOYO Enterprise can help date a piece, though tag formats changed across decades, so cross-referencing the embroidery style and construction together is more reliable than relying on any single detail alone.
+
+## Why the history matters when you're actually buying one
+
+None of this is trivia if you're shopping secondhand. A genuine hand-embroidered vintage sukajan is a fundamentally different object, and a different price, than a machine-embroidered modern reissue wearing the same dragon motif, and sellers routinely blur the two in a listing title. Knowing the construction and motif history above is what lets you tell a $150 reissue from a $1,000+ original before you pay for either one.
 
 Finding a real vintage sukajan on Western marketplaces is a genuine needle-in-a-haystack search, since inventory is scattered and inconsistently described. [Crawli](/) can search Depop, eBay, and Vestiaire Collective at once so you don't miss the one that just got listed.

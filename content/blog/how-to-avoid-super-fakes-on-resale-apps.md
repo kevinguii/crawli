@@ -2,7 +2,7 @@
 title: "How to Avoid Super Fakes When Buying Designer Secondhand"
 description: "Counterfeits have gotten scarily good. Here's how to tell which resale platforms actually authenticate, which ones don't, and what to check yourself before you buy."
 date: "2026-06-15"
-updated: "2026-06-15"
+updated: "2026-07-06"
 cover: "/blog/images/super-fakes-cover.svg"
 tags: ["guides", "luxury", "authentication", "buying-tips"]
 faq:
@@ -18,7 +18,7 @@ faq:
 
 **Short answer:** Counterfeits have gotten very good, but platforms that physically authenticate and some basic buyer knowledge go a long way. Not every platform is equal when it comes to authentication, and the gaps matter.
 
-The counterfeit market has kept pace with luxury resale's growth, and the quality gap between a real piece and a convincing fake has closed significantly. A scan of counterfeit submissions across major verification services shows Louis Vuitton accounts for nearly 33% of all fakes caught, and Prada follows at around 14%.
+The counterfeit market has kept pace with luxury resale's growth, and the quality gap between a real piece and a convincing fake has closed significantly. Louis Vuitton and Prada are consistently among the brands most frequently flagged by verification services, reflecting how much counterfeit volume concentrates on a handful of the most recognizable logos.
 
 The difference now is that fakes aren't just cheap knock-offs with bad stitching. The high-end replicas circulating today, often called "1:1s" or "super fakes," are built to pass a quick look. What they still can't do reliably is pass a close look.
 

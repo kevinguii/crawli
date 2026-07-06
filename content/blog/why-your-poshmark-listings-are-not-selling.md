@@ -1,8 +1,8 @@
 ---
-title: "Why Your Poshmark Listings Are Not Selling (and It's Probably Not the Price)"
+title: "Why Your Poshmark Listings Aren't Selling (It's Not Price)"
 description: "Most Poshmark sellers who are stuck blame pricing first. The real problem is often timing. Here's how to get your listings in front of buyers when they're actually browsing."
 date: "2026-06-12"
-updated: "2026-06-12"
+updated: "2026-07-06"
 cover: "/blog/images/poshmark-timing-cover.svg"
 tags: ["resellers", "poshmark", "selling-tips"]
 faq:
@@ -45,7 +45,7 @@ The weakest times: early morning on weekdays, and Friday afternoons (people are 
 
 ## Time zones matter more than you think
 
-Poshmark's buyer base skews toward the East Coast. About 55% of US internet traffic sits in Eastern time. If you're on the West Coast and you list at 7 PM Pacific, East Coast buyers already logged off an hour ago. For high-value items where you want maximum exposure, aim for 7 to 8 PM Eastern (4 to 5 PM Pacific). For casual everyday pieces with broad appeal, 7 PM local is fine.
+Poshmark's buyer base skews toward the East Coast, where a large share of the US population and its internet traffic sits in Eastern time. If you're on the West Coast and you list at 7 PM Pacific, East Coast buyers already logged off an hour ago. For high-value items where you want maximum exposure, aim for 7 to 8 PM Eastern (4 to 5 PM Pacific). For casual everyday pieces with broad appeal, 7 PM local is fine.
 
 ## What to do right now
 

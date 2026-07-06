@@ -1,8 +1,8 @@
 ---
-title: "Y2K Fashion Will Not Peak in 2026. The Real Money Is in the Anti-Y2K Reaction Already Starting."
+title: "Y2K Backlash 2026: The Quiet Luxury Countertrend"
 description: "While Y2K fashion will remain visible, the resale market in 2026 will see a growing demand for quiet luxury and minimalist pieces from the early 2010s as a countertrend to logo-heavy nostalgia, driven by burnout from micro-trends."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/y2k-backlash-cover.svg"
 tags: ["culture-explainer", "y2k-backlash-trend", "vintage-resale-market"]
 faq:
@@ -58,4 +58,4 @@ Seam and construction detail. Hold the garment up and look at how the structural
 
 Label provenance. Checking the country of manufacture and the composition label matters in this category. Philo-era Celine was produced in France and Italy from high-specification materials. The composition labels on archive pieces are typically very specific about fibre quality.
 
-Crawli lets you set saved-search alerts for terms like 'old Celine' or 'normcore blazer' across multiple platforms, so you are notified first when relevant pieces are listed rather than discovering them after other collectors have already acted.
+[Crawli](/) lets you set saved-search alerts for terms like 'old Celine' or 'normcore blazer' across multiple platforms, so you are notified first when relevant pieces are listed rather than discovering them after other collectors have already acted.

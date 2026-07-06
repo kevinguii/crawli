@@ -90,6 +90,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-06 — Blog conversion reframe complete (all 4 phases)**
+- 15 new compare-anchored price posts (one per live `/compare/[slug]`), 2 new Tier C posts, bulk title-shortened all 89 posts to ≤60 chars, and a full convert-audit pass (internal compare-links, CTA tightening, unsourced-stat cleanup, dead-post rescues) across all 72 pre-existing posts. Full breakdown, decisions, and what's left: `docs/blog-briefs-2026-07-reframe.md` (STATUS section at top). Nothing committed yet.
+
 **2026-07-02 — Alert query edits are free (cooldown-gated, not credit-charged)**
 - Baseline-changing alert edits (query/platforms/filters/criteria) no longer charge a search credit. They still reset the baseline and re-run in-house (eBay excluded from alerts → crawl4ai only, marginal cost). Free tier is gated by a per-alert cooldown (`FREE_BASELINE_EDIT_COOLDOWN_HOURS = 4` in `lib/alertConstants.ts`); paid tiers uncapped. New column `saved_searches.last_baseline_edit_at` tracks the last edit — deliberately NOT `last_run_at` (cron runs bump that too). PATCH now returns `429 edit_cooldown` for free-tier over-edits. Client (`CreateAlertModal`) no longer fires `crawli:search-started` on edits and messages the cooldown for free users.
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Minimalist tailored blazer silhouette representing 1990s Helmut Lang archive fashion">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="300" r="220" fill="#f4f4f5"/>
+
+  <!-- Blazer silhouette, deconstructed/asymmetric to nod at Lang's cut -->
+  <path d="M 520 190 L 470 230 L 460 430 L 540 430 L 560 300 L 600 300 L 620 430 L 740 430 L 730 220 L 680 190 L 620 230 L 600 220 Z"
+        fill="none" stroke="#18181b" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Bias seam line, a nod to bias-cut construction -->
+  <line x1="560" y1="300" x2="640" y2="230" stroke="#18181b" stroke-width="6" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Collar notch -->
+  <line x1="520" y1="190" x2="560" y2="240" stroke="#18181b" stroke-width="8" stroke-linecap="round"/>
+  <line x1="680" y1="190" x2="640" y2="240" stroke="#18181b" stroke-width="8" stroke-linecap="round"/>
+
+  <text x="600" y="510" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#18181b" text-anchor="middle">1990s Helmut Lang, before 2005</text>
+</svg>

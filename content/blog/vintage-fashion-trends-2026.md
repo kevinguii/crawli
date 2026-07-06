@@ -1,8 +1,8 @@
 ---
-title: "The Vintage Fashion Trends Actually Driving 2026 (It's Not Just Sustainability)"
+title: "Vintage Fashion Trends 2026: What's Actually Driving It"
 description: "Y2K luxury, 90s slip dresses, and high-rise denim are dominating resale right now. The real driver behind vintage's growth in 2026 is more about value and individuality than the planet, even though sustainability is quietly reshaping the supply side."
 date: "2026-06-16"
-updated: "2026-06-16"
+updated: "2026-07-06"
 cover: "/blog/images/vintage-trends-2026-cover.svg"
 tags: ["guides", "vintage", "trends", "sustainability"]
 faq:
@@ -30,7 +30,7 @@ Sustainability hasn't disappeared from the picture, it's just moved. A majority 
 
 | Trend | What's driving it | How to wear it now |
 |---|---|---|
-| Y2K luxury | Designer handbags, tailored jackets, and silk accessories from the late 90s/early 2000s; demand growing roughly 15% annually | Pair one investment-era piece (a structured bag or blazer) with simple current basics |
+| Y2K luxury | Designer handbags, tailored jackets, and silk accessories from the late 90s/early 2000s; demand climbing steadily year over year | Pair one investment-era piece (a structured bag or blazer) with simple current basics |
 | 90s minimalism revival | Slip dresses, satin sets, chokers, cargo pants | Layer a slip dress over a t-shirt, or wear cargo pants with a fitted top to avoid a full throwback look |
 | High-rise vintage denim | Consistent demand across resale platforms as low-rise fatigue sets in | Sizing runs differently than modern denim, check actual waist measurements, not the tag size |
 | Oversized 90s denim jackets | Strong resale search volume, versatile across seasons | Works as a layering piece over almost anything; the easiest vintage entry point for new shoppers |
@@ -38,14 +38,16 @@ Sustainability hasn't disappeared from the picture, it's just moved. A majority 
 
 ## How shoppers are actually finding these pieces
 
-Almost half of shoppers, 46%, now discover resale finds through social media feeds, content creators, and in-person browsing rather than searching a single platform directly. Style inspiration is increasingly coming from what shows up in a feed, then the actual purchase happens wherever that specific piece is listed.
+A large and growing share of shoppers now discover resale finds through social media feeds, content creators, and in-person browsing rather than searching a single platform directly. Style inspiration is increasingly coming from what shows up in a feed, then the actual purchase happens wherever that specific piece is listed.
 
-That discovery pattern is also pushing shoppers toward AI tools: 48% of secondhand shoppers now say they use AI shopping tools somewhere in their search process. The shift from "search one app" to "see it somewhere, then hunt it down across platforms" is a real behavior change, not a marginal one.
+That discovery pattern is also pushing more shoppers toward AI search tools somewhere in the process of tracking a piece down. The shift from "search one app" to "see it somewhere, then hunt it down across platforms" is a real behavior change, not a marginal one.
 
 ## What this means if you're shopping or selling
 
 If you're buying, the categories above are where competition for good pieces is highest right now, so search by specific brand and era details rather than generic terms to beat the volume. If you're reselling, Y2K-adjacent and 90s pieces in good condition are sitting in a genuine demand window. Pricing them like generic "vintage" instead of naming the specific trend they fit into is leaving money on the table.
 
 One vintage statement piece styled with current basics is also the easiest way to wear any of this without it reading as costume. A single denim jacket or slip dress does more for an outfit than trying to recreate an entire era head to toe.
+
+One category not yet showing up in this search volume but worth watching: [1970s athletic and club wear](/blog/1970s-athletic-club-wear-trend) is thin-inventory, still underpriced, and sits a step behind the trends above rather than competing with them.
 
 Finding the right piece across platforms, especially in categories where demand is climbing, takes more than one search. [Crawli](/) searches resale marketplaces at once so you can catch a Y2K or 90s piece wherever it's actually listed instead of missing it because it surfaced somewhere you didn't check. Start your search at [thecrawli.com](https://thecrawli.com).

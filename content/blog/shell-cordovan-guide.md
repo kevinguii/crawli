@@ -1,8 +1,8 @@
 ---
-title: "Shell Cordovan Is Not Leather. It's the Membrane You Want on Your Vintage Shoes."
+title: "Shell Cordovan Guide: The Horsehide Leather Explained"
 description: "Shell cordovan is a non-creasing, high-gloss membrane cut from a horse's rump, produced almost exclusively by Chicago's Horween tannery, and it ages with a characteristic luminescence that makes vintage shell shoes easy to spot if you know what to look for."
 date: "2026-06-25"
-updated: "2026-06-25"
+updated: "2026-07-06"
 cover: "/blog/images/shell-cordovan-cover.svg"
 tags: ["material-guide", "shell-cordovan-guide", "vintage-shoes"]
 faq:
@@ -96,4 +96,4 @@ When you see a vintage shoe listing claiming shell cordovan:
 3. **Check the maker** - If it's an Alden, Allen Edmonds, or other known cordovan user, the likelihood is much higher.
 4. **Cross-search the shoe across platforms** - If the same vintage Alden appears on eBay for $450 and Vestiaire for $200, the lower-priced seller may not realize they have shell cordovan.
 
-Sellers often under-price shell cordovan shoes simply because they don't recognize the material for what it is. Cross-platform searching reveals these gaps. Search for the same vintage shoe across all resale platforms at once, Poshmark, eBay, Depop, Vestiaire, TheRealReal, and the real value becomes clear. You can search them all simultaneously for free at [thecrawli.com](/).
+Sellers often under-price shell cordovan shoes simply because they don't recognize the material for what it is. Cross-platform searching reveals these gaps. Search for the same vintage shoe across all resale platforms at once, Poshmark, eBay, Depop, Vestiaire, TheRealReal, and the real value becomes clear. You can search them all simultaneously for free at [thecrawli.com](/). For checking leather quality on other vintage pieces beyond footwear, see our guide to [identifying quality vintage leather](/blog/identifying-quality-vintage-leather).

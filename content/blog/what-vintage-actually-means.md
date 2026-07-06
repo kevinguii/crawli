@@ -2,7 +2,7 @@
 title: "The Real Meaning Behind 'Vintage': What Buyers Need to Know"
 description: "Vintage, retro, and antique get used interchangeably online, but they mean different things, and listings that blur the line can mislead buyers into paying vintage prices for something that isn't."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-07-06"
 cover: "/blog/images/understanding-vintage-cover.svg"
 tags: ["vintage", "buying-guide", "fashion-history"]
 faq:
@@ -40,6 +40,8 @@ This isn't always intentional misrepresentation. Plenty of sellers genuinely are
 2. **Look at construction details.** Overlock stitching, zipper types, and even the specific plastic used in buttons shifted over time in ways that are documented and checkable.
 3. **Ask for the brand or union label closeup.** Union labels in particular stopped appearing on US-made garments at a specific, dateable point, which makes them a useful era marker when present.
 4. **Cross-reference the silhouette against the claimed decade.** A cut that doesn't match the design conventions of the claimed era is worth questioning even if every label checks out.
+
+For a deeper walkthrough of dating a specific garment stage by stage, from original manufacture through to how construction ages, see our guide on [the lifecycle of vintage clothing and how to date it](/blog/lifecycle-of-vintage-clothing).
 
 ## Quick reference
 

@@ -1,8 +1,8 @@
 ---
-title: "The Fisherman Sweater Was Never Meant to Be Fashion. It Was a Sea-Proof Armor for the North Atlantic."
+title: "Fisherman Sweater History: The Gansey and Aran Story"
 description: "The fisherman sweater, known as a gansey or Aran sweater, originated as thick, tightly knitted wool garments worn by fishermen in the British Isles and Brittany, designed with dense stitch patterns that repelled water and insulated against Atlantic cold."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/fisherman-sweater-cover.svg"
 tags: ["fashion-history", "fisherman-sweater-history", "vintage-knitwear"]
 faq:
@@ -68,8 +68,10 @@ Moth damage in dense wool often appears as small round holes with slightly disco
 
 The lanolin content of older wools, which protected the garment in use, also acts as a mild moth deterrent. Pre-war ganseys with their original unscoured wool are sometimes more intact than post-war commercial pieces that were processed with harsher finishing treatments.
 
-When you are ready to buy, Crawli can search multiple platforms simultaneously for terms like 'gansey sweater' or 'naval jumper,' so you are not limited to a single marketplace's listing vocabulary.
+Knowing the construction history above matters at the point of purchase too: because wartime naval sweaters and pre-1980s ganseys carry no commercial brand name, they're the category most often misdescribed or underpriced on resale platforms by sellers who don't know what they have. The shoulder-saddle and gusset details that date a piece are the same details that tell you whether a "vintage wool sweater" listing is actually worth the asking price.
+
+When you are ready to buy, [Crawli](/) can search multiple platforms simultaneously for terms like 'gansey sweater' or 'naval jumper,' so you are not limited to a single marketplace's listing vocabulary.
 
 ---
 
-*Cross-reference: the stitch comparison table above and the construction dating clues apply equally when evaluating the Harris Tweed pieces covered in our authentication guide.*
+*Cross-reference: the stitch comparison table above and the construction dating clues apply equally when evaluating the Harris Tweed pieces covered in our [Harris Tweed authentication guide](/blog/harris-tweed-authentication-guide).*

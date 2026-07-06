@@ -1,8 +1,8 @@
 ---
-title: "The Harrington Jacket Had a Working-Class Name Before Baracuta Made It a Preppy Icon"
+title: "Harrington Jacket History: Baracuta G9 to Preppy Icon"
 description: "The Harrington jacket, originally the Baracuta G9, was created in 1937 by John and Isaac Miller as a rain-proof golf coat with a Fraser tartan lining. It got the name Harrington in 1964 after the TV character Rodney Harrington wore one on Peyton Place."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-07-06"
 cover: "/blog/images/harrington-jacket-cover.svg"
 tags: ["fashion-history", "harrington-jacket-history-baracuta", "vintage-menswear"]
 faq:
@@ -51,5 +51,7 @@ By the 1960s and into the following decades, the jacket had been adopted well be
 ## Spotting an Authentic Vintage Harrington
 
 The clearest identifiers on a genuine vintage Baracuta G9 are the Fraser tartan lining itself (a red, green, and white check, not a generic plaid substitute), an umbrella-style back vent for movement and ventilation, and a Baracuta label with a design consistent with the jacket's production era; label fonts and tag formats changed over the decades, so cross-referencing a specific label style against the jacket's other construction details is more reliable than assuming any single label design covers the entire vintage era. Later licensed and reissued versions sometimes substitute a similar-looking tartan or omit some of the original construction details, so close inspection of the lining pattern and back vent construction is worth the extra minute before buying.
+
+This is why the history above is worth more than trivia when you're actually shopping for one: a jacket sold as a "vintage Harrington" is only worth a vintage price if it's genuinely an older Baracuta G9 with the correct tartan and construction, not a recent reissue or a different brand's fold-collar jacket riding on the name. The same detail that dates the jacket is the detail that tells you what you're actually paying for.
 
 When you are searching for an authentic vintage Harrington, [Crawli](/) can scan multiple secondhand marketplaces for the telltale Fraser tartan lining and umbrella back vent at once, so you can compare listings and find the real thing faster.

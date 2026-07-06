@@ -1,8 +1,8 @@
 ---
-title: "Vintage Viyella Is the Wool-Cotton Blend That Made British Shirts Indestructible, and Now It's Disappearing."
+title: "Viyella Fabric Guide: The Vintage Wool-Cotton Blend"
 description: "Viyella is a trademarked blend of 55% lambswool and 45% cotton, first produced in England in 1893, known for being warm, soft, shrink-resistant, and virtually indestructible, making vintage Viyella shirts a durable secondhand buy."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/viyella-fabric-cover.svg"
 tags: ["material-guide", "viyella-fabric-guide", "vintage-menswear"]
 faq:
@@ -38,6 +38,8 @@ Post-2000 garments bearing the Viyella name represent licensed production using 
 
 The practical test for anyone handling an unknown piece: press the fabric firmly between thumb and forefinger. The original Viyella has a distinctive springback and a slightly waxy, lanolin-adjacent surface warmth. Modern licensed versions feel thinner and more clearly cottony. The original fabric also wrinkles differently: when you release a pressed fold, genuine pre-2000 Viyella resists creasing more noticeably than the current formula.
 
+Viyella isn't the only British heritage fabric where the label tells a different story than the material feels like it should. If you're also buying tweed, our [Harris Tweed authentication guide](/blog/harris-tweed-authentication-guide) covers the same real-versus-relabeled problem for a fabric that's legally protected but still widely faked.
+
 ## Fabric Comparison: Viyella, Pure Wool Flannel, Cotton Flannel
 
 | Property | Original Viyella (55/45) | Pure wool flannel | Cotton flannel |
@@ -64,4 +66,4 @@ This production history creates a clear sourcing window for the secondhand marke
 
 Military surplus channels also occasionally produce Viyella shirts. British officers in the 20th century regularly wore Viyella as a personal-purchase undergarment beneath uniform, meaning some estate sales from military families turn up genuine pre-war or wartime examples.
 
-Crawli makes it easier to find mislabelled Viyella pieces, because you can cross-search descriptions across multiple platforms simultaneously, catching the sellers who listed a cotton shirt without reading the composition label properly.
+[Crawli](/) makes it easier to find mislabelled Viyella pieces, because you can cross-search descriptions across multiple platforms simultaneously, catching the sellers who listed a cotton shirt without reading the composition label properly.

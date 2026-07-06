@@ -1,8 +1,8 @@
 ---
-title: "The Sneaker Resale Crash: What's Actually Worth Buying Right Now"
-description: "Only 47% of sneaker releases now resell above retail, down from 58% in 2020. Here's what the market correction means for collectors and which silhouettes are genuinely good buys in 2026."
+title: "Sneaker Resale Market 2026: What's Worth Buying Now"
+description: "The sneaker resale market has cooled sharply since its 2020 hype peak, with far fewer releases still trading above retail. Here's what the market correction means for collectors and which silhouettes are genuinely good buys in 2026."
 date: "2026-06-15"
-updated: "2026-06-15"
+updated: "2026-07-06"
 cover: "/blog/images/sneaker-resale-cover.svg"
 tags: ["guides", "sneakers", "resale", "buying-tips"]
 faq:
@@ -18,9 +18,9 @@ faq:
 
 **Short answer:** The sneaker resale market has corrected. The flip economy is mostly over. For people who want to actually wear great shoes, 2026 is one of the better buying environments in years.
 
-The numbers are blunt. In 2020, around 58% of new sneaker releases traded above retail on the secondary market. In 2026, that number is closer to 47%. If you bought two pairs to flip, statistically one of them was going to lose you money.
+The shift is blunt. Back in 2020, a clear majority of new sneaker releases traded above retail on the secondary market. That's no longer the norm: a meaningful share of releases now sit at or below retail once they actually hit resale, a real reversal from the peak of the hype cycle. If you bought two pairs to flip, there's a decent chance one of them lost you money.
 
-This didn't happen by accident. Nike spent years releasing as many "limited" drops as the market would absorb, and eventually the market stopped absorbing them. Jordan 1 colorways that sold for $500 over retail in 2021 are sitting at $200 to $300 now. Pairs that flew out in minutes are being relisted by people who never even tried them on.
+This didn't happen by accident. Nike spent years releasing as many "limited" drops as the market would absorb, and eventually the market stopped absorbing them. Jordan 1 colorways that sold for $500 over retail in 2021 are sitting at $200 to $300 now ([see live Jordan 1 resale prices across platforms](/blog/jordan-1-resale-price) for where that floor actually sits today). Pairs that flew out in minutes are being relisted by people who never even tried them on.
 
 ## What actually caused the crash
 

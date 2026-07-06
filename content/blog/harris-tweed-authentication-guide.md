@@ -1,8 +1,8 @@
 ---
-title: "Harris Tweed Is Protected by an Act of Parliament. Here Is How to Tell Real From Fake."
+title: "Harris Tweed Authentication: Spot Real vs Fake"
 description: "Authentic Harris Tweed is a handwoven fabric from the Outer Hebrides, protected since 1993 by the Harris Tweed Act, and identifiable not only by its iconic orb trademark but by its dense, springy hand and faint lanolin scent."
 date: "2026-06-25"
-updated: "2026-06-25"
+updated: "2026-07-06"
 cover: "/blog/images/harris-tweed-cover.svg"
 tags: ["material-guide", "harris-tweed-authentication", "vintage-coat"]
 faq:
@@ -80,6 +80,8 @@ The counterfeits are almost always synthetic or synthetic-blend fabrics wearing 
 
 ## What Vintage Harris Tweed Actually Costs
 
-Authentic vintage Harris Tweed coats and jackets typically range from $80 to $400 on resale platforms, depending on condition, weight, and color. Vintage coats in excellent condition with deep, well-kept colors command the higher end. A price significantly below this range, or a seller who cannot verify the fabric's authenticity, is worth questioning.
+Authentic vintage Harris Tweed coats and jackets sell for a real premium over generic or synthetic wool-blend coats on resale platforms, and that premium widens with condition, weight, and how well the color has held up. Vintage coats in excellent condition with deep, well-kept colors command the higher end. A price that seems unusually low for the category, or a seller who cannot verify the fabric's authenticity, is worth questioning rather than treating as a lucky find.
+
+For a broader look at how resale platforms handle counterfeit detection generally, not just for tweed, see our guide on [how to avoid super fakes when buying designer secondhand](/blog/how-to-avoid-super-fakes-on-resale-apps).
 
 The Harris Tweed Orb is not enough to verify a piece on its own. But the fabric's weight, density, irregular weave, and lanolin scent are nearly impossible to counterfeit convincingly. Trust what you feel and smell more than what the label says. When you spot a tweed coat on one marketplace, cross-check the label details across others. The more listing photos you compare, the easier it is to verify authenticity without relying on one seller's word. You can search all these platforms at once for free at [thecrawli.com](/).

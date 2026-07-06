@@ -1,5 +1,5 @@
 ---
-title: "Poshmark Sales Are Down for Everyone, but Resellers Who Switched to Bundling Are Still Hitting Their Numbers."
+title: "Poshmark Bundling Strategy: How to Increase Sales"
 description: "While Poshmark's overall traffic may fluctuate, sellers who shifted from single-item strategies to encouraging multi-item bundles have maintained revenue because bundling increases average order value and circumvents the price-drop reliance that the algorithm now deprioritizes."
 date: "2026-06-29"
 updated: "2026-06-29"

@@ -71,14 +71,14 @@ export default async function BlogIndex() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={post.cover}
-                          alt=""
+                          alt={post.title}
                           className="h-full w-full object-contain p-6"
                           style={{ maxHeight: '200px' }}
                           loading="lazy"
                         />
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/icon.svg" alt="" className="h-12 w-12 opacity-20" />
+                        <img src="/icon.svg" alt={post.title} className="h-12 w-12 opacity-20" />
                       )}
                     </div>
 

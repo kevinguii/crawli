@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cross-platform price comparison bars for a North Face Nuptse, rising from low to high">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- baseline -->
+  <line x1="230" y1="470" x2="970" y2="470" stroke="#e5e7eb" stroke-width="4"/>
+
+  <!-- ascending price bars: low (cheap) to high -->
+  <rect x="250"  y="410" width="90" height="60"  rx="8" fill="#7c3aed" opacity="0.30"/>
+  <rect x="370"  y="360" width="90" height="110" rx="8" fill="#7c3aed" opacity="0.42"/>
+  <rect x="490"  y="300" width="90" height="170" rx="8" fill="#7c3aed" opacity="0.55"/>
+  <rect x="610"  y="240" width="90" height="230" rx="8" fill="#7c3aed" opacity="0.70"/>
+  <rect x="730"  y="185" width="90" height="285" rx="8" fill="#7c3aed" opacity="0.85"/>
+  <rect x="850"  y="150" width="90" height="320" rx="8" fill="#7c3aed"/>
+
+  <!-- price tag on the cheapest bar -->
+  <circle cx="295" cy="410" r="34" fill="#ffffff" stroke="#7c3aed" stroke-width="8"/>
+  <text x="295" y="420" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#7c3aed" text-anchor="middle">$</text>
+
+  <!-- down arrow highlighting the low end -->
+  <path d="M295 320 L295 362 M278 348 L295 366 L312 348" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="600" y="545" font-family="Arial, sans-serif" font-size="40" font-weight="700" fill="#111827" text-anchor="middle">Same jacket, 5x price spread</text>
+</svg>

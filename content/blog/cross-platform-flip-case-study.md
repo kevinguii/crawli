@@ -1,8 +1,8 @@
 ---
-title: "I Listed the Same 1960s Pendleton Flannel on Depop, eBay, and Poshmark. The Sale Price Varied by 40%."
+title: "I Sold the Same Pendleton Shirt for 3 Different Prices"
 description: "When cross-listing a vintage Pendleton wool flannel shirt from the 1960s, the final sale price can differ by up to 40% across Depop, eBay, and Poshmark due to buyer demographics and platform culture, with eBay often yielding the highest price for iconic Americana pieces."
 date: "2026-06-29"
-updated: "2026-06-29"
+updated: "2026-07-06"
 cover: "/blog/images/pendleton-crosslist-cover.svg"
 tags: ["case-study", "cross-platform-flip-case-study", "resale-strategy"]
 faq:
@@ -58,4 +58,4 @@ The most useful step before deciding where to list a specific piece is to unders
 
 I used Crawli's multi-platform search to check what another 1960s Pendleton in similar condition had sold for across Grailed and Etsy in the weeks before listing. That research confirmed that the eBay market for this specific item was strong, which gave me confidence to set the eBay price at $130 buy-it-now with best-offer enabled rather than starting lower and risking a sale below market.
 
-That research step is the difference between guessing and knowing.
+That research step is the difference between guessing and knowing. Before you cross-list your next piece, run it through [Crawli](/) first, it checks Depop, eBay, Poshmark, Grailed, and Etsy at once so you know which platform's buyers will actually pay up before you decide where to list.

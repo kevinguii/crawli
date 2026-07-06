@@ -1,8 +1,8 @@
 ---
-title: "Why Your Resale Brand Needs to Look the Same Everywhere You Sell"
+title: "Build a Consistent Personal Brand as a Reseller"
 description: "Buyers who follow you on Depop, then find your Poshmark closet, then check your Instagram, should recognize the same shop every time. Here's how to build that consistency without it feeling like extra work."
 date: "2026-06-16"
-updated: "2026-06-16"
+updated: "2026-07-06"
 cover: "/blog/images/personal-brand-consistency-cover.svg"
 tags: ["resellers", "branding", "selling-tips"]
 faq:
@@ -49,4 +49,4 @@ This compounds over time. A buyer who bought from you once on Depop and later se
 
 You don't need to rebuild your shop from scratch to apply this. Pick the niche your inventory already leans toward. Reshoot your next few listings with one consistent background. Rewrite your bio once, then copy a version of it to every platform you sell on. Link your accounts to each other. That's the whole project, and it compounds every time you list something new.
 
-Building a recognizable shop is one side of getting more sales. Knowing what similar pieces are actually selling for elsewhere is the other. [Crawli](/) searches prices across resale platforms so you can price your next drop with real comps instead of a guess. Start your search at [thecrawli.com](https://thecrawli.com).
+Building a recognizable shop is one side of getting more sales. Knowing what similar pieces are actually selling for elsewhere is the other. [Crawli](/) searches prices across resale platforms at once, for free, so you can price your next drop with real comps instead of a guess.

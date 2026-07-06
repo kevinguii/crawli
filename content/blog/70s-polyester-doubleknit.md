@@ -1,5 +1,5 @@
 ---
-title: "1970s Polyester Double-Knit Is Mostly a Joke, Until You Find the Right Pieces"
+title: "1970s Polyester Double-Knit: How to Spot the Good Stuff"
 description: "Most 1970s polyester double-knit is bulk-bin filler. Some of it is heavy, sharply printed, and made by people who knew what they were doing. Here's how to tell which is which."
 date: "2026-06-23"
 updated: "2026-06-23"

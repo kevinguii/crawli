@@ -2,7 +2,7 @@
 title: "The Untold History of Denim: More Than Just a Fabric"
 description: "Denim went from miners' workwear to a global fashion staple in under a century. Understanding that path changes how you evaluate a pair of jeans, vintage or new."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-07-06"
 cover: "/blog/images/denim-history-blog-cover.svg"
 tags: ["denim", "fashion-history", "vintage"]
 faq:
@@ -54,4 +54,6 @@ The current era treats well-made denim closer to a craft good than a commodity, 
 
 A pair of jeans built to the original durability standard, heavyweight fabric, reinforced seams, quality dye, will outlast a pair built purely to current trend cycles, regardless of which era it's actually from. Understanding the history isn't trivia, it's a buying filter.
 
-Vintage denim, in particular, benefits from this directly: a piece from an era when durability was non-negotiable has often already survived decades of wear, which tells you something a brand-new pair can't yet prove. [Crawli](/) searches vintage and current denim listings across multiple platforms at once, so finding a piece with the construction quality that history actually predicts takes one search. Start at [thecrawli.com](https://thecrawli.com).
+Vintage denim, in particular, benefits from this directly: a piece from an era when durability was non-negotiable has often already survived decades of wear, which tells you something a brand-new pair can't yet prove. The Levi's 501 is the clearest example of this filter in action, the same silhouette has been in continuous production since the 1800s, and [current resale prices for Levi's 501s](/blog/levis-501-resale-price) vary enormously depending on whether you're looking at an everyday pair or a collector-grade vintage run.
+
+[Crawli](/) searches vintage and current denim listings across multiple platforms at once, so finding a piece with the construction quality that history actually predicts takes one search. Start at [thecrawli.com](https://thecrawli.com).

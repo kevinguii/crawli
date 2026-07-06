@@ -1,8 +1,8 @@
 ---
-title: "The Resellers Who Invent Stories About Old Clothes Aren't Liars, They're Getting Paid More."
+title: "Why Storytelling Sells Vintage Clothing for More"
 description: "Vintage clothing selling isn't about condition alone; a well-crafted backstory, even one derived from an era's cultural mood, can increase perceived value and final sale price, because buyers are purchasing identity and connection, not just the garment."
 date: "2026-06-25"
-updated: "2026-06-25"
+updated: "2026-07-06"
 cover: "/blog/images/vintage-story-cover.svg"
 tags: ["opinion", "vintage-story-selling", "reseller-strategy"]
 faq:
@@ -98,4 +98,4 @@ The difference is not the item. It is the communication. The buyer pays more bec
 
 To build a compelling, true story, you need to know how other sellers describe the same piece and what language resonates with buyers. Reading successful listings for similar items shows you the era references, construction details, and aesthetic framings that move products at higher prices.
 
-Cross-platform searching lets you see how the same vintage piece is described and priced across Depop, eBay, Vestiaire, and Poshmark at once. You can see which descriptions command premiums and which fall flat, then craft your own honest, evocative story informed by what actually sells. Crawli lets you scan listings across all platforms simultaneously for inspiration and price comparison, free at [thecrawli.com](/).
+Cross-platform searching lets you see how the same vintage piece is described and priced across Depop, eBay, Vestiaire, and Poshmark at once. You can see which descriptions command premiums and which fall flat, then craft your own honest, evocative story informed by what actually sells. [Crawli](/) scans listings across all those platforms in one search, free, so you can pull that comparison in minutes instead of tab-hopping for an hour.

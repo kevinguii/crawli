@@ -1,8 +1,8 @@
 ---
-title: "The Best Secondhand Marketplaces for Luxury Items (Beyond the Obvious Ones)"
-description: "Most luxury buyers default to The RealReal or Vestiaire. But the platform that authenticates best isn't always the one with the lowest price. Here's where to actually look."
+title: "Best Secondhand Luxury Marketplaces: 2026 Guide"
+description: "The RealReal and Vestiaire aren't always the cheapest for the same authenticated bag. A ranked comparison of 7 luxury resale sites by fees, authentication, and real price spread."
 date: "2026-06-12"
-updated: "2026-06-12"
+updated: "2026-07-06"
 cover: "/blog/images/luxury-marketplaces-cover.svg"
 tags: ["guides", "luxury", "best-sites"]
 faq:
@@ -18,7 +18,7 @@ faq:
 
 **Short answer:** Luxury shoppers are increasingly prioritizing quality and marketplace reputation over brand name when purchasing secondhand. Authentication, buyer protection, and fee structures vary enough across platforms to affect whether you overpay or not.
 
-Luxury secondhand has grown fast. The resale market for luxury goods is projected to grow around 20% annually through 2026, according to McKinsey. That growth has brought new platforms into a space that used to have one or two obvious options. And with more options comes more price spread. The same authenticated Chanel bag can sit at $2,800 on one platform and $3,400 on another, depending on seller, fees, and demand.
+Luxury secondhand has grown fast. McKinsey's State of Fashion 2026 report forecasts the secondhand fashion and luxury market to grow two to three times faster than the first-hand market through 2027, and the luxury resale segment specifically is tracking a compound annual growth rate near 10% ($38B in 2025 to roughly $42B in 2026). That growth has brought new platforms into a space that used to have one or two obvious options. And with more options comes more price spread. The same authenticated Chanel bag can sit at $2,800 on one platform and $3,400 on another, depending on seller, fees, and demand.
 
 ## The platforms worth knowing
 
@@ -30,6 +30,7 @@ Luxury secondhand has grown fast. The resale market for luxury goods is projecte
 | Depop | Contemporary luxury, younger labels | None | 10% seller fee |
 | eBay Authenticity Guarantee | Watches, sneakers, handbags | Third-party partners | None on auth items |
 | 1stDibs | High-end vintage, jewelry | Dealer-vetted | Variable |
+| Rebag | Handbags (fast liquidity) | In-house | Built into instant quote |
 
 **The RealReal** uses strict in-house grading with experts on staff. Prices are firm with less room to negotiate, but you're buying with high confidence.
 
@@ -40,6 +41,8 @@ Luxury secondhand has grown fast. The resale market for luxury goods is projecte
 **Depop** often undervalues pieces. Worth checking before committing to a higher-priced platform.
 
 **eBay** offers the largest volume. Authenticated listings are marked clearly and the program covers watches, sneakers, and handbags.
+
+**Rebag** is the outlier: it buys handbags outright with an instant quote instead of consigning. You trade some upside for certainty and speed, which makes it worth benchmarking whenever you value liquidity over squeezing the last dollar.
 
 ## What "quality over brand" actually means when buying
 
@@ -57,4 +60,11 @@ The platforms most buyers overlook are peer-to-peer markets with knowledgeable s
 
 The trade-off is that there's no authentication. You're relying on seller reputation, photos, and your own knowledge of what a real piece looks like. For buyers who know the tells, this is where the best value lives. For buyers who don't, stick to platforms with third-party authentication.
 
-The other undervalued move: search the same piece across all platforms before committing. Price spreads on authenticated luxury are real and consistent. The same authenticated Louis Vuitton Speedy 30 in good condition can run from $450 to $750 depending on which platform surfaces it first. Finding the bottom of that spread is the whole game. [Crawli](/) searches across marketplaces so you can see the full spread before you buy.
+The other undervalued move: search the same piece across all platforms before committing. Price spreads on authenticated luxury are real and consistent. The same authenticated Louis Vuitton Speedy 30 in good condition can run from $450 to $750 depending on which platform surfaces it first. Finding the bottom of that spread is the whole game.
+
+## Where to go next
+
+- Hunting older or archival pieces rather than current-season luxury? See [why niche vintage marketplaces are where the rarest finds surface](/blog/best-niche-marketplaces-for-vintage-finds).
+- Selling instead of buying? The payout math is different: [here's which luxury platform actually nets you the most after fees](/blog/best-marketplaces-for-luxury-items).
+
+Checking one platform at a time is how you overpay. [Crawli](/) runs a single search across every marketplace above at once and shows you the lowest live price per site, so you see the full spread before you buy, and a saved alert pings you the moment a piece lists below the market floor.
