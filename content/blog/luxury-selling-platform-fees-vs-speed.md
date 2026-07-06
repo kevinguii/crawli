@@ -1,6 +1,6 @@
 ---
 title: "Luxury Resale Platform Fees vs Speed: Where to Sell Fastest"
-description: "Luxury sellers often confuse high commission with high performance. Here's how fees, authentication, and actual sell-through speed differ across eBay, Vestiaire, Poshmark, The RealReal, and Depop."
+description: "Luxury sellers often confuse high commission with high performance. Here's how fees and sell-through speed differ across eBay, Vestiaire, and Poshmark."
 date: "2026-06-23"
 updated: "2026-06-23"
 cover: "/blog/images/luxury-selling-speed-cover.svg"

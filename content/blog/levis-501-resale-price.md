@@ -1,6 +1,6 @@
 ---
 title: "Levi's 501 Resale Price: Cheapest Sites 2026"
-description: "The everyday Levi's 501 floors around $9 on Depop, while rare vintage pairs hit $320+ on StockX. A live cross-platform breakdown of where the two markets diverge."
+description: "The everyday Levi's 501 floors around $9 on Depop, while rare vintage pairs hit $320+ on StockX. A cross-platform breakdown of where the two markets diverge."
 date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/levis-501-resale-price-cover.svg"

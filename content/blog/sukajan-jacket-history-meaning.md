@@ -1,6 +1,6 @@
 ---
 title: "Sukajan Jacket History: From GI Souvenir to Streetwear"
-description: "Sukajan, or souvenir jackets, are silk or rayon bomber-style jackets with embroidered dragons, tigers, and eagles. They originated in post-WWII Yokosuka when American servicemen commissioned embellished jackets from local craftspeople, before Japanese youth subcultures adopted the style."
+description: "Sukajan, or souvenir jackets, are embroidered silk bombers that originated in post-WWII Yokosuka, first commissioned by American servicemen."
 date: "2026-07-02"
 updated: "2026-07-06"
 cover: "/blog/images/sukajan-jacket-cover.svg"

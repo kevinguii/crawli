@@ -1,6 +1,6 @@
 ---
 title: "Why Band Tees Are More Than Just Fashion Statements"
-description: "A band tee is merchandise, memorabilia, and a public signal of taste all at once, which is why the right one can outsell almost anything else in a vintage closet."
+description: "A band tee is merchandise, memorabilia, and a public signal of taste all at once, which is why the right one can outsell almost anything in a vintage closet."
 date: "2026-06-19"
 updated: "2026-07-06"
 cover: "/blog/images/band-tees-cover.svg"

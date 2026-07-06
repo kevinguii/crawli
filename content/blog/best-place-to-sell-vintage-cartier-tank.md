@@ -1,6 +1,6 @@
 ---
 title: "Best Place to Sell a Vintage Cartier Tank Watch"
-description: "eBay hosts millions of listings, but curated watch marketplaces like Chrono24 and 1stDibs attract a smaller, more targeted audience of collectors willing to pay closer to full asking price, often selling a vintage Cartier Tank faster despite different fee structures."
+description: "Chrono24 and 1stDibs attract a smaller, more targeted pool of watch collectors, often selling a vintage Cartier Tank faster and closer to full price than eBay."
 date: "2026-07-02"
 updated: "2026-07-02"
 cover: "/blog/images/cartier-tank-resale-cover.svg"

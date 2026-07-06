@@ -1,6 +1,6 @@
 ---
 title: "Harris Tweed Authentication: Spot Real vs Fake"
-description: "Authentic Harris Tweed is a handwoven fabric from the Outer Hebrides, protected since 1993 by the Harris Tweed Act, and identifiable not only by its iconic orb trademark but by its dense, springy hand and faint lanolin scent."
+description: "Authentic Harris Tweed is handwoven in the Outer Hebrides and protected by law. Identify it by the orb trademark, plus its dense hand and lanolin scent."
 date: "2026-06-25"
 updated: "2026-07-06"
 cover: "/blog/images/harris-tweed-cover.svg"

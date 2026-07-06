@@ -1,6 +1,6 @@
 ---
 title: "Luxury Resale Evolution: Why It's the Sustainable Choice"
-description: "Luxury resale stopped being a niche workaround and became a mainstream entry point into high-end fashion. Here's what changed and why it's structurally different from fast fashion's secondhand market."
+description: "Luxury resale stopped being a niche workaround and became a mainstream entry into high-end fashion. Here's what changed and why it's different."
 date: "2026-06-18"
 updated: "2026-06-18"
 cover: "/blog/images/luxury-resale-cover.svg"

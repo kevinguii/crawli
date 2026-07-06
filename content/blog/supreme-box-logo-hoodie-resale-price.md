@@ -1,6 +1,6 @@
 ---
 title: "Supreme Box Logo Hoodie Resale Price 2026"
-description: "The same style of Supreme Box Logo hoodie ranges from a ~$40 floor on Mercari to ~$169 on StockX, with rare seasons hitting $1,878 on Poshmark. A live breakdown."
+description: "The same Supreme Box Logo hoodie ranges from a ~$40 floor on Mercari to ~$169 on StockX, with rare seasons hitting $1,878 on Poshmark. A live price breakdown."
 date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/supreme-box-logo-hoodie-resale-price-cover.svg"

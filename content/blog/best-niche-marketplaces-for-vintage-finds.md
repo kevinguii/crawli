@@ -1,6 +1,6 @@
 ---
 title: "Best Niche Marketplaces for Vintage Finds (2026)"
-description: "Sticking to eBay and Depop means missing the specialist marketplaces where the rarest vintage actually surfaces. Where the hidden gems are and how to find them across sites."
+description: "Sticking to eBay and Depop means missing the specialist marketplaces where the rarest vintage actually surfaces. Where the hidden gems are and how to find them."
 date: "2026-06-16"
 updated: "2026-07-06"
 cover: "/blog/images/niche-vintage-marketplaces-cover.svg"

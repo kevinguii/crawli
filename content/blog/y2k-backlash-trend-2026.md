@@ -1,6 +1,6 @@
 ---
 title: "Y2K Backlash 2026: The Quiet Luxury Countertrend"
-description: "While Y2K fashion will remain visible, the resale market in 2026 will see a growing demand for quiet luxury and minimalist pieces from the early 2010s as a countertrend to logo-heavy nostalgia, driven by burnout from micro-trends."
+description: "Y2K fashion stays visible in 2026, but resale is rotating toward quiet luxury and minimalist early 2010s pieces as a countertrend to logo-heavy nostalgia."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/y2k-backlash-cover.svg"

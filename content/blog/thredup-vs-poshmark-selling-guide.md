@@ -1,6 +1,6 @@
 ---
 title: "ThredUp vs Poshmark: Which Should You Sell On?"
-description: "ThredUp and Poshmark have different fee structures, audiences, and selling processes. Here's what the comparison actually looks like before you commit your inventory."
+description: "ThredUp and Poshmark have different fee structures, audiences, and selling processes. Here's what the comparison looks like before you commit your inventory."
 date: "2026-06-12"
 updated: "2026-07-06"
 cover: "/blog/images/thredup-vs-poshmark-cover.svg"

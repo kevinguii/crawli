@@ -1,6 +1,6 @@
 ---
 title: "Resale Pricing Psychology: Sell Listings Faster"
-description: "Pricing secondhand items isn't just about market value. Small psychological cues in how you set, frame, and adjust a price change how fast buyers actually click 'buy.'"
+description: "Pricing secondhand items isn't just about market value. Small psychological cues in how you set and frame a price change how fast buyers click buy."
 date: "2026-06-16"
 updated: "2026-06-16"
 cover: "/blog/images/pricing-psychology-cover.svg"

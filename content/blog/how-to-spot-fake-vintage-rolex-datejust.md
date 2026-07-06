@@ -1,6 +1,6 @@
 ---
 title: "How to Spot a Fake Vintage Rolex Datejust"
-description: "A genuine vintage Rolex Datejust has a smooth sweeping second hand, a cyclops lens that magnifies the date 2.5 times, and a caseback with clean, deep metal engravings. Fakes almost always fail at least one of these tests."
+description: "A genuine vintage Rolex Datejust has a smooth sweeping second hand, a cyclops lens that magnifies the date 2.5 times, and clean, deep caseback engravings."
 date: "2026-07-02"
 updated: "2026-07-02"
 cover: "/blog/images/rolex-authentication-cover.svg"

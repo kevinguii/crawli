@@ -1,6 +1,6 @@
 ---
 title: "Resale Platform Authentication: Why Fakes Slip Through"
-description: "Most resale platforms' authenticity guarantees rely on a human authenticator visually inspecting an item for 60 to 120 seconds, checking stitching, hardware, and tags against a database, but the process often misses super fakes and can flag genuine vintage pieces with replaced parts."
+description: "Most resale platform guarantees rely on a human visually inspecting an item for under two minutes, but the process often misses fakes and flags genuine vintage."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/resale-authentication-cover.svg"

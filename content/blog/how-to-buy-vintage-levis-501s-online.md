@@ -1,6 +1,6 @@
 ---
 title: "Vintage Levi's 501 Sizing: Measure, Don't Trust the Tag"
-description: "When buying vintage Levi's 501s online, ignore the tag size because shrinkage, era differences, and wear alter the actual fit; instead, always request or look for the exact waist measurement laid flat, and compare to a pair you already own."
+description: "When buying vintage Levi's 501s online, ignore the tag size. Shrinkage alters the fit, so always request the exact waist measurement laid flat."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/vintage-levis-sizing-cover.svg"

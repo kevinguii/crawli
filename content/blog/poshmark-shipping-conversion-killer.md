@@ -1,6 +1,6 @@
 ---
 title: "Poshmark's $6.49 Shipping Fee Is Killing Your Sales"
-description: "Poshmark's flat-rate shipping, currently $6.49 for most items as of September 2025, adds a visible surcharge at checkout that makes lower-priced items disproportionately expensive, causing buyers to abandon carts more often than on platforms with calculated shipping or free shipping offers."
+description: "Poshmark's flat $6.49 shipping fee adds a visible checkout surcharge, making cheap items disproportionately pricier and pushing buyers to abandon carts."
 date: "2026-06-25"
 updated: "2026-06-25"
 cover: "/blog/images/poshmark-shipping-cover.svg"

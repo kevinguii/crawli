@@ -1,6 +1,6 @@
 ---
 title: "Why Vintage Clothing Holds Its Value"
-description: "Vintage isn't just nostalgia. Scarcity, construction quality, and a real shift toward sustainable buying are why well-chosen vintage pieces tend to hold or gain value instead of depreciating."
+description: "Vintage isn't just nostalgia. Scarcity, construction quality, and a real shift toward sustainable buying are why well-chosen vintage pieces hold or gain value."
 date: "2026-06-18"
 updated: "2026-07-06"
 cover: "/blog/images/vintage-value-cover.svg"

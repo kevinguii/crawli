@@ -1,6 +1,6 @@
 ---
 title: "Build a Consistent Personal Brand as a Reseller"
-description: "Buyers who follow you on Depop, then find your Poshmark closet, then check your Instagram, should recognize the same shop every time. Here's how to build that consistency without it feeling like extra work."
+description: "Buyers who follow you on Depop, then find your Poshmark closet, then check your Instagram, should recognize the same shop. Here's how to build that consistency."
 date: "2026-06-16"
 updated: "2026-07-06"
 cover: "/blog/images/personal-brand-consistency-cover.svg"

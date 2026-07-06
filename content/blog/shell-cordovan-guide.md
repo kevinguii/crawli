@@ -1,6 +1,6 @@
 ---
 title: "Shell Cordovan Guide: The Horsehide Leather Explained"
-description: "Shell cordovan is a non-creasing, high-gloss membrane cut from a horse's rump, produced almost exclusively by Chicago's Horween tannery, and it ages with a characteristic luminescence that makes vintage shell shoes easy to spot if you know what to look for."
+description: "Shell cordovan is a non-creasing, high-gloss membrane cut from a horse's rump, produced almost exclusively by Chicago's Horween tannery."
 date: "2026-06-25"
 updated: "2026-07-06"
 cover: "/blog/images/shell-cordovan-cover.svg"

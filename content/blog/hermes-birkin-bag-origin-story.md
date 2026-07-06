@@ -1,6 +1,6 @@
 ---
 title: "Hermes Birkin Bag History: The True Origin Story"
-description: "The Hermes Birkin bag was born in 1983 when actress Jane Birkin complained to Hermes CEO Jean-Louis Dumas about not being able to find a practical leather weekend bag, and he sketched the design on an airsickness bag during their flight together."
+description: "The Hermes Birkin was born in 1983 when Jane Birkin told CEO Jean-Louis Dumas she couldn't find a practical bag, and he sketched it on an airsickness bag."
 date: "2026-07-02"
 updated: "2026-07-06"
 cover: "/blog/images/birkin-bag-history-cover.svg"

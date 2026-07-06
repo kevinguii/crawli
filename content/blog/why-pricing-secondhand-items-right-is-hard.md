@@ -1,6 +1,6 @@
 ---
 title: "Why Pricing Secondhand Items Right Is So Hard"
-description: "Underpricing isn't usually about not knowing the market. It's emotional attachment quietly overriding the data, and it costs resellers real profit on almost every listing."
+description: "Underpricing usually isn't about not knowing the market. It's emotional attachment overriding the data, costing resellers real profit on nearly every listing."
 date: "2026-06-18"
 updated: "2026-07-06"
 cover: "/blog/images/pricing-challenges-cover.svg"

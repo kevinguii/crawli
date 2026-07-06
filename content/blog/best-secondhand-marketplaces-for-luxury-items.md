@@ -1,6 +1,6 @@
 ---
 title: "Best Secondhand Luxury Marketplaces: 2026 Guide"
-description: "The RealReal and Vestiaire aren't always the cheapest for the same authenticated bag. A ranked comparison of 7 luxury resale sites by fees, authentication, and real price spread."
+description: "The RealReal and Vestiaire aren't always cheapest for the same authenticated bag. A ranked comparison of 7 luxury resale sites by fees and price spread."
 date: "2026-06-12"
 updated: "2026-07-06"
 cover: "/blog/images/luxury-marketplaces-cover.svg"

@@ -1,6 +1,6 @@
 ---
 title: "I Sold the Same Pendleton Shirt for 3 Different Prices"
-description: "When cross-listing a vintage Pendleton wool flannel shirt from the 1960s, the final sale price can differ by up to 40% across Depop, eBay, and Poshmark due to buyer demographics and platform culture, with eBay often yielding the highest price for iconic Americana pieces."
+description: "Cross-listing a vintage Pendleton wool flannel shirt, the sale price differed by up to 40% across Depop, eBay, and Poshmark, with eBay winning for Americana."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/pendleton-crosslist-cover.svg"

@@ -1,6 +1,6 @@
 ---
 title: "1960s Mod Fashion Is Undervalued: What to Buy Now"
-description: "1960s mod fashion was a youth-driven movement defined by geometric prints, mini skirts, and sleek tailoring, and while men's suits have a steady market, original women's mod shift dresses and bold knitwear from labels like Mary Quant, Biba, and Foale & Tuffin are currently underpriced compared to later decades and poised for a resurgence."
+description: "1960s mod fashion was a youth-driven movement of geometric prints and sleek tailoring. Women's shift dresses and knitwear from Mary Quant are still underpriced."
 date: "2026-06-25"
 updated: "2026-06-25"
 cover: "/blog/images/1960s-mod-cover.svg"

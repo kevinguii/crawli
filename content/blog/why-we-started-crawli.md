@@ -1,6 +1,6 @@
 ---
 title: "Why I Started Crawli"
-description: "The story behind Crawli: how a college budget, hours lost across Depop, Poshmark, eBay, and Grailed, and a $25 regret purchase led to building a secondhand fashion price comparison search engine."
+description: "The story behind Crawli: a college budget, hours lost across Depop, Poshmark, eBay, and Grailed, and a $25 regret buy that led to a price comparison engine."
 date: "2026-06-01"
 cover: "/crawli.svg"
 tags: ["story", "second-hand", "resale", "thrift shopping", "price comparison", "vintage clothing", "resale marketplace", "preloved fashion"]

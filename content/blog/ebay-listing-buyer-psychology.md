@@ -1,6 +1,6 @@
 ---
 title: "eBay Listing Tips: Answer Buyers' Questions, Not Just Photos"
-description: "Most eBay optimization advice pushes keywords and photo count. The real lever is answering the buyer's unspoken anxieties about fit, smell, and authenticity before they scroll away."
+description: "Most eBay optimization advice pushes keywords and photo count. The real lever is answering buyers' unspoken anxieties about fit, smell, and authenticity."
 date: "2026-06-23"
 updated: "2026-06-23"
 cover: "/blog/images/ebay-listing-psychology-cover.svg"

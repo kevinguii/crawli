@@ -1,6 +1,6 @@
 ---
 title: "Why Storytelling Sells Vintage Clothing for More"
-description: "Vintage clothing selling isn't about condition alone; a well-crafted backstory, even one derived from an era's cultural mood, can increase perceived value and final sale price, because buyers are purchasing identity and connection, not just the garment."
+description: "Vintage clothing selling isn't about condition alone; a well-crafted backstory can raise perceived value and sale price by selling identity, not just fabric."
 date: "2026-06-25"
 updated: "2026-07-06"
 cover: "/blog/images/vintage-story-cover.svg"

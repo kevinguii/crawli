@@ -1,6 +1,6 @@
 ---
 title: "How to Identify a Real Vintage Band Tee, Not a Reprint"
-description: "A genuine 1970s band tee typically has a single-stitch hem, a thin polyester-cotton blend, and a tag from a maker like Screen Stars or Brockum. Later reprints usually have double-stitch hems, heavier cotton, and tags from makers like Giant or later Fruit of the Loom."
+description: "A genuine 1970s band tee typically has a single-stitch hem, a thin poly-cotton blend, and a tag from a maker like Screen Stars or Brockum."
 date: "2026-07-02"
 updated: "2026-07-02"
 cover: "/blog/images/vintage-band-tee-cover.svg"

@@ -1,6 +1,6 @@
 ---
 title: "TheRealReal Authentication: What the Reporting Found"
-description: "The RealReal's authenticity guarantee relies on a mix of trained specialists and lower-wage copywriters working under strict daily quotas. CNBC reporting and a subsequent shareholder lawsuit alleged the vast majority of items were reviewed only by copywriters, not brand specialists."
+description: "The RealReal's authenticity guarantee relies on trained specialists and lower-wage copywriters under daily quotas, per CNBC reporting and a shareholder lawsuit."
 date: "2026-07-02"
 updated: "2026-07-02"
 cover: "/blog/images/realreal-authentication-cover.svg"

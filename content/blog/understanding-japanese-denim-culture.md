@@ -1,6 +1,6 @@
 ---
 title: "Understanding the Cultural Significance of Japanese Denim"
-description: "Japanese denim earned its reputation through specific weaving and dyeing traditions, not marketing. Here's what actually separates it from mass-produced denim and what to look for when buying."
+description: "Japanese denim earned its reputation through specific weaving and dyeing traditions, not marketing. Here's what separates it from mass-produced denim."
 date: "2026-06-18"
 updated: "2026-06-18"
 cover: "/blog/images/japanese-denim-cover.svg"

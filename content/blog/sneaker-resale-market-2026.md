@@ -1,6 +1,6 @@
 ---
 title: "Sneaker Resale Market 2026: What's Worth Buying Now"
-description: "The sneaker resale market has cooled sharply since its 2020 hype peak, with far fewer releases still trading above retail. Here's what the market correction means for collectors and which silhouettes are genuinely good buys in 2026."
+description: "The sneaker resale market has cooled sharply since its 2020 hype peak, with far fewer releases trading above retail. What's worth buying in 2026."
 date: "2026-06-15"
 updated: "2026-07-06"
 cover: "/blog/images/sneaker-resale-cover.svg"

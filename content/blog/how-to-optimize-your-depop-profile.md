@@ -1,6 +1,6 @@
 ---
 title: "How to Optimize Your Depop Profile for More Sales"
-description: "Good photos aren't enough on their own. Here's how keyword-driven titles, a consistent visual style, and a real bio turn a Depop profile from ignored to followed."
+description: "Good photos alone aren't enough. Here's how keyword-driven titles, a consistent visual style, and a real bio turn a Depop profile from ignored to followed."
 date: "2026-06-16"
 updated: "2026-07-06"
 cover: "/blog/images/depop-profile-cover.svg"

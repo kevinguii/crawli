@@ -1,6 +1,6 @@
 ---
 title: "Corduroy Fabric History: The Myth of the King's Cord"
-description: "Corduroy is a durable cotton fabric with vertical ridges called wales. Its popular corde du roi origin story is a 19th-century marketing myth; the name most likely comes from cord plus duroy, an old English wool cloth, and the fabric became a working-class staple."
+description: "Corduroy is a durable cotton fabric with vertical ridges called wales. Its corde du roi origin story is a myth; the name likely comes from cord plus duroy."
 date: "2026-07-02"
 updated: "2026-07-06"
 cover: "/blog/images/corduroy-fabric-cover.svg"

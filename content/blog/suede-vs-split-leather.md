@@ -1,6 +1,6 @@
 ---
 title: "Suede vs Split Leather: How to Spot the Fake"
-description: "A lot of 'suede' on resale apps is actually split leather sanded and dyed to fake the nap. Here's the water-drop test, the cut-edge check, and what separates the real thing from a coated impostor."
+description: "A lot of 'suede' on resale apps is actually split leather sanded and dyed to fake the nap. Here's the water-drop test to spot a coated impostor."
 date: "2026-06-23"
 updated: "2026-06-23"
 cover: "/blog/images/suede-split-leather-cover.svg"

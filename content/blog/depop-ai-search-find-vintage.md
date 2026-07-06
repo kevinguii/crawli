@@ -1,6 +1,6 @@
 ---
 title: "Depop Vintage Search: How to Find Real Pieces AI Buries"
-description: "Depop's AI-driven search now personalizes results based on trending and brand affinity, often demoting true vintage in favor of mass-produced 'vintage style' items, but buyers can still find authentic pieces by using exact era, fabric, and brand keywords or by searching across platforms."
+description: "Depop's AI search often buries true vintage under mass-produced 'vintage style' items, but authentic pieces still surface with exact era and brand keywords."
 date: "2026-06-25"
 updated: "2026-06-25"
 cover: "/blog/images/depop-search-cover.svg"

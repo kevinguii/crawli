@@ -1,6 +1,6 @@
 ---
 title: "Vintage Fashion Trends 2026: What's Actually Driving It"
-description: "Y2K luxury, 90s slip dresses, and high-rise denim are dominating resale right now. The real driver behind vintage's growth in 2026 is more about value and individuality than the planet, even though sustainability is quietly reshaping the supply side."
+description: "Y2K luxury, 90s slip dresses, and high-rise denim dominate resale in 2026, but the real driver is value and individuality, not sustainability."
 date: "2026-06-16"
 updated: "2026-07-06"
 cover: "/blog/images/vintage-trends-2026-cover.svg"

@@ -1,6 +1,6 @@
 ---
 title: "Viyella Fabric Guide: The Vintage Wool-Cotton Blend"
-description: "Viyella is a trademarked blend of 55% lambswool and 45% cotton, first produced in England in 1893, known for being warm, soft, shrink-resistant, and virtually indestructible, making vintage Viyella shirts a durable secondhand buy."
+description: "Viyella is a trademarked 55% lambswool, 45% cotton blend first made in England in 1893, warm, soft, shrink-resistant, and nearly indestructible."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/viyella-fabric-cover.svg"

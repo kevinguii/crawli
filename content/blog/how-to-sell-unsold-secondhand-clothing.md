@@ -1,6 +1,6 @@
 ---
 title: "How to Sell Secondhand Clothing That Is Not Moving"
-description: "Most sellers discount a listing the moment it stalls. The data says the more common problem is visibility, not price. Here's how to diagnose and fix unsold inventory before you touch the price tag."
+description: "Most sellers discount a listing the moment it stalls. The data says visibility, not price, is the more common problem. Here's how to diagnose unsold inventory."
 date: "2026-06-18"
 updated: "2026-07-06"
 cover: "/blog/images/unsold-inventory-cover.svg"

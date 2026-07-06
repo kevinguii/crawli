@@ -1,6 +1,6 @@
 ---
 title: "Exploring the Impact of Color in Vintage Fashion"
-description: "Color in vintage clothing is rarely arbitrary. Decade-specific palettes reflect dye technology, cultural mood, and design movements you can use to date and style pieces."
+description: "Color in vintage clothing is rarely arbitrary. Decade-specific palettes reflect dye technology and cultural mood you can use to date and style pieces."
 date: "2026-06-19"
 updated: "2026-06-19"
 cover: "/blog/images/color-vintage-cover.svg"

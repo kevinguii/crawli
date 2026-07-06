@@ -1,6 +1,6 @@
 ---
 title: "1970s Athletic Club Wear Is 2026's Next Vintage Trend"
-description: "Thin remaining inventory, durable natural fabrics, and muted club-logo branding make 1970s athletic and track club wear one of the most underpriced vintage categories right now, before it saturates like other revived eras."
+description: "Thin inventory, durable natural fabrics, and muted club-logo branding make 1970s athletic club wear one of the most underpriced vintage categories right now."
 date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/1970s-athletic-club-wear-cover.svg"

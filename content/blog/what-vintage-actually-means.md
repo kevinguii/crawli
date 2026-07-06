@@ -1,6 +1,6 @@
 ---
 title: "The Real Meaning Behind 'Vintage': What Buyers Need to Know"
-description: "Vintage, retro, and antique get used interchangeably online, but they mean different things, and listings that blur the line can mislead buyers into paying vintage prices for something that isn't."
+description: "Vintage, retro, and antique get used interchangeably online, but they mean different things, and blurring the line can mislead buyers into overpaying."
 date: "2026-06-18"
 updated: "2026-07-06"
 cover: "/blog/images/understanding-vintage-cover.svg"

@@ -1,6 +1,6 @@
 ---
 title: "How Resale Site Authentication Actually Works"
-description: "Not every platform inspects every item. Some check photos, some check it physically, some only check above a price threshold. Here's what each major resale site actually does, and what happens when the system gets it wrong."
+description: "Not every platform inspects every item. Some check photos, some check physically, some only above a price threshold. Here's what each resale site actually does."
 date: "2026-06-18"
 updated: "2026-06-18"
 cover: "/blog/images/authentication-process-cover.svg"

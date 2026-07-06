@@ -5,9 +5,17 @@
 
 ---
 
-# ⏩ STATUS & CONTINUATION (updated 2026-07-06, session 2 — ALL FOUR PHASES DONE) — read this first if resuming in a new chat
+# ⏩ STATUS & CONTINUATION (updated 2026-07-06, session 3 — ALL FOUR PHASES + META DESCRIPTION FIX DONE) — read this first if resuming in a new chat
 
-**Everything in this doc is now done: Tier A, Tier B (all 15), Tier C (all 3), bulk title shortening (all 89 posts ≤60 chars), and the full convert audit (compare links, CTAs, stat cleanup, dead-post rescues on all 72 pre-existing posts). Nothing is committed — that's still the user's call. There is no more scoped work left in this doc; the next session should either spot-check in a browser, commit, or pull fresh GSC data to see if the reframe is moving the needle before writing anything new.**
+**Everything in this doc is now done: Tier A, Tier B (all 15), Tier C (all 3), bulk title shortening (all 89 posts ≤60 chars), the full convert audit (compare links, CTAs, stat cleanup, dead-post rescues on all 72 pre-existing posts), and a bulk meta description length fix (all 89 posts ≤160 chars). Nothing is committed — that's still the user's call. There is no more scoped work left in this doc; the next session should either spot-check in a browser, commit, or pull fresh GSC data to see if the reframe is moving the needle before writing anything new.**
+
+## ✅ Done this session, part 4 — meta description length fix (Bing Webmaster flag)
+- **Trigger:** user's Bing Webmaster Tools scan flagged `1970s-athletic-club-wear-trend.md`'s meta description as "too long" (Bing/Google truncate around 150-160 chars). Checked all 89 posts and found **66 of 89 (74%) had `description` frontmatter over 160 chars**, up to 340 chars in the worst case (`1960s-mod-fashion-undervalued.md`). The reframe's title rule (≤60 chars) was never paired with an equivalent description rule, so this slipped through every prior audit pass across both sessions.
+- **Why it matters beyond Bing:** `description` is a single frontmatter field that drives `<meta name="description">`, `og:description`, AND `twitter:description` simultaneously (`app/blog/[slug]/page.tsx`) — so this was a social-share and AI-Overview-snippet quality issue too, not just a search console warning.
+- **Fix:** 5 parallel subagents, ~13-14 files each, rewrote every over-160-char description to 135-160 chars, preserving the core hook/keyword and cutting redundant clauses rather than genericizing. Same no-em-dash rule applied.
+- **Verification (centrally, not by agents):** all 89 posts re-checked — 0 over 160 chars, 0 under 25 chars, 0 em/en dashes in any description. `gray-matter` re-parsed all 89 files in Node, zero errors. `npx tsc --noEmit` clean.
+- **Pre-existing, out-of-scope, left alone:** `how-to-sell-winter-coats-successfully.md` has en dashes at lines 33-36, but they're numeric/date-range separators (`December–January`, `10–20%`), not punctuation dashes — a different, allowed use case, and not something any subagent touched this session.
+- **Still not committed** — same as everything else in this doc.
 
 ## ✅ Done this session, part 3 — Tier C + bulk title shortening + full 72-post convert audit
 - **Tier C, 2 of 3 briefs published as new posts, 1 folded into an existing post to avoid duplication:**

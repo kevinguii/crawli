@@ -134,6 +134,9 @@ No `thecrawli.com`, no URL, no "search Crawli", no "download", no "link in bio" 
 **visual-history.json and POSTS_README.md are the source of truth for batch history**
 Before generating a new carousel batch: run `marketing-visual-diversity` skill to read `check-visual-diversity.js` output. Each batch must differ from the last 1-2 on font pairing AND text placement AND layout. These are in `docs/marketing/visual-history.json`.
 
+**Blog post `description` frontmatter must be ≤160 chars, not just `title` ≤60**
+`description` drives `<meta name="description">`, `og:description`, AND `twitter:description` simultaneously (`app/blog/[slug]/page.tsx`) — one over-long field breaks all three surfaces at once. Bing Webmaster flags anything over ~160 chars as "too long." Found 2026-07-06: 66 of 89 posts had descriptions over 160 chars (up to 340) because the reframe session's title-length rule was never paired with an equivalent description rule. Check with: `python3 -c "import re,glob; [print(len(re.search(r'^description:\s*\"(.*)\"\s*$', open(f).read(), re.MULTILINE).group(1)), f) for f in glob.glob('content/blog/*.md')]"` and flag anything outside 25-160.
+
 ---
 
 ## LLM / sidecar

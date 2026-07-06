@@ -1,6 +1,6 @@
 ---
 title: "Buy Archive Fashion Without Japan Proxy Fees"
-description: "Archive hunters assume rare Margiela, Rick Owens, and Raf Simons pieces only live on Japanese resale sites. A lot of it is already on Grailed, Vestiaire, and eBay."
+description: "Archive hunters assume rare Margiela, Rick Owens, and Raf Simons pieces only live on Japanese resale sites. A lot of it is already on Grailed and eBay."
 date: "2026-06-15"
 updated: "2026-06-15"
 cover: "/blog/images/archive-fashion-cover.svg"

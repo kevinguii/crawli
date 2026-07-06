@@ -1,6 +1,6 @@
 ---
 title: "Deadstock Sneakers: Why They Cost So Much to Own"
-description: "Deadstock sneaker prices don't track footwear value, they track time-capsule value. Here's how deadstock grading actually works, and why an untouched 1985 pair can outprice a 2020s release many times over."
+description: "Deadstock sneaker prices track time capsule value, not footwear value. Here's how grading works, and why an untouched 1985 pair can outprice a new release."
 date: "2026-06-23"
 updated: "2026-07-06"
 cover: "/blog/images/deadstock-sneaker-cover.svg"

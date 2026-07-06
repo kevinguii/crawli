@@ -1,6 +1,6 @@
 ---
 title: "M-65 Field Jacket Guide: Dating and Buying Vintage"
-description: "The M-65 field jacket is a US military-issue outer garment introduced in 1965, characterized by its olive drab sateen, button-in liner, and four large pockets, which has become a civilian wardrobe staple and a resale category with high demand for Vietnam-era originals."
+description: "The M-65 field jacket is a US military-issue coat introduced in 1965, now a resale category with high demand for Vietnam-era originals."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/m65-field-jacket-cover.svg"

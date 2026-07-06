@@ -1,6 +1,6 @@
 ---
 title: "Harrington Jacket History: Baracuta G9 to Preppy Icon"
-description: "The Harrington jacket, originally the Baracuta G9, was created in 1937 by John and Isaac Miller as a rain-proof golf coat with a Fraser tartan lining. It got the name Harrington in 1964 after the TV character Rodney Harrington wore one on Peyton Place."
+description: "The Harrington jacket, originally the Baracuta G9, was created in 1937 as a rain-proof golf coat. It got the Harrington name in 1964 from a TV character."
 date: "2026-07-02"
 updated: "2026-07-06"
 cover: "/blog/images/harrington-jacket-cover.svg"

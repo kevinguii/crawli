@@ -1,6 +1,6 @@
 ---
 title: "Fisherman Sweater History: The Gansey and Aran Story"
-description: "The fisherman sweater, known as a gansey or Aran sweater, originated as thick, tightly knitted wool garments worn by fishermen in the British Isles and Brittany, designed with dense stitch patterns that repelled water and insulated against Atlantic cold."
+description: "The fisherman sweater, or gansey or Aran sweater, began as a thick, tightly knitted wool garment worn by fishermen in the British Isles and Brittany."
 date: "2026-06-29"
 updated: "2026-07-06"
 cover: "/blog/images/fisherman-sweater-cover.svg"

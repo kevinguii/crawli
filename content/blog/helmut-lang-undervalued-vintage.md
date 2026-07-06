@@ -1,6 +1,6 @@
 ---
 title: "Why 1990s Helmut Lang Is Still Underpriced Vintage"
-description: "1990s Helmut Lang bias-cut trousers and minimalist tailoring routinely sell for less than a mass-market Y2K tracksuit, even though Lang defined 90s minimalism before the label changed hands. Here's the buying window and how to authenticate a pre-2005 piece."
+description: "1990s Helmut Lang bias-cut trousers routinely sell for less than a Y2K tracksuit, even though Lang defined 90s minimalism. Here's the buying window."
 date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/helmut-lang-undervalued-vintage-cover.svg"
