@@ -90,10 +90,53 @@ select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; 
 </div>
 
 <script>
-// ─── RENDER FUNCTIONS GO HERE (Task 4) ──
+function renderJourneyPhoto(s, post) {
+  return `<div class="journey-photo variant-${s.variant}" style="--accent:${post.color}">
+    <img class="bg" src="${s.img}" alt="">
+    <div class="scrim"></div>
+    ${s.chapter ? `<div class="j-chapter">${s.chapter}</div>` : ''}
+    <div class="content">
+      ${s.badge ? `<span class="j-badge">${s.badge}</span>` : ''}
+      <div class="j-caption">${s.caption}</div>
+      ${s.swipe ? `<div class="j-swipe">${s.swipe}</div>` : ''}
+      ${s.citation ? `<div class="j-citation">${s.citation}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function buildSlideHTML(s, post) {
+  return renderJourneyPhoto(s, post);
+}
 
 // ─── POST DATA GOES HERE (Task 4) ──
-const posts = [];
+const posts = [
+  {
+    label: 'JOURNEY SERIES · TRUE STORY · RESELLERS',
+    color: '#6b5744',
+    fontClass: '',
+    slides: [
+      { variant:'hook', img:'images/slide-01-hook.jpg',
+        badge:'True Story',
+        caption:'She listed shoes that didn\'t even fit her.',
+        swipe:'swipe for what happened →' },
+      { variant:'beat', img:'images/slide-02-thrift.jpg', chapter:'01 / 06',
+        caption:'Thrifted with her mom after every gymnastics practice.' },
+      { variant:'beat', img:'images/slide-03-listing.jpg', chapter:'02 / 06',
+        caption:'Found a pair of 90s platform sneakers. Too small for her.' },
+      { variant:'beat', img:'images/slide-04-biddingwar.jpg', chapter:'03 / 06',
+        caption:'Listed them on Depop anyway. A bidding war broke out.' },
+      { variant:'beat', img:'images/slide-05-tiktok.jpg', chapter:'04 / 06',
+        caption:'Posted a TikTok of herself packing the orders.' },
+      { variant:'beat', img:'images/slide-06-viral.jpg', chapter:'05 / 06',
+        caption:'6 million views in a week. 40,000 new followers overnight.' },
+      { variant:'lesson', img:'images/slide-07-store.jpg', chapter:'06 / 06',
+        caption:'One bidding war became a real vintage store on the Lower East Side.' },
+      { variant:'tie-in', img:'images/slide-08-tiein.jpg',
+        caption:'Somewhere in a closet is the next pair like that one.',
+        citation:'Story: Emma Rogue, reported by i-D, Hypebae &amp; Elite Daily. Crawli helps resellers find the next one faster.' }
+    ]
+  }
+];
 
 // ─── NAV ENGINE (unchanged from existing batches) ──
 let pIdx = 0, sIdx = 0;
