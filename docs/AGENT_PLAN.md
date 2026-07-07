@@ -89,6 +89,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 - [x] **Reddit** — connected. Permissions: posts, comments, votes, DMs, flair, inbox
 - [x] **Pinterest** — connected. Permissions: boards, pins, ads, followers
+- [x] **Threads** — connected 2026-07-06, `@thecrawli`, account `_id` `6a4c55359d9472faae9f8bea`. **Replaced the TikTok connection** (free tier is 2 accounts; TikTok's slot was reassigned) — the `tiktok auto post` and `tiktok performance digest` workflows (1E below) now have no live Zernio TikTok account behind them until TikTok is reconnected on a paid slot.
 
 ---
 
@@ -224,6 +225,8 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 **Update (2026-06-18):** Zernio's TikTok slot (freed from Reddit, which moved to PRAW — see HANDOFF §0) is now live and connected to `@thecrawli` with `video.publish`/`video.upload`/`video.list`/`user.info.stats` scopes already granted. Posting is still 100% manual (all posts so far are `isExternal: true`), but analytics are now being tracked: **"tiktok performance digest"** workflow (`9QUnEUbl66Zxwl7D`, weekly Monday 8am PT) pulls Zernio's `/v1/analytics`, ranks posts, breaks out top hashtags + format performance, and emails + saves to `tiktok_performance`. Full details in HANDOFF.md top entry. Agreed next steps in order: (1) this digest — done, (2) wire `reddit_research` pain points into the content-brief generator — done, and the resulting batch was turned into 13 social posts + 7 blog posts the same day (see HANDOFF.md top entry), (3) automated posting via `video.publish` — not started. Native-video-vs-carousel A/B testing is paused until the digest has a few weeks of data — the account is too new (3 followers, ~3 days of posts) to separate format effect from cold-start effect.
 
+**Update (2026-07-06): TikTok's Zernio connection was replaced by Threads.** See 1H below — `tiktok auto post` and `tiktok performance digest` will 403/return stale data until TikTok is reconnected on a paid Zernio slot.
+
 **Crawli audience on TikTok (same 3 segments, different energy):**
 | Segment | Mindset | Tone | Keywords |
 |---------|---------|------|----------|
@@ -239,6 +242,22 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 
 **Chat prompt to start:**
 > "I want the daily n8n content email (from 1D) to include TikTok versions of each idea. For TikTok: hook lands in 2 seconds, entertainment-first even for educational content, note any trending formats or sounds to piggyback on. Same 3 audience segments as Instagram but different tone: faster, rawer, more 'omg I found this' energy. Include both IG and TikTok version for each of the 10 ideas."
+
+---
+
+#### 1H. Threads Auto-Post — plain script, not n8n ✅ DONE (2026-07-06/07)
+
+**What was built:** `scripts/post-to-threads.mjs` — takes `<slug> <title> <hook> <url> [imageUrl]`, drafts a Threads-voice caption via OpenAI (`gpt-4o-mini`, strict JSON `{root, reply}`), posts to Zernio, logs to `content_history` (`kind:'threads'`). `--draft` flag drafts only, no post, no log.
+
+**Why no n8n, unlike every other Zernio channel:** this is on-demand only (you pick which blog post, when), and n8n's CLI `execute --id` has no way to pass custom trigger input short of building a wrapper "test caller" workflow just to inject data — pure ceremony for something you invoke by hand. A first version was built and imported into n8n, then deleted (no execution history, nothing lost) once this was clear. If Threads posting is ever put on a schedule instead (e.g. auto-post on new blog publish via `/feed.xml` diffing), n8n would earn its keep back — revisit then.
+
+**Key details:**
+- Threads account: `_id` `6a4c55359d9472faae9f8bea` (`@thecrawli`) — fetched live via `GET /v1/accounts` on 2026-07-06 (see Pinterest gotcha above: don't trust a stale ID, account IDs reset on reconnect).
+- Reuses `.env` keys already in the repo: `OPENAI_API_KEY`, `ZERNIO_API_KEY` (bearer token only, script adds the `Bearer ` prefix), `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Run with `node --env-file=.env scripts/post-to-threads.mjs ...` (Node 20.6+ built-in flag, no dotenv dependency).
+- **Zernio Threads gotcha (undocumented, found empirically 2026-07-06):** `docs.zernio.com/platforms/threads` says the top-level `content` field is "optional if threadItems provided" — false. A `threadItems`-only request 400s with `"Content is required for selected platforms"`. Fix: `content` is always the root post; `platformSpecificData.threadItems` holds only the *additional* reply post(s), not a duplicate of the root.
+- **Threads' 500-char cap is real and Zernio can't bypass it** — Zernio does not support Threads' separate 10,000-character text-attachment feature at all (confirmed via their own docs, which call exceeding 500 "the #1 failure"). Instead of truncating, the script asks the model for an optional second post (a genuine Threads reply) when there's a second distinct fact worth adding — that's the native mechanism for saying more than one post's worth, not a workaround.
+- Voice prompt bans specific phrases the model has actually produced and slipped through review ("check out", generic listicle-recap sentences) — tighten this list further if a future post reads off-voice.
+- Curated backlog (compare-anchored `*-resale-price.md` posts + 2 retitled evergreen posts) is the seed content; all 6 from the first batch are posted (see `content_history` for the record — the pending-drafts doc used to review 3 of them was deleted once they went out, per session convention of not leaving one-off scratch docs around).
 
 ---
 

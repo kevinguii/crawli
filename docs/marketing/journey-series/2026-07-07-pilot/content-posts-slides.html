@@ -55,6 +55,7 @@ select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; 
 .journey-photo .j-caption { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:26px; line-height:1.22; text-shadow:0 2px 20px rgba(0,0,0,.55); }
 .journey-photo .j-swipe { font-family:'Work Sans',sans-serif; font-size:11px; opacity:.78; letter-spacing:.06em; text-transform:uppercase; margin-top:12px; }
 .journey-photo .j-citation { font-family:'Work Sans',sans-serif; font-size:10px; opacity:.62; letter-spacing:.02em; margin-top:14px; line-height:1.5; }
+.journey-photo .j-cta-line { display:inline-block; margin-top:16px; padding:12px 20px; border-radius:8px; background:var(--accent); font-family:'Work Sans',sans-serif; font-size:14px; font-weight:700; letter-spacing:.02em; color:#fdfaf6; }
 
 /* hook: bigger caption, badge shown, no chapter counter */
 .journey-photo.variant-hook .j-caption { font-size:32px; }
@@ -67,6 +68,10 @@ select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; 
 
 /* tie-in: smaller caption, citation line visible */
 .journey-photo.variant-tie-in .j-caption { font-size:20px; }
+
+/* cta: explicit brand CTA slide (deliberate exception to the obfuscate-CI rule
+   used elsewhere in this project — see README.md "CTA policy" section) */
+.journey-photo.variant-cta .j-caption { font-size:26px; }
 
 </style>
 </head>
@@ -100,6 +105,7 @@ function renderJourneyPhoto(s, post) {
       <div class="j-caption">${s.caption}</div>
       ${s.swipe ? `<div class="j-swipe">${s.swipe}</div>` : ''}
       ${s.citation ? `<div class="j-citation">${s.citation}</div>` : ''}
+      ${s.ctaLine ? `<div class="j-cta-line">${s.ctaLine}</div>` : ''}
     </div>
   </div>`;
 }
@@ -133,7 +139,11 @@ const posts = [
         caption:'One bidding war became a real vintage store on the Lower East Side.' },
       { variant:'tie-in', img:'images/slide-08-tiein.jpg',
         caption:'Somewhere in a closet is the next pair like that one.',
-        citation:'Story: Emma Rogue, reported by i-D, Hypebae &amp; Elite Daily. Crawli helps resellers find the next one faster.' }
+        citation:'Story: Emma Rogue, reported by i-D, Hypebae &amp; Elite Daily. Crawli helps resellers find the next one faster.' },
+      { variant:'cta', img:'images/slide-09-cta.jpg',
+        badge:'Crawli',
+        caption:'Find your next resale grail before anyone else does.',
+        ctaLine:'Search Crawli → thecrawli.com' }
     ]
   }
 ];

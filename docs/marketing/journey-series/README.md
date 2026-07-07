@@ -4,7 +4,11 @@ Pubity-style narrative carousels: one real, documented person's story told in sh
 
 ## Format
 
-8 slides: hook (unresolved tension, no name yet) → 5 beats (one real photo + one short line each, 5-12 words) → lesson (the arc resolves into one takeaway) → tie-in (soft Crawli aside, decoupled from the subject's story, plus a source citation).
+9 slides: hook (unresolved tension, no name yet) → 5 beats (one real photo + one short line each, 5-12 words) → lesson (the arc resolves into one takeaway) → tie-in (soft Crawli aside, decoupled from the subject's story, plus a source citation) → cta (explicit Crawli call-to-action, closing the post).
+
+## CTA policy
+
+Unlike the fact-carousel batches (`../POSTS_README.md`), which follow an obfuscate-commercial-intent rule (no URL, no "search Crawli," Crawli mentioned only as a subtle aside on select posts), the journey series closes every post with a dedicated, explicit CTA slide: Crawli badge, direct call-to-action line, and the URL. This is a deliberate exception, not an oversight. Reasoning: a journey post already reads as editorial commentary on a real, cited story (not a disguised ad), so the tie-in slide carries the soft narrative close while the final slide can afford to ask directly, the same way a magazine feature can end with a subscribe link after the article is done. Keep the CTA slide visually consistent with the series look (same font pairing, same full-bleed-photo + scrim template) — only the badge/caption/CTA-line content changes.
 
 ## Photo policy
 
@@ -31,4 +35,4 @@ Font pairing: Fraunces (headings/captions) + Work Sans (small UI text). Layout: 
 
 ## Caption format
 
-Same TikTok title/description rules as the fact-carousel series (`../POSTS_README.md` "Caption Format" section), plus a source-citation line in the description naming the real person and outlets.
+Same TikTok title/description rules as the fact-carousel series (`../POSTS_README.md` "Caption Format" section), plus a source-citation line in the description naming the real person and outlets. Unlike the fact-carousel series, the description may end with a direct Crawli CTA line (see "CTA policy" above) since the explicit-ask exception applies to captions too.

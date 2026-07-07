@@ -90,6 +90,11 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-07 — Threads auto-posting live via `scripts/post-to-threads.mjs`**
+- On-demand script (no n8n — CLI `execute` can't take custom trigger input without a wrapper workflow, so a plain script direct to OpenAI + Zernio was simpler for something invoked by hand). Drafts a Threads-voice caption, posts via Zernio, logs to `content_history`. `--draft` flag to preview without posting. Zernio's Threads `content` field is required even when using `threadItems` for a reply chain (their docs say otherwise) — see `docs/PITFALLS.md`. Full writeup: `docs/AGENT_PLAN.md` §1H.
+- 6 posts live: 2 retitled evergreen posts + 4 compare-anchored `*-resale-price.md` posts. TikTok's Zernio connection was replaced by Threads (free-tier 2-account limit) — `tiktok auto post`/`tiktok performance digest` are stale until TikTok is reconnected on a paid slot.
+- Also fixed 2 zero-click blog post titles (`best-secondhand-marketplaces-for-luxury-items`, `how-to-identify-vintage-band-tee`) flagged by `mcp__gsc__ctr_anomalies` — ruled out cannibalization first, then added a real number/hook to each title+description instead of just keeping them short.
+
 **2026-07-06 — Blog conversion reframe complete (all 4 phases) + meta description length fix**
 - 15 new compare-anchored price posts (one per live `/compare/[slug]`), 2 new Tier C posts, bulk title-shortened all 89 posts to ≤60 chars, and a full convert-audit pass (internal compare-links, CTA tightening, unsourced-stat cleanup, dead-post rescues) across all 72 pre-existing posts. Full breakdown, decisions, and what's left: `docs/blog-briefs-2026-07-reframe.md` (STATUS section at top).
 - Bing Webmaster flagged one post's meta `description` as too long; audit found 66 of 89 posts over Bing/Google's ~160-char display limit (title rule was ≤60 chars but no equivalent existed for description). Fixed all 89 to 25-160 chars via 5 parallel subagents — see PITFALLS.md. Nothing committed yet.

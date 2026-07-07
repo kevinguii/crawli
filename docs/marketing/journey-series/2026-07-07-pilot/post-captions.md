@@ -18,4 +18,6 @@ That single listing eventually became a real vintage store on New York's Lower E
 
 Story reported by i-D, Hypebae, and Elite Daily. If you're a reseller sitting on a closet full of "maybe someone wants this" pieces, this is basically the whole playbook: post it, let the right buyer find it. Crawli is built for the part after that, finding what's already out there before you list.
 
+Search Crawli to find your next resale grail before anyone else does → thecrawli.com
+
 #thrifting #reselling #depop #vintagefashion #secondhandstyle

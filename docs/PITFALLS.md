@@ -134,6 +134,15 @@ No `thecrawli.com`, no URL, no "search Crawli", no "download", no "link in bio" 
 **visual-history.json and POSTS_README.md are the source of truth for batch history**
 Before generating a new carousel batch: run `marketing-visual-diversity` skill to read `check-visual-diversity.js` output. Each batch must differ from the last 1-2 on font pairing AND text placement AND layout. These are in `docs/marketing/visual-history.json`.
 
+**Zernio Threads posts: `content` is NOT optional even when using `threadItems`**
+`docs.zernio.com/platforms/threads` claims top-level `content` is "optional if threadItems provided" — false as of 2026-07-06. A `threadItems`-only request 400s with `"Content is required for selected platforms"`. `content` must always carry the root post; `platformSpecificData.threadItems` holds only *additional* reply post(s) in the chain, not a repeat of the root. See `scripts/post-to-threads.mjs` and `docs/AGENT_PLAN.md` §1H.
+
+**Threads' 500-char cap can't be bypassed via Zernio**
+Zernio does not expose Threads' native 10,000-character text-attachment feature at all — don't build anything assuming it can. Longer content means a real Threads reply (a second post), not a workaround.
+
+**GSC zero-click anomaly on a well-ranked page isn't always a title problem — check cannibalization first**
+Before assuming a bad title/snippet caused 0 clicks despite decent position, run `mcp__gsc__cannibalization` to rule out two pages competing for the same query first (would otherwise misdiagnose the fix). Confirmed clean via `dimension_filters` on `page` scoped to the exact query on 2026-07-06 before rewriting two post titles.
+
 **Blog post `description` frontmatter must be ≤160 chars, not just `title` ≤60**
 `description` drives `<meta name="description">`, `og:description`, AND `twitter:description` simultaneously (`app/blog/[slug]/page.tsx`) — one over-long field breaks all three surfaces at once. Bing Webmaster flags anything over ~160 chars as "too long." Found 2026-07-06: 66 of 89 posts had descriptions over 160 chars (up to 340) because the reframe session's title-length rule was never paired with an equivalent description rule. Check with: `python3 -c "import re,glob; [print(len(re.search(r'^description:\s*\"(.*)\"\s*$', open(f).read(), re.MULTILINE).group(1)), f) for f in glob.glob('content/blog/*.md')]"` and flag anything outside 25-160.
 

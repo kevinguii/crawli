@@ -12,3 +12,4 @@ All images are real photography, licensed for commercial use under the standard 
 | slide-06-viral.jpg | Person using smartphone to view social media analytics | (see source page) | unsplash.com/photos/person-using-smartphone-to-view-social-media-analytics-4lKFi3KqnD8 | Unsplash License |
 | slide-07-store.jpg | Retail clothing display on store racks | atelierbyvineeth | unsplash.com/photos/clothes-displayed-on-racks-inside-a-store-window-5fdhWc1Vm1s | Unsplash License |
 | slide-08-tiein.jpg | (reuses slide-07-store.jpg) | — | — | — |
+| slide-09-cta.jpg | Person using smartphone to view social media analytics | (see source page) | unsplash.com/photos/person-using-smartphone-to-view-social-media-analytics-4lKFi3KqnD8 | Unsplash License |
