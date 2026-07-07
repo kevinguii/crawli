@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawli Journey Series — Pilot (2026-07-07)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Journey series pilot post 1: "The Depop Blowup" — Emma Rogue's real, publicly
+     documented story (i-D, Hypebae, Elite Daily), used under editorial commentary,
+     cited on the final slide. Real photos only (Unsplash/Pexels, free commercial
+     license) — no AI generation, no unlicensed third-party press photos.
+     Signature series look: Fraunces (headings/captions) + Work Sans (small UI text),
+     warm taupe accent #6b5744 — fixed across every future journey post, exempt from
+     the fact-carousel batches' per-batch font/layout rotation rule.
+     See docs/superpowers/specs/2026-07-07-journey-carousel-format-design.md -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  background: #0a0a0a;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px; gap: 14px;
+}
+
+.top-bar { width:100%; max-width:440px; display:flex; align-items:center; gap:10px; }
+select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; background:#1a1a1a; color:#ccc; font-size:13px; cursor:pointer; }
+.nbtn { padding:9px 14px; border:1px solid #2a2a2a; border-radius:8px; background:#1a1a1a; color:#aaa; font-size:13px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.nbtn:hover:not(:disabled) { background:#252525; color:#fff; }
+.nbtn:disabled { opacity:.3; cursor:default; }
+.post-label { width:100%; max-width:440px; font-size:11px; color:#444; text-transform:uppercase; letter-spacing:.1em; }
+
+.frame { width:100%; max-width:440px; aspect-ratio:4/5; border-radius:18px; overflow:hidden; position:relative; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.slide { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+.slide.on { display:block; }
+.bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
+.slide-ctr { font-size:12px; color:#444; }
+
+/* ════════════════════════════════════════════════════════════════════
+   JOURNEY-PHOTO — signature series template, fixed across every journey
+   post (font pairing + layout do NOT rotate per-batch like the fact-
+   carousel series does). Full-bleed real photo + bottom scrim + a small
+   chapter counter (top-left) + one short caption line (bottom).
+   ════════════════════════════════════════════════════════════════════ */
+.journey-photo { width:100%; height:100%; position:relative; overflow:hidden; background:#111; }
+.journey-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.journey-photo .scrim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.20) 45%, rgba(0,0,0,.82) 100%); }
+.journey-photo .content { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; padding:7% 9% 9%; color:#fdfaf6; }
+
+.journey-photo .j-chapter { position:absolute; top:5%; left:7%; z-index:1; font-family:'Work Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#fdfaf6; opacity:.82; text-shadow:0 1px 8px rgba(0,0,0,.6); }
+.journey-photo .j-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:100px; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.30); font-family:'Work Sans',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; width:fit-content; margin-bottom:14px; }
+.journey-photo .j-caption { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:26px; line-height:1.22; text-shadow:0 2px 20px rgba(0,0,0,.55); }
+.journey-photo .j-swipe { font-family:'Work Sans',sans-serif; font-size:11px; opacity:.78; letter-spacing:.06em; text-transform:uppercase; margin-top:12px; }
+.journey-photo .j-citation { font-family:'Work Sans',sans-serif; font-size:10px; opacity:.62; letter-spacing:.02em; margin-top:14px; line-height:1.5; }
+
+/* hook: bigger caption, badge shown, no chapter counter */
+.journey-photo.variant-hook .j-caption { font-size:32px; }
+
+/* beat: chapter counter shown, no badge, mid-size caption */
+.journey-photo.variant-beat .j-caption { font-size:24px; }
+
+/* lesson: largest caption, italic emphasis (chapter counter still shown, story concludes at 06/06) */
+.journey-photo.variant-lesson .j-caption { font-size:29px; font-style:italic; }
+
+/* tie-in: smaller caption, citation line visible */
+.journey-photo.variant-tie-in .j-caption { font-size:20px; }
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="nbtn" id="pp" onclick="changePost(-1)">← Post</button>
+  <select id="sel" onchange="jumpPost(+this.value)">
+    <option value="0">1 · The Depop Blowup 👟</option>
+  </select>
+  <button class="nbtn" id="np" onclick="changePost(1)">Post →</button>
+</div>
+
+<div class="post-label" id="plabel"></div>
+<div class="frame" id="frame"></div>
+
+<div class="bot-bar">
+  <button class="nbtn" id="ps" onclick="changeSlide(-1)">←</button>
+  <span class="slide-ctr" id="sctr"></span>
+  <button class="nbtn" id="ns" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+function renderJourneyPhoto(s, post) {
+  return `<div class="journey-photo variant-${s.variant}" style="--accent:${post.color}">
+    <img class="bg" src="${s.img}" alt="">
+    <div class="scrim"></div>
+    ${s.chapter ? `<div class="j-chapter">${s.chapter}</div>` : ''}
+    <div class="content">
+      ${s.badge ? `<span class="j-badge">${s.badge}</span>` : ''}
+      <div class="j-caption">${s.caption}</div>
+      ${s.swipe ? `<div class="j-swipe">${s.swipe}</div>` : ''}
+      ${s.citation ? `<div class="j-citation">${s.citation}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function buildSlideHTML(s, post) {
+  return renderJourneyPhoto(s, post);
+}
+
+// ─── POST DATA GOES HERE (Task 4) ──
+const posts = [
+  {
+    label: 'JOURNEY SERIES · TRUE STORY · RESELLERS',
+    color: '#6b5744',
+    fontClass: '',
+    slides: [
+      { variant:'hook', img:'images/slide-01-hook.jpg',
+        badge:'True Story',
+        caption:'She listed shoes that didn’t even fit her.',
+        swipe:'swipe for what happened →' },
+      { variant:'beat', img:'images/slide-02-thrift.jpg', chapter:'01 / 06',
+        caption:'Thrifted with her mom after every gymnastics practice.' },
+      { variant:'beat', img:'images/slide-03-listing.jpg', chapter:'02 / 06',
+        caption:'Found a pair of 90s platform sneakers. Too small for her.' },
+      { variant:'beat', img:'images/slide-04-biddingwar.jpg', chapter:'03 / 06',
+        caption:'Listed them on Depop anyway. A bidding war broke out.' },
+      { variant:'beat', img:'images/slide-05-tiktok.jpg', chapter:'04 / 06',
+        caption:'Posted a TikTok of herself packing the orders.' },
+      { variant:'beat', img:'images/slide-06-viral.jpg', chapter:'05 / 06',
+        caption:'6 million views in a week. 40,000 new followers overnight.' },
+      { variant:'lesson', img:'images/slide-07-store.jpg', chapter:'06 / 06',
+        caption:'One bidding war became a real vintage store on the Lower East Side.' },
+      { variant:'tie-in', img:'images/slide-08-tiein.jpg',
+        caption:'Somewhere in a closet is the next pair like that one.',
+        citation:'Story: Emma Rogue, reported by i-D, Hypebae &amp; Elite Daily. Crawli helps resellers find the next one faster.' }
+    ]
+  }
+];
+
+// ─── NAV ENGINE (unchanged from existing batches) ──
+let pIdx = 0, sIdx = 0;
+function renderPost() {
+  const post = posts[pIdx];
+  const frame = document.getElementById('frame');
+  frame.innerHTML = post.slides.map(s => `<div class="slide ${post.fontClass || ''}">${buildSlideHTML(s, post)}</div>`).join('');
+  document.getElementById('plabel').textContent = post.label;
+  document.getElementById('sel').value = pIdx;
+  sIdx = 0;
+  updateSlide();
+}
+function updateSlide() {
+  const post = posts[pIdx];
+  document.querySelectorAll('.slide').forEach((el, i) => el.classList.toggle('on', i === sIdx));
+  document.getElementById('sctr').textContent = `${sIdx + 1} / ${post.slides.length}`;
+  document.getElementById('ps').disabled = sIdx === 0;
+  document.getElementById('ns').disabled = sIdx === post.slides.length - 1;
+  document.getElementById('pp').disabled = pIdx === 0;
+  document.getElementById('np').disabled = pIdx === posts.length - 1;
+}
+function changeSlide(d) { sIdx = Math.max(0, Math.min(posts[pIdx].slides.length - 1, sIdx + d)); updateSlide(); }
+function gotoSlide(i) { sIdx = i; updateSlide(); }
+function changePost(d) { pIdx = Math.max(0, Math.min(posts.length - 1, pIdx + d)); renderPost(); }
+function jumpPost(i) { pIdx = i; renderPost(); }
+
+renderPost();
+</script>
+</body>
+</html>
