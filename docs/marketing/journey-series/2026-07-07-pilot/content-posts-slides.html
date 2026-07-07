@@ -39,7 +39,34 @@ select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; 
 .bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
 .slide-ctr { font-size:12px; color:#444; }
 
-/* ── JOURNEY-PHOTO SLIDE TYPE CSS GOES HERE (Task 2) ── */
+/* ════════════════════════════════════════════════════════════════════
+   JOURNEY-PHOTO — signature series template, fixed across every journey
+   post (font pairing + layout do NOT rotate per-batch like the fact-
+   carousel series does). Full-bleed real photo + bottom scrim + a small
+   chapter counter (top-left) + one short caption line (bottom).
+   ════════════════════════════════════════════════════════════════════ */
+.journey-photo { width:100%; height:100%; position:relative; overflow:hidden; background:#111; }
+.journey-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.journey-photo .scrim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.20) 45%, rgba(0,0,0,.82) 100%); }
+.journey-photo .content { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; padding:7% 9% 9%; color:#fdfaf6; }
+
+.journey-photo .j-chapter { position:absolute; top:5%; left:7%; z-index:1; font-family:'Work Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#fdfaf6; opacity:.82; text-shadow:0 1px 8px rgba(0,0,0,.6); }
+.journey-photo .j-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:100px; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.30); font-family:'Work Sans',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; width:fit-content; margin-bottom:14px; }
+.journey-photo .j-caption { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:26px; line-height:1.22; text-shadow:0 2px 20px rgba(0,0,0,.55); }
+.journey-photo .j-swipe { font-family:'Work Sans',sans-serif; font-size:11px; opacity:.78; letter-spacing:.06em; text-transform:uppercase; margin-top:12px; }
+.journey-photo .j-citation { font-family:'Work Sans',sans-serif; font-size:10px; opacity:.62; letter-spacing:.02em; margin-top:14px; line-height:1.5; }
+
+/* hook: bigger caption, badge shown, no chapter counter */
+.journey-photo.variant-hook .j-caption { font-size:32px; }
+
+/* beat: chapter counter shown, no badge, mid-size caption */
+.journey-photo.variant-beat .j-caption { font-size:24px; }
+
+/* lesson: no chapter counter (story has resolved), largest caption, italic emphasis */
+.journey-photo.variant-lesson .j-caption { font-size:29px; font-style:italic; }
+
+/* tie-in: smaller caption, citation line visible */
+.journey-photo.variant-tie-in .j-caption { font-size:20px; }
 
 </style>
 </head>
