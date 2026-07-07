@@ -118,6 +118,10 @@ body {
 .social-instagram:hover { color: #C13584; filter: drop-shadow(0 0 6px rgba(193, 53, 132, 0.5)); }
 .social-pinterest:hover { color: #E60023; filter: drop-shadow(0 0 6px rgba(230, 0, 35, 0.5)); }
 
+.ph-badge-dark { display: none; }
+[data-theme="dark"] .ph-badge-light { display: none; }
+[data-theme="dark"] .ph-badge-dark { display: inline-block; }
+
 /* ---------- Animations ---------- */
 @keyframes queued-pulse {
   0%, 100% { opacity: 0.35; }

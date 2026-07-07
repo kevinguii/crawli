@@ -69,6 +69,30 @@ export default function Footer() {
           ))}
         </div>
 
+        {/* Product Hunt badge */}
+        <a
+          href="https://www.producthunt.com/products/crawli?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-crawli"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Crawli on Product Hunt"
+          className="shrink-0"
+        >
+          <img
+            className="ph-badge-light"
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1190528&theme=light"
+            alt="Crawli - Compare resale prices across 9 marketplaces at once | Product Hunt"
+            width={200}
+            height={43}
+          />
+          <img
+            className="ph-badge-dark"
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1190528&theme=dark"
+            alt="Crawli - Compare resale prices across 9 marketplaces at once | Product Hunt"
+            width={200}
+            height={43}
+          />
+        </a>
+
         {/* Nav links — Blog lives in the navbar */}
         <nav className="flex items-center gap-5 text-sm">
           {[
