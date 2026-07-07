@@ -1,6 +1,6 @@
 ---
-title: "Best Secondhand Luxury Marketplaces: 2026 Guide"
-description: "The RealReal and Vestiaire aren't always cheapest for the same authenticated bag. A ranked comparison of 7 luxury resale sites by fees and price spread."
+title: "Best Luxury Resale Sites: Same Bag, $600 Price Gap"
+description: "The same Chanel bag: $2,800 on one platform, $3,400 on another. A ranked comparison of 7 luxury resale sites by fees, authentication, and price spread."
 date: "2026-06-12"
 updated: "2026-07-06"
 cover: "/blog/images/luxury-marketplaces-cover.svg"

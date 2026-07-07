@@ -1,8 +1,8 @@
 ---
-title: "How to Identify a Real Vintage Band Tee, Not a Reprint"
-description: "A genuine 1970s band tee typically has a single-stitch hem, a thin poly-cotton blend, and a tag from a maker like Screen Stars or Brockum."
+title: "Vintage Band Tee or Reprint? How to Tell in 10 Seconds"
+description: "Flip the hem inside out. One row of stitching usually means genuine vintage; two rows means a later reprint. The fastest way to spot a fake tour tee."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-07-06"
 cover: "/blog/images/vintage-band-tee-cover.svg"
 tags: ["category-deep-guide", "how-to-identify-vintage-band-t-shirt", "vintage-tee-authentication"]
 faq:
