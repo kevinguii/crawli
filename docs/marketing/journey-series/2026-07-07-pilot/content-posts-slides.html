@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawli Journey Series — Pilot (2026-07-07)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Journey series pilot post 1: "The Depop Blowup" — Emma Rogue's real, publicly
+     documented story (i-D, Hypebae, Elite Daily), used under editorial commentary,
+     cited on the final slide. Real photos only (Unsplash/Pexels, free commercial
+     license) — no AI generation, no unlicensed third-party press photos.
+     Signature series look: Fraunces (headings/captions) + Work Sans (small UI text),
+     warm taupe accent #6b5744 — fixed across every future journey post, exempt from
+     the fact-carousel batches' per-batch font/layout rotation rule.
+     See docs/superpowers/specs/2026-07-07-journey-carousel-format-design.md -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  background: #0a0a0a;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px; gap: 14px;
+}
+
+.top-bar { width:100%; max-width:440px; display:flex; align-items:center; gap:10px; }
+select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; background:#1a1a1a; color:#ccc; font-size:13px; cursor:pointer; }
+.nbtn { padding:9px 14px; border:1px solid #2a2a2a; border-radius:8px; background:#1a1a1a; color:#aaa; font-size:13px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.nbtn:hover:not(:disabled) { background:#252525; color:#fff; }
+.nbtn:disabled { opacity:.3; cursor:default; }
+.post-label { width:100%; max-width:440px; font-size:11px; color:#444; text-transform:uppercase; letter-spacing:.1em; }
+
+.frame { width:100%; max-width:440px; aspect-ratio:4/5; border-radius:18px; overflow:hidden; position:relative; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.slide { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+.slide.on { display:block; }
+.bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
+.slide-ctr { font-size:12px; color:#444; }
+
+/* ── JOURNEY-PHOTO SLIDE TYPE CSS GOES HERE (Task 2) ── */
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="nbtn" id="pp" onclick="changePost(-1)">← Post</button>
+  <select id="sel" onchange="jumpPost(+this.value)">
+    <option value="0">1 · The Depop Blowup 👟</option>
+  </select>
+  <button class="nbtn" id="np" onclick="changePost(1)">Post →</button>
+</div>
+
+<div class="post-label" id="plabel"></div>
+<div class="frame" id="frame"></div>
+
+<div class="bot-bar">
+  <button class="nbtn" id="ps" onclick="changeSlide(-1)">←</button>
+  <span class="slide-ctr" id="sctr"></span>
+  <button class="nbtn" id="ns" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+// ─── RENDER FUNCTIONS GO HERE (Task 4) ──
+
+// ─── POST DATA GOES HERE (Task 4) ──
+const posts = [];
+
+// ─── NAV ENGINE (unchanged from existing batches) ──
+let pIdx = 0, sIdx = 0;
+function renderPost() {
+  const post = posts[pIdx];
+  const frame = document.getElementById('frame');
+  frame.innerHTML = post.slides.map(s => `<div class="slide ${post.fontClass || ''}">${buildSlideHTML(s, post)}</div>`).join('');
+  document.getElementById('plabel').textContent = post.label;
+  document.getElementById('sel').value = pIdx;
+  sIdx = 0;
+  updateSlide();
+}
+function updateSlide() {
+  const post = posts[pIdx];
+  document.querySelectorAll('.slide').forEach((el, i) => el.classList.toggle('on', i === sIdx));
+  document.getElementById('sctr').textContent = `${sIdx + 1} / ${post.slides.length}`;
+  document.getElementById('ps').disabled = sIdx === 0;
+  document.getElementById('ns').disabled = sIdx === post.slides.length - 1;
+  document.getElementById('pp').disabled = pIdx === 0;
+  document.getElementById('np').disabled = pIdx === posts.length - 1;
+}
+function changeSlide(d) { sIdx = Math.max(0, Math.min(posts[pIdx].slides.length - 1, sIdx + d)); updateSlide(); }
+function gotoSlide(i) { sIdx = i; updateSlide(); }
+function changePost(d) { pIdx = Math.max(0, Math.min(posts.length - 1, pIdx + d)); renderPost(); }
+function jumpPost(i) { pIdx = i; renderPost(); }
+
+renderPost();
+</script>
+</body>
+</html>
