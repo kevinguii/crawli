@@ -1107,6 +1107,20 @@
       "text_placement": "bottom-anchor",
       "imagery": "clipart",
       "style_movement": null
+    },
+    {
+      "date": "2026-07-07",
+      "batch_post_num": 1,
+      "title": "The Depop Blowup",
+      "color_hex": "#6b5744",
+      "color_name": "Warm Taupe",
+      "style_movement": null,
+      "typography": "editorial",
+      "font_pairing": "Fraunces + Work Sans",
+      "layout": "journey-photo",
+      "text_placement": "bottom-anchored, full-bleed photo",
+      "imagery": "real-photo",
+      "series": "journey"
     }
   ]
 }

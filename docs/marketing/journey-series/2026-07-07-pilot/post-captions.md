@@ -6,7 +6,7 @@
 She listed shoes that didn't fit her. A bidding war changed everything.
 
 **TikTok Description:**
-This is the true story of Emma Rogue. Her single Depop listing turned into a real vintage store on New York's Lower East Side.
+This is the true story of Emma Rogue. Her single Depop listing turned into a real vintage store.
 
 She started thrifting with her mom after gymnastics practice, years before any of this. One day she found a pair of 90s platform sneakers that were too small for her. She listed them on Depop anyway.
 

@@ -21,7 +21,7 @@ Real names and real, publicly reported story facts are used under editorial comm
 
 ## Visual system — signature look (fixed across the series)
 
-Font pairing: Fraunces (headings/captions) + Work Sans (small UI text). Layout: full-bleed real photo + bottom scrim + chapter counter (beats only) + one caption line. This look is intentionally **fixed** across every journey post — unlike the fact-carousel batches, which rotate font/layout/placement every batch, this series stays visually consistent so it reads as a recognizable format. Only the accent color varies per story.
+Font pairing: Fraunces (headings/captions) + Work Sans (small UI text). Layout: full-bleed real photo + bottom scrim + chapter counter (beats + lesson slide) + one caption line. This look is intentionally **fixed** across every journey post — unlike the fact-carousel batches, which rotate font/layout/placement every batch, this series stays visually consistent so it reads as a recognizable format. Only the accent color varies per story.
 
 ## Batch index
 
