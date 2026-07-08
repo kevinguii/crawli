@@ -134,3 +134,78 @@ export function cheapestSnapshot(snapshots: CompareSnapshot[]): CompareSnapshot 
     (a.min_price_usd ?? Infinity) < (b.min_price_usd ?? Infinity) ? a : b,
   );
 }
+
+export interface CompareHeroPlatformPrice {
+  platform: string;
+  avgPriceUsd: number;
+}
+
+export interface CompareHeroItem {
+  slug: string;
+  name: string;
+  category: string | null;
+  platforms: CompareHeroPlatformPrice[];
+}
+
+/**
+ * Groups snapshot rows by slug and sorts each item's platforms cheapest-first.
+ * Pure — no I/O — so it can be exercised with sample data without Supabase.
+ * Items with fewer than 2 priced platforms are dropped: a single-platform
+ * result doesn't demonstrate a cross-platform comparison.
+ */
+export function buildCompareHeroItems(
+  items: CompareItem[],
+  snapshots: CompareSnapshot[],
+  slugs: string[],
+): CompareHeroItem[] {
+  const itemBySlug = new Map(items.map((i) => [i.slug, i]));
+  const platformsBySlug = new Map<string, CompareHeroPlatformPrice[]>();
+
+  for (const snap of snapshots) {
+    if (snap.avg_price_usd === null) continue;
+    const list = platformsBySlug.get(snap.slug) ?? [];
+    list.push({ platform: snap.platform, avgPriceUsd: snap.avg_price_usd });
+    platformsBySlug.set(snap.slug, list);
+  }
+
+  const result: CompareHeroItem[] = [];
+  for (const slug of slugs) {
+    const item = itemBySlug.get(slug);
+    const platforms = platformsBySlug.get(slug);
+    if (!item || !platforms || platforms.length < 2) continue;
+    result.push({
+      slug: item.slug,
+      name: item.name,
+      category: item.category,
+      platforms: [...platforms].sort((a, b) => a.avgPriceUsd - b.avgPriceUsd),
+    });
+  }
+  return result;
+}
+
+/**
+ * Real per-platform prices for a curated set of compare items, for the
+ * landing-page hero widget. Reads only the existing daily-cron-refreshed
+ * compare_snapshots cache — never triggers a live scrape. Best-effort:
+ * returns [] on any error so the hero can never break the landing page.
+ */
+export async function getCompareHeroData(slugs: string[]): Promise<CompareHeroItem[]> {
+  try {
+    const admin = createAdminClient();
+    const [{ data: items }, { data: snapshots }] = await Promise.all([
+      admin.from('compare_items').select('*').in('slug', slugs).eq('enabled', true),
+      admin
+        .from('compare_snapshots')
+        .select('*')
+        .in('slug', slugs)
+        .not('avg_price_usd', 'is', null),
+    ]);
+    return buildCompareHeroItems(
+      (items ?? []) as CompareItem[],
+      (snapshots ?? []) as CompareSnapshot[],
+      slugs,
+    );
+  } catch {
+    return [];
+  }
+}
