@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-08 — Fixed `longsleeve`/`shortsleeve` as unmatchable relevance-filter anchors**
+A user's "black longsleeve messi jersey" alert silently returned 0 new matches every day (unlike a sibling alert) because "longsleeve" (one word) never appears in listing titles, which write "long sleeve" (two words) — same class as the earlier `tshirt` bug but fixed via a normalized-substring compound-word map in `lib/parse.ts` instead of stopwording, since sleeve length is a real narrowing signal. See `docs/core/PITFALLS.md` → Relevance filtering.
+
 **2026-07-08 — Fixed duplicate Sentry client init + trimmed legacy JS polyfills (PageSpeed follow-up)**
 - Sentry was initializing twice in the browser (`instrumentation-client.ts` auto-loaded by Next.js + a leftover `sentry.client.config.ts` wired via a now-deleted `app/sentry-provider.tsx`), bloating the JS bundle by ~200 KB and silently running prod at 100% trace sampling + PII collection instead of the intended 10%. Consolidated into `instrumentation-client.ts` only. Also added a `browserslist` field to `package.json` (modern evergreen targets) so Next's SWC compiler stops shipping `Array.at`/`flat`/`Object.hasOwn`/etc. polyfills for browsers that don't need them. See `docs/core/PITFALLS.md` Infrastructure section.
 

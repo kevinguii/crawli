@@ -101,6 +101,18 @@ function relevanceTokens(text: string): Set<string> {
 //      satisfied. If the query has no anchors at all (all-generic query),
 //      fall back to "match at least one" so we don't reject everything.
 // If the query has no substantive tokens at all we pass everything through.
+// Query words shoppers type as one word but resale sellers virtually always
+// split into two in listing titles — same tokenization gap that made "tshirt"
+// an unmatchable anchor before it was stopworded (see PITFALLS.md). Unlike
+// "tshirt"/"shirt", sleeve length is a real narrowing signal (a long sleeve
+// jersey isn't a short sleeve one), so it's normalized to match instead of
+// dropped as a stopword — checked as a substring against the title, same
+// mechanism as multi-word brand aliases below.
+const COMPOUND_ANCHOR_FORMS: Record<string, string> = {
+  longsleeve: 'long sleeve',
+  shortsleeve: 'short sleeve',
+};
+
 function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
   if (queryTokens.size === 0) return true;
   if (!title) return false;
@@ -121,6 +133,8 @@ function titleMatchesQuery(title: string | null, queryTokens: Set<string>): bool
 
     const anchorSatisfied = (t: string): boolean => {
       if (titleTokens.has(t)) return true;
+      const compoundForm = COMPOUND_ANCHOR_FORMS[t];
+      if (compoundForm && titleNorm.includes(` ${compoundForm} `)) return true;
       // Brand-to-brand: query token and title resolve to the same canonical brand.
       const canon = canonicalBrandOf(t);
       if (canon && titleBrand === canon) return true;
