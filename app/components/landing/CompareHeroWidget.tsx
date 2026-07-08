@@ -70,6 +70,10 @@ export default function CompareHeroWidget({ items }: { items: CompareHeroItem[] 
 
   function selectItem(index: number) {
     if (index === activeIndex) return;
+    if (reducedMotion.current) {
+      setActiveIndex(index);
+      return;
+    }
     setVisible(false);
     setTimeout(() => {
       setActiveIndex(index);

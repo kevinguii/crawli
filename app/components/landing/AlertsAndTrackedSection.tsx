@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import MockFrame from './MockFrame';
 
@@ -156,9 +156,19 @@ export default function AlertsAndTrackedSection() {
   const [tab, setTab] = useState<'alerts' | 'tracked'>('alerts');
   const [visible, setVisible] = useState(true);
   const active = TABS.find((t) => t.key === tab)!;
+  const reducedMotion = useRef(false);
+
+  useEffect(() => {
+    reducedMotion.current =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }, []);
 
   function selectTab(key: 'alerts' | 'tracked') {
     if (key === tab) return;
+    if (reducedMotion.current) {
+      setTab(key);
+      return;
+    }
     setVisible(false);
     setTimeout(() => {
       setTab(key);
