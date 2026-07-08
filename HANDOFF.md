@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-08 — Fixed duplicate Sentry client init + trimmed legacy JS polyfills (PageSpeed follow-up)**
+- Sentry was initializing twice in the browser (`instrumentation-client.ts` auto-loaded by Next.js + a leftover `sentry.client.config.ts` wired via a now-deleted `app/sentry-provider.tsx`), bloating the JS bundle by ~200 KB and silently running prod at 100% trace sampling + PII collection instead of the intended 10%. Consolidated into `instrumentation-client.ts` only. Also added a `browserslist` field to `package.json` (modern evergreen targets) so Next's SWC compiler stops shipping `Array.at`/`flat`/`Object.hasOwn`/etc. polyfills for browsers that don't need them. See `docs/core/PITFALLS.md` Infrastructure section.
+
 **2026-07-08 — Cross-links between /compare/[slug] and its price-guide blog post**
 - New `getPriceGuideSlugMap()` in `lib/blog.ts` (compareSlug → blog post slug, from the same `PostMeta.compareSlug` field the Price Guides tab uses). `/compare/[slug]` now shows a "Read the full price analysis →" link under the hero when a price-guide post exists for that item. Landing page `CompareSection` cards got the same treatment on the other direction: each card's `<Link>` wrapper became a `<div>` with an absolutely-positioned stretched link to `/compare/[slug]` (`z-0`) plus a small separate "Read analysis →" link to the blog post (`z-10`, sits above the stretched link so it captures its own clicks — standard stretched-link-with-sublink pattern, not nested anchors). Only 12 of the 15 compare items show as cards on the landing page (`shown = items.slice(0, 12)`, pre-existing, unrelated to this change) — the other 3 still get the reverse link on their own `/compare/[slug]` page.
 

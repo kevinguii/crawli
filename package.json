@@ -2,6 +2,13 @@
   "name": "crawler",
   "version": "0.1.0",
   "private": true,
+  "browserslist": [
+    "chrome >= 109",
+    "edge >= 109",
+    "firefox >= 102",
+    "safari >= 15.4",
+    "ios_saf >= 15.4"
+  ],
   "scripts": {
     "dev": "next dev",
     "dev:sidecar": "cd crawl4ai-service && venv/bin/python -m uvicorn main:app --port 8000",

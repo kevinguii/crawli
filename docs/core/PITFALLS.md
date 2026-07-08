@@ -121,6 +121,9 @@ n8n 2.8.4's `n8n execute --id` fails with "Missing node to start execution" unle
 **Server deploy `npm install` needs `unzip` (fixed 2026-06-29)**
 Puppeteer's postinstall downloads Chrome and extracts it with `unzip` — if missing, install fails with "Required native binary ... was not found in PATH". Already installed on the production box via `apt-get install -y unzip`; only relevant again on a fresh server. If `npm install` instead fails with "browser folder exists but executable is missing," a prior failed extraction left a stale partial cache — `rm -rf /root/.cache/puppeteer && npm install` to fix (upstream extract-zip bug, see `docs/reference/SERVER_REFERENCE.md`).
 
+**Only one Sentry client entry point: `instrumentation-client.ts` (fixed 2026-07-08)**
+Next.js auto-loads root `instrumentation-client.ts` — it needs no import anywhere. The original Sentry install (commit `5f9f39b`) also left a legacy `sentry.client.config.ts` wired in via `app/sentry-provider.tsx`, so Sentry was initializing twice per pageload with two different, conflicting configs (the stale one ran `tracesSampleRate: 1` + `sendDefaultPii: true` unconditionally, overriding the intended prod value of `0.1`). Confirmed via a real `next build`: `.next/static/chunks/*.js` contained both configs' distinctive strings in one ~204 KB chunk — this is very likely what PageSpeed Insights was flagging as "~188 KiB unused JavaScript" on the homepage. Removed `sentry.client.config.ts` and `app/sentry-provider.tsx`; the conservative settings (env DSN, `tracesSampleRate: 0.1` in prod) now live solely in `instrumentation-client.ts`. If Sentry needs client config again, edit that file only — do not reintroduce `sentry.client.config.ts` or a wrapper component that imports it.
+
 ---
 
 ## Content / marketing
