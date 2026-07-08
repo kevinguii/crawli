@@ -104,7 +104,7 @@ export default function Hero({ heroItems }: { heroItems: CompareHeroItem[] }) {
                 Start sourcing free
               </Link>
               <a
-                href="#hero-compare"
+                href="#compare"
                 className="w-full rounded-xl px-6 py-3 text-center text-sm font-semibold transition-colors sm:w-auto"
                 style={{
                   background: 'var(--surface)',

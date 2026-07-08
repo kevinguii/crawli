@@ -83,7 +83,6 @@ export default function CompareHeroWidget({ items }: { items: CompareHeroItem[] 
 
   return (
     <div
-      id="hero-compare"
       className="w-full rounded-2xl p-5 text-left sm:p-6"
       style={{
         background: 'var(--bg-elevated)',
