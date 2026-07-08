@@ -4,8 +4,8 @@
  *
  *   node scripts/cogs-per-search.mjs
  *
- * Source of truth for the cost inputs is docs/FIRECRAWL_PRICING.md (current model)
- * + docs/SYSTEM_DESIGN.md §6. The tier caps mirror lib/stripe.ts TIER_CAPS and the
+ * Source of truth for the cost inputs is docs/reference/FIRECRAWL_PRICING.md (current model)
+ * + docs/core/SYSTEM_DESIGN.md §6. The tier caps mirror lib/stripe.ts TIER_CAPS and the
  * packs mirror lib/creditPacks.ts — both are duplicated here as plain numbers so
  * this script stays dependency-free (importing lib/stripe.ts would pull in the
  * Stripe SDK). If you change those files, update the constants below in the same
@@ -25,7 +25,7 @@
  * table only for context.
  */
 
-// ── Cost model inputs (docs/FIRECRAWL_PRICING.md current model) ─────────────
+// ── Cost model inputs (docs/reference/FIRECRAWL_PRICING.md current model) ─────────────
 const EBAY_DISCOVERY_CREDITS = 4;      // 4-credit Firecrawl search, every search (eBay only)
 const FALLBACK_PLATFORMS = 2;          // depop + mercari, native-first
 const FALLBACK_RATE = 0.25;            // ~1 in 4 searches misses native render

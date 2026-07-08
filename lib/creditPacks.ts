@@ -8,7 +8,7 @@
  * been paid for.
  *
  * TUNABLE DIAL: `searches` and `priceUsd` below are the shipped numbers.
- * Per the Avenue A cost model (docs/FIRECRAWL_PRICING.md / scripts/cogs-per-search.mjs),
+ * Per the Avenue A cost model (docs/reference/FIRECRAWL_PRICING.md / scripts/cogs-per-search.mjs),
  * marginal cost is ~$0.006 (Standard) to ~$0.019 (Hobby) per search, so every
  * pack price here sits comfortably above worst-case marginal cost. `priceUsd`
  * is DISPLAY ONLY — the actual charge is whatever the Stripe one-time price ID

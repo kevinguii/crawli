@@ -31,7 +31,7 @@ ALL_PLATFORMS = [
     # "realreal"  # Disabled for now
 ]
 
-# Pricing (May 2026) — Firecrawl source of truth: docs/FIRECRAWL_PRICING.md
+# Pricing (May 2026) — Firecrawl source of truth: docs/reference/FIRECRAWL_PRICING.md
 GPT_4O_MINI_INPUT_PRICE = 0.15 / 1_000_000
 GPT_4O_MINI_OUTPUT_PRICE = 0.60 / 1_000_000
 # Hobby plan: $20/mo = 5,000 credits. Standard: $99/mo = 100,000 credits.

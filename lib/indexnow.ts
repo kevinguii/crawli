@@ -5,7 +5,7 @@
 //
 // Protocol: POST JSON { host, key, keyLocation, urlList } to
 // https://api.indexnow.org/indexnow. Up to 10,000 URLs per request. The key
-// must match public/<key>.txt (the ownership proof file). See docs/PITFALLS.md.
+// must match public/<key>.txt (the ownership proof file). See docs/core/PITFALLS.md.
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';

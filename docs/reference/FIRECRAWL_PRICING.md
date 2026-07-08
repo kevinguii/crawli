@@ -119,7 +119,7 @@ crawl4ai (our current scrape engine) has no provider-imposed concurrency cap —
 
 ## What this project uses today
 
-**⚠️ Superseded as of the 2026-06-29 Avenue A migration.** Everything below this point (Brave/hybrid routing, per-search dollar math) describes the **pre-migration** search-provider model and no longer reflects production traffic for 6 of 9 platforms. `lib/firecrawl.ts`'s `PLATFORM_STRATEGY`/`searchPlatform()` (Brave/hybrid) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar's `/scrape-search`, never touching `lib/firecrawl.ts`. See `docs/PLATFORM_STATUS.md` for the current per-platform routing and `docs/SYSTEM_DESIGN.md` §3/§6 for the up-to-date architecture. Kept below for historical reference only — do not use these dollar figures for planning.
+**⚠️ Superseded as of the 2026-06-29 Avenue A migration.** Everything below this point (Brave/hybrid routing, per-search dollar math) describes the **pre-migration** search-provider model and no longer reflects production traffic for 6 of 9 platforms. `lib/firecrawl.ts`'s `PLATFORM_STRATEGY`/`searchPlatform()` (Brave/hybrid) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar's `/scrape-search`, never touching `lib/firecrawl.ts`. See `docs/core/PLATFORM_STATUS.md` for the current per-platform routing and `docs/core/SYSTEM_DESIGN.md` §3/§6 for the up-to-date architecture. Kept below for historical reference only — do not use these dollar figures for planning.
 
 **As of 2026-05-22 (historical):**
 

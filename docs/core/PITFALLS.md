@@ -113,13 +113,13 @@ The page shells (`mx-auto max-w-* px-6` + nav) are all mobile-safe; public pages
 - Only successful, non-empty results land in cache; failures retry next time.
 
 **n8n on the server is the real edit path**
-`n8n MCP` tools are read-only and only see a subset of workflows. All real workflow edits go via SSH. See `docs/SERVER_REFERENCE.md` for the SSH workflow edit pattern. After editing: export → patch → import + `--active=true` → `systemctl restart n8n`.
+`n8n MCP` tools are read-only and only see a subset of workflows. All real workflow edits go via SSH. See `docs/reference/SERVER_REFERENCE.md` for the SSH workflow edit pattern. After editing: export → patch → import + `--active=true` → `systemctl restart n8n`.
 
 **n8n `Run on demand` trigger is required for CLI testing**
 n8n 2.8.4's `n8n execute --id` fails with "Missing node to start execution" unless the workflow also has an `Execute Workflow Trigger` node (not just the schedule trigger). Add one to any workflow you want to CLI-test.
 
 **Server deploy `npm install` needs `unzip` (fixed 2026-06-29)**
-Puppeteer's postinstall downloads Chrome and extracts it with `unzip` — if missing, install fails with "Required native binary ... was not found in PATH". Already installed on the production box via `apt-get install -y unzip`; only relevant again on a fresh server. If `npm install` instead fails with "browser folder exists but executable is missing," a prior failed extraction left a stale partial cache — `rm -rf /root/.cache/puppeteer && npm install` to fix (upstream extract-zip bug, see `docs/SERVER_REFERENCE.md`).
+Puppeteer's postinstall downloads Chrome and extracts it with `unzip` — if missing, install fails with "Required native binary ... was not found in PATH". Already installed on the production box via `apt-get install -y unzip`; only relevant again on a fresh server. If `npm install` instead fails with "browser folder exists but executable is missing," a prior failed extraction left a stale partial cache — `rm -rf /root/.cache/puppeteer && npm install` to fix (upstream extract-zip bug, see `docs/reference/SERVER_REFERENCE.md`).
 
 ---
 
@@ -135,7 +135,7 @@ No `thecrawli.com`, no URL, no "search Crawli", no "download", no "link in bio" 
 Before generating a new carousel batch: run `marketing-visual-diversity` skill to read `check-visual-diversity.js` output. Each batch must differ from the last 1-2 on font pairing AND text placement AND layout. These are in `docs/marketing/visual-history.json`.
 
 **Zernio Threads posts: `content` is NOT optional even when using `threadItems`**
-`docs.zernio.com/platforms/threads` claims top-level `content` is "optional if threadItems provided" — false as of 2026-07-06. A `threadItems`-only request 400s with `"Content is required for selected platforms"`. `content` must always carry the root post; `platformSpecificData.threadItems` holds only *additional* reply post(s) in the chain, not a repeat of the root. See `scripts/post-to-threads.mjs` and `docs/AGENT_PLAN.md` §1H.
+`docs.zernio.com/platforms/threads` claims top-level `content` is "optional if threadItems provided" — false as of 2026-07-06. A `threadItems`-only request 400s with `"Content is required for selected platforms"`. `content` must always carry the root post; `platformSpecificData.threadItems` holds only *additional* reply post(s) in the chain, not a repeat of the root. See `scripts/post-to-threads.mjs` and `docs/planning/AGENT_PLAN.md` §1H.
 
 **Threads' 500-char cap can't be bypassed via Zernio**
 Zernio does not expose Threads' native 10,000-character text-attachment feature at all — don't build anything assuming it can. Longer content means a real Threads reply (a second post), not a workaround.

@@ -15,7 +15,7 @@
 -- (bypasses RLS). Users only ever SELECT/UPDATE/DELETE their own rows, so
 -- there is intentionally no INSERT policy for `authenticated`.
 --
--- Per docs/PITFALLS.md: RLS alone 503s — every new table needs explicit GRANTs
+-- Per docs/core/PITFALLS.md: RLS alone 503s — every new table needs explicit GRANTs
 -- to authenticated + service_role.
 
 -- ---------------------------------------------------------------------------

@@ -6,13 +6,13 @@
 
 **HANDOFF.md is the current-state hub** — what is true right now, what is broken, what is open. It is NOT a changelog.
 
-- Architecture and search internals → [`docs/SYSTEM_DESIGN.md`](docs/SYSTEM_DESIGN.md)
-- Per-platform scraping status → [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md)
-- Gotchas and lessons learned → [`docs/PITFALLS.md`](docs/PITFALLS.md)
-- Server SSH, n8n, deployment → [`docs/SERVER_REFERENCE.md`](docs/SERVER_REFERENCE.md)
-- B2B feature scope and truth → [`docs/B2B_FEATURE_TRUTH.md`](docs/B2B_FEATURE_TRUTH.md)
-- **Growth/marketing gameplan (distribution + conversion roadmap)** → [`docs/GROWTH_PLAN.md`](docs/GROWTH_PLAN.md)
-- Cost model → [`docs/FIRECRAWL_PRICING.md`](docs/FIRECRAWL_PRICING.md) + `node scripts/cogs-per-search.mjs`
+- Architecture and search internals → [`docs/core/SYSTEM_DESIGN.md`](docs/core/SYSTEM_DESIGN.md)
+- Per-platform scraping status → [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md)
+- Gotchas and lessons learned → [`docs/core/PITFALLS.md`](docs/core/PITFALLS.md)
+- Server SSH, n8n, deployment → [`docs/reference/SERVER_REFERENCE.md`](docs/reference/SERVER_REFERENCE.md)
+- B2B feature scope and truth → [`docs/reference/B2B_FEATURE_TRUTH.md`](docs/reference/B2B_FEATURE_TRUTH.md)
+- **Growth/marketing gameplan (distribution + conversion roadmap)** → [`docs/planning/GROWTH_PLAN.md`](docs/planning/GROWTH_PLAN.md)
+- Cost model → [`docs/reference/FIRECRAWL_PRICING.md`](docs/reference/FIRECRAWL_PRICING.md) + `node scripts/cogs-per-search.mjs`
 - Marketing/carousel operation → [`docs/marketing/POSTS_README.md`](docs/marketing/POSTS_README.md)
 
 **Maintenance rule for every session:**
@@ -41,7 +41,7 @@ Note: Mercari and Depop are both native-first with a Firecrawl fallback — they
 | eBay | B | ✅ (intermittent Akamai blocks) |
 | RealReal | — | ❌ disabled (PerimeterX) |
 
-Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md)
+Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md)
 
 **Tier caps (lib/stripe.ts — single source of truth; revised 2026-06-29 to pass through Avenue A cost savings):**
 - Free: 5 searches/wk, 2 alerts, 50 tracked listings, 15 native results/search
@@ -84,14 +84,14 @@ Full per-platform details, selectors, and open issues: [`docs/PLATFORM_STATUS.md
 Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM. User decision: leave as-is. Add "scraped at" timestamp if user complaints arrive.
 
 **Supabase cache tables may not exist in prod yet**
-`search_listings_cache` and `query_expansion_cache` were designed in Session 4 but may not have been applied to the live project. Check via `docs/PLATFORM_STATUS.md` or Supabase MCP `list_tables`. Apply via `apply_migration` with GRANTs.
+`search_listings_cache` and `query_expansion_cache` were designed in Session 4 but may not have been applied to the live project. Check via `docs/core/PLATFORM_STATUS.md` or Supabase MCP `list_tables`. Apply via `apply_migration` with GRANTs.
 
 ---
 
 ## Recent changes
 
 **2026-07-07 — Threads auto-posting live via `scripts/post-to-threads.mjs`**
-- On-demand script (no n8n — CLI `execute` can't take custom trigger input without a wrapper workflow, so a plain script direct to OpenAI + Zernio was simpler for something invoked by hand). Drafts a Threads-voice caption, posts via Zernio, logs to `content_history`. `--draft` flag to preview without posting. Zernio's Threads `content` field is required even when using `threadItems` for a reply chain (their docs say otherwise) — see `docs/PITFALLS.md`. Full writeup: `docs/AGENT_PLAN.md` §1H.
+- On-demand script (no n8n — CLI `execute` can't take custom trigger input without a wrapper workflow, so a plain script direct to OpenAI + Zernio was simpler for something invoked by hand). Drafts a Threads-voice caption, posts via Zernio, logs to `content_history`. `--draft` flag to preview without posting. Zernio's Threads `content` field is required even when using `threadItems` for a reply chain (their docs say otherwise) — see `docs/core/PITFALLS.md`. Full writeup: `docs/planning/AGENT_PLAN.md` §1H.
 - 6 posts live: 2 retitled evergreen posts + 4 compare-anchored `*-resale-price.md` posts. TikTok's Zernio connection was replaced by Threads (free-tier 2-account limit) — `tiktok auto post`/`tiktok performance digest` are stale until TikTok is reconnected on a paid slot.
 - Also fixed 2 zero-click blog post titles (`best-secondhand-marketplaces-for-luxury-items`, `how-to-identify-vintage-band-tee`) flagged by `mcp__gsc__ctr_anomalies` — ruled out cannibalization first, then added a real number/hook to each title+description instead of just keeping them short.
 
@@ -118,12 +118,12 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 - Added `content/blog/*.md` + matching SVG covers for: vintage Rolex Datejust authentication, Hermes Birkin origin story, Harrington/Baracuta G9 history, corduroy fabric history, sukajan jacket history, The RealReal authentication process (grounded in the real 2019 CNBC investigation/shareholder suit, not a later unverified claim), a Poshmark 30-day sales-tracking case study, best platform to sell a vintage Cartier Tank, best platform to sell a Hermes scarf, and a vintage band tee single-stitch dating guide. Several factual claims from the original briefs were corrected against live web search before publishing (e.g. Sotheby's Birkin auction price, Baracuta G9 timeline, Chrono24/1stDibs/Vestiaire fee tiers, RealReal's actual authentication controversy) rather than published as originally drafted. Verified: all 10 frontmatter blocks parse via `gray-matter`, `tsc --noEmit` clean, all 10 `/blog/[slug]` routes 200 and render correctly (cover, FAQ accordion, tables) in a real browser.
 
 **2026-07-01 — Fixed Pinterest auto-pin 403 (stale Zernio accountId)**
-- `pinterest crawli` n8n workflow (`0SoGJUO8UrgPIJY7`) was 403ing with "One or more accounts do not belong to this user". Cause: the Pinterest Zernio connection got recreated on 2026-07-01, which issued a new Zernio account `_id` (`6a454bd69d9472faae43601f`) even though it's the same `thecrawli` Pinterest profile — the workflow's Code node still had the old id (`6a2506e02b2567671a0b8721`) hardcoded. Updated the Code node, reimported + reactivated the workflow, verified with a live test webhook (execution 168, status success). See gotcha in `docs/AGENT_PLAN.md` §1A for how to decrypt the Zernio credential and re-check account IDs if this recurs on other platforms (TikTok, Reddit).
+- `pinterest crawli` n8n workflow (`0SoGJUO8UrgPIJY7`) was 403ing with "One or more accounts do not belong to this user". Cause: the Pinterest Zernio connection got recreated on 2026-07-01, which issued a new Zernio account `_id` (`6a454bd69d9472faae43601f`) even though it's the same `thecrawli` Pinterest profile — the workflow's Code node still had the old id (`6a2506e02b2567671a0b8721`) hardcoded. Updated the Code node, reimported + reactivated the workflow, verified with a live test webhook (execution 168, status success). See gotcha in `docs/planning/AGENT_PLAN.md` §1A for how to decrypt the Zernio credential and re-check account IDs if this recurs on other platforms (TikTok, Reddit).
 
 **2026-07-01 — IndexNow + accurate sitemap lastmod (Bing indexing fixes)**
-- IndexNow now pings Bing/Yandex/Naver on content change. New: `lib/indexnow.ts` (best-effort `submitToIndexNow`, never throws), `app/api/indexnow/submit/route.ts` (Bearer `CRON_SECRET`; no body = resubmit full sitemap), ownership key file `public/421d3af41bc04a0439069010586fcb56.txt` + `INDEXNOW_KEY` env. Wired into `/api/compare/refresh` (submits refreshed slug URLs) and the deploy step (curl in `docs/SERVER_REFERENCE.md`). No effect on Google (Google doesn't use IndexNow).
+- IndexNow now pings Bing/Yandex/Naver on content change. New: `lib/indexnow.ts` (best-effort `submitToIndexNow`, never throws), `app/api/indexnow/submit/route.ts` (Bearer `CRON_SECRET`; no body = resubmit full sitemap), ownership key file `public/421d3af41bc04a0439069010586fcb56.txt` + `INDEXNOW_KEY` env. Wired into `/api/compare/refresh` (submits refreshed slug URLs) and the deploy step (curl in `docs/reference/SERVER_REFERENCE.md`). No effect on Google (Google doesn't use IndexNow).
 - Sitemap `<lastmod>` was always "now" for every URL — now accurate: posts use `updated||date`, compare pages use real `scraped_at` (new `getCompareLastUpdated()` in `lib/compare.ts`), static pages use last git commit (`lib/gitLastModified.ts`). Verified 30 distinct lastmod values in `/sitemap.xml`. Added `export const revalidate = 3600` to `app/sitemap.ts` — without it Next.js prerenders the sitemap as fully static and freezes lastmod (incl. compare `scraped_at`) until the next deploy; 1h matches `/compare/[slug]`'s own ISR interval.
-- www→non-www 301 now live on nginx (`5.78.187.97`) — `https://www.thecrawli.com/*` 301s to the bare domain (was serving 200 duplicate content). Dedicated www server block + main block scoped to `thecrawli.com`; port-80 www redirect collapsed to a single hop. Backup at `/root/crawli.nginx.bak-*`. See `docs/SERVER_REFERENCE.md` "nginx: www → non-www redirect".
+- www→non-www 301 now live on nginx (`5.78.187.97`) — `https://www.thecrawli.com/*` 301s to the bare domain (was serving 200 duplicate content). Dedicated www server block + main block scoped to `thecrawli.com`; port-80 www redirect collapsed to a single hop. Backup at `/root/crawli.nginx.bak-*`. See `docs/reference/SERVER_REFERENCE.md` "nginx: www → non-www redirect".
 - Baseline security headers added (`next.config.ts` `headers()`): HSTS (no preload), `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`. Site had none before. No CSP yet — needs per-directive scoping against Stripe checkout/Sentry tunnel/GA4 before adding, don't add a blanket policy.
 - Corrected a stale SERVER_REFERENCE.md claim: Cloudflare is an **active proxy** (confirmed via `cf-ray`/`server: cloudflare` response headers), not just DNS — it terminates client TLS at the edge in addition to nginx's own Certbot cert for the Cloudflare→origin hop (Full/strict mode).
 
@@ -137,13 +137,13 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 - Stripe idempotency migration applied to prod (previous session).
 
 **2026-06-30 — Growth gameplan doc + SEO/AEO entity signals**
-Wrote `docs/GROWTH_PLAN.md` — the full distribution/conversion roadmap (data diagnosis, phased plan, owner checklist) so any session can continue the marketing push. Shipped Phase 1 SEO code: `public/llms.txt`, Organization `sameAs`/`alternateName`/`foundingDate` in `StructuredData.tsx`, and social links in landing `Footer.tsx`. Next planned: Phase 2 public `/compare/[slug]` page (not built). On-page SEO was already strong; brand-rank gap is off-page (age/backlinks/entity).
+Wrote `docs/planning/GROWTH_PLAN.md` — the full distribution/conversion roadmap (data diagnosis, phased plan, owner checklist) so any session can continue the marketing push. Shipped Phase 1 SEO code: `public/llms.txt`, Organization `sameAs`/`alternateName`/`foundingDate` in `StructuredData.tsx`, and social links in landing `Footer.tsx`. Next planned: Phase 2 public `/compare/[slug]` page (not built). On-page SEO was already strong; brand-rank gap is off-page (age/backlinks/entity).
 
 **2026-06-30 — Stripe webhook idempotency + local billing test**
-Added `stripe_webhook_events` ledger so a re-delivered `checkout.session.completed` can't double-grant credits (claim-with-rollback in `app/api/webhooks/stripe/route.ts`). Confirmed the credit-grant path is correct end-to-end via new `scripts/test-credit-webhook.mjs` (0→100 on grant, duplicate skipped, no double-grant). Root cause of "credits never granted in dev" was just that Stripe can't reach localhost without `stripe listen` — code was fine. See `docs/PITFALLS.md` → Payments.
+Added `stripe_webhook_events` ledger so a re-delivered `checkout.session.completed` can't double-grant credits (claim-with-rollback in `app/api/webhooks/stripe/route.ts`). Confirmed the credit-grant path is correct end-to-end via new `scripts/test-credit-webhook.mjs` (0→100 on grant, duplicate skipped, no double-grant). Root cause of "credits never granted in dev" was just that Stripe can't reach localhost without `stripe listen` — code was fine. See `docs/core/PITFALLS.md` → Payments.
 
 **2026-06-30 — Weekly cadence option for search alerts**
-Alerts could only check daily (`cadence_hours` hardcoded to `24` end-to-end). Added `168` (weekly) as a second valid value — floating 7-day interval, still anchored to 9 AM in the owner's timezone, no day-of-week picker. Fixed `nextAnchoredRunAt` in `lib/alertSchedule.ts`, which previously ignored `cadenceHours` entirely (always found "next 9 AM," which only worked for daily by coincidence) — see `docs/PITFALLS.md`. `CreateAlertModal` now has a real Daily/Weekly toggle and the edit flow actually persists cadence changes (it silently dropped `cadence_hours` from the PATCH body before). No schema migration, no cron change.
+Alerts could only check daily (`cadence_hours` hardcoded to `24` end-to-end). Added `168` (weekly) as a second valid value — floating 7-day interval, still anchored to 9 AM in the owner's timezone, no day-of-week picker. Fixed `nextAnchoredRunAt` in `lib/alertSchedule.ts`, which previously ignored `cadenceHours` entirely (always found "next 9 AM," which only worked for daily by coincidence) — see `docs/core/PITFALLS.md`. `CreateAlertModal` now has a real Daily/Weekly toggle and the edit flow actually persists cadence changes (it silently dropped `cadence_hours` from the PATCH body before). No schema migration, no cron change.
 
 **2026-06-30 — Landing page reorder: proof before CTA, redundancy cut**
 - Removed `HowItWorks` (fully redundant with `BentoFeatures` hero cards); anchor `#how-it-works` now lives on `BentoFeatures`
@@ -154,11 +154,11 @@ Alerts could only check daily (`cadence_hours` hardcoded to `24` end-to-end). Ad
 `AlertMatchesModal` now fetches `GET /api/saved-searches/[id]/history` (one row per `notifications` entry, up to 365) alongside the existing `/matches` query and groups matches by `notification_id` under a date header (e.g. "Jun 30, 2026 · 11 new"). Days whose `new_count > 0` but whose matches have since been pruned (beyond the 100/alert cap) show "No longer available" instead of silently disappearing. The 100-match cap itself is unchanged — this only adds visibility into run history, which was already being recorded but never surfaced.
 
 **2026-06-30 — Poshmark/StockX grid images fixed (lazy-load scroll)**
-Cards below the fold on both grids were missing/wrong images (Poshmark: "No image"; StockX: gray-X placeholder graphic) because both lazy-swap images via IntersectionObserver and the scraper captured HTML before scrolling. Added a scroll script (`js_code`, runs after `wait_for`) in `main.py` for both platforms; extractors also fall back to `data-src` (Poshmark) and null out the StockX placeholder URL if it's still unswapped. See `docs/PITFALLS.md` → "Poshmark/StockX grid cards lazy-load images".
+Cards below the fold on both grids were missing/wrong images (Poshmark: "No image"; StockX: gray-X placeholder graphic) because both lazy-swap images via IntersectionObserver and the scraper captured HTML before scrolling. Added a scroll script (`js_code`, runs after `wait_for`) in `main.py` for both platforms; extractors also fall back to `data-src` (Poshmark) and null out the StockX placeholder URL if it's still unswapped. See `docs/core/PITFALLS.md` → "Poshmark/StockX grid cards lazy-load images".
 
 **2026-06-30 — Mobile overflow fixes (settings, profile, alerts)**
 - Three real horizontal-overflow culprits on protected pages at ≤375px (all public pages were already clean): settings `Row` didn't stack so the long email + fixed `w-48` quota bars pushed off-screen; profile `RecentSearches` platform list collided with the timestamp; alerts `SavedSearchCard` squeezed the title/platforms into a sliver beside 3 fixed action buttons.
-- Fixes: settings `Row` now `flex-col … sm:flex-row` (value wraps under label on mobile) + email `break-all`; `RecentSearches` platform list `hidden sm:inline` + `truncate max-w-[45%]`; `SavedSearchCard` actions drop to their own row on mobile (`flex-col … sm:flex-row`, actions `flex-wrap`). Desktop layout unchanged. Verified at 360/375px and 1280px via a throwaway harness rendering the real components with worst-case data (long email, all 9 platforms). See `docs/PITFALLS.md` → "Mobile horizontal overflow".
+- Fixes: settings `Row` now `flex-col … sm:flex-row` (value wraps under label on mobile) + email `break-all`; `RecentSearches` platform list `hidden sm:inline` + `truncate max-w-[45%]`; `SavedSearchCard` actions drop to their own row on mobile (`flex-col … sm:flex-row`, actions `flex-wrap`). Desktop layout unchanged. Verified at 360/375px and 1280px via a throwaway harness rendering the real components with worst-case data (long email, all 9 platforms). See `docs/core/PITFALLS.md` → "Mobile horizontal overflow".
 - Also: search-history row actions ("Search again" / delete) were hover-only (`opacity-0 group-hover:opacity-100`) and thus invisible on touch devices — now always visible at every width (dropped the now-dead `group` + opacity classes).
 
 **2026-06-30 — Alerts recurrence fixed + edit + in-app notifications**
@@ -181,12 +181,12 @@ Cards below the fold on both grids were missing/wrong images (Poshmark: "No imag
 **2026-06-29 — Cost model corrected for Mercari native-first**
 - SYSTEM_DESIGN §6, FIRECRAWL_PRICING (current model), and `scripts/cogs-per-search.mjs` corrected: per-search ~$0.006 (Firecrawl Standard) / ~$0.019 (Hobby), down from the stale ~$0.021 (which priced Mercari as always-Firecrawl). eBay is now the only material per-search cost.
 - cogs script rewritten to the Avenue A model (eBay 4-credit discovery + ~1-in-4 fallback on Depop/Mercari; OpenAI residual $0.001); it was still modelling 8 Firecrawl platforms + $0.019 LLM.
-- FIRECRAWL_PRICING.md Brave/hybrid section remains historical.
+- docs/reference/FIRECRAWL_PRICING.md Brave/hybrid section remains historical.
 
 **2026-06-29 — Deploy fix: `unzip` required on server + npm install/build order corrected**
-- Fixed deploy order in `docs/SERVER_REFERENCE.md`: `npm install` must run before `npm run build` (was reversed)
+- Fixed deploy order in `docs/reference/SERVER_REFERENCE.md`: `npm install` must run before `npm run build` (was reversed)
 - Server was missing `unzip`, breaking Puppeteer's Chrome download during `npm install`; installed via apt
-- See `docs/PITFALLS.md` Infrastructure section for the stale-cache symptom and fix
+- See `docs/core/PITFALLS.md` Infrastructure section for the stale-cache symptom and fix
 
 **2026-06-29 — Session 4: Avenue A migration + alias matching**
 - All 8 native platforms now on Avenue A (vestiaire, vinted, poshmark, stockx extractors added to `search_page_extractors.py`)
@@ -198,7 +198,7 @@ Cards below the fold on both grids were missing/wrong images (Poshmark: "No imag
 **2026-06-29 — B2B Session 3: landing page reseller revamp**
 - HowItWorks, BentoFeatures, Hero, faqData, PricingCards rewritten for reseller audience
 - Positioning: sourcing intelligence (comp pricing, flip margin, alerts) — NOT cross-listing
-- Source of truth for feature claims: `docs/B2B_FEATURE_TRUTH.md`
+- Source of truth for feature claims: `docs/reference/B2B_FEATURE_TRUTH.md`
 
 **2026-06-29 — n8n content brief pivot**
 - `moMVEnr5L6kGgJTC` (DeepSeek brief) patched with reseller framing + obfuscate-commercial-intent rule

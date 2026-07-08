@@ -9,16 +9,16 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 | File | What's in it | Read when |
 |---|---|---|
 | `HANDOFF.md` | Current platform state, open issues, recent changes, env setup | Every session |
-| `docs/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase |
-| `docs/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
-| `docs/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
+| `docs/core/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase |
+| `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
+| `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
 
 **Supporting docs:**
-- `docs/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
-- `docs/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
-- `docs/FIRECRAWL_PRICING.md` — Firecrawl credit costs
+- `docs/reference/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
+- `docs/reference/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
+- `docs/reference/FIRECRAWL_PRICING.md` — Firecrawl credit costs
 - `docs/marketing/POSTS_README.md` — carousel batch operation
-- `docs/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
+- `docs/planning/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
 
 ## Available MCP tools
 
@@ -49,7 +49,7 @@ These MCP servers are connected in this project. Use them instead of manual API 
 
 ## Critical rules
 
-**1. Never hallucinate or assume.** Read files before editing. Verify paths and function names. For n8n and API integrations: never assume field names, output paths, or API response shapes. Always check `docs/PITFALLS.md` first — many wrong paths are already documented. The OpenAI n8n node output is `output[0].content[0].text`, not `message.content`.
+**1. Never hallucinate or assume.** Read files before editing. Verify paths and function names. For n8n and API integrations: never assume field names, output paths, or API response shapes. Always check `docs/core/PITFALLS.md` first — many wrong paths are already documented. The OpenAI n8n node output is `output[0].content[0].text`, not `message.content`.
 
 **2. Test rigorously — every time.**
 - `npm run dev:all` to start Next.js + Python sidecar
@@ -58,9 +58,9 @@ These MCP servers are connected in this project. Use them instead of manual API 
 - Do not declare done based on type-checks alone
 
 **3. Update docs after every session — the right doc, not just HANDOFF.**
-- Did platform extraction change? → update `docs/PLATFORM_STATUS.md`
-- Did you hit a new gotcha or fix one? → update `docs/PITFALLS.md`
-- Did the architecture or data flow change? → update `docs/SYSTEM_DESIGN.md`
+- Did platform extraction change? → update `docs/core/PLATFORM_STATUS.md`
+- Did you hit a new gotcha or fix one? → update `docs/core/PITFALLS.md`
+- Did the architecture or data flow change? → update `docs/core/SYSTEM_DESIGN.md`
 - Always update `HANDOFF.md` "Current state" and "Recent changes" sections
 
 **What NOT to do:** Don't append a big "Latest change (date): ..." block to HANDOFF.md. The new system is current-state only. Put details in the relevant doc, put a one-line bullet in "Recent changes".
@@ -68,7 +68,7 @@ These MCP servers are connected in this project. Use them instead of manual API 
 **4. Do NOT modify:**
 - `/api/` endpoints unless explicitly told (streaming NDJSON protocol is fragile)
 - `/lib/` utilities without understanding the full call chain
-- `crawl4ai-service/` Python code without reading PLATFORM_STATUS.md first
+- `crawl4ai-service/` Python code without reading docs/core/PLATFORM_STATUS.md first
 
 ## Project context
 
@@ -96,9 +96,9 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 
 **TikTok-only.** Default export: 4:5 (1080×1350). Keep headline/CTA out of bottom ~20% / right ~15% (TikTok UI). Cover = gpt-image-2 always.
 
-**Obfuscate commercial intent:** No `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere. Crawli teased only on final slide as subtle aside, worded differently each post, present in only some posts. Goal: comment inquiries, not clicks. See `docs/B2B_FEATURE_TRUTH.md` and live n8n brief `moMVEnr5L6kGgJTC`.
+**Obfuscate commercial intent:** No `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere. Crawli teased only on final slide as subtle aside, worded differently each post, present in only some posts. Goal: comment inquiries, not clicks. See `docs/reference/B2B_FEATURE_TRUTH.md` and live n8n brief `moMVEnr5L6kGgJTC`.
 
-## Common gotchas (quick reference — full list in docs/PITFALLS.md)
+## Common gotchas (quick reference — full list in docs/core/PITFALLS.md)
 
 - **Streaming endpoints buffer in dev** — test `/api/search` with `curl -N`
 - **CSS theming** — `[data-theme="dark"]` on `<html>`, not Tailwind `dark:`
@@ -149,4 +149,4 @@ For medium tasks (3-4 hours of estimated work), always follow this workflow:
 - [ ] Behavior matches task description exactly
 - [ ] Relevant doc updated (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN)
 - [ ] HANDOFF.md "Current state" + "Recent changes" updated
-- [ ] Ports 3000 and 8000 freed before finishing (see `docs/CLEANUP.md`)
+- [ ] Ports 3000 and 8000 freed before finishing (see `docs/reference/CLEANUP.md`)

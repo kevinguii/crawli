@@ -649,7 +649,7 @@ EditProfileModal:
 
 ## 6. Cost Map
 
-> **Updated 2026-06-29 for the Avenue A migration.** The Brave/hybrid `SEARCH_PROVIDER` routing described in older revisions of this section (and still detailed historically in `docs/FIRECRAWL_PRICING.md`) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar, never calling `lib/firecrawl.ts`'s `searchPlatform()`. That file's `PLATFORM_STRATEGY` only still executes for eBay (the one non-native platform). Figures below reflect actual current routing, verified against `crawl4ai-service/main.py` and `lib/types.ts`.
+> **Updated 2026-06-29 for the Avenue A migration.** The Brave/hybrid `SEARCH_PROVIDER` routing described in older revisions of this section (and still detailed historically in `docs/reference/FIRECRAWL_PRICING.md`) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar, never calling `lib/firecrawl.ts`'s `searchPlatform()`. That file's `PLATFORM_STRATEGY` only still executes for eBay (the one non-native platform). Figures below reflect actual current routing, verified against `crawl4ai-service/main.py` and `lib/types.ts`.
 
 ### Per-search cost breakdown
 
@@ -679,7 +679,7 @@ TOTAL PER SEARCH (typical, all 9 platforms selected):
   Total:               ~$0.006/search (Standard) · ~$0.019/search (Hobby)
 
 This is a >10× reduction from the pre-Avenue-A hybrid model (~$0.073-0.074/search,
-see FIRECRAWL_PRICING.md's historical section). Removing Mercari's probe
+see docs/reference/FIRECRAWL_PRICING.md's historical section). Removing Mercari's probe
 (native-first, like Depop) on 2026-06-29 cut the last always-on Firecrawl
 platform to occasional-fallback, leaving eBay as the only material per-search cost.
 ```

@@ -38,7 +38,7 @@ docs/marketing/
 5. Run: `node export-slides.js --batch=YYYY-MM-DD`
 6. Add a row to this Batch Index
 7. Append each post's `color_hex`/`color_name`/`typography`/`font_pairing`/`layout`/`text_placement`/`imagery`/`style_movement` to `visual-history.json` (required, all fields — this is what step 0 checks for the next batch; omitting `font_pairing`/`text_placement`/`layout` triggers a `!!! BLOCK` and blinds the diversity check)
-8. Mark the posted ideas `posted = true` in Supabase `content_history` so the content brief never re-suggests them — see "After posting a social batch" in `docs/SERVER_REFERENCE.md`. Use each post's `#topic-key` from the brief email.
+8. Mark the posted ideas `posted = true` in Supabase `content_history` so the content brief never re-suggests them — see "After posting a social batch" in `docs/reference/SERVER_REFERENCE.md`. Use each post's `#topic-key` from the brief email.
 
 ---
 

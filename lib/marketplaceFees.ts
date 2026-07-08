@@ -9,11 +9,11 @@
  *    net profit depends only on the seller side; buyer-side fees are surfaced
  *    for context (they shape how high you can list before buyers balk).
  *  - Every platform carries a `lastVerified` date. When a rate changes, update
- *    the value AND the date in the same edit, and note the source in B2B_FEATURE_TRUTH.md.
+ *    the value AND the date in the same edit, and note the source in docs/reference/B2B_FEATURE_TRUTH.md.
  *
  * Rates below are US-market, default (non-store / Level-1 / non-boosted) seller
  * status, verified via vendor help pages + fee trackers on 2026-06-28. Scope and
- * caveats live in each entry's `notes`. See docs/B2B_FEATURE_TRUTH.md for sources.
+ * caveats live in each entry's `notes`. See docs/reference/B2B_FEATURE_TRUTH.md for sources.
  */
 
 import type { PlatformKey } from '@/lib/types';

@@ -11,7 +11,7 @@
 -- deletes its claim so Stripe's retry can re-process (claim-with-rollback).
 --
 -- Written/read by the Stripe webhook via the service-role admin client only.
--- Per docs/PITFALLS.md: every new table needs explicit GRANTs. Only service_role
+-- Per docs/core/PITFALLS.md: every new table needs explicit GRANTs. Only service_role
 -- touches this one, so there is no `authenticated` grant and no RLS policy.
 
 create table if not exists public.stripe_webhook_events (

@@ -20,7 +20,7 @@ so no downstream n8n node changes. Workflow variant: `docs/workflows/reddit-moni
 
 > **ToS note:** Reddit's free tier is officially non-commercial. This is a
 > low-volume, human-in-the-loop marketing monitor; you (not Zernio) now hold the
-> OAuth app, so you own that exposure. See `docs/AGENT_PLAN.md` §1B.
+> OAuth app, so you own that exposure. See `docs/planning/AGENT_PLAN.md` §1B.
 
 ## Endpoints
 

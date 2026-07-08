@@ -76,7 +76,7 @@ Both grids lazy-load card images via IntersectionObserver: Poshmark ships `data-
 
 ## Adding a new platform
 
-Follow the Avenue A survey playbook in `docs/SYSTEM_DESIGN.md §Path A`. Key checklist:
+Follow the Avenue A survey playbook in `docs/core/SYSTEM_DESIGN.md §Path A`. Key checklist:
 1. Probe the search page HTML — is it SSR or CSR? Does it have JSON-LD array, `__NEXT_DATA__`, or DOM cards?
 2. Add extractor to `crawl4ai-service/search_page_extractors.py` + `wait_for` in `main.py`
 3. Add to `SEARCH_PAGE_PLATFORMS` in **both** `crawl4ai-service/search_page_extractors.py` AND `lib/scraper.ts`

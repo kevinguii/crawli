@@ -76,7 +76,7 @@ giving the product a way to *collect money*.
   `docs/migrations/stripe-webhook-idempotency.sql`.
 - **Root cause of "credits never granted in dev":** Stripe can't reach
   `localhost` without `stripe listen`. Code was always correct. See
-  `docs/PITFALLS.md` → Payments for the two local-test methods.
+  `docs/core/PITFALLS.md` → Payments for the two local-test methods.
 - **✅ Prod Stripe one-time prices provisioned** ($10/$25/$60) and
   `STRIPE_PRICE_PACK_SMALL/MEDIUM/LARGE` set in `/opt/crawli/.env` (confirmed
   2026-06-30). Local `.env` has matching test price IDs.
@@ -137,8 +137,8 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
   how many slugs to seed; refresh cadence; exact data shown; whether sample
   cards deep-link to the live listings; affiliate links (none today).
 - **Guardrail:** do not touch the `/api/search` NDJSON streaming protocol or
-  `crawl4ai-service/` internals — read `docs/SYSTEM_DESIGN.md` +
-  `docs/PLATFORM_STATUS.md` first.
+  `crawl4ai-service/` internals — read `docs/core/SYSTEM_DESIGN.md` +
+  `docs/core/PLATFORM_STATUS.md` first.
 
 ### Phase 3 — Re-aim + restart content ⏳ NOT STARTED (after Phase 2)
 - Stop the obfuscation experiment (data killed it: 0 comments/55 posts).
@@ -160,7 +160,7 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
   The only thing being "built" (Phase 2 page) is marketing infrastructure.
 - **No tier/pricing optimization** until there's a paying base to optimize.
 - **No cross-listing, authentication, or escrow** — not what Crawli is (see
-  `docs/B2B_FEATURE_TRUTH.md`). Don't let reddit scam-pain data pull the product
+  `docs/reference/B2B_FEATURE_TRUTH.md`). Don't let reddit scam-pain data pull the product
   off-thesis.
 
 ## 5. Owner action checklist (the human-only items, in priority order)
@@ -178,7 +178,7 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 - Footer socials: `app/components/landing/Footer.tsx`
 - Data: Supabase project `peyqxfijdrziqfjkxjsn`; tables `profiles`, `search_history`, `saves`, `saved_searches`, `tiktok_performance`, `reddit_research`
 - GSC: property `https://thecrawli.com/` (MCP `mcp__gsc__*`)
-- Deploy: `cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next` (see `docs/SERVER_REFERENCE.md`)
+- Deploy: `cd /opt/crawli && git pull && npm install && npm run build && systemctl restart crawli-next` (see `docs/reference/SERVER_REFERENCE.md`)
 
 ## 7. Status snapshot
 | Phase | What | Status |
