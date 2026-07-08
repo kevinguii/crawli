@@ -27,9 +27,9 @@ type Saved = {
 
 const SAVED: Saved[] = [
   { platform: 'grailed', title: 'Rick Owens DRKSHDW Geobasket', price: '$320' },
-  { platform: 'depop', title: 'Carhartt Detroit Jacket — Hamilton Brown', price: '$118', oldPrice: '$140', drop: '16%' },
+  { platform: 'depop', title: 'Carhartt Detroit Jacket, Hamilton Brown', price: '$118', oldPrice: '$140', drop: '16%' },
   { platform: 'vestiaire', title: 'Margiela 5AC Mini Bag', price: '$680' },
-  { platform: 'stockx', title: 'Air Jordan 1 Mocha — 10', price: '$268', oldPrice: '$295', drop: '9%' },
+  { platform: 'stockx', title: 'Air Jordan 1 Mocha, size 10', price: '$268', oldPrice: '$295', drop: '9%' },
 ];
 
 function AlertsPanel() {
