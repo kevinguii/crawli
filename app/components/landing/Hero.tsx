@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import FlipCalculator from './FlipCalculator';
+import CompareHeroWidget from './CompareHeroWidget';
+import type { CompareHeroItem } from '@/lib/compare';
 
 const PILLARS = [
   {
@@ -11,14 +12,6 @@ const PILLARS = [
     ),
   },
   {
-    label: 'Net flip profit after fees',
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" />
-      </svg>
-    ),
-  },
-  {
     label: 'Alerts the moment deals land',
     icon: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -26,9 +19,17 @@ const PILLARS = [
       </svg>
     ),
   },
+  {
+    label: 'Net flip profit after fees',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" />
+      </svg>
+    ),
+  },
 ];
 
-export default function Hero() {
+export default function Hero({ heroItems = [] }: { heroItems?: CompareHeroItem[] } = {}) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -68,7 +69,7 @@ export default function Hero() {
                   backgroundClip: 'text',
                 }}
               >
-                Know your margin before you buy.
+                See the real price, across every platform.
               </span>
             </h1>
 
@@ -103,7 +104,7 @@ export default function Hero() {
                 Start sourcing free
               </Link>
               <a
-                href="#compare"
+                href="#hero-compare"
                 className="w-full rounded-xl px-6 py-3 text-center text-sm font-semibold transition-colors sm:w-auto"
                 style={{
                   background: 'var(--surface)',
@@ -111,7 +112,7 @@ export default function Hero() {
                   color: 'var(--text)',
                 }}
               >
-                See live prices ↓
+                See it live ↓
               </a>
             </div>
 
@@ -120,9 +121,9 @@ export default function Hero() {
             </p>
           </div>
 
-          {/* Right: live calculator */}
+          {/* Right: live cross-platform comparison */}
           <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
-            <FlipCalculator />
+            <CompareHeroWidget items={heroItems} />
           </div>
         </div>
       </div>
