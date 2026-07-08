@@ -29,7 +29,7 @@ const PILLARS = [
   },
 ];
 
-export default function Hero({ heroItems = [] }: { heroItems?: CompareHeroItem[] } = {}) {
+export default function Hero({ heroItems = [] }: { heroItems: CompareHeroItem[] }) {
   return (
     <section className="relative overflow-hidden">
       <div
