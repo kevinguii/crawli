@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/fear-of-god-essentials-hoodie-resale-price-cover.svg"
 tags: ["guides", "hoodies", "price-comparison", "fear-of-god"]
+compareSlug: "fear-of-god-essentials-hoodie"
 faq:
   - question: "How much is a used Fear of God Essentials hoodie worth?"
     answer: "As of July 2026, used Essentials hoodie resale floors range from about $16 on Depop to $54 on Grailed. Mercari sits near $25, Vinted around $30, Poshmark and StockX both close to $43 to $44. Average sale prices span roughly $35 on Depop to $114 on Poshmark, with color and season driving most of the difference."
@@ -24,14 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$16 | ~$35 |
-| Mercari | ~$25 | ~$78 |
-| Vinted | ~$30 | ~$80 |
-| Poshmark | ~$43 | ~$114 |
-| StockX | ~$44 | ~$70 |
-| Grailed | ~$54 | ~$62 |
+<!-- LIVE_PRICE_TABLE -->
 
 Vestiaire currently shows just one listing at $86, too thin a sample to treat as a reliable floor for that platform.
 

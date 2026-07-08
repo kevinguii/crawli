@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/nike-air-force-1-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "nike"]
+compareSlug: "nike-air-force-1"
 faq:
   - question: "How much does a used Nike Air Force 1 cost?"
     answer: "As of July 2026, used Nike Air Force 1 resale floors vary from about $9 on Depop up to $65 on StockX. Vinted and Poshmark sit in the $27 to $32 range, Vestiaire and Grailed run $35 to $40, and Mercari's floor is around $42. Average sale prices span roughly $16 on Depop to $124 on StockX, where authenticated and rarer colorways push the number up."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$9 | ~$16 |
-| Vinted | ~$27 | ~$65 |
-| Poshmark | ~$32 | ~$63 |
-| Vestiaire | ~$35 | ~$73 |
-| Grailed | ~$40 | ~$92 |
-| Mercari | ~$42 | ~$54 |
-| StockX | ~$65 | ~$124 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **7x spread** between the cheapest and most expensive floor on the same shoe. Because the Air Force 1 never goes out of production, this gap is remarkably stable compared to trend-driven sneakers.
 

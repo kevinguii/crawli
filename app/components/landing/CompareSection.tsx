@@ -19,9 +19,11 @@ function teaserLabel(min: number | undefined): string {
 export default function CompareSection({
   items,
   teasers,
+  priceGuideSlugs,
 }: {
   items: CompareItem[];
   teasers: Map<string, number>;
+  priceGuideSlugs: Map<string, string>;
 }) {
   if (items.length === 0) return null;
   const shown = items.slice(0, 12);
@@ -47,13 +49,22 @@ export default function CompareSection({
           {shown.map((item) => {
             const color = (item.category && CATEGORY_COLORS[item.category]) || 'var(--accent)';
             const min = teasers.get(item.slug);
+            const blogSlug = priceGuideSlugs.get(item.slug);
             return (
-              <Link
+              <div
                 key={item.slug}
-                href={`/compare/${item.slug}`}
-                className="compare-card group flex flex-col gap-3 rounded-2xl p-4 transition-all hover:scale-[1.02]"
+                className="compare-card group relative flex flex-col gap-3 rounded-2xl p-4 transition-all hover:scale-[1.02]"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
+                {/* Stretched link: the whole card navigates to /compare/[slug]
+                    except the "Read analysis" link below, which sits above it
+                    (higher z-index) and captures its own clicks. */}
+                <Link
+                  href={`/compare/${item.slug}`}
+                  className="absolute inset-0 z-0 rounded-2xl"
+                  aria-label={`See live prices for ${item.name}`}
+                />
+
                 {item.category && (
                   <span
                     className="self-start rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
@@ -76,7 +87,17 @@ export default function CompareSection({
                 >
                   {teaserLabel(min)}
                 </span>
-              </Link>
+
+                {blogSlug && (
+                  <Link
+                    href={`/blog/${blogSlug}`}
+                    className="relative z-10 self-start text-[11px] font-medium underline-offset-2 hover:underline"
+                    style={{ color: 'var(--text-dim)' }}
+                  >
+                    Read analysis →
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>

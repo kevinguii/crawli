@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/vintage-band-tee-resale-price-cover.svg"
 tags: ["guides", "vintage", "price-comparison", "band-tees"]
+compareSlug: "vintage-band-tee"
 faq:
   - question: "How much is a vintage band tee worth?"
     answer: "As of July 2026, vintage band tee resale floors range from about $4 on Vinted to $30 on Grailed. Depop sits near $7, Poshmark around $19, and Mercari about $25. Average sale prices swing much wider, from roughly $11 on Depop to $68 on Mercari, since rare tour prints and specific bands sell for far more than a common, mass-produced logo tee."
@@ -24,13 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Vinted | ~$4 | ~$16 |
-| Depop | ~$7 | ~$11 |
-| Poshmark | ~$19 | ~$55 |
-| Mercari | ~$25 | ~$68 |
-| Grailed | ~$30 | ~$38 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly an **8x spread** between the cheapest and most expensive floor on comparable listings. Mercari's average of $68, far above its own $25 floor, tells you this platform's search results mix common reprints with genuinely rare tour tees, which is exactly the gap a buyer who checks construction and tag details can exploit.
 

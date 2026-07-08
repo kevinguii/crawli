@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/ralph-lauren-polo-shirt-resale-price-cover.svg"
 tags: ["guides", "prep", "price-comparison", "ralph-lauren"]
+compareSlug: "ralph-lauren-polo-shirt"
 faq:
   - question: "How much is a used Ralph Lauren Polo shirt worth?"
     answer: "As of July 2026, used Ralph Lauren Polo shirt resale floors range from about $7 on Vinted to $112 on StockX. Mercari, Depop, ThredUp, and Poshmark sit close together between $8 and $11, Grailed is around $17, and Vestiaire runs about $41. Average sale prices span roughly $20 on Depop to $178 on StockX, where rare vintage and collaboration polos sell alongside common current-season pieces."
@@ -24,16 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Vinted | ~$7 | ~$25 |
-| Mercari | ~$8 | ~$24 |
-| Depop | ~$10 | ~$20 |
-| ThredUp | ~$10 | ~$34 |
-| Poshmark | ~$11 | ~$29 |
-| Grailed | ~$17 | ~$38 |
-| Vestiaire | ~$41 | ~$107 |
-| StockX | ~$112 | ~$178 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **16x spread** between the cheapest common shirt and the priciest rare piece. Five platforms sit within a tight $7 to $11 band for everyday polos, which tells you that band is the real market rate for a common shirt, and anything charging far above it should be a specific, verifiable rare piece.
 

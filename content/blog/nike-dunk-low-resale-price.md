@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/nike-dunk-low-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "nike"]
+compareSlug: "nike-dunk-low"
 faq:
   - question: "How much does a used Nike Dunk Low cost?"
     answer: "As of July 2026, used Nike Dunk Low resale floors span from about $7 on Grailed up to $46 on Vestiaire. Vinted and Depop sit near $12 to $15, Mercari is around $17, StockX's authenticated floor is about $30, and Poshmark runs closer to $40. Average sale prices vary far more widely, from about $24 on Depop to over $200 on Vinted and Vestiaire, where rare colorways sell alongside common ones."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Grailed | ~$7 | ~$86 |
-| Vinted | ~$12 | ~$158 |
-| Depop | ~$15 | ~$24 |
-| Mercari | ~$17 | ~$63 |
-| StockX | ~$30 | ~$84 |
-| Poshmark | ~$40 | ~$132 |
-| Vestiaire | ~$46 | ~$209 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **7x spread** between the lowest and highest platform floor, and the average prices show an even wider range: Vinted's average sits near $158 even though its floor is one of the cheapest, which tells you the platform carries both bargain listings and pricier rare colorways side by side.
 

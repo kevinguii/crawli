@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/adidas-samba-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "adidas"]
+compareSlug: "adidas-samba"
 faq:
   - question: "How much do used Adidas Sambas sell for?"
     answer: "As of July 2026, used Adidas Samba resale prices vary widely by platform. Peer-to-peer marketplaces like Depop and Mercari carry floors around $16 to $17, Vinted and ThredUp sit near $20 to $22, and StockX's authenticated floor runs about $38. Vestiaire's floor is the highest of the group at roughly $64. Average sale prices range from about $35 on Depop to $195 on Grailed, where rare colorways skew the number up."
@@ -26,16 +27,7 @@ The Samba's popularity is exactly why its price is this inconsistent. A shoe tha
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$16 | ~$35 |
-| Mercari | ~$17 | ~$58 |
-| Vinted | ~$20 | ~$52 |
-| ThredUp | ~$22 | ~$44 |
-| StockX | ~$38 | ~$65 |
-| Grailed | ~$45 | ~$195 |
-| Poshmark | ~$55 | ~$61 |
-| Vestiaire | ~$64 | ~$100 |
+<!-- LIVE_PRICE_TABLE -->
 
 That is roughly a **4x spread** between the cheapest and most expensive floor on the same core Samba. Grailed's average is skewed high by rare collaborations selling well above the everyday colorway, which is worth knowing before you assume the whole platform runs expensive.
 

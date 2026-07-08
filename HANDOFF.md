@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-08
 
 ## How to use this file
 
@@ -77,18 +77,27 @@ Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STAT
 **eBay Akamai blocks (intermittent)**
 ~1 in 5 eBay listing scrapes returns HTTP 403. Structured extractor logs `[structured] crawl failed`, LLM fallback runs on partial content. Not worth fixing now. Options if it worsens: residential proxy, eBay Browse API (OAuth required), paid unlocker.
 
-**`_DRIVER_DEAD_PATTERNS` missing one error string**
-`"Target page, context or browser has been closed"` is not in `main.py`'s `_DRIVER_DEAD_PATTERNS`. If Playwright context dies from antibot, the pool member stays broken instead of auto-recovering. Fix: add that string to the tuple. Small, safe change.
-
 **StockX SSR vs live price drift**
 Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM. User decision: leave as-is. Add "scraped at" timestamp if user complaints arrive.
-
-**Supabase cache tables may not exist in prod yet**
-`search_listings_cache` and `query_expansion_cache` were designed in Session 4 but may not have been applied to the live project. Check via `docs/core/PLATFORM_STATUS.md` or Supabase MCP `list_tables`. Apply via `apply_migration` with GRANTs.
 
 ---
 
 ## Recent changes
+
+**2026-07-08 — Cross-links between /compare/[slug] and its price-guide blog post**
+- New `getPriceGuideSlugMap()` in `lib/blog.ts` (compareSlug → blog post slug, from the same `PostMeta.compareSlug` field the Price Guides tab uses). `/compare/[slug]` now shows a "Read the full price analysis →" link under the hero when a price-guide post exists for that item. Landing page `CompareSection` cards got the same treatment on the other direction: each card's `<Link>` wrapper became a `<div>` with an absolutely-positioned stretched link to `/compare/[slug]` (`z-0`) plus a small separate "Read analysis →" link to the blog post (`z-10`, sits above the stretched link so it captures its own clicks — standard stretched-link-with-sublink pattern, not nested anchors). Only 12 of the 15 compare items show as cards on the landing page (`shown = items.slice(0, 12)`, pre-existing, unrelated to this change) — the other 3 still get the reverse link on their own `/compare/[slug]` page.
+
+**2026-07-08 — Price Guides tab on /blog**
+- `/blog` now has a two-tab segmented control ("All Posts" 89 / "Price Guides" 15), reusing `AlertsTabsClient`'s exact pill+badge pattern in a new `app/components/blog/BlogTabsClient.tsx`. Both lists are server-rendered up front (no client fetch); the client component only toggles `display:block/none`, so both sets of post links stay in the initial HTML regardless of which tab is active — no crawlability loss either way. "All Posts" is the default tab (unchanged behavior/links). Split is driven by `PostMeta.compareSlug` (exclusive to the 15 posts — the older `price-comparison` tag isn't a clean signal, 2 unrelated posts also carry it). Each of the 15 also gets a small "Live pricing" badge on its card in both tabs, so it's recognizable without switching tabs.
+
+**2026-07-07 — Live-pricing embed on the 15 compare-anchored blog posts**
+- `content/blog/*-resale-price.md`'s hand-written, build-time-frozen price tables are replaced with a live `LivePriceTable` component (`app/components/blog/LivePriceTable.tsx`) that reads real-time data via the same `getComparePageData()` `/compare/[slug]` uses. Each post's table is spliced in via an `<!-- LIVE_PRICE_TABLE -->` marker in the markdown, which `marked` passes through untouched; `app/blog/[slug]/page.tsx` splits `post.html` on it and renders the live component in between. New optional `compareSlug` frontmatter field (`lib/blog.ts`) maps each post to its compare item — 3 of the 15 diverge from their filename (`jordan-1-resale-price.md`→`jordan-1-retro-high`, `levis-501-resale-price.md`→`levis-501-jeans`, `north-face-nuptse-resale-price.md`→`north-face-nuptse-jacket`).
+- **Found mid-implementation:** `/blog/[slug]` (and `/compare/[slug]`) both build as `ƒ` fully dynamic routes, not `●` static/ISR — `export const revalidate` is inert on both today because both call `supabase.auth.getUser()` (a dynamic API), not yet root-caused beyond that. Fine for freshness here since `getComparePageData()` now runs fresh on every request rather than on an hourly cache.
+- FAQ text/JSON-LD on these posts stays a manual snapshot, intentionally not live, to avoid a visible-text/structured-data mismatch.
+
+**2026-07-08 — Doc staleness sweep (HANDOFF, PLATFORM_STATUS, SYSTEM_DESIGN)**
+- Triggered by the ISR discovery above. Verified every checkable claim in HANDOFF.md's open issues + current-state block, PLATFORM_STATUS.md, and SYSTEM_DESIGN.md against the actual code (not memory/assumption). Fixed: the `/compare/[slug]` "ISR, cached daily" claim here and in `app/sitemap.ts`'s own comment (both corrected to reflect the `ƒ` dynamic reality above); SYSTEM_DESIGN.md §6 `nativeResultsCap` said `10/40/80`, code (`lib/stripe.ts` `TIER_CAPS`) says `15/60/100`; SYSTEM_DESIGN.md's eBay cost line said "~$0.016 Standard" (that's actually the Hobby figure — Standard is ~$0.005, matching the doc's own later table). Removed 2 fully-resolved open issues: `_DRIVER_DEAD_PATTERNS` missing-string gap (string is already in `main.py`'s tuple — checked) and "Supabase cache tables may not exist in prod" (both `search_listings_cache`/`query_expansion_cache` confirmed present via Supabase MCP). Everything else checked (TIER_CAPS values, protected-app-shell files, landing page section order, platform counts/lists in SYSTEM_DESIGN.md) matched code exactly.
+- **Not fixed, flagged instead:** "Recent changes" below has ~20 dated entries back to 2026-06-28, well past this file's own stated "last 3-5 sessions only" retention rule. Didn't prune it — these entries are still factually accurate, just numerous, and deciding what history is safe to drop is an editorial call, not a correctness fix.
 
 **2026-07-07 — Threads auto-posting live via `scripts/post-to-threads.mjs`**
 - On-demand script (no n8n — CLI `execute` can't take custom trigger input without a wrapper workflow, so a plain script direct to OpenAI + Zernio was simpler for something invoked by hand). Drafts a Threads-voice caption, posts via Zernio, logs to `content_history`. `--draft` flag to preview without posting. Zernio's Threads `content` field is required even when using `threadItems` for a reply chain (their docs say otherwise) — see `docs/core/PITFALLS.md`. Full writeup: `docs/planning/AGENT_PLAN.md` §1H.
@@ -122,7 +131,7 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 **2026-07-01 — IndexNow + accurate sitemap lastmod (Bing indexing fixes)**
 - IndexNow now pings Bing/Yandex/Naver on content change. New: `lib/indexnow.ts` (best-effort `submitToIndexNow`, never throws), `app/api/indexnow/submit/route.ts` (Bearer `CRON_SECRET`; no body = resubmit full sitemap), ownership key file `public/421d3af41bc04a0439069010586fcb56.txt` + `INDEXNOW_KEY` env. Wired into `/api/compare/refresh` (submits refreshed slug URLs) and the deploy step (curl in `docs/reference/SERVER_REFERENCE.md`). No effect on Google (Google doesn't use IndexNow).
-- Sitemap `<lastmod>` was always "now" for every URL — now accurate: posts use `updated||date`, compare pages use real `scraped_at` (new `getCompareLastUpdated()` in `lib/compare.ts`), static pages use last git commit (`lib/gitLastModified.ts`). Verified 30 distinct lastmod values in `/sitemap.xml`. Added `export const revalidate = 3600` to `app/sitemap.ts` — without it Next.js prerenders the sitemap as fully static and freezes lastmod (incl. compare `scraped_at`) until the next deploy; 1h matches `/compare/[slug]`'s own ISR interval.
+- Sitemap `<lastmod>` was always "now" for every URL — now accurate: posts use `updated||date`, compare pages use real `scraped_at` (new `getCompareLastUpdated()` in `lib/compare.ts`), static pages use last git commit (`lib/gitLastModified.ts`). Verified 30 distinct lastmod values in `/sitemap.xml`. Added `export const revalidate = 3600` to `app/sitemap.ts` — without it Next.js prerenders the sitemap as fully static and freezes lastmod (incl. compare `scraped_at`) until the next deploy. Unlike `/compare/[slug]` and `/blog/[slug]` (both forced fully dynamic by `supabase.auth.getUser()`, see 2026-07-07 entry), the sitemap route has no dynamic API calls, so this `revalidate` is real ISR — 1h just comfortably beats the daily 6am compare-refresh cron.
 - www→non-www 301 now live on nginx (`5.78.187.97`) — `https://www.thecrawli.com/*` 301s to the bare domain (was serving 200 duplicate content). Dedicated www server block + main block scoped to `thecrawli.com`; port-80 www redirect collapsed to a single hop. Backup at `/root/crawli.nginx.bak-*`. See `docs/reference/SERVER_REFERENCE.md` "nginx: www → non-www redirect".
 - Baseline security headers added (`next.config.ts` `headers()`): HSTS (no preload), `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`. Site had none before. No CSP yet — needs per-directive scoping against Stripe checkout/Sentry tunnel/GA4 before adding, don't add a blanket policy.
 - Corrected a stale SERVER_REFERENCE.md claim: Cloudflare is an **active proxy** (confirmed via `cf-ray`/`server: cloudflare` response headers), not just DNS — it terminates client TLS at the edge in addition to nginx's own Certbot cert for the Cloudflare→origin hop (Full/strict mode).
@@ -131,7 +140,7 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 - Replaced both fake search elements with two real, no-login, interactive proofs: a live flip-margin calculator in the hero (`FlipCalculator.tsx`, real `netFlipProfit` math) and the promoted real compare slugs (`CompareSection` now data-driven w/ "from $X" teasers via new `getCompareTeasers()`). Deleted `SearchMock.tsx` + `mockSearches.ts`. Hero is now a two-column layout (copy left, calculator right). BentoFeatures elevates **tracked listings** into a co-equal hero card alongside margin + alerts; SavesMock reframed to price-drop tracking and moved up. Below-fold sections fade in via `Reveal.tsx` (reduced-motion aware). Compare `/[slug]` page: removed the eBay "not cached" card, breadcrumb now bridges to `/#compare`. Verified: `tsc` clean; no horizontal overflow at 375/768/1280; light + dark correct. Design spec: `docs/superpowers/specs/2026-06-30-landing-reseller-revamp-design.md`.
 
 **2026-06-30 — Phase 2 compare pages + GEO fixes**
-- 15 public `/compare/[slug]` pages (ISR, cached daily, no auth required) — `app/compare/[slug]/page.tsx`. Scrape cron `0 6 * * *` wired on server (`/var/log/crawli-compare.log`). Nginx `proxy_read_timeout 300s` added for `/api/compare/refresh`. First snapshot run triggered 2026-06-30. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.
+- 15 public `/compare/[slug]` pages, no auth required — `app/compare/[slug]/page.tsx`. Has `export const revalidate = 3600` but builds as `ƒ` fully dynamic (see 2026-07-07 entry below) — data is fetched fresh per request, not from an hourly ISR cache. Scrape cron `0 6 * * *` wired on server (`/var/log/crawli-compare.log`). Nginx `proxy_read_timeout 300s` added for `/api/compare/refresh`. First snapshot run triggered 2026-06-30. DB tables: `compare_items` (slug registry) + `compare_snapshots` (cached stats + listings). Both applied to prod.
 - GEO: `public/.well-known/ai.txt`, `public/ai/summary.json`, `/ai/faq.json`, `/ai/service.json`. RSS feed at `/feed.xml` + `<link rel="alternate">` in layout `<head>`.
 - Footer: brand-gradient top border, bigger padding + icons (22px), platform brand-color hover glow, Blog link removed.
 - Stripe idempotency migration applied to prod (previous session).

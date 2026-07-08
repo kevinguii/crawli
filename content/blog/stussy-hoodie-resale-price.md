@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/stussy-hoodie-resale-price-cover.svg"
 tags: ["guides", "hoodies", "price-comparison", "stussy"]
+compareSlug: "stussy-hoodie"
 faq:
   - question: "How much is a used Stussy hoodie worth?"
     answer: "As of July 2026, used Stussy hoodie resale floors range from about $20 on Vinted to $94 on Vestiaire. Depop sits near $22, Mercari and Poshmark around $30 to $32, Grailed about $40, and StockX's authenticated floor is roughly $88. Average sale prices vary widely, from about $33 on Depop to $233 on Vestiaire, driven by which specific print or collaboration is listed."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Vinted | ~$20 | ~$38 |
-| Depop | ~$22 | ~$33 |
-| Mercari | ~$30 | ~$95 |
-| Poshmark | ~$32 | ~$85 |
-| Grailed | ~$40 | ~$125 |
-| StockX | ~$88 | ~$130 |
-| Vestiaire | ~$94 | ~$233 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **4x spread** between the cheapest and most expensive floor. Vestiaire's average of $233, far above its own $94 floor, signals a market where common logo hoodies and rare collaboration pieces are both listed side by side.
 

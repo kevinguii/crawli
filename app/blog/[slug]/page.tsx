@@ -6,14 +6,26 @@ import LandingNav from '@/app/components/landing/LandingNav';
 import Footer from '@/app/components/landing/Footer';
 import CollapsibleFAQ from '@/app/components/blog/CollapsibleFAQ';
 import { getAllSlugs, getPost } from '@/lib/blog';
+import { getComparePageData } from '@/lib/compare';
+import LivePriceTable from '@/app/components/blog/LivePriceTable';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
+
+// `revalidate` has no effect while this route calls supabase.auth.getUser()
+// below (a dynamic API), which forces server-rendering on every request —
+// so live price data is already fetched fresh per-request, not on an hourly
+// cache. Kept for consistency with /compare/[slug] and in case the auth
+// check is ever made conditional, at which point this would start governing
+// ISR freshness as intended.
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// Pre-render every post at build time — these are fully static pages.
+// generateStaticParams still lists every slug (used for route generation /
+// build-time validation), but supabase.auth.getUser() below forces this
+// route to render dynamically per-request rather than serve prerendered HTML.
 export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
 }
@@ -58,6 +70,10 @@ export default async function BlogPost({ params }: Props) {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) notFound();
+
+  const compareData = post.compareSlug ? await getComparePageData(post.compareSlug) : null;
+  const htmlParts = post.compareSlug ? post.html.split('<!-- LIVE_PRICE_TABLE -->') : [post.html];
+  const hasLiveSlot = post.compareSlug !== undefined && htmlParts.length === 2;
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
@@ -164,10 +180,28 @@ export default async function BlogPost({ params }: Props) {
           </div>
         )}
 
-        <div
-          className="blog-content"
-          dangerouslySetInnerHTML={{ __html: post.html }}
-        />
+        {hasLiveSlot ? (
+          <>
+            <div className="blog-content" dangerouslySetInnerHTML={{ __html: htmlParts[0] }} />
+            <LivePriceTable
+              compareSlug={post.compareSlug!}
+              itemName={compareData?.item.name ?? post.title}
+              snapshots={compareData?.snapshots ?? []}
+            />
+            <div className="blog-content" dangerouslySetInnerHTML={{ __html: htmlParts[1] }} />
+          </>
+        ) : post.compareSlug ? (
+          <>
+            <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
+            <LivePriceTable
+              compareSlug={post.compareSlug}
+              itemName={compareData?.item.name ?? post.title}
+              snapshots={compareData?.snapshots ?? []}
+            />
+          </>
+        ) : (
+          <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
+        )}
 
         {/* On-page FAQ — collapsible accordion. Mirrors the FAQPage JSON-LD above.
             Drives Google's People Also Ask and gives AI answer engines clean Q&A. */}

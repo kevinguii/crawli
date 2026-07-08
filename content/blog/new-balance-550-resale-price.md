@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/new-balance-550-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "new-balance"]
+compareSlug: "new-balance-550"
 faq:
   - question: "How much is a used New Balance 550 worth?"
     answer: "As of July 2026, used New Balance 550 resale prices vary sharply by platform. Depop carries the lowest floor around $9, Vinted sits near $18, Mercari and Grailed run $33 to $38, Vestiaire and Poshmark are in the $43 to $50 range, StockX's authenticated floor is about $54, and ThredUp's floor, on limited listings, runs over $100. Average sale prices span roughly $22 on Depop to $104 on ThredUp."
@@ -24,16 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$9 | ~$22 |
-| Vinted | ~$18 | ~$45 |
-| Mercari | ~$33 | ~$65 |
-| Grailed | ~$38 | ~$91 |
-| Vestiaire | ~$43 | ~$100 |
-| Poshmark | ~$50 | ~$73 |
-| StockX | ~$54 | ~$73 |
-| ThredUp | ~$101* | ~$104 |
+<!-- LIVE_PRICE_TABLE -->
 
 \*ThredUp's floor reflects a small number of listings and should be read as a data point, not a broad market average.
 

@@ -2,7 +2,7 @@
 
 > **Maintenance rule:** update this table any time a platform's extraction method, viability, or known issues change. This is the single source of truth for per-platform state. Do not duplicate it in HANDOFF.md.
 
-Last verified: 2026-06-30
+Last verified: 2026-07-08
 
 ## Search extraction (per-platform)
 
@@ -68,11 +68,6 @@ Color is a **sort boost** (never a hard drop). Structured color reorders results
 
 **Poshmark/StockX grid images were missing/wrong below the fold (fixed 2026-06-30)**
 Both grids lazy-load card images via IntersectionObserver: Poshmark ships `data-src` (no `src`) until a card scrolls into view; StockX ships `src` pointing at its own gray-X `Product-Placeholder-Default-*.jpg` until the real image swaps in. `wait_for` only waits for the first card to exist, so anything below the fold was captured mid-lazy-load — Poshmark showed "No image", StockX showed the gray-X graphic. Fixed in `main.py`'s `_LAZY_IMAGE_SCROLL_JS` (`js_code`, runs after `wait_for`/before HTML capture): scrolls the page in viewport steps, capped at 20 steps/~6s, before the DOM is captured. Defense-in-depth in `search_page_extractors.py`: Poshmark falls back to `data-src` if `src` is still empty; StockX nulls out `imageUrl` if it still matches the placeholder filename (some StockX listings genuinely have no real photo — verified live, this is correct behavior, not a residual bug).
-
-**`_DRIVER_DEAD_PATTERNS` gap (semi-open)**
-- `"Target page, context or browser has been closed"` is NOT in the pattern list in `main.py`.
-- Consequence: if Playwright context is killed by antibot, the pool member stays broken instead of auto-recovering.
-- Fix: add that string to `_DRIVER_DEAD_PATTERNS`. Not yet done.
 
 ## Adding a new platform
 

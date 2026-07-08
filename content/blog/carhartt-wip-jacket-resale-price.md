@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/carhartt-wip-jacket-resale-price-cover.svg"
 tags: ["guides", "outerwear", "price-comparison", "carhartt"]
+compareSlug: "carhartt-wip-jacket"
 faq:
   - question: "How much is a used Carhartt WIP jacket worth?"
     answer: "As of July 2026, used Carhartt WIP jacket resale floors range from about $26 on Depop to $162 on StockX. Vinted, Poshmark, and Mercari sit close together near $50 to $53, Grailed runs about $71, and Vestiaire is near $104. Average sale prices span roughly $73 on Depop to $373 on StockX, where rare collaboration jackets sell alongside common workwear pieces."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$26 | ~$73 |
-| Vinted | ~$50 | ~$137 |
-| Poshmark | ~$50 | ~$161 |
-| Mercari | ~$53 | ~$137 |
-| Grailed | ~$71 | ~$117 |
-| Vestiaire | ~$104 | ~$175 |
-| StockX | ~$162 | ~$373 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **6x spread** between the cheapest and most expensive floor. StockX's average of $373 well above its own floor of $162 signals a market where common workwear and rare collaboration pieces are both listed side by side, and the collaboration pieces are pulling the number way up.
 

@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Footer from '@/app/components/landing/Footer';
-import { getAllPosts } from '@/lib/blog';
+import BlogTabsClient from '@/app/components/blog/BlogTabsClient';
+import { getAllPosts, type PostMeta } from '@/lib/blog';
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -21,12 +22,96 @@ function formatDate(iso: string): string {
   });
 }
 
+function PostCard({ post }: { post: PostMeta }) {
+  return (
+    <li>
+      <Link
+        href={`/blog/${post.slug}`}
+        className="bento-card block overflow-hidden rounded-xl"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr]">
+          {/* Image column */}
+          <div
+            className="flex items-center justify-center"
+            style={{ background: '#ffffff', minHeight: '200px' }}
+          >
+            {post.cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.cover}
+                alt={post.title}
+                className="h-full w-full object-contain p-6"
+                style={{ maxHeight: '200px' }}
+                loading="lazy"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src="/icon.svg" alt={post.title} className="h-12 w-12 opacity-20" />
+            )}
+          </div>
+
+          {/* Content column */}
+          <div className="flex flex-col justify-between gap-4 p-6 sm:p-8">
+            <div className="flex flex-col gap-3">
+              {post.compareSlug && (
+                <span
+                  className="self-start rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  style={{
+                    background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+                    color: 'var(--accent-text)',
+                  }}
+                >
+                  Live pricing
+                </span>
+              )}
+              <h2
+                className="leading-snug tracking-tight"
+                style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 600 }}
+              >
+                {post.title}
+              </h2>
+              {post.description && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: '1.6' }}>
+                  {post.description}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/icon.svg"
+                alt="Crawli"
+                className="h-7 w-7 rounded-full"
+                style={{ background: 'var(--border)', padding: '3px' }}
+              />
+              <div className="flex flex-col leading-none">
+                <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                  Kevin Gui
+                </span>
+                <span className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  {formatDate(post.date)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
 export default async function BlogIndex() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   const isAuthenticated = !error && !!data.user;
 
   const posts = getAllPosts();
+  const priceGuidePosts = posts.filter((post) => post.compareSlug !== undefined);
 
   return (
     <main className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
@@ -50,77 +135,24 @@ export default async function BlogIndex() {
             No posts yet — check back soon.
           </p>
         ) : (
-          <ul className="flex flex-col gap-6">
-            {posts.map((post) => (
-              <li key={post.slug}>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="bento-card block overflow-hidden rounded-xl"
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr]">
-                    {/* Image column */}
-                    <div
-                      className="flex items-center justify-center"
-                      style={{ background: '#ffffff', minHeight: '200px' }}
-                    >
-                      {post.cover ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={post.cover}
-                          alt={post.title}
-                          className="h-full w-full object-contain p-6"
-                          style={{ maxHeight: '200px' }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/icon.svg" alt={post.title} className="h-12 w-12 opacity-20" />
-                      )}
-                    </div>
-
-                    {/* Content column */}
-                    <div className="flex flex-col justify-between gap-4 p-6 sm:p-8">
-                      <div className="flex flex-col gap-3">
-                        <h2
-                          className="leading-snug tracking-tight"
-                          style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 600 }}
-                        >
-                          {post.title}
-                        </h2>
-                        {post.description && (
-                          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: '1.6' }}>
-                            {post.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/icon.svg"
-                          alt="Crawli"
-                          className="h-7 w-7 rounded-full"
-                          style={{ background: 'var(--border)', padding: '3px' }}
-                        />
-                        <div className="flex flex-col leading-none">
-                          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                            Kevin Gui
-                          </span>
-                          <span className="mt-1 text-xs" style={{ color: 'var(--text-dim)' }}>
-                            {formatDate(post.date)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <BlogTabsClient
+            allCount={posts.length}
+            priceGuidesCount={priceGuidePosts.length}
+            allPosts={
+              <ul className="flex flex-col gap-6">
+                {posts.map((post) => (
+                  <PostCard key={post.slug} post={post} />
+                ))}
+              </ul>
+            }
+            priceGuides={
+              <ul className="flex flex-col gap-6">
+                {priceGuidePosts.map((post) => (
+                  <PostCard key={post.slug} post={post} />
+                ))}
+              </ul>
+            }
+          />
         )}
       </div>
 

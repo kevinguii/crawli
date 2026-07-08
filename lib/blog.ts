@@ -27,6 +27,7 @@ export interface PostMeta {
   cover?: string;
   tags: string[];
   faq: BlogFaqItem[];
+  compareSlug?: string; // maps this post to a live /compare/[slug] item, drives LivePriceTable
 }
 
 export interface Post extends PostMeta {
@@ -72,6 +73,7 @@ function parse(slug: string): Post | null {
     cover: data.cover ?? undefined,
     tags: Array.isArray(data.tags) ? data.tags : [],
     faq,
+    compareSlug: typeof data.compareSlug === 'string' ? data.compareSlug : undefined,
     html,
   };
 }
@@ -88,6 +90,18 @@ export function getAllPosts(): PostMeta[] {
 /** Single post by slug, or null if it doesn't exist. */
 export function getPost(slug: string): Post | null {
   return parse(slug);
+}
+
+/** Maps a compare item's slug (e.g. "jordan-1-retro-high") to the blog post
+ * slug of its price-guide article, for posts that set `compareSlug` in
+ * frontmatter. Used to link /compare/[slug] and the landing page's compare
+ * cards to their written analysis. */
+export function getPriceGuideSlugMap(): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const post of getAllPosts()) {
+    if (post.compareSlug) map.set(post.compareSlug, post.slug);
+  }
+  return map;
 }
 
 /** Slugs for generateStaticParams. */

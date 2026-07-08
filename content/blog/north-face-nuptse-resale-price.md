@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/nuptse-resale-price-cover.svg"
 tags: ["guides", "outerwear", "price-comparison", "north-face"]
+compareSlug: "north-face-nuptse-jacket"
 faq:
   - question: "How much is a North Face Nuptse worth used?"
     answer: "As of July 2026, used North Face Nuptse 700 jackets have a wide resale range depending on platform and condition. Peer-to-peer marketplaces like Mercari and Vinted carry listings starting around $31 to $45, Poshmark and Grailed floors run about $104 to $117, and StockX's authenticated floor sits near $154. Average sale prices range from roughly $91 on Depop to $340 on StockX. The same jacket routinely sells for 3 to 5 times more on one platform than another."
@@ -26,14 +27,7 @@ The Nuptse is one of the most-searched puffers in resale, and that popularity is
 
 Here is the lowest listing per platform from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Mercari | ~$31 | ~$135 |
-| Vinted | ~$45 | ~$119 |
-| Depop | ~$54 | ~$91 |
-| Poshmark | ~$104 | ~$209 |
-| Grailed | ~$117 | ~$209 |
-| StockX | ~$154 | ~$340 |
+<!-- LIVE_PRICE_TABLE -->
 
 That is a roughly **5x spread on the same jacket**. A buyer shopping only Poshmark or Grailed is paying three to four times the Mercari floor for what is, in condition-adjusted terms, the same Nuptse.
 

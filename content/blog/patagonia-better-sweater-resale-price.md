@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/patagonia-better-sweater-resale-price-cover.svg"
 tags: ["guides", "outerwear", "price-comparison", "patagonia"]
+compareSlug: "patagonia-better-sweater"
 faq:
   - question: "How much is a used Patagonia Better Sweater worth?"
     answer: "As of July 2026, used Patagonia Better Sweater resale floors range from about $9 on Grailed to $67 on Vestiaire. Vinted sits near $10, Depop around $16, Mercari and ThredUp close together near $20, and Poshmark is about $29. Average sale prices span roughly $27 on Vinted to $96 on Vestiaire, with color and specific fleece pattern moving the number."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Grailed | ~$9 | ~$48 |
-| Vinted | ~$10 | ~$33 |
-| Depop | ~$16 | ~$27 |
-| Mercari | ~$20 | ~$33 |
-| ThredUp | ~$20 | ~$37 |
-| Poshmark | ~$29 | ~$49 |
-| Vestiaire | ~$67 | ~$96 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **7x spread** between the cheapest and most expensive floor. Because the Better Sweater is produced continuously in high volume, this spread comes largely from platform buyer expectations rather than scarcity, unlike streetwear pieces where a single rare drop explains most of the gap.
 

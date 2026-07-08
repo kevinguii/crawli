@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/jordan-1-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "jordan"]
+compareSlug: "jordan-1-retro-high"
 faq:
   - question: "How much does a used Jordan 1 Retro High cost?"
     answer: "As of July 2026, used Jordan 1 Retro High resale floors vary widely by platform: peer-to-peer sites like Depop and ThredUp start around $11 to $32, StockX's authenticated floor sits near $41, and Grailed runs about $85 at the low end. Average sale prices range from roughly $38 on Depop to $147 on Vestiaire. Condition, colorway, and whether the box is included all move the number, but the platform you shop is often the single biggest factor."
@@ -26,16 +27,7 @@ StockX conditions everyone to think of one number as *the* Jordan 1 price. It is
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$11 | ~$38 |
-| ThredUp | ~$32 | ~$66 |
-| Mercari | ~$36 | ~$99 |
-| StockX | ~$41 | ~$116 |
-| Vinted | ~$45 | ~$89 |
-| Poshmark | ~$50 | ~$104 |
-| Vestiaire | ~$69 | ~$147 |
-| Grailed | ~$85 | ~$120 |
+<!-- LIVE_PRICE_TABLE -->
 
 That is an **8x spread between the cheapest and most expensive floor** on the same silhouette. StockX says $41. Depop has one for $11. Same shoe, same day.
 

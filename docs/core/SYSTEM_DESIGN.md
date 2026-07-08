@@ -254,7 +254,7 @@ searchPlatform(platform, query)   [eBay only]
   → ~5–10 clean listing URLs
   → scrape each (Step 3)
 
-Cost (eBay): ~4 Firecrawl credits/search Standard (~$0.016 Standard). Firecrawl is the only avenue for eBay.
+Cost (eBay): ~4 Firecrawl credits/search — ~$0.005 Standard / ~$0.017 Hobby (see §6 Cost Map). Firecrawl is the only avenue for eBay.
 ```
 
 **Path A — Search-page extraction (all 8 native platforms, as of 2026-06-29):**
@@ -654,7 +654,7 @@ EditProfileModal:
 ### Per-search cost breakdown
 
 ```
-9 platforms, each capped at the user's tier nativeResultsCap (10/40/80, per lib/stripe.ts)
+9 platforms, each capped at the user's tier nativeResultsCap (15/60/100, per lib/stripe.ts TIER_CAPS)
 
 Native sidecar render only (0 third-party cost):
   Grailed, ThredUp, Vestiaire, Vinted, Poshmark, StockX  → $0 × 6 = $0

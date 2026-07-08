@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getAllCompareItems, getCompareTeasers } from '@/lib/compare';
+import { getPriceGuideSlugMap } from '@/lib/blog';
 import LandingNav from '@/app/components/landing/LandingNav';
 import Hero from '@/app/components/landing/Hero';
 import CompareSection from '@/app/components/landing/CompareSection';
@@ -23,13 +24,14 @@ export default async function LandingPage() {
     getCompareTeasers(),
   ]);
   const isAuthenticated = !error && !!data.user;
+  const priceGuideSlugs = getPriceGuideSlugMap();
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <StructuredData />
       <LandingNav isAuthenticated={isAuthenticated} />
       <Hero />
-      <Reveal><CompareSection items={items} teasers={teasers} /></Reveal>
+      <Reveal><CompareSection items={items} teasers={teasers} priceGuideSlugs={priceGuideSlugs} /></Reveal>
       <Reveal><PlatformLogos /></Reveal>
       <Reveal><BentoFeatures /></Reveal>
       <Reveal><AlertsMock /></Reveal>

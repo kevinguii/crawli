@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/supreme-box-logo-hoodie-resale-price-cover.svg"
 tags: ["guides", "hoodies", "price-comparison", "supreme"]
+compareSlug: "supreme-box-logo-hoodie"
 faq:
   - question: "How much is a used Supreme Box Logo hoodie worth?"
     answer: "As of July 2026, Supreme Box Logo hoodie floors range from about $40 on Mercari to $169 on StockX for common colorways, but the ceiling is far higher. Poshmark alone shows listings from $88 up to $1,878 for the same category, since rare seasons and exclusive colorways trade at collector prices that dwarf a common-color box logo."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Mercari | ~$40 | ~$153 |
-| Vinted | ~$50 | ~$127 |
-| Depop | ~$69 | ~$97 |
-| Poshmark | ~$88 | ~$366 |
-| Vestiaire | ~$120 | ~$491 |
-| Grailed | ~$121 | ~$276 |
-| StockX | ~$169 | ~$263 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **4x spread** between the cheapest and most expensive common-colorway floor. But the more important number is what's happening inside a single platform: Poshmark's own listings run from $88 to $1,878, a 21x spread within one site, because rare seasons and everyday colorways sit in the same search results.
 

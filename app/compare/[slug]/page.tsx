@@ -10,6 +10,7 @@ import {
 } from '@/lib/compare';
 import { PLATFORM_NAMES } from '@/lib/types';
 import type { Listing } from '@/lib/types';
+import { getPriceGuideSlugMap } from '@/lib/blog';
 
 export const revalidate = 3600; // ISR: rebuild hourly from DB
 
@@ -194,6 +195,7 @@ export default async function ComparePage({ params }: Props) {
   if (!data) notFound();
 
   const { item, snapshots } = data;
+  const blogSlug = getPriceGuideSlugMap().get(item.slug);
 
   // Build a quick lookup map
   const snapshotByPlatform = new Map<string, CompareSnapshot>(
@@ -286,6 +288,15 @@ export default async function ComparePage({ params }: Props) {
               <> · <span style={{ color: 'var(--text-dim)' }}>Updated {hoursAgo(latestScrape)}</span></>
             )}
           </p>
+          {blogSlug && (
+            <Link
+              href={`/blog/${blogSlug}`}
+              className="mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline"
+              style={{ color: 'var(--accent-text)' }}
+            >
+              Read the full price analysis →
+            </Link>
+          )}
         </div>
 
         {/* Platform grid */}

@@ -5,6 +5,7 @@ date: "2026-07-06"
 updated: "2026-07-06"
 cover: "/blog/images/bape-shark-hoodie-resale-price-cover.svg"
 tags: ["guides", "hoodies", "price-comparison", "bape"]
+compareSlug: "bape-shark-hoodie"
 faq:
   - question: "How much is a used BAPE Shark Hoodie worth?"
     answer: "As of July 2026, used BAPE Shark Hoodie resale floors range from about $41 on Depop to $233 on StockX. Mercari sits near $49, Poshmark around $75, Vinted about $135, and Grailed and Vestiaire run $166 to $174. Average sale prices vary even more, from roughly $72 on Depop to $389 on Vestiaire, driven heavily by colorway and camo pattern rarity."
@@ -24,15 +25,7 @@ faq:
 
 Lowest listing per platform, from Crawli's cross-marketplace data, July 2026:
 
-| Platform | Lowest listing | Typical (avg) |
-|---|---|---|
-| Depop | ~$41 | ~$72 |
-| Mercari | ~$49 | ~$89 |
-| Poshmark | ~$75 | ~$256 |
-| Vinted | ~$135 | ~$190 |
-| Grailed | ~$166 | ~$270 |
-| Vestiaire | ~$174 | ~$389 |
-| StockX | ~$233 | ~$318 |
+<!-- LIVE_PRICE_TABLE -->
 
 That's roughly a **6x spread** between the cheapest and most expensive floor on the same hoodie. Poshmark's average of $256 against a $75 floor shows the same pattern seen across platforms: common colorways sit at the floor while rare camo patterns pull the average far higher.
 
