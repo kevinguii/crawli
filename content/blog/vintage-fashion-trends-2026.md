@@ -50,4 +50,6 @@ One vintage statement piece styled with current basics is also the easiest way t
 
 One category not yet showing up in this search volume but worth watching: [1970s athletic and club wear](/blog/1970s-athletic-club-wear-trend) is thin-inventory, still underpriced, and sits a step behind the trends above rather than competing with them.
 
+Zooming out past any single revived decade, the bigger 2026 story may be a quieter one: the [quiet luxury shift toward permanent wardrobes](/blog/quiet-luxury-resale-trend-2026), where buyers invest in timeless, well-made pieces they keep for years instead of chasing the next micro-trend. It is the counterweight to everything in the table above.
+
 Finding the right piece across platforms, especially in categories where demand is climbing, takes more than one search. [Crawli](/) searches resale marketplaces at once so you can catch a Y2K or 90s piece wherever it's actually listed instead of missing it because it surfaced somewhere you didn't check. Start your search at [thecrawli.com](https://thecrawli.com).

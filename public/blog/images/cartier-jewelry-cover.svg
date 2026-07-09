@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cover illustration">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <circle cx="600" cy="315" r="220" fill="#f3e8ff"/>
+  <ellipse cx="600" cy="320" rx="130" ry="150" fill="none" stroke="#7c3aed" stroke-width="14"/>
+  <rect x="576" y="150" width="48" height="30" rx="8" fill="none" stroke="#7c3aed" stroke-width="12"/>
+  <circle cx="600" cy="230" r="14" fill="#7c3aed"/>
+  <circle cx="540" cy="270" r="7" fill="#7c3aed"/>
+  <circle cx="660" cy="270" r="7" fill="#7c3aed"/>
+</svg>

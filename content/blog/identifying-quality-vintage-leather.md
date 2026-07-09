@@ -52,4 +52,6 @@ Full-grain leather that's properly conditioned resists cracking and tearing for 
 
 That's the real reason this distinction matters for buyers: you're not just judging how something looks today, you're judging whether it'll still look like that in five years.
 
+If your question is simpler than grading, just whether a piece is real hide at all rather than a coated synthetic, work through the [five non-destructive real-vs-fake leather tests](/blog/is-vintage-leather-real-leather) instead.
+
 Once you know what grade you're actually looking at, the next step is finding it at a fair price. [Crawli](/) searches vintage leather listings across marketplaces at once, so you can compare condition and price before you commit.

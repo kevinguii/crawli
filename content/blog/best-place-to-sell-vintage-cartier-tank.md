@@ -51,4 +51,6 @@ Across every platform, the presence of the original box, papers, and a Cartier-s
 
 The lowest seller fee isn't automatically the best choice if it comes attached to a buyer base less prepared to pay full value for a genuinely collectible piece. A watch that sells quickly at a strong price on a 6.5%-commission platform nets more than one that lingers for months on a lower-fee general marketplace before eventually selling below its real value. Matching the platform to the specific piece, common versus rare, documented versus undocumented, matters more than optimizing for the lowest fee percentage in isolation.
 
+If what you're selling is Cartier jewelry rather than a watch (a Love bracelet, Juste un Clou, or Trinity ring), the platform calculus shifts, since watch-specific marketplaces no longer apply. That's covered separately in [the best place to sell vintage Cartier jewelry](/blog/best-place-to-sell-vintage-cartier-jewelry).
+
 Before you list, [Crawli](/) can check whether similar Cartier Tanks are already sitting unsold on other platforms, helping you pick the marketplace where your watch won't get lost in a sea of quartz fashion watches and generic listings.
