@@ -65,6 +65,12 @@ The set lives in BOTH `crawl4ai-service/search_page_extractors.py` AND `lib/scra
 **`PLATFORM_STRATEGY[platform]` in `lib/firecrawl.ts` is now inert for all Avenue A platforms**
 The route checks `SEARCH_PAGE_PLATFORMS.has(platform)` first. The entries are kept as fallbacks in case a search-page extractor breaks later. Do not delete them.
 
+**Homepage schema's `PLATFORMS` array (`app/components/StructuredData.tsx`) is a fourth, separate platform list**
+It's hand-maintained and had drifted — missing ThredUp, describing the site as "eight marketplaces" instead of nine, while the same page's `FAQPage` schema (from `faqData.ts`) correctly said nine. Google can flag mismatched entity counts across a page's own JSON-LD. Fixed 2026-07-08; if the platform roster changes again, update this array too (it's independent of `NATIVE_PLATFORMS`/`SEARCH_PAGE_PLATFORMS`/`PLATFORM_NAMES` in `lib/types.ts`).
+
+**`/compare/[slug]` price schema must be `Product`+`AggregateOffer`, not `ItemList`+`Offer`**
+`ItemList` renders as a list/carousel rich result in Google, not the price-range/product snippet. Switched 2026-07-08 (`app/compare/[slug]/page.tsx`) to `Product` with a top-level `AggregateOffer` (`lowPrice`/`highPrice`/`offerCount` across all platforms) containing per-platform `Offer` children. If you add more compare data fields (ratings, images), they go on the `Product`, not the old `ItemList`.
+
 ---
 
 ## Payments + Supabase

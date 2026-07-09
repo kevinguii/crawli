@@ -9,6 +9,7 @@ const PLATFORMS = [
   "StockX",
   "Mercari",
   "Vinted",
+  "ThredUp",
   "eBay",
   "Vestiaire Collective",
 ];
@@ -36,7 +37,7 @@ export default function StructuredData() {
       logo: `${SITE_URL}/icon.svg`,
       foundingDate: "2026",
       description:
-        "Crawli is a resale price search engine that compares secondhand fashion listings across eight marketplaces in one search.",
+        "Crawli is a resale price search engine that compares secondhand fashion listings across nine marketplaces in one search.",
       // Linked profiles consolidate the brand entity in Google's Knowledge Graph
       // and corroborate identity for AI answer engines. Kept in sync with the
       // links rendered in landing/Footer.tsx.
@@ -58,7 +59,7 @@ export default function StructuredData() {
       url: SITE_URL,
       name: "Crawli",
       description:
-        "Compare resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire in one search.",
+        "Compare resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, eBay and Vestiaire in one search.",
       publisher: { "@id": `${SITE_URL}/#organization` },
       potentialAction: {
         "@type": "SearchAction",
@@ -76,10 +77,10 @@ export default function StructuredData() {
       operatingSystem: "Web",
       url: SITE_URL,
       description:
-        "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire at once to compare secondhand fashion prices and find the best deal.",
+        "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, eBay and Vestiaire at once to compare secondhand fashion prices and find the best deal.",
       featureList: [
         "Cross-platform resale price comparison",
-        "Search 8 marketplaces simultaneously",
+        "Search 9 marketplaces simultaneously",
         ...PLATFORMS.map((p) => `Search ${p}`),
         "Daily search alerts for new listings",
         "Save and track listings",

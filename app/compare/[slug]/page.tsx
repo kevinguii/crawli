@@ -211,8 +211,13 @@ export default async function ComparePage({ params }: Props) {
     return s.scraped_at > latest ? s.scraped_at : latest;
   }, null);
 
-  // JSON-LD: ItemList with one entry per platform that has data
+  // JSON-LD: Product with an AggregateOffer per platform — this is the schema
+  // Google actually keys its price-range rich result off of (ItemList/ListItem>Offer
+  // does not render as a product snippet, only as a list/carousel result).
   const offersWithData = snapshots.filter((s) => s.min_price_usd !== null);
+  const allLows = offersWithData.map((s) => s.min_price_usd as number);
+  const allHighs = offersWithData.map((s) => s.max_price_usd ?? (s.min_price_usd as number));
+  const totalOfferCount = offersWithData.reduce((sum, s) => sum + (s.listing_count ?? 0), 0);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -224,27 +229,33 @@ export default async function ComparePage({ params }: Props) {
           { '@type': 'ListItem', position: 3, name: item.name },
         ],
       },
-      {
-        '@type': 'ItemList',
-        name: `${item.name} Resale Prices`,
-        description: `Cross-platform resale price comparison for ${item.name} across ${offersWithData.length} marketplaces.`,
-        numberOfItems: offersWithData.length,
-        itemListElement: offersWithData.map((s, i) => ({
-          '@type': 'ListItem',
-          position: i + 1,
-          name: PLATFORM_NAMES[s.platform] ?? s.platform,
-          item: {
-            '@type': 'Offer',
-            name: `${item.name} on ${PLATFORM_NAMES[s.platform] ?? s.platform}`,
-            lowPrice: s.min_price_usd,
-            highPrice: s.max_price_usd,
-            offerCount: s.listing_count,
-            priceCurrency: 'USD',
-            availability: 'https://schema.org/InStock',
-          },
-        })),
-      },
-    ],
+      offersWithData.length > 0
+        ? {
+            '@type': 'Product',
+            name: item.name,
+            description: `Cross-platform resale price comparison for ${item.name} across ${offersWithData.length} marketplaces.`,
+            ...(item.category ? { category: item.category } : {}),
+            offers: {
+              '@type': 'AggregateOffer',
+              priceCurrency: 'USD',
+              lowPrice: Math.min(...allLows),
+              highPrice: Math.max(...allHighs),
+              offerCount: totalOfferCount,
+              offers: offersWithData.map((s) => ({
+                '@type': 'Offer',
+                name: `${item.name} on ${PLATFORM_NAMES[s.platform] ?? s.platform}`,
+                url: `${SITE_URL}/compare/${item.slug}`,
+                lowPrice: s.min_price_usd,
+                highPrice: s.max_price_usd,
+                offerCount: s.listing_count,
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
+                itemCondition: 'https://schema.org/UsedCondition',
+              })),
+            },
+          }
+        : null,
+    ].filter(Boolean),
   };
 
   const searchUrl = `/login?tab=signup&q=${encodeURIComponent(item.query)}`;

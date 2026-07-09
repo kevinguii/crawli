@@ -84,6 +84,10 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-08 — Schema fixes: platform-count drift + Product/AggregateOffer on compare pages**
+- Homepage `StructuredData.tsx`'s hand-maintained `PLATFORMS` array was missing ThredUp and said "eight marketplaces" while the same page's FAQPage schema said nine — fixed to nine everywhere. `/compare/[slug]` price schema switched from `ItemList`+`Offer` (list/carousel rich result) to `Product`+`AggregateOffer` (the type that actually earns Google's price-range snippet). See PITFALLS.md.
+- Also confirmed via GSC URL Inspection: all 15 `/compare/[slug]` pages are still unindexed (12 "Discovered — not indexed", 3 "unknown to Google" — the 3 not linked from the homepage's first-12 grid). Root cause is low domain authority/backlinks (Common Crawl shows zero referring domains), not a crawlability bug — real internal links to all 12 are present and Googlebot-visible in raw HTML.
+
 **2026-07-08 — Landing page reprioritized: comparison leads, margin calculator demoted**
 - Hero no longer leads with the margin calculator. New `CompareHeroWidget.tsx` shows real, rotating per-platform prices (reads existing `compare_snapshots` cache, zero new backend cost) in the hero's right column instead. `AlertsMock.tsx` + `SavesMock.tsx` merged into one tabbed `AlertsAndTrackedSection.tsx`. `FlipCalculator` moved into its own new `MarginSection.tsx`, positioned after the alerts/tracked pitch. `BentoFeatures.tsx` trimmed from 6 cards to the 3 supporting ones (its former hero trio now has full sections elsewhere). See `docs/superpowers/specs/2026-07-08-landing-page-priority-redesign-design.md`.
 
