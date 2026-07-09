@@ -19,12 +19,11 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default:
-      "Crawli: Reseller Sourcing Tool. Find Underpriced Inventory & Know Your Margin",
+    default: "Crawli: Reseller Sourcing Tool & Margin Calculator",
     template: "%s · Crawli",
   },
   description:
-    "Crawli is a sourcing tool for resellers. Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once to find underpriced inventory, see the real cross-platform comp, and calculate your flip margin after fees before you buy.",
+    "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once. Find underpriced inventory and calculate your flip margin after fees before you buy.",
   applicationName: "Crawli",
   keywords: [
     "reseller sourcing tool",
@@ -48,7 +47,7 @@ export const metadata: Metadata = {
     type: "website",
     url: `${SITE_URL}/`,
     siteName: "Crawli",
-    title: "Crawli: Reseller Sourcing Tool. Find Underpriced Inventory & Know Your Margin",
+    title: "Crawli: Reseller Sourcing Tool & Margin Calculator",
     description:
       "One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay. Find underpriced inventory, see the real comp, and know your flip margin after fees before you buy.",
     locale: "en_US",
