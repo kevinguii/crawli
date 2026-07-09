@@ -12,6 +12,12 @@
 **Sitemap `lastmod` must reflect real dates, not `new Date()` (fixed 2026-07-01)**
 `app/sitemap.ts` used to stamp every URL with "now", which makes Bing/Google distrust the freshness signal. It now derives real dates: posts `updated||date`, compare pages `scraped_at` (`getCompareLastUpdated()`), static pages last-git-commit (`lib/gitLastModified.ts`). The git helper shells out to `git log` and only works because prod is a persistent `git pull` clone — it falls back to build time if `.git` is absent. If you add a new static page to the sitemap, give it a `gitLastModified("app/<route>/page.tsx")` entry, not a bare `new Date()`.
 
+**IndexNow alone doesn't get URLs crawled promptly on a young domain (found 2026-07-09)**
+"Discovered but not crawled" in Bing Webmaster Tools can persist for days/weeks even with IndexNow firing correctly — IndexNow only notifies Bing a URL changed, it doesn't force a recrawl, and Bing gates actual crawling by domain authority. For any real content change (new/edited blog post, new compare item, title/description edit), also run `node scripts/submit-bing.mjs <path...>` — the Bing Webmaster Submission API, which is the same "Request Indexing" action as the WMT UI button. See `docs/reference/SERVER_REFERENCE.md` "Bing priority reindex" for quota details (shared with manual UI submissions, don't resubmit unchanged URLs).
+
+**All root layout `<title>` metadata gets `· Crawli` appended (found 2026-07-09)**
+`app/layout.tsx` defines `title: { default, template: "%s · Crawli" }`. Any child page/post that sets its own `title` string gets `· Crawli` (9 chars) auto-appended by Next.js — this is easy to forget when checking a title against Bing's ~60-char limit. Always check the *rendered* `<title>` (`curl -s <url> | grep -oE '<title>.*</title>'`), not just the raw frontmatter/string value. Blog post frontmatter titles should stay ≤51 chars so the rendered title (with suffix) stays ≤60.
+
 ---
 
 ## Relevance filtering

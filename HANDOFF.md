@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-07-09
 
 ## How to use this file
 
@@ -83,6 +83,10 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 ---
 
 ## Recent changes
+
+**2026-07-09 — Bing "Discovered but not crawled" fix: title/description overflow + priority reindex script**
+- Root cause of Bing SEO/GEO "issues found": homepage title (77 chars) and meta description (235 chars) exceeded Bing's limits; `/compare/[slug]` titles rendered up to 85 chars once the item name was interpolated into a long fixed suffix; 40/94 blog posts overflowed 60 chars once the root layout's `· Crawli` title template suffix (easy to miss — see PITFALLS.md) was accounted for. All fixed: home/pricing/blog-listing metadata shortened, compare page title template shortened to `${item.name} Resale Price`, 40 blog post titles trimmed losslessly (no meaning change). Committed as `161ce5c` + `db2f0f5`.
+- Added `scripts/submit-bing.mjs` — Bing Webmaster `SubmitUrlBatch` API, requests priority reindexing (same effect as manual "Request Indexing" in Bing WMT UI, scriptable). **Run this after any content change** — IndexNow alone wasn't getting Bing to recrawl promptly on this domain. Requires `BING_WMT_API_KEY` in `.env` (already set). See `docs/reference/SERVER_REFERENCE.md` "Bing priority reindex".
 
 **2026-07-09 — 5 new blog posts (GSC-driven, cannibalization-checked) + first interactive in-article component**
 - Added `content/blog/*.md` + cover SVGs for: `is-vintage-leather-real-leather` (targets the "is vintage leather real leather" query already at GSC pos 13.7 with no page), `how-to-tell-cashmere-quality` (greenfield — zero cashmere impressions), `best-place-to-sell-vintage-cartier-jewelry`, `depop-fabric-tags-search`, `quiet-luxury-resale-trend-2026`. Keyword targets were chosen against a live GSC pull to avoid cannibalizing existing assets: the Cartier jewelry post is a **spoke** that avoids the 1,042-impr/pos-8.3 "best marketplaces for luxury items" query owned by the luxury hub, and the quiet-luxury post avoids "resale fashion trends 2026" (pos 7.7, owned by `vintage-fashion-trends-2026`). Reciprocal spoke links added to `vintage-fashion-trends-2026`, `identifying-quality-vintage-leather`, and `best-place-to-sell-vintage-cartier-tank`.

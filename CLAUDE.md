@@ -106,6 +106,8 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 - **RLS alone 503s** — every new Supabase table needs explicit `GRANT ... TO authenticated, service_role`
 - **"tshirt" is a stopword** — platform titles write "t-shirt" which tokenizes differently; "tshirt" in queries is now a stopword in RELEVANCE_STOPWORDS
 - **Brand alias matching is live** — `lib/queryExpansion.ts` handles bape/A Bathing Ape etc.; don't hand-add aliases to BRAND_ANCHOR_OVERRIDES
+- **New/changed blog post or compare item? Run `node scripts/submit-bing.mjs <path...>`** — IndexNow alone doesn't get Bing to actually recrawl promptly on this domain; this requests priority reindexing. See `docs/reference/SERVER_REFERENCE.md` "Bing priority reindex"
+- **Blog post titles get `· Crawli` auto-appended** — check the *rendered* `<title>` against Bing's ~60-char limit, not just the frontmatter string; keep frontmatter titles ≤51 chars
 
 ## Feature Implementation Workflow
 
