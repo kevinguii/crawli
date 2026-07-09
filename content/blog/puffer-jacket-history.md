@@ -1,5 +1,5 @@
 ---
-title: "Puffer Jacket History: From Survival Gear to Vintage Grail"
+title: "Puffer Jacket History: From Survival Gear to Grail"
 description: "Eddie Bauer designed the first quilted down jacket after a near-fatal hike in 1936. Here's how survival gear became archive-collector fashion."
 date: "2026-06-23"
 updated: "2026-07-06"

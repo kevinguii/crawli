@@ -1,5 +1,5 @@
 ---
-title: "eBay Listing Tips: Answer Buyers' Questions, Not Just Photos"
+title: "eBay Listings: Answer Buyer Questions, Not Photos"
 description: "Most eBay optimization advice pushes keywords and photo count. The real lever is answering buyers' unspoken anxieties about fit, smell, and authenticity."
 date: "2026-06-23"
 updated: "2026-06-23"

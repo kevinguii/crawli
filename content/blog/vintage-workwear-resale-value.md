@@ -1,5 +1,5 @@
 ---
-title: "Vintage Workwear Resale Value: What Drives the Price"
+title: "Vintage Workwear Resale Value: Price Drivers"
 description: "Discontinued colorways and 'Union Made in USA' tags push some vintage chore coats far above near-identical-looking pieces. Here's what actually separates them."
 date: "2026-06-22"
 updated: "2026-07-06"

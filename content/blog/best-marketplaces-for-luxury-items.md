@@ -1,5 +1,5 @@
 ---
-title: "Best Sites to Sell Luxury Clothing: Lowest Fees 2026"
+title: "Best Sites to Sell Luxury Clothing: Lowest Fees"
 description: "For luxury pieces over $1,000, flat-fee platforms like Grailed and Catawiki can net hundreds more than The RealReal's tiered commission. The payout math."
 date: "2026-06-29"
 updated: "2026-07-06"

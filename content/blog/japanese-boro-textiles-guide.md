@@ -1,5 +1,5 @@
 ---
-title: "Japanese Boro Textiles: A Guide to Authentic Vintage Boro"
+title: "Japanese Boro Textiles: A Guide to Authentic Boro"
 description: "Japanese Boro refers to patched, indigo-dyed cotton textiles made by rural communities out of necessity. Museum-quality pieces now sell for over $1,000."
 date: "2026-06-25"
 updated: "2026-07-06"

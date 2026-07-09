@@ -1,5 +1,5 @@
 ---
-title: "Fabric Composition in Vintage Clothing: A Buyer's Guide"
+title: "Vintage Clothing Fabric Composition: Buyer's Guide"
 description: "Aesthetic catches your eye first, but fabric composition determines whether a vintage piece lasts. Here's how to evaluate material quality before you buy."
 date: "2026-06-19"
 updated: "2026-07-06"

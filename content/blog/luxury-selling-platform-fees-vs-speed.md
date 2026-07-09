@@ -1,5 +1,5 @@
 ---
-title: "Luxury Resale Platform Fees vs Speed: Where to Sell Fastest"
+title: "Luxury Resale Fees vs Speed: Where to Sell Fastest"
 description: "Luxury sellers often confuse high commission with high performance. Here's how fees and sell-through speed differ across eBay, Vestiaire, and Poshmark."
 date: "2026-06-23"
 updated: "2026-06-23"

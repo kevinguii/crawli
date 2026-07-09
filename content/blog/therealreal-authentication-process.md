@@ -1,5 +1,5 @@
 ---
-title: "TheRealReal Authentication: What the Reporting Found"
+title: "TheRealReal Authentication: What Reporting Found"
 description: "The RealReal's authenticity guarantee relies on trained specialists and lower-wage copywriters under daily quotas, per CNBC reporting and a shareholder lawsuit."
 date: "2026-07-02"
 updated: "2026-07-02"

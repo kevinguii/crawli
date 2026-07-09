@@ -1,5 +1,5 @@
 ---
-title: "Poshmark Sales Drop: A 30-Day Sharing Timing Case Study"
+title: "Poshmark Sales Drop: A 30-Day Sharing Timing Study"
 description: "After tracking daily Poshmark metrics for 30 days, shifting shares to the hour before peak evening browsing stabilized sales despite visibility complaints."
 date: "2026-07-02"
 updated: "2026-07-02"

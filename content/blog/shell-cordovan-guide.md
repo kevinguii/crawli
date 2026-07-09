@@ -1,5 +1,5 @@
 ---
-title: "Shell Cordovan Guide: The Horsehide Leather Explained"
+title: "Shell Cordovan Guide: The Horsehide Leather"
 description: "Shell cordovan is a non-creasing, high-gloss membrane cut from a horse's rump, produced almost exclusively by Chicago's Horween tannery."
 date: "2026-06-25"
 updated: "2026-07-06"

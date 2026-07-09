@@ -1,5 +1,5 @@
 ---
-title: "Why Your Poshmark Listings Aren't Selling (It's Not Price)"
+title: "Poshmark Listings Aren't Selling (Not Price)"
 description: "Most stuck Poshmark sellers blame pricing first, but the real problem is often timing. Here's how to get listings seen when buyers are actually browsing."
 date: "2026-06-12"
 updated: "2026-07-06"

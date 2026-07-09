@@ -9,7 +9,7 @@ import { getAllPosts, type PostMeta } from '@/lib/blog';
 export const metadata: Metadata = {
   title: 'Blog',
   description:
-    'Guides and tips for buying secondhand fashion: how to compare resale prices, spot deals, and shop smarter across Grailed, Depop, Poshmark, StockX, eBay and more.',
+    'Guides and tips for buying secondhand fashion: compare resale prices, spot deals, and shop smarter across Grailed, Depop, Poshmark, StockX, eBay and more.',
   alternates: { canonical: '/blog' },
 };
 

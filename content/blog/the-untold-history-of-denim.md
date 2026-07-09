@@ -1,5 +1,5 @@
 ---
-title: "The Untold History of Denim: More Than Just a Fabric"
+title: "The Untold History of Denim: More Than a Fabric"
 description: "Denim went from miners' workwear to a global fashion staple in under a century. Understanding that path changes how you evaluate any pair of jeans."
 date: "2026-06-18"
 updated: "2026-07-06"

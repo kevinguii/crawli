@@ -1,5 +1,5 @@
 ---
-title: "I Sold the Same Pendleton Shirt for 3 Different Prices"
+title: "Same Pendleton Shirt Sold for 3 Different Prices"
 description: "Cross-listing a vintage Pendleton wool flannel shirt, the sale price differed by up to 40% across Depop, eBay, and Poshmark, with eBay winning for Americana."
 date: "2026-06-29"
 updated: "2026-07-06"

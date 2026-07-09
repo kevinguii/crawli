@@ -1,5 +1,5 @@
 ---
-title: "How to Identify Quality Vintage Leather (Real vs Bonded)"
+title: "Identify Quality Vintage Leather (Real vs Bonded)"
 description: "Quality vintage leather and bonded leather can look identical in a listing photo. Here's how to tell them apart before you buy, and why it matters."
 date: "2026-06-22"
 updated: "2026-07-06"

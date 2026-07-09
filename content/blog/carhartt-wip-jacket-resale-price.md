@@ -1,5 +1,5 @@
 ---
-title: "Carhartt WIP Jacket Resale Price: Cheapest Sites 2026"
+title: "Carhartt WIP Jacket Price: Cheapest Sites 2026"
 description: "The same Carhartt WIP jacket ranges from a ~$26 floor on Depop to ~$162 on StockX right now. A live cross-platform breakdown of where to buy one cheap."
 date: "2026-07-06"
 updated: "2026-07-06"

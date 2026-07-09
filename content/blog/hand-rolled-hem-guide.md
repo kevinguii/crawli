@@ -1,5 +1,5 @@
 ---
-title: "How to Identify a Hand-Rolled Hem on Vintage Clothing"
+title: "Identify a Hand-Rolled Hem on Vintage Clothing"
 description: "Mass-market fakes almost never replicate a true hand-rolled hem. Here's how to spot one by feel and eye, and why it signals genuinely well-made vintage."
 date: "2026-06-23"
 updated: "2026-06-23"

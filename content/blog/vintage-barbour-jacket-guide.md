@@ -1,5 +1,5 @@
 ---
-title: "Vintage Barbour Jacket Guide: History, Models, Value"
+title: "Vintage Barbour Jacket Guide: Models & Value"
 description: "A vintage Barbour jacket is waxed cotton outerwear made for British farmers, with resale value hinging on royal warrants, model, and wax condition."
 date: "2026-06-29"
 updated: "2026-07-06"

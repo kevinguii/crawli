@@ -1,5 +1,5 @@
 ---
-title: "Cross-Platform Scam Spotting: How Resale Fraud Works"
+title: "Cross-Platform Scam Spotting: How Fraud Works"
 description: "Identical photos of a vintage item on two platforms under different usernames almost always means stolen images. Cross-platform searching reveals it fast."
 date: "2026-06-25"
 updated: "2026-06-25"

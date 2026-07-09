@@ -1,5 +1,5 @@
 ---
-title: "Sukajan Jacket History: From GI Souvenir to Streetwear"
+title: "Sukajan Jacket History: GI Souvenir to Streetwear"
 description: "Sukajan, or souvenir jackets, are embroidered silk bombers that originated in post-WWII Yokosuka, first commissioned by American servicemen."
 date: "2026-07-02"
 updated: "2026-07-06"

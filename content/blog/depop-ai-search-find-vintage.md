@@ -1,5 +1,5 @@
 ---
-title: "Depop Vintage Search: How to Find Real Pieces AI Buries"
+title: "Depop Vintage Search: Find Real Pieces AI Buries"
 description: "Depop's AI search often buries true vintage under mass-produced 'vintage style' items, but authentic pieces still surface with exact era and brand keywords."
 date: "2026-06-25"
 updated: "2026-06-25"

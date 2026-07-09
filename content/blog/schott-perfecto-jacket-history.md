@@ -1,5 +1,5 @@
 ---
-title: "Schott Perfecto Jacket History: The Original Biker Leather"
+title: "Schott Perfecto History: The Original Biker Leather"
 description: "The Schott Perfecto 613/618, first produced in 1928, is the archetype leather motorcycle jacket, and mid-century examples remain highly collectible today."
 date: "2026-06-25"
 updated: "2026-07-06"

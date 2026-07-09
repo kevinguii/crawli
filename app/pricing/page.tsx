@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'Crawli pricing for resellers. Start free with no credit card. Upgrade for more weekly searches, precision sourcing alerts with brand and size criteria, and the flip margin calculator across all 7 resale platforms.',
+    'Crawli pricing for resellers. Start free, no credit card. Upgrade for more searches, sourcing alerts, and the flip margin calculator.',
   alternates: { canonical: '/pricing' },
 };
 

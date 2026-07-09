@@ -1,5 +1,5 @@
 ---
-title: "How to Avoid Super Fakes When Buying Designer Secondhand"
+title: "How to Avoid Super Fakes Buying Designer Secondhand"
 description: "Counterfeits have gotten scarily good. Here's how to tell which resale platforms actually authenticate, and what to check yourself before you buy."
 date: "2026-06-15"
 updated: "2026-07-06"

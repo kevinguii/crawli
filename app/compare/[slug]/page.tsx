@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return {};
 
   const { item } = data;
-  const title = `${item.name} Resale Price — Compare Grailed, Depop & 7 More`;
+  const title = `${item.name} Resale Price`;
   const description =
     item.description ??
     `Compare ${item.name} resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire. Find the best deal in one search.`;

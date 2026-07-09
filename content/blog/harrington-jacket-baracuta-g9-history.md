@@ -1,5 +1,5 @@
 ---
-title: "Harrington Jacket History: Baracuta G9 to Preppy Icon"
+title: "Harrington Jacket: Baracuta G9 to Preppy Icon"
 description: "The Harrington jacket, originally the Baracuta G9, was created in 1937 as a rain-proof golf coat. It got the Harrington name in 1964 from a TV character."
 date: "2026-07-02"
 updated: "2026-07-06"

@@ -1,5 +1,5 @@
 ---
-title: "Resale Platform Authentication: Why Fakes Slip Through"
+title: "Resale Authentication: Why Fakes Slip Through"
 description: "Most resale platform guarantees rely on a human visually inspecting an item for under two minutes, but the process often misses fakes and flags genuine vintage."
 date: "2026-06-29"
 updated: "2026-07-06"

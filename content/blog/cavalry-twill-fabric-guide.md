@@ -1,5 +1,5 @@
 ---
-title: "Cavalry Twill Fabric Guide: Why It Outlasts Everything"
+title: "Cavalry Twill Fabric Guide: Why It Outlasts Others"
 description: "Cavalry twill is a heavy, diagonal ribbed wool fabric used for military riding breeches and civilian trousers, known for its steep twill line and dense hand."
 date: "2026-06-25"
 updated: "2026-07-06"

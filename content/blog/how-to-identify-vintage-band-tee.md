@@ -1,5 +1,5 @@
 ---
-title: "Vintage Band Tee or Reprint? How to Tell in 10 Seconds"
+title: "Vintage Band Tee or Reprint? Tell in 10 Seconds"
 description: "Flip the hem inside out. One row of stitching usually means genuine vintage; two rows means a later reprint. The fastest way to spot a fake tour tee."
 date: "2026-07-02"
 updated: "2026-07-06"

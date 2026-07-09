@@ -1,5 +1,5 @@
 ---
-title: "The Importance of Ethical Buying in Secondhand Fashion"
+title: "Why Ethical Buying Matters in Secondhand Fashion"
 description: "Buying secondhand is already a sustainability win, but ethical buying goes further: it's about how you shop, not just what you buy."
 date: "2026-06-19"
 updated: "2026-06-19"

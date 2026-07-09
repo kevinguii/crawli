@@ -1,5 +1,5 @@
 ---
-title: "How to Sell Winter Coats Successfully (Timing Beats Pricing)"
+title: "How to Sell Winter Coats: Timing Beats Pricing"
 description: "Most sellers cut the price when a coat sits unsold. The bigger lever is when you list it. Here's the actual seasonal timing that moves winter outerwear."
 date: "2026-06-18"
 updated: "2026-07-06"
