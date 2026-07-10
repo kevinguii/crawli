@@ -114,7 +114,7 @@ export default function FilterPanel({
           return (
             <label
               key={p}
-              className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+              className="relative flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
               style={
                 active
                   ? { background: ps.background, color: ps.color, border: '1px solid transparent' }

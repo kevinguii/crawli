@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-09 — Fixed whole-page horizontal scroll on mobile (`/search` + 47 blog posts)**
+- Two unrelated root causes, found by sweeping every route (public + protected + all table-bearing blog posts) at a 390×844 viewport and checking `scrollWidth` vs `innerWidth`: (1) `/search`'s platform-chip row had a `sr-only` checkbox with no positioned ancestor, whose containing block bubbled up to the document and pinned it ~450px past the viewport — fixed with `relative` on the chip `<label>` (`FilterPanel.tsx`). (2) `lib/blog.ts` rendered markdown tables as bare `<table>`, never matching the `.table-wrapper` CSS that was supposed to scope their overflow — fixed by wrapping `marked`'s table output in `.table-wrapper` post-render; confirmed across all 47 posts that have a markdown table. Full trace and detection method in `docs/core/PITFALLS.md` → "Mobile horizontal overflow".
+
 **2026-07-09 — New "Tool Spotlight" TikTok carousel series (pilot)**
 - New format at `docs/marketing/tool-spotlight-series/` (own README, distinct from the fact-carousel batches and the Journey Series): a genuine "underrated tools" roundup, one real named tool per slide, overlaid on free-licensed Unsplash photos (no AI generation, no gpt-image-2 spend). First draft named zero tools (vague capability blurbs + a hidden aside) and was rejected on review as giving the reader nothing concrete — rebuilt so Crawli is named directly as one of 4 real tools (Google Lens reverse-image check, eBay's sold-listings filter, Google Trends, Crawli), all given equal plain treatment. This is a deliberate per-series exception to the project's obfuscate-CI rule — see the series README "Naming policy". New font pairing (Satoshi + General Sans via Fontshare) and centered-stacked text placement, both new to the project. Not posted yet — pilot pending review.
 

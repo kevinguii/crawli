@@ -47,7 +47,14 @@ function parse(slug: string): Post | null {
   if (!fs.existsSync(file)) return null;
   const raw = fs.readFileSync(file, 'utf8');
   const { data, content } = matter(raw);
-  const html = marked.parse(content, { async: false }) as string;
+  // marked renders bare <table> with no wrapper, so the overflow-x:auto rule on
+  // .blog-content .table-wrapper (globals.css) never applies — a wide table
+  // (long headers, many columns) then overflows the whole page horizontally
+  // on mobile instead of just scrolling within itself.
+  const html = (marked.parse(content, { async: false }) as string).replace(
+    /<table>([\s\S]*?)<\/table>/g,
+    '<div class="table-wrapper"><table>$1</table></div>',
+  );
 
   // Keep only well-formed { question, answer } pairs; both must be non-empty so
   // the on-page FAQ and the FAQPage JSON-LD never carry blank entries.
