@@ -1121,6 +1121,20 @@
       "text_placement": "bottom-anchored, full-bleed photo",
       "imagery": "real-photo",
       "series": "journey"
+    },
+    {
+      "date": "2026-07-09",
+      "batch_post_num": 1,
+      "title": "Tools Resellers Actually Use",
+      "color_hex": "#f472b6",
+      "color_name": "Soft Pink",
+      "style_movement": null,
+      "typography": "standard",
+      "font_pairing": "Satoshi + General Sans",
+      "layout": "spotlight-photo",
+      "text_placement": "centered-stacked, full-bleed photo",
+      "imagery": "real-photo",
+      "series": "tool-spotlight"
     }
   ]
 }
