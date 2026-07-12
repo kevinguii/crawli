@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawli Tool Spotlight — Luxury Authentication (2026-07-11)</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<!-- Tool Spotlight post 2: "5 tools so you never get scammed on a designer piece" — a genuine
+     "underrated tools" roundup for the luxury-secondhand audience, chosen because luxury/authentication
+     queries dominate GSC impressions ("best marketplaces for luxury items" 1,354 impr; a cluster of
+     "trusted/reliable/authenticated luxury resale platform" queries; real-vs-fake authenticity queries).
+     Each slide names one real, independently useful authentication tool a buyer can act on today
+     (brand hardware/date-code markers, PurseForum's free "Authenticate This" threads, paid photo
+     authentication like LegitGrails/Real Authentication, platforms that authenticate before shipping) —
+     Crawli is named directly as the 5th, given the SAME plain treatment as the other four, not hidden
+     behind an aside. Deliberate departure from the obfuscate-CI rule (see ../README.md "Naming policy").
+     Real free-licensed Unsplash photos (see images/CREDITS.md), no AI generation.
+     Series signature held: Satoshi (headings) + General Sans (small text) via Fontshare,
+     spotlight-photo layout, centered-stacked full-bleed placement. Per-post variation axes:
+     accent #ff4d4d (alert red, unused in visual-history.json — semantically "verify before you buy"),
+     and a glassmorphism frosted-glass text panel (style movement unused in the history until now). -->
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  background: #0a0a0a;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px; gap: 14px;
+}
+
+.top-bar { width:100%; max-width:440px; display:flex; align-items:center; gap:10px; }
+select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; background:#1a1a1a; color:#ccc; font-size:13px; cursor:pointer; }
+.nbtn { padding:9px 14px; border:1px solid #2a2a2a; border-radius:8px; background:#1a1a1a; color:#aaa; font-size:13px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.nbtn:hover:not(:disabled) { background:#252525; color:#fff; }
+.nbtn:disabled { opacity:.3; cursor:default; }
+.post-label { width:100%; max-width:440px; font-size:11px; color:#444; text-transform:uppercase; letter-spacing:.1em; }
+
+.frame { width:100%; max-width:440px; aspect-ratio:4/5; border-radius:18px; overflow:hidden; position:relative; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.slide { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+.slide.on { display:block; }
+.bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
+.slide-ctr { font-size:12px; color:#444; }
+
+/* ════════════════════════════════════════════════════════════════════
+   SPOTLIGHT-PHOTO — Tool Spotlight series template (fixed signature):
+   full-bleed real photo + scrim + a centered-stacked text block
+   (vertically centered, not edge-anchored). This post adds the series'
+   per-post variation: a GLASSMORPHISM frosted-glass panel behind the
+   text (new style movement) and an alert-red accent. Layout, placement
+   and font pairing stay identical to the pilot — that is the signature.
+   ════════════════════════════════════════════════════════════════════ */
+.spotlight-photo { width:100%; height:100%; position:relative; overflow:hidden; background:#111; }
+.spotlight-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.spotlight-photo .scrim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.50) 0%, rgba(0,0,0,.22) 40%, rgba(0,0,0,.28) 60%, rgba(0,0,0,.55) 100%); }
+.spotlight-photo .content { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:9% 8%; color:#fdfaf6; }
+
+/* Glassmorphism frosted panel — the per-post style movement for this batch. */
+.spotlight-photo .sp-panel {
+  display:flex; flex-direction:column; align-items:center;
+  padding:34px 26px 30px;
+  border-radius:22px;
+  background:rgba(18,18,20,.30);
+  backdrop-filter:blur(15px) saturate(1.25);
+  -webkit-backdrop-filter:blur(15px) saturate(1.25);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 10px 44px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+.spotlight-photo .sp-eyebrow { font-family:'General Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:.26em; text-transform:uppercase; color:var(--accent); margin-bottom:15px; }
+.spotlight-photo .sp-headline { font-family:'Satoshi',sans-serif; font-weight:700; font-size:31px; line-height:1.16; text-shadow:0 2px 20px rgba(0,0,0,.45); }
+.spotlight-photo .sp-sub { font-family:'General Sans',sans-serif; font-weight:400; font-size:14.5px; line-height:1.52; opacity:.92; margin-top:15px; max-width:92%; text-shadow:0 1px 10px rgba(0,0,0,.4); }
+.spotlight-photo .sp-swipe { font-family:'General Sans',sans-serif; font-size:11px; font-weight:600; opacity:.75; letter-spacing:.1em; text-transform:uppercase; margin-top:20px; color:var(--accent); }
+
+/* hook: bigger headline, no eyebrow, accented hairline instead of a number */
+.spotlight-photo.variant-hook .sp-headline { font-size:34px; }
+.spotlight-photo.variant-hook .sp-panel { padding:38px 28px 32px; }
+
+/* tool: eyebrow number shown. Crawli's slide uses this SAME variant as the other
+   four named tools — deliberately no special "reveal" treatment, since it reads as a
+   peer recommendation, not a punchline. */
+.spotlight-photo.variant-tool .sp-headline { font-size:29px; }
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="nbtn" id="pp" onclick="changePost(-1)">← Post</button>
+  <select id="sel" onchange="jumpPost(+this.value)">
+    <option value="0">2 · Never Get Scammed On A Designer Piece 🧵</option>
+  </select>
+  <button class="nbtn" id="np" onclick="changePost(1)">Post →</button>
+</div>
+
+<div class="post-label" id="plabel"></div>
+<div class="frame" id="frame"></div>
+
+<div class="bot-bar">
+  <button class="nbtn" id="ps" onclick="changeSlide(-1)">←</button>
+  <span class="slide-ctr" id="sctr"></span>
+  <button class="nbtn" id="ns" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+function renderSpotlightPhoto(s, post) {
+  return `<div class="spotlight-photo variant-${s.variant}" style="--accent:${post.color}">
+    <img class="bg" src="${s.img}" alt="">
+    <div class="scrim"></div>
+    <div class="content">
+      <div class="sp-panel">
+        ${s.eyebrow ? `<div class="sp-eyebrow">${s.eyebrow}</div>` : ''}
+        <div class="sp-headline">${s.headline}</div>
+        ${s.sub ? `<div class="sp-sub">${s.sub}</div>` : ''}
+        ${s.swipe ? `<div class="sp-swipe">${s.swipe}</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildSlideHTML(s, post) {
+  return renderSpotlightPhoto(s, post);
+}
+
+// ─── POST DATA ──
+const posts = [
+  {
+    label: 'TOOL SPOTLIGHT · LUXURY AUTHENTICATION',
+    color: '#ff4d4d',
+    fontClass: '',
+    slides: [
+      { variant:'hook', img:'images/slide-01-hook.jpg',
+        headline:'A fake designer bag and a real one look identical in a listing photo.',
+        sub:'Here is how people who actually buy pre-owned luxury tell them apart.',
+        swipe:'swipe →' },
+      { variant:'tool', img:'images/slide-02-hardware.jpg', eyebrow:'01',
+        headline:'The hardware and date code check',
+        sub:'Every house has a tell. Louis Vuitton moved to a microchip in 2021, Chanel has a hologram sticker, Hermès has a blind stamp. Learn your brand’s one marker and check it against the seller’s close ups before you pay.' },
+      { variant:'tool', img:'images/slide-03-purseforum.jpg', eyebrow:'02',
+        headline:'PurseForum’s “Authenticate This” threads',
+        sub:'Free. Post the seller’s photos in the brand’s thread and volunteers who authenticate all day will call it real or fake, usually within hours.' },
+      { variant:'tool', img:'images/slide-04-authentication.jpg', eyebrow:'03',
+        headline:'A paid photo authentication',
+        sub:'For anything in the four figures, $15 to $30 to a service like LegitGrails or Real Authentication is cheap insurance. Photo based, back in a day, with a certificate that holds up when you resell.' },
+      { variant:'tool', img:'images/slide-05-platforms.jpg', eyebrow:'04',
+        headline:'Platforms that authenticate before it ships',
+        sub:'Vestiaire’s Physical Check, The RealReal, Fashionphile, StockX. The item is inspected by them before it reaches you. You pay a little more and you stop gambling.' },
+      { variant:'tool', img:'images/slide-06-crawli.jpg', eyebrow:'05',
+        headline:'Crawli',
+        sub:'The same bag sits on Vestiaire, Grailed, and StockX at three different prices. Crawli searches all of them at once, so you compare the authenticated options side by side instead of opening nine tabs.' }
+    ]
+  }
+];
+
+// ─── NAV ENGINE (unchanged from existing batches) ──
+let pIdx = 0, sIdx = 0;
+function renderPost() {
+  const post = posts[pIdx];
+  const frame = document.getElementById('frame');
+  frame.innerHTML = post.slides.map(s => `<div class="slide ${post.fontClass || ''}">${buildSlideHTML(s, post)}</div>`).join('');
+  document.getElementById('plabel').textContent = post.label;
+  document.getElementById('sel').value = pIdx;
+  sIdx = 0;
+  updateSlide();
+}
+function updateSlide() {
+  const post = posts[pIdx];
+  document.querySelectorAll('.slide').forEach((el, i) => el.classList.toggle('on', i === sIdx));
+  document.getElementById('sctr').textContent = `${sIdx + 1} / ${post.slides.length}`;
+  document.getElementById('ps').disabled = sIdx === 0;
+  document.getElementById('ns').disabled = sIdx === post.slides.length - 1;
+  document.getElementById('pp').disabled = pIdx === 0;
+  document.getElementById('np').disabled = pIdx === posts.length - 1;
+}
+function changeSlide(d) { sIdx = Math.max(0, Math.min(posts[pIdx].slides.length - 1, sIdx + d)); updateSlide(); }
+function gotoSlide(i) { sIdx = i; updateSlide(); }
+function changePost(d) { pIdx = Math.max(0, Math.min(posts.length - 1, pIdx + d)); renderPost(); }
+function jumpPost(i) { pIdx = i; renderPost(); }
+
+renderPost();
+</script>
+</body>
+</html>

@@ -74,6 +74,7 @@ pairing and layout/placement are fixed as the series signature).
 | Date | Folder | Post | Subject |
 |---|---|---|---|
 | 2026-07-09 | `2026-07-09-pilot/` | 1 | Tools Resellers Actually Use |
+| 2026-07-11 | `2026-07-11-luxury-authentication/` | 2 | Never Get Scammed On A Designer Piece (luxury authentication) |
 
 ## Caption format
 
