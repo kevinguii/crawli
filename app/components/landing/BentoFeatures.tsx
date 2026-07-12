@@ -52,7 +52,7 @@ export default function BentoFeatures() {
             Also built in
           </h2>
           <p className="mt-3 text-base" style={{ color: 'var(--text-muted)' }}>
-            The details that make sourcing across 9 platforms actually usable.
+            The details that make comparing across 9 platforms actually usable.
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export default function BentoFeatures() {
           />
           <Card
             title="Price intelligence"
-            body="See low, average, and high prices across all results. Know what the market actually pays before you decide to source."
+            body="See low, average, and high prices across all results. Know what the market actually pays before you buy."
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" {...stroke}>
                 <path d="M3 17l6-6 4 4 7-8" />
@@ -79,7 +79,7 @@ export default function BentoFeatures() {
           />
           <Card
             title="Smart filters"
-            body="Filter by platform, size, condition, color, and price range. Narrow to exactly the inventory you source, without leaving the page."
+            body="Filter by platform, size, condition, color, and price range. Narrow to exactly the piece you want, without leaving the page."
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" {...stroke}>
                 <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />

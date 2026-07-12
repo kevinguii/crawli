@@ -19,21 +19,23 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Crawli: Reseller Sourcing Tool & Margin Calculator",
+    default: "Crawli: Compare Secondhand & Vintage Prices Everywhere",
     template: "%s · Crawli",
   },
   description:
-    "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once. Find underpriced inventory and calculate your flip margin after fees before you buy.",
+    "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
   applicationName: "Crawli",
   keywords: [
+    "secondhand fashion price comparison",
+    "vintage clothing search",
+    "compare resale prices",
+    "cross-platform price comparison",
     "reseller sourcing tool",
     "find underpriced inventory",
     "resale margin calculator",
-    "cross-platform price comparison",
     "flip margin after fees",
     "search all resale sites at once",
     "Grailed Depop Poshmark StockX Mercari Vinted eBay",
-    "sourcing intelligence for resellers",
     "streetwear resale sourcing",
     "sneaker resale comp",
   ],
@@ -47,16 +49,16 @@ export const metadata: Metadata = {
     type: "website",
     url: `${SITE_URL}/`,
     siteName: "Crawli",
-    title: "Crawli: Reseller Sourcing Tool & Margin Calculator",
+    title: "Crawli: Compare Secondhand & Vintage Prices Everywhere",
     description:
-      "One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay. Find underpriced inventory, see the real comp, and know your flip margin after fees before you buy.",
+      "One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Crawli: Sourcing Intelligence for Resellers",
+    title: "Crawli: Compare Secondhand & Vintage Prices Everywhere",
     description:
-      "One search across every resale marketplace. Find underpriced inventory and know your flip margin after fees before you buy.",
+      "One search across every resale marketplace to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
   },
   robots: {
     index: true,

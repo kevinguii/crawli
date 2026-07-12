@@ -1,12 +1,16 @@
 # B2B Feature Truth — Session 1 Foundation
 
-**Status as of 2026-06-28.** Ground truth for Sessions 2 & 3. This file states exactly
+**Status as of 2026-07-11.** Ground truth for Sessions 2 & 3. This file states exactly
 what shipped, the tier/cap/overage model, and what the margin calculator covers. Where a
 number is a *proposal pending owner sign-off*, it says so explicitly.
 
-Repositioning: Crawli is now a **B2B sourcing-intelligence tool for resellers** (find
-underpriced inventory + know the real cross-platform comp and flip margin before buying).
-We do NOT do cross-listing. The search core is unchanged.
+Repositioning (updated 2026-07-11): Crawli is a **cross-platform secondhand/vintage price
+comparison tool that also serves resellers** (find underpriced inventory + know the real
+cross-platform comp and flip margin before buying). Landing copy and metadata speak to both
+audiences — resellers (margin/flip framing) and secondhand/vintage shoppers who want the
+best price on a piece, even if the latter never convert to paid. Do not revert to
+reseller-only "B2B sourcing intelligence" framing on the landing page or in metadata. We do
+NOT do cross-listing. The search core is unchanged.
 
 ---
 
@@ -140,8 +144,18 @@ SQL: `docs/migrations/b2b-foundation.sql` (idempotent). Applied to the live Supa
 ---
 
 ## 5. Copy repositioning
-B2C → B2B reseller language in `app/components/landing/Hero.tsx`, `BentoFeatures.tsx`,
-`AboutSection.tsx`, and meta in `app/layout.tsx` (title/description/keywords/OG/Twitter).
+Originally B2C → B2B reseller language in `app/components/landing/Hero.tsx`,
+`BentoFeatures.tsx`, `AboutSection.tsx`, and meta in `app/layout.tsx`
+(title/description/keywords/OG/Twitter).
+
+**Revised 2026-07-11:** walked back to hybrid B2B+B2C. Removed the reseller-only eyebrow
+badge and CTA wording from `Hero.tsx`; broadened `AboutSection.tsx`, `CompareSection.tsx`,
+and `faqData.ts` so the copy no longer reads reseller-exclusive ("not for casual shoppers"
+removed from the FAQ). `app/layout.tsx` metadata (title/description/OG/Twitter/keywords) now
+leads with secondhand & vintage price comparison; reseller terms kept as secondary keywords
+only — GSC homepage query data (90-day) showed zero real ranking equity tied to the old
+reseller-first title, so this was low-risk.
+
 Tier labels (free/pro/max) unchanged. No dashes-as-punctuation in new copy.
 
 ---

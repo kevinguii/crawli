@@ -8,7 +8,7 @@ export default function CTASection() {
           className="text-2xl font-semibold tracking-tight sm:text-3xl"
           style={{ color: 'var(--text)' }}
         >
-          Start sourcing smarter today.
+          Start comparing smarter today.
         </h2>
         <p
           className="mx-auto mt-3 text-sm sm:text-base"
