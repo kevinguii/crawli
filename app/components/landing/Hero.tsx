@@ -44,18 +44,6 @@ export default function Hero({ heroItems }: { heroItems: CompareHeroItem[] }) {
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
           {/* Left: copy */}
           <div className="text-center lg:text-left">
-            <span
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-              style={{
-                background: 'var(--accent-soft)',
-                color: 'var(--accent-text)',
-                border: '1px solid var(--accent-soft)',
-              }}
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
-              Sourcing intelligence for resellers
-            </span>
-
             <h1
               className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
               style={{ color: 'var(--text)', lineHeight: 1.05 }}
@@ -101,7 +89,7 @@ export default function Hero({ heroItems }: { heroItems: CompareHeroItem[] }) {
                 href="/login?tab=signup"
                 className="btn-primary w-full rounded-xl px-6 py-3 text-sm font-semibold sm:w-auto"
               >
-                Start sourcing free
+                Start comparing free
               </Link>
               <a
                 href="#compare"

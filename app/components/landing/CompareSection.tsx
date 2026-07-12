@@ -40,7 +40,7 @@ export default function CompareSection({
             See the real comp before you buy
           </h2>
           <p className="mt-3 text-base" style={{ color: 'var(--text-muted)' }}>
-            Live cross-platform pricing on the pieces resellers flip most. Click any item to see where it&apos;s cheapest — no login.
+            Live cross-platform pricing on the most-searched secondhand and vintage pieces. Click any item to see where it&apos;s cheapest — no login.
           </p>
         </div>
 

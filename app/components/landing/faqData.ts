@@ -14,7 +14,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "What is Crawli and who is it for?",
     answer:
-      "Crawli is a sourcing intelligence tool built for professional resellers. Instead of checking 9 platforms one by one, you run a single search and Crawli pulls matching listings from Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, and eBay side by side. The flip margin calculator then shows your net profit after real platform fees before you buy. Crawli is built for resellers who source secondhand inventory to flip at a margin, not for casual shoppers.",
+      "Crawli is a cross-platform search tool for secondhand and vintage fashion. Instead of checking 9 platforms one by one, you run a single search and Crawli pulls matching listings from Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, and eBay side by side. Resellers use the built-in flip margin calculator to see net profit after real platform fees before they buy, while shoppers who just love fashion use Crawli to find the best price on a piece across every platform at once. Crawli works for anyone comparing secondhand listings, whether you're sourcing inventory to resell or hunting for a personal grail.",
   },
   {
     question: "How does the flip margin calculator work?",

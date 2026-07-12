@@ -18,11 +18,12 @@ export default function AboutSection() {
           className="mx-auto mt-5 text-base sm:text-lg"
           style={{ color: 'var(--text-muted)' }}
         >
-          Good flips come from buying below the real market, not from luck.
-          Crawli pulls every resale marketplace into one search so you see the
-          true cross-platform comp, then shows your net margin after each
-          platform’s fees before you buy. The sourcing edge every serious
-          reseller wishes they had.
+          Whether you're flipping for margin or just hunting for your next
+          favorite piece, the best price is buried across nine different
+          tabs. Crawli pulls every resale marketplace into one search so you
+          see the true cross-platform comp, then shows your net margin after
+          each platform’s fees before you buy. The edge every secondhand and
+          vintage lover wishes they had.
         </p>
 
         <div
