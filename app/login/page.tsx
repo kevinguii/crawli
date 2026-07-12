@@ -74,21 +74,19 @@ function LoginContent() {
         setError(error.message);
         return;
       }
-      // Supabase returns identities:[] for both confirmed accounts and unconfirmed
-      // (e.g. expired confirmation link). Try resending confirmation first — if it
-      // succeeds the account was unconfirmed and they'll get a fresh link. If it
-      // errors the account is already confirmed and they should just log in.
+      // Supabase returns identities:[] for any existing account — confirmed,
+      // unconfirmed, or Google-only with no password identity at all. It's not
+      // just "unconfirmed retry": resend() also returns success (200, no-op) for
+      // already-confirmed accounts, so its success/error can't tell these apart.
+      // Fire the resend as a best-effort (it only does something for the truly
+      // unconfirmed case) and send the user to a check-email screen that covers
+      // every case, including "you actually signed up with Google."
       if (data.user && (data.user.identities?.length ?? 0) === 0) {
-        const { error: resendError } = await supabase.auth.resend({
-          type: 'signup',
-          email: trimmedEmail,
-        });
+        await supabase.auth.resend({ type: 'signup', email: trimmedEmail });
         setLoading(null);
-        if (!resendError) {
-          router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);
-        } else {
-          setError('This email is already registered. Try logging in instead.');
-        }
+        router.push(
+          `/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}&existing=1`
+        );
         return;
       }
       router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);
