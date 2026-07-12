@@ -1,8 +1,10 @@
 # Turnstile CAPTCHA setup — handoff
 
-Status as of 2026-07-11: all auth code paths audited and fixed. CAPTCHA is the
-one remaining piece, deliberately not started — it needs a Site Key first and
-must be sequenced correctly or it breaks all sign-in.
+Status as of 2026-07-12: widget created in Cloudflare, client code shipped
+and verified in a real browser on all 3 call sites. **Only Step 3 remains**
+(flip the Supabase dashboard switch) — that's the user's step, done outside
+a Claude session. Delete this doc once Step 3 is done and a real signup +
+sign-in is confirmed working.
 
 ## What's already done (this session)
 
@@ -37,40 +39,33 @@ reset). Full detail: `docs/core/PITFALLS.md` → search "identities:[]".
 None of the above needs further work. **Do not re-litigate the `identities:[]`
 signup logic in the next session** — it was rebuilt and verified end-to-end.
 
-## What's left: enable Turnstile
+## What's left: flip the Supabase switch
 
 **Why it matters:** without it, bot signups keep eating the hourly email
 budget (now 100/h instead of 30/h, but still finite — and Resend's free tier
 caps at 100/day regardless).
 
-### Step 1 — you: create the Turnstile widget
+### Step 1 — done: Turnstile widget created
 
-1. Go to https://dash.cloudflare.com/?to=/:account/turnstile (free, no need
-   for your DNS to be on Cloudflare)
-2. **Add widget** → Mode: **Managed** → Hostnames: `thecrawli.com` AND
-   `localhost` (so `npm run dev` keeps working)
-3. Copy both the **Site Key** (public) and **Secret Key** (private) — you'll
-   need both in the next chat
+Widget "Crawli Auth" created in Managed mode, hostnames `thecrawli.com` +
+`localhost`. Site key: `0x4AAAAAAD0FRzkurcIYXA9Q` (already in `.env`). Secret
+key is not stored in this repo — you'll need it again for Step 3 below (from
+the Cloudflare Turnstile dashboard, same widget, "view keys again").
 
-### Step 2 — next chat session: wire the client code
+### Step 2 — done: client code wired + verified
 
-Give Claude the Site Key and Secret Key and say: *"Implement Turnstile CAPTCHA
-per docs/reference/TURNSTILE_CAPTCHA_SETUP.md"*. It should:
+`app/components/TurnstileWidget.tsx` (explicit-render wrapper, single-use
+token reset after each submit). Wired into:
+- `app/login/page.tsx` — `signUp()` AND `signInWithPassword()`
+- `app/check-email/page.tsx` — both `resend()` paths (signup + reset)
+- `app/forgot-password/page.tsx` — `resetPasswordForEmail()`
+- Google OAuth (`signInWithOAuth`) is exempt by design — no token needed
 
-1. Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` to env config, gated so the widget is
-   inert if unset (nothing breaks pre-rollout)
-2. Add the Turnstile widget + token to **every** call site that will require
-   it once enabled — CAPTCHA in Supabase applies per-request, not just to
-   signup:
-   - `app/login/page.tsx` — `signUp()` AND `signInWithPassword()`
-   - `app/check-email/page.tsx` — the `resend()` calls (signup + reset)
-   - `app/forgot-password/page.tsx` — `resetPasswordForEmail()`
-   - Google OAuth (`signInWithOAuth`) does **not** need a token — it's a
-     redirect flow, exempt by design
-3. Pass the token via `options: { captchaToken }` on each call (see
-   https://supabase.com/docs/guides/auth/auth-captcha for the exact API)
-4. `npx tsc --noEmit` clean, then **visually verify in a real browser** —
-   don't just trust the typecheck (this project's CLAUDE.md rule)
+`npx tsc --noEmit` clean. Verified live in a real browser on all 3 pages
+(Managed mode auto-solved, "Success!" shown, submit buttons correctly
+gated on token presence). Widget is inert until `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+is set — it now is, so the widget renders, but CAPTCHA isn't enforced
+server-side yet (Step 3 not done).
 
 ### Step 3 — you: flip the switch (LAST, only after step 2 ships)
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import AuthCard, { GoogleIcon } from '@/app/components/AuthCard';
+import TurnstileWidget, { TURNSTILE_ENABLED, type TurnstileHandle } from '@/app/components/TurnstileWidget';
 
 // Supabase enforces a per-user resend cooldown (default 60s). Match it here so
 // the button doesn't let users fire a request that silently no-ops server-side.
@@ -44,6 +45,8 @@ function CheckEmailContent() {
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -60,21 +63,26 @@ function CheckEmailContent() {
 
   const handleResend = useCallback(async () => {
     if (!email || cooldown > 0 || status === 'sending') return;
+    if (TURNSTILE_ENABLED && !captchaToken) return;
     setStatus('sending');
     const supabase = createClient();
+    const token = captchaToken ?? undefined;
     const { error } =
       mode === 'reset'
         ? await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+            captchaToken: token,
           })
-        : await supabase.auth.resend({ type: 'signup', email });
+        : await supabase.auth.resend({ type: 'signup', email, options: { captchaToken: token } });
+    turnstileRef.current?.reset();
+    setCaptchaToken(null);
     if (error) {
       setStatus('error');
     } else {
       setStatus('sent');
       setCooldown(RESEND_COOLDOWN_SECONDS);
     }
-  }, [email, cooldown, status, mode]);
+  }, [email, cooldown, status, mode, captchaToken]);
 
   return (
     <AuthCard>
@@ -159,10 +167,11 @@ function CheckEmailContent() {
               New here and nothing arrived?
             </p>
           )}
+          {cooldown <= 0 && <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />}
           <button
             type="button"
             onClick={handleResend}
-            disabled={cooldown > 0 || status === 'sending'}
+            disabled={cooldown > 0 || status === 'sending' || (TURNSTILE_ENABLED && !captchaToken)}
             className="text-sm font-medium transition-opacity duration-200 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             style={{ color: 'var(--accent-text)' }}
           >

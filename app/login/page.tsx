@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import AuthCard, { GoogleIcon, EyeIcon, EyeOffIcon } from '@/app/components/AuthCard';
+import TurnstileWidget, { TURNSTILE_ENABLED, type TurnstileHandle } from '@/app/components/TurnstileWidget';
 
 type Tab = 'signin' | 'signup';
 
@@ -17,6 +18,8 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState<'submit' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const router = useRouter();
 
   // Already signed in? Don't show the auth form — bounce to the app. This makes
@@ -48,12 +51,16 @@ function LoginContent() {
     setError(null);
 
     const supabase = createClient();
+    const token = captchaToken ?? undefined;
 
     if (tab === 'signin') {
       const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
+        options: { captchaToken: token },
       });
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       if (error) {
         setLoading(null);
         setError(error.message);
@@ -67,8 +74,11 @@ function LoginContent() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          captchaToken: token,
         },
       });
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       if (error) {
         setLoading(null);
         setError(error.message);
@@ -230,9 +240,16 @@ function LoginContent() {
           </div>
         )}
 
+        <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
+
         <button
           type="submit"
-          disabled={loading !== null || !email.trim() || !password}
+          disabled={
+            loading !== null ||
+            !email.trim() ||
+            !password ||
+            (TURNSTILE_ENABLED && !captchaToken)
+          }
           className="btn-primary w-full rounded-lg px-4 py-3 text-sm font-medium"
         >
           {loading === 'submit' ? submitLoadingLabel : submitLabel}

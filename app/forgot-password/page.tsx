@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import AuthCard from '@/app/components/AuthCard';
+import TurnstileWidget, { TURNSTILE_ENABLED, type TurnstileHandle } from '@/app/components/TurnstileWidget';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,7 +24,10 @@ export default function ForgotPasswordPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
       redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      captchaToken: captchaToken ?? undefined,
     });
+    turnstileRef.current?.reset();
+    setCaptchaToken(null);
     if (error) {
       setLoading(false);
       setError(error.message);
@@ -63,9 +69,11 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="input-base w-full rounded-lg px-4 py-3 text-sm"
         />
+        <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
+
         <button
           type="submit"
-          disabled={loading || !email.trim()}
+          disabled={loading || !email.trim() || (TURNSTILE_ENABLED && !captchaToken)}
           className="btn-primary w-full rounded-lg px-4 py-3 text-sm font-medium"
         >
           {loading ? 'Sending…' : 'Send reset link'}
