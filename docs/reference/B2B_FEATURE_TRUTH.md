@@ -19,8 +19,12 @@ NOT do cross-listing. The search core is unchanged.
 **Module:** `lib/marketplaceFees.ts` — the ONE source of truth for fees. Never hardcode a
 rate in a component.
 
-- Covers all 7 active platforms: **eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX**
-  (keys match `PLATFORM_DOMAINS` in `lib/types.ts`).
+- Covers the 7 **sell-on** platforms the flip-margin calc supports: **eBay, Poshmark, Mercari,
+  Grailed, Depop, Vinted, StockX** (keys match `PLATFORM_DOMAINS` in `lib/types.ts`). This is the
+  fee-calculator's scope only — NOT total platform coverage. **Search spans 9 platforms**: these 7
+  plus **Vestiaire** and **ThredUp**, which are source-from (buy-side) only and intentionally absent
+  from the fee calc (ThredUp is source-only; Vestiaire has no flip-margin entry). RealReal is
+  disabled (PerimeterX). See `HANDOFF.md` "Current state" for the live search roster.
 - **Seller-payout fees are separated from buyer-side fees.** Net profit uses seller-side only;
   buyer-side fees are stored for context (`buyerCost()`).
 - Per-platform `lastVerified` date (all `2026-06-28`) + `FEES_LAST_VERIFIED`. Shown in the UI.

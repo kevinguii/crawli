@@ -56,6 +56,7 @@ const BATCH = batchArg ? batchArg.split('=')[1] : '2026-07-02';
 // 2026-07-02: [7,7,7,4,7,7,4,7] (split/number-left/visual-hero/myth posts = cover + 4 body
 // + interstitial + cta = 7; grid posts 4 and 7 consolidate their 4 facts into one grid-panel
 // slide = cover + grid + interstitial + cta = 4, same pattern as the 2026-06-23 grid posts)
+// tool-spotlight-series/2026-07-09-pilot: [5] · 2026-07-11-luxury-authentication: [6] (single post, 6 slides)
 const SLIDE_COUNTS = [7, 7, 7, 4, 7, 7, 4, 7];
 
 const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');
