@@ -75,6 +75,7 @@ docs/marketing/**/*.png
 docs/marketing/**/*.jpg
 docs/marketing/**/*.mp4
 docs/marketing/**/*.mov
+docs/marketing/*.zip
 
 # Runtime logs
 token_usage.jsonl
