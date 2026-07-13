@@ -39,7 +39,7 @@ const height = 1350;
 
 // --batch=YYYY-MM-DD selects the batch folder; defaults to most recent
 const batchArg = process.argv.find(a => a.startsWith('--batch='));
-const BATCH = batchArg ? batchArg.split('=')[1] : '2026-07-02';
+const BATCH = batchArg ? batchArg.split('=')[1] : '2026-07-13';
 
 // Number of slides per post for this batch (cover + steps + cta)
 // Update this array when creating a new batch.
@@ -57,7 +57,9 @@ const BATCH = batchArg ? batchArg.split('=')[1] : '2026-07-02';
 // + interstitial + cta = 7; grid posts 4 and 7 consolidate their 4 facts into one grid-panel
 // slide = cover + grid + interstitial + cta = 4, same pattern as the 2026-06-23 grid posts)
 // tool-spotlight-series/2026-07-09-pilot: [5] · 2026-07-11-luxury-authentication: [6] (single post, 6 slides)
-const SLIDE_COUNTS = [7, 7, 7, 4, 7, 7, 4, 7];
+// 2026-07-13: [6,6] (2 posts, cover + ledger + interstitial(s) + cta; post 1 = cover+ledger+stat+
+// ed-step+manifesto+cta = 6, post 2 = cover+ledger+checklist+ed-step+manifesto+cta = 6)
+const SLIDE_COUNTS = [6, 6];
 
 const HTML_FILE  = path.resolve(__dirname, BATCH, 'content-posts-slides.html');
 const OUTPUT_DIR = path.resolve(__dirname, BATCH, 'exports', 'carousel');

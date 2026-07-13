@@ -12,7 +12,7 @@ product screenshots. Distinct from both the fact-carousel format's rotating layo
 eyebrow + the tool's name as the headline + one supporting line explaining exactly how to
 use it). Every tool slide gets the same plain treatment — no special reveal or punchline
 styling on whichever slide names Crawli.
- 
+
 ## Naming policy (deliberate departure from obfuscate-CI)
 
 Pilot post 1 shipped first with every slide describing a vague, unnamed capability

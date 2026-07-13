@@ -14,6 +14,7 @@ Each batch has one HTML source file and one exports folder. They are linked by d
 | 2026-06-25 | `2026-06-25/content-posts-slides.html` | `2026-06-25/post-captions.md` | `2026-06-25/exports/carousel/` | 8 carousel posts (56 slides) — number-left/visual-hero/myth layouts, four new font pairings (Poiret One+Didact Gothic, Newsreader+Roboto, Bebas Neue+Source Sans 3, Noto Serif JP+Noto Sans JP), Neumorphism style movement (first use) on the three light-background posts, centered/top/bottom cover placements, flat colored clipart object illustrations on inner slides — see Post Breakdown — Day 7 |
 | 2026-06-29 | `2026-06-29/content-posts-slides.html` | `2026-06-29/post-captions.md` | `2026-06-29/exports/carousel/` | 8 carousel posts (56 slides, 7 each) — first reseller-pivot batch under the obfuscate-CI rule (no URL/CTA on any slide, Crawli mentioned subtly/variably on select final slides only). Three new font pairings (Space Grotesk+DM Sans, Calistoga+Inter, Archivo Black+Spectral), new corner-block cover placement (solid accent panel bottom-left), new ledger/checklist/editorial-step inner layouts. All covers ai-raster (gpt-image-2). Topics sourced from 2026-06-29 DeepSeek brief + dedup against Supabase content_history — see Post Breakdown — Day 8 |
 | 2026-07-02 | `2026-07-02/content-posts-slides.html` | `2026-07-02/post-captions.md` | `2026-07-02/exports/carousel/` | 8 carousel posts (50 slides — 6 posts at 7 slides, 2 grid posts at 4) — 8 brand-new font pairings, split/number-left/visual-hero/grid/myth layouts (none of the 2026-06-29 batch's three), cover placement rotates top-anchor/side-rail/centered-stacked/bottom-anchor (no corner-block), Neumorphism on post 5. Topics sourced from 2026-07-02 DeepSeek brief, dedup against Supabase content_history caught 1 confirmed repeat (eBay Authenticity Guarantee ~= posted `authenticity-guarantee-limits`) — see Post Breakdown — Day 9 |
+| 2026-07-13 | `2026-07-13/content-posts-slides.html` | `2026-07-13/post-captions.md` | `2026-07-13/exports/carousel/` | 2 carousel posts (12 slides, 6 each) — user-supplied concepts (platform fee netting comparison, authenticity guarantee scope by platform), sharpened to a new numeric/per-platform angle after both topics were flagged as overlapping recent posts. Ledger + checklist layouts reused from 2026-06-29; 2 brand-new font pairings (IBM Plex Sans, Newsreader+Roboto) — see Post Breakdown — Day 10 |
 
 **Folder structure:**
 ```
@@ -195,6 +196,26 @@ Vary `text_placement` per batch — this `justify-content:flex-end` bottom-ancho
 | Day 9: Band Tee Reprint Spotting | Oxblood | #5c1f2e |
 | Day 9: Varsity Jacket History | Leather Gold | #a8763e |
 | Day 9: Platform Pricing Psychology | Slate Teal | #3b5a6b |
+| Day 10: The Fee Math Before You List | Deep Jade | #047857 |
+| Day 10: What the Badge Actually Covers | Authority Navy | #1e3a5f |
+
+---
+
+## Post Breakdown — Day 10 (2026-07-13)
+
+Both posts came from user-supplied concepts (not the DeepSeek brief). Cross-checked against Supabase `content_history` `posted=true` before building: the platform-fees concept overlapped `luxury-price-discrepancy-cross-platform`, `luxury-selling-platform-fees-vs-speed`, `luxury-resale-platform-demographics`, and `platform-fees-overview`; the authenticity-guarantee concept overlapped `authenticity-guarantee-limits` (2026-06-29's myth-busting post) and the blog post on Vestiaire's authentication process. User confirmed proceeding with a sharpened angle rather than dropping either: post 1 moved from a narrative "prices differ" framing to a literal net-payout ledger for one $500 bag across four platforms; post 2 moved from general myth-busting to a platform-by-platform ledger of what each authentication program actually covers, which the existing `authenticity-guarantee-limits` post never broke down. All commission/threshold/lawsuit facts were verified via web search before writing (Poshmark 20%/$15 floor + Posh Authenticate $500 brand list, eBay ~13.6% FVF + $0.40/order + Authenticity Guarantee category/price gates, Vestiaire's 5-tier commission + 80-person in-house authentication team, The RealReal's $11M investor settlement and Chanel lawsuit, Grailed's AI+human photo review) rather than taken as-is from the user's draft numbers, which were directionally close but not exact.
+
+**New this batch (per `check-visual-diversity.js`, differing from the 2026-07-11 tool-spotlight post AND the 2026-07-02 batch on font_pairing, text_placement, AND layout):**
+- **2 brand-new font pairings:** IBM Plex Sans single-family (`font-plex`, "Financial Trust" mood, post 1) and Newsreader+Roboto (`font-newsreader`, "News Editorial" mood, post 2 — the diversity check's own least-used-pairing suggestion).
+- **Layouts: ledger (post 1) + checklist (post 2)**, reused from the 2026-06-29 batch's CSS (2 batches back, not the immediate previous ones) rather than any of the 2026-07-02 batch's five layouts.
+- **Cover placement: corner-block on both** (also last used 2026-06-29), avoiding the 2026-07-02 batch's top/side-rail/centered/bottom rotation and the 2026-07-11 post's full-bleed centered-stacked.
+- **No style movement.** Vibrant & Block-based was the diversity check's top unused suggestion, but its own do-not-use-for guidance in `ui-ux-pro-max`'s `styles.csv` flags financial content, so it was skipped for post 1; the Financial Trust / News Editorial font choices carry the mood on their own instead.
+- **Bug caught during build:** post 2's 5-row ledger (more rows than any prior ledger use, which topped out at 4) initially overflowed the frame at the original description lengths — the Grailed row got clipped at the bottom edge. Fixed by tightening every row's description to a single crisp sentence; re-exported and verified all 5 rows render fully.
+
+| # | Title | Category | topic_key | Layout | Font pairing | Cover placement | Imagery |
+|---|-------|----------|-----------|--------|--------------|-----------------|---------|
+| 1 | The Fee Math Before You List | Resellers | platform-fee-netting-comparison | ledger | IBM Plex Sans | corner-block | ai-raster cover only |
+| 2 | What the Badge Actually Covers | All | authenticity-guarantee-scope-by-platform | ledger + checklist | Newsreader + Roboto | corner-block | ai-raster cover only |
 
 ---
 

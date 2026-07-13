@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Certificate with magnifying glass over a luxury handbag hardware detail">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Halo -->
+  <circle cx="600" cy="315" r="230" fill="#fffbeb"/>
+
+  <!-- Certificate card -->
+  <g>
+    <rect x="430" y="180" width="340" height="240" rx="10" fill="#ffffff" stroke="#92400e" stroke-width="10"/>
+    <line x1="466" y1="240" x2="700" y2="240" stroke="#b45309" stroke-width="10" stroke-linecap="round"/>
+    <line x1="466" y1="272" x2="744" y2="272" stroke="#d6a35a" stroke-width="8" stroke-linecap="round"/>
+    <line x1="466" y1="300" x2="744" y2="300" stroke="#d6a35a" stroke-width="8" stroke-linecap="round"/>
+    <line x1="466" y1="328" x2="680" y2="328" stroke="#d6a35a" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wax seal, bottom-left of card -->
+  <circle cx="470" cy="400" r="30" fill="#b45309"/>
+  <path d="M 456 400 L 466 410 L 486 388" fill="none" stroke="#fffbeb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Magnifying glass over the card's lower-right corner -->
+  <circle cx="742" cy="392" r="66" fill="#fffbeb" fill-opacity="0.6" stroke="#92400e" stroke-width="14"/>
+  <line x1="788" y1="438" x2="838" y2="488" stroke="#92400e" stroke-width="16" stroke-linecap="round"/>
+
+  <!-- Hardware detail hint inside the lens -->
+  <circle cx="742" cy="392" r="20" fill="none" stroke="#b45309" stroke-width="6"/>
+</svg>

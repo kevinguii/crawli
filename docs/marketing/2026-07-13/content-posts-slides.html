@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawli Content Posts — 2026-07-13</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 2026-07-13 batch (2 posts). Per check-visual-diversity.js, differs from both the
+     2026-07-11 tool-spotlight post (Satoshi+General Sans, spotlight-photo, real-photo,
+     centered-stacked full-bleed) and the 2026-07-02 batch (8 font pairings already used,
+     split/number-left/visual-hero/grid/myth layouts, top/side-rail/centered/bottom placements):
+     2 brand-new font pairings: IBM Plex Sans (font-plex, "Financial Trust" mood) and
+     Newsreader+Roboto (font-newsreader, "News Editorial" mood, least-used pairing per the
+     diversity check). Layouts: ledger (post 1, fee-table format) + checklist (post 2,
+     coverage-gap format) — both reused from the 2026-06-29 batch's CSS system (2 batches
+     back, not the immediate previous ones). Cover placement: corner-block on both (also
+     last used 2026-06-29, avoiding the 2026-07-02/07-11 placements). Colors: #047857
+     (Deep Jade) and #1e3a5f (Authority Navy), both unused in visual-history.json. No style
+     movement this batch (clean treatment — Financial Trust / News Editorial font choices
+     carry the mood on their own; Vibrant & Block-based was considered but its own
+     do-not-use-for guidance flags financial content, so skipped). -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  background: #0a0a0a;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px; gap: 14px;
+}
+
+/* ── top bar ── */
+.top-bar { width:100%; max-width:440px; display:flex; align-items:center; gap:10px; }
+select { flex:1; padding:9px 12px; border-radius:8px; border:1px solid #2a2a2a; background:#1a1a1a; color:#ccc; font-size:13px; cursor:pointer; }
+.nbtn { padding:9px 14px; border:1px solid #2a2a2a; border-radius:8px; background:#1a1a1a; color:#aaa; font-size:13px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.nbtn:hover:not(:disabled) { background:#252525; color:#fff; }
+.nbtn:disabled { opacity:.3; cursor:default; }
+.post-label { width:100%; max-width:440px; font-size:11px; color:#444; text-transform:uppercase; letter-spacing:.1em; }
+
+/* ── slide frame (4:5) ── */
+.frame { width:100%; max-width:440px; aspect-ratio:4/5; border-radius:18px; overflow:hidden; position:relative; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+.slide { display:none; width:100%; height:100%; position:absolute; top:0; left:0; }
+.slide.on { display:block; }
+.bot-bar { width:100%; max-width:440px; display:flex; align-items:center; justify-content:space-between; }
+.slide-ctr { font-size:12px; color:#444; }
+
+/* ════════════════════════════════════════════════════════════════════
+   COVER PHOTO — corner-block placement
+   ════════════════════════════════════════════════════════════════════ */
+.cover-photo { width:100%; height:100%; position:relative; overflow:hidden; }
+.cover-photo .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.cover-photo .scrim { position:absolute; inset:0; }
+.cover-photo.place-corner .scrim {
+  background: linear-gradient(148deg, rgba(0,0,0,.02) 38%, rgba(0,0,0,.10) 62%, rgba(0,0,0,.22) 82%);
+}
+.cover-photo.place-corner .content {
+  position:absolute; z-index:2; bottom:0; left:0; right:0; display:block; padding:0;
+}
+.cover-photo.place-corner .corner-box {
+  background: var(--accent);
+  padding: 18px 22px 22px;
+  max-width: 84%;
+  display: flex; flex-direction:column; gap:8px;
+}
+.cover-photo .badge {
+  display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:100px;
+  background:rgba(255,255,255,.20); border:1px solid rgba(255,255,255,.32);
+  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  width:fit-content; color:#fff;
+}
+.cover-photo .hook {
+  font-size:23px; line-height:1.18; font-weight:800; color:#fff;
+  text-shadow:0 1px 12px rgba(0,0,0,.35);
+}
+.cover-photo .swipe { font-size:10px; opacity:.80; letter-spacing:.07em; text-transform:uppercase; color:#fff; }
+
+/* ════════════════════════════════════════════════════════════════════
+   LEDGER — horizontal-striped rows, number col left, content right.
+   ════════════════════════════════════════════════════════════════════ */
+.ledger { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; }
+.ledger .l-head { padding:22px 22px 14px; border-bottom:1px solid rgba(255,255,255,.10); flex-shrink:0; }
+.ledger .l-section { font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; margin-bottom:5px; }
+.ledger .l-head-title { font-size:18px; font-weight:800; line-height:1.22; }
+.ledger .l-rows { flex:1; display:flex; flex-direction:column; }
+.ledger .l-row { flex:1; display:flex; align-items:stretch; border-bottom:1px solid rgba(255,255,255,.08); }
+.ledger .l-row:last-child { border-bottom:none; }
+.ledger .l-num { width:52px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; opacity:.9; padding:0; letter-spacing:-.5px; color:var(--accent); }
+.ledger .l-row.hi .l-num { opacity:1; color:var(--accent); background:rgba(255,255,255,.05); }
+.ledger .l-sep { width:1px; background:rgba(255,255,255,.08); flex-shrink:0; }
+.ledger .l-content { flex:1; padding:11px 16px 11px 14px; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+.ledger .l-label { font-size:10px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; opacity:.36; }
+.ledger .l-title { font-size:13px; font-weight:700; line-height:1.26; }
+.ledger .l-desc { font-size:11px; line-height:1.5; opacity:.66; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CHECKLIST — numbered items stacked vertically
+   ════════════════════════════════════════════════════════════════════ */
+.checklist { width:100%; height:100%; display:flex; flex-direction:column; padding:24px 22px 20px; overflow:hidden; }
+.checklist .ck-head { margin-bottom:14px; flex-shrink:0; }
+.checklist .ck-section { font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; margin-bottom:5px; }
+.checklist .ck-head-title { font-size:18px; font-weight:800; line-height:1.22; }
+.checklist .ck-items { display:flex; flex-direction:column; flex:1; justify-content:space-between; }
+.checklist .ck-item { display:flex; align-items:flex-start; gap:13px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+.checklist .ck-item:last-child { border-bottom:none; }
+.checklist .ck-num { font-size:10px; font-weight:800; min-width:22px; height:22px; border-radius:50%; border:1.5px solid rgba(255,255,255,.28); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; opacity:.52; letter-spacing:0; }
+.checklist .ck-num.tick { background:var(--accent); border-color:var(--accent); opacity:1; color:#fff; }
+.checklist .ck-text { display:flex; flex-direction:column; gap:2px; }
+.checklist .ck-name { font-size:13.5px; font-weight:700; line-height:1.28; }
+.checklist .ck-detail { font-size:11.5px; line-height:1.55; opacity:.68; }
+
+/* ════════════════════════════════════════════════════════════════════
+   EDITORIAL STEP — text-dominant, typographic
+   ════════════════════════════════════════════════════════════════════ */
+.ed-step { width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:28px 24px 26px; overflow:hidden; position:relative; }
+.ed-step .ed-ghost { position:absolute; right:12px; top:14px; font-size:96px; font-weight:900; opacity:.05; letter-spacing:-3px; user-select:none; line-height:1; pointer-events:none; }
+.ed-step .ed-top { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+.ed-step .ed-section { font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; }
+.ed-step .ed-counter { font-size:11px; font-weight:600; opacity:.36; letter-spacing:.04em; }
+.ed-step .ed-body { flex:1; display:flex; flex-direction:column; justify-content:center; gap:12px; padding:16px 0; }
+.ed-step .ed-headline { font-size:24px; font-weight:800; line-height:1.22; }
+.ed-step .ed-sub { font-size:13px; line-height:1.65; opacity:.76; }
+
+/* ════════════════════════════════════════════════════════════════════
+   MANIFESTO / STAT
+   ════════════════════════════════════════════════════════════════════ */
+.manifesto { width:100%; height:100%; padding:38px 26px; display:flex; flex-direction:column; justify-content:center; gap:16px; }
+.manifesto .big { font-weight:800; font-size:31px; line-height:1.16; letter-spacing:-.4px; }
+.manifesto .big .hl { font-style:italic; color:var(--accent); }
+.manifesto .footnote { font-size:12px; opacity:.48; letter-spacing:.02em; }
+
+.stat { width:100%; height:100%; padding:38px 26px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
+.stat .num { font-size:88px; font-weight:900; line-height:.9; letter-spacing:-2px; color:var(--accent); }
+.stat .ctx { font-size:14.5px; line-height:1.58; opacity:.76; max-width:300px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CTA — no URL, no explicit download/link-in-bio language
+   ════════════════════════════════════════════════════════════════════ */
+.cta-slide { width:100%; height:100%; padding:32px 24px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; }
+.cta-slide .cta-tag { font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; opacity:.36; flex-shrink:0; }
+.cta-slide .cta-headline { font-size:23px; font-weight:800; line-height:1.24; flex:1; display:flex; align-items:center; }
+.cta-slide .cta-closing { font-size:13px; line-height:1.66; opacity:.76; border-top:1px solid rgba(255,255,255,.14); padding-top:15px; margin-top:14px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   FONT TRACKS — 2 brand-new pairings
+   ════════════════════════════════════════════════════════════════════ */
+/* font-plex = IBM Plex Sans single-family ("Financial Trust" mood) — post 1 */
+.font-plex .hook,.font-plex .l-head-title,.font-plex .ck-head-title,.font-plex .ed-headline,
+.font-plex .manifesto .big,.font-plex .stat .num,.font-plex .cta-headline { font-family:'IBM Plex Sans',sans-serif; font-weight:700; }
+.font-plex .badge,.font-plex .swipe,.font-plex .l-section,.font-plex .l-label,.font-plex .l-title,.font-plex .l-desc,
+.font-plex .ck-section,.font-plex .ck-name,.font-plex .ck-detail,.font-plex .ed-section,.font-plex .ed-counter,
+.font-plex .ed-sub,.font-plex .manifesto .footnote,.font-plex .stat .ctx,.font-plex .cta-tag,.font-plex .cta-closing
+{ font-family:'IBM Plex Sans',sans-serif; font-weight:400; }
+
+/* font-newsreader = Newsreader (heading, serif) + Roboto (body) — post 2 */
+.font-newsreader .hook,.font-newsreader .l-head-title,.font-newsreader .ck-head-title,.font-newsreader .ed-headline,
+.font-newsreader .manifesto .big,.font-newsreader .stat .num,.font-newsreader .cta-headline { font-family:'Newsreader',Georgia,serif; }
+.font-newsreader .badge,.font-newsreader .swipe,.font-newsreader .l-section,.font-newsreader .l-label,.font-newsreader .l-title,.font-newsreader .l-desc,
+.font-newsreader .ck-section,.font-newsreader .ck-name,.font-newsreader .ck-detail,.font-newsreader .ed-section,.font-newsreader .ed-counter,
+.font-newsreader .ed-sub,.font-newsreader .manifesto .footnote,.font-newsreader .stat .ctx,.font-newsreader .cta-tag,.font-newsreader .cta-closing
+{ font-family:'Roboto',sans-serif; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <select id="sel" onchange="jumpPost(this.value)"></select>
+  <button class="nbtn" id="pp" onclick="changePost(-1)">← Post</button>
+  <button class="nbtn" id="np" onclick="changePost(1)">Post →</button>
+</div>
+<div class="post-label" id="plabel"></div>
+<div class="frame" id="frame"></div>
+<div class="bot-bar">
+  <button class="nbtn" id="ps" onclick="changeSlide(-1)">← Slide</button>
+  <span class="slide-ctr" id="sctr"></span>
+  <button class="nbtn" id="ns" onclick="changeSlide(1)">Slide →</button>
+</div>
+<script>
+// ─── RENDER FUNCTIONS ────────────────────────────────────────────────────────
+
+function sv(post) { return `--accent:${post.color};`; }
+
+function renderCoverPhoto(s, post) {
+  return `<div class="cover-photo place-corner" style="${sv(post)}">
+    <img class="bg" src="${s.img}" alt="">
+    <div class="scrim"></div>
+    <div class="content">
+      <div class="corner-box">
+        <span class="badge">${s.badge}</span>
+        <h1 class="hook">${s.title}</h1>
+        <span class="swipe">${s.swipe || 'swipe →'}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLedger(s, post) {
+  const rows = (s.rows || []).map(r => `
+    <div class="l-row${r.hi ? ' hi' : ''}">
+      <div class="l-num">${r.num}</div>
+      <div class="l-sep"></div>
+      <div class="l-content">
+        ${r.label ? `<div class="l-label">${r.label}</div>` : ''}
+        <div class="l-title">${r.title}</div>
+        ${r.desc ? `<div class="l-desc">${r.desc}</div>` : ''}
+      </div>
+    </div>`).join('');
+  return `<div class="ledger" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="l-head">
+      ${s.section ? `<div class="l-section">${s.section}</div>` : ''}
+      <div class="l-head-title">${s.title}</div>
+    </div>
+    <div class="l-rows">${rows}</div>
+  </div>`;
+}
+
+function renderChecklist(s, post) {
+  const items = (s.items || []).map((it, i) => `
+    <div class="ck-item">
+      <div class="ck-num${it.tick ? ' tick' : ''}">${i + 1}</div>
+      <div class="ck-text">
+        <div class="ck-name">${it.name}</div>
+        ${it.detail ? `<div class="ck-detail">${it.detail}</div>` : ''}
+      </div>
+    </div>`).join('');
+  return `<div class="checklist" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="ck-head">
+      ${s.section ? `<div class="ck-section">${s.section}</div>` : ''}
+      <div class="ck-head-title">${s.title}</div>
+    </div>
+    <div class="ck-items">${items}</div>
+  </div>`;
+}
+
+function renderEdStep(s, post) {
+  return `<div class="ed-step" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="ed-ghost" aria-hidden="true">${s.ghost || ''}</div>
+    <div class="ed-top">
+      ${s.section ? `<div class="ed-section">${s.section}</div>` : ''}
+      ${s.counter ? `<div class="ed-counter">${s.counter}</div>` : ''}
+    </div>
+    <div class="ed-body">
+      <div class="ed-headline">${s.headline}</div>
+      ${s.sub ? `<div class="ed-sub">${s.sub}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderManifesto(s, post) {
+  return `<div class="manifesto" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="big">${s.text}</div>
+    ${s.footnote ? `<div class="footnote">${s.footnote}</div>` : ''}
+  </div>`;
+}
+
+function renderStat(s, post) {
+  return `<div class="stat" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="num">${s.num}</div>
+    <div class="ctx">${s.ctx}</div>
+  </div>`;
+}
+
+function renderCTA(s, post) {
+  return `<div class="cta-slide" style="background:${post.bg}; color:${post.text}; ${sv(post)}">
+    <div class="cta-tag">${s.tag || 'RESELLER INTEL'}</div>
+    <div class="cta-headline">${s.headline}</div>
+    ${s.closing ? `<div class="cta-closing">${s.closing}</div>` : ''}
+  </div>`;
+}
+
+function buildSlideHTML(s, post) {
+  if (s.type === 'cover-photo') return renderCoverPhoto(s, post);
+  if (s.type === 'ledger')      return renderLedger(s, post);
+  if (s.type === 'checklist')   return renderChecklist(s, post);
+  if (s.type === 'ed-step')     return renderEdStep(s, post);
+  if (s.type === 'manifesto')   return renderManifesto(s, post);
+  if (s.type === 'stat')        return renderStat(s, post);
+  if (s.type === 'cta')         return renderCTA(s, post);
+  return `<div style="background:${post.bg};color:${post.text};height:100%;display:flex;align-items:center;justify-content:center;padding:24px;">Unknown type: ${s.type}</div>`;
+}
+
+// ─── POST DATA ────────────────────────────────────────────────────────────────
+
+const posts = [
+
+  // ── 1. THE FEE MATH BEFORE YOU LIST ─────────────────────────────────────────
+  // color:#047857  font-plex  ledger+stat+ed-step  corner-block  topic:platform-fee-netting-comparison
+  {
+    label: 'CAROUSEL · RESELLERS · PLATFORM FEES',
+    ptitle: 'The Fee Math Before You List',
+    color: '#047857', text: '#e6f5ee',
+    bg: 'linear-gradient(162deg,#065f46 0%,#062018 100%)',
+    fontClass: 'font-plex',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-01-cover.png', badge:'Platform Fees',
+        title:'the same $500 bag can net you $37 more or less, and the fee percentage on the listing page does not tell you that.',
+        swipe:'swipe for the real numbers →' },
+
+      { type:'ledger', section:'Same $500 designer bag, four platforms', title:'What you actually net',
+        rows:[
+          { num:'01', label:'Poshmark', title:'20% commission on sales $15+', desc:'Nets $400. A prepaid USPS label is bundled into that fee, which is real negotiation cover if a buyer asks about shipping.' },
+          { num:'02', label:'eBay', title:'~13.6% final value fee + $0.40 per order', desc:'Nets roughly $432. Authenticity Guarantee is free on qualifying handbags $500+, but luxury search traffic there is inconsistent.', hi:true },
+          { num:'03', label:'Vestiaire Collective', title:'18% commission in the $500 to $1,999 tier', desc:'Nets $410 before shipping. You cover roughly $12 to $18 to send it to their authentication hub, landing closer to $395.' },
+          { num:'04', label:'The RealReal', title:'Tiered consignment, not a flat rate', desc:'Payout scales with price and consignor history, so the identical bag can net two sellers two different amounts. Attracts serious buyers, less predictable upfront.' },
+        ] },
+
+      { type:'stat', num:'$37', ctx:'the gap between the tightest net (Vestiaire, after shipping) and the best net (eBay) on the exact same $500 bag this round, before buyer-pool differences even factor in.' },
+
+      { type:'ed-step', section:'Before you list', counter:'The math most people skip',
+        ghost:'$',
+        headline:'The fee percentage on the listing page is not your net.',
+        sub:'Shipping who pays, authentication-hub costs, and per-order fees all sit outside the headline percentage. Run the actual net for your item before picking a platform, not after the sale clears.' },
+
+      { type:'manifesto', text:'The platform is not neutral.<br>It is part of your <span class="hl">pricing strategy.</span>' },
+
+      { type:'cta', tag:'RESELLER INTEL · CRAWLI', headline:'The math gets tighter once you can see it side by side.',
+        closing:'Some resellers now check what a piece is actually worth across platforms before they ever open a listing draft, instead of guessing at the net.' },
+    ]
+  },
+
+  // ── 2. WHAT THE BADGE ACTUALLY COVERS ───────────────────────────────────────
+  // color:#1e3a5f  font-newsreader  ledger+checklist+ed-step  corner-block  topic:authenticity-guarantee-scope-by-platform
+  {
+    label: 'CAROUSEL · ALL · PLATFORM AUTHENTICATION',
+    ptitle: 'What the Badge Actually Covers',
+    color: '#1e3a5f', text: '#e8eef5',
+    bg: 'linear-gradient(162deg,#1e3a5f 0%,#0a1420 100%)',
+    fontClass: 'font-newsreader',
+    slides: [
+      { type:'cover-photo', img:'ai-images/post-02-cover.png', badge:'Authentication',
+        title:'five platforms, five different definitions of "authenticated." none of them mean the same thing.',
+        swipe:'swipe for what each one covers →' },
+
+      { type:'ledger', section:'Five platforms, five authentication programs', title:'Read the fine print on the badge',
+        rows:[
+          { num:'01', label:'Poshmark', title:'Posh Authenticate, $500+', desc:'Covers Chanel, LV, Gucci, Rolex, handbags, watches, jewelry, select sneakers. Free both ways.' },
+          { num:'02', label:'eBay', title:'Authenticity Guarantee, category + price gated', desc:'Handbags $500+, watches $2,000+, select sneakers. Off-list items get no check at all.' },
+          { num:'03', label:'Vestiaire Collective', title:'Digital screening + in-house physical review', desc:'80+ trained authenticators. Thorough, but it is Vestiaire grading its own inventory.', hi:true },
+          { num:'04', label:'The RealReal', title:'Internal authentication process', desc:'Paid an $11M investor settlement over its rigor, and was separately sued by Chanel over counterfeits.' },
+          { num:'05', label:'Grailed', title:'"Digital Authentication" badge', desc:'AI image-matching plus human photo review. No hands-on inspection like Vestiaire\'s.' },
+        ] },
+
+      { type:'checklist', section:'Where the coverage gap usually is', title:'What a badge does not promise',
+        items:[
+          { name:'Below the price floor', detail:'Most programs run zero check under their dollar threshold, no matter how convincing the listing looks.', tick:true },
+          { name:'Off the brand or category list', detail:'Authentication covers a defined set of brands and item types, not everything sold on the platform.', tick:true },
+          { name:'Peer-to-peer listings outside the program', detail:'A badge on one item from a seller does not mean every other listing they have was checked.', tick:true },
+          { name:'Photo-only review', detail:'Even "authenticated" can mean someone reviewed submitted photos, not the physical item in hand.', tick:true },
+        ] },
+
+      { type:'ed-step', section:'The point', counter:'Not a reason to distrust every badge',
+        ghost:'?',
+        headline:'Know what the badge covers before you treat it as your only check.',
+        sub:'A badge on a $600 bag from a covered brand means something real. The same badge icon on a $40 accessory or an off-list brand usually means the platform never looked at all.' },
+
+      { type:'manifesto', text:'A badge tells you<br>what one team decided.<br>It is <span class="hl">one data point,</span><br>not the whole picture.' },
+
+      { type:'cta', tag:'RESELLER INTEL', headline:'Reading the fine print takes longer than trusting the icon, but it is the part that protects you.',
+        closing:'Some buyers now cross-check a listing against what similar pieces are actually selling for elsewhere before the badge is the only thing they lean on.' },
+    ]
+  },
+
+];
+
+// ─── STATE + NAV ──────────────────────────────────────────────────────────────
+let pi = 0, si = 0;
+
+function render() {
+  const post = posts[pi];
+  const frame = document.getElementById('frame');
+  frame.className = `frame ${post.fontClass}`;
+  frame.innerHTML = post.slides.map((s, i) =>
+    `<div class="slide${i === si ? ' on' : ''}">${buildSlideHTML(s, post)}</div>`
+  ).join('');
+  document.getElementById('plabel').textContent = post.label;
+  document.getElementById('sctr').textContent = `${si + 1} / ${post.slides.length}`;
+  document.getElementById('pp').disabled = pi === 0;
+  document.getElementById('np').disabled = pi === posts.length - 1;
+  document.getElementById('ps').disabled = si === 0;
+  document.getElementById('ns').disabled = si === post.slides.length - 1;
+}
+
+function buildSelect() {
+  const sel = document.getElementById('sel');
+  sel.innerHTML = posts.map((p, i) => `<option value="${i}">${i + 1} · ${p.ptitle}</option>`).join('');
+}
+
+function changePost(d) {
+  const next = pi + d;
+  if (next < 0 || next >= posts.length) return;
+  pi = next; si = 0;
+  document.getElementById('sel').value = pi;
+  render();
+}
+function jumpPost(i) { pi = Number(i); si = 0; render(); }
+function changeSlide(d) {
+  const post = posts[pi];
+  const next = si + d;
+  if (next < 0 || next >= post.slides.length) return;
+  si = next;
+  render();
+}
+function gotoSlide(i) { si = i; render(); }
+
+buildSelect();
+render();
+</script>
+</body>
+</html>

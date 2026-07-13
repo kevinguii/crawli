@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-13 — New blog post: third-party luxury authentication providers**
+- `content/blog/best-third-party-luxury-authentication-services.md` — fills a gap the two existing authentication posts don't cover (in-house/partner platform checks only); GSC showed real impressions for this exact query already misfiled on an unrelated page. Two other briefed ideas (fee/profit case study, Levi's 501 platform price tracking) were dropped after checking for cannibalization: both duplicated live-ranking posts (`luxury-selling-platform-fees-vs-speed`, `hidden-costs-of-selling-vintage-clothing`, `levis-501-resale-price`) and one repeated the `cross-platform-flip-case-study` format verbatim.
+
 **2026-07-12 — Turnstile CAPTCHA shipped to production, fully enforced**
 - New `app/components/TurnstileWidget.tsx` — explicit-render wrapper (`window.turnstile.render`) with an imperative `reset()` handle (tokens are single-use, ~5min TTL) and a `TURNSTILE_ENABLED` export gated on `NEXT_PUBLIC_TURNSTILE_SITE_KEY` being set. Wired into `app/login/page.tsx` (`signUp` + `signInWithPassword`), `app/check-email/page.tsx` (both resend paths — widget only mounts once the 60s cooldown clears), and `app/forgot-password/page.tsx` (`resetPasswordForEmail`). Google OAuth exempt by design.
 - Supabase dashboard switch (Auth → Providers → Turnstile) is flipped and enforcing. Deployed to prod (`git pull && npm run build && systemctl restart crawli-next`) with `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in `/opt/crawli/.env`. Verified live on `thecrawli.com`: widget auto-solves invisibly (Managed mode), a bad-credentials sign-in returns `error_code: invalid_credentials` (not a captcha error) in Supabase auth logs — confirms the full token round-trip works in production, not just locally.
