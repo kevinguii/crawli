@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-13 — Journey Series illustrated pipeline documented + 3 posts built (Wisdom Kaye, Emma Rogue, Satu Tuohimaa)**
+- New illustrated sub-format (AI-redrawn cartoon portraits, 4:5, full-bleed, Playfair Display captions) fully written up in `docs/marketing/journey-series/README.md`, superseding the original photo-only pilot for new posts. Pipeline itself lives outside the repo at `~/Desktop/nano-banana-tests/<post-slug>/` (`process.py` + `build_cta.py`, reused per post). New step added: every journey post now also gets a matching `content/blog/<slug>.md` (real citations, FAQ schema, no forced `compareSlug`) plus 3 draft X posts. See CLAUDE.md "Social media content" for the pointer.
+
 **2026-07-13 — New blog post: third-party luxury authentication providers**
 - `content/blog/best-third-party-luxury-authentication-services.md` — fills a gap the two existing authentication posts don't cover (in-house/partner platform checks only); GSC showed real impressions for this exact query already misfiled on an unrelated page. Two other briefed ideas (fee/profit case study, Levi's 501 platform price tracking) were dropped after checking for cannibalization: both duplicated live-ranking posts (`luxury-selling-platform-fees-vs-speed`, `hidden-costs-of-selling-vintage-clothing`, `levis-501-resale-price`) and one repeated the `cross-platform-flip-case-study` format verbatim.
 

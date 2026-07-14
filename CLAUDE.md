@@ -98,6 +98,8 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 
 **Obfuscate commercial intent:** No `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere. Crawli teased only on final slide as subtle aside, worded differently each post, present in only some posts. Goal: comment inquiries, not clicks. See `docs/reference/B2B_FEATURE_TRUTH.md` and live n8n brief `moMVEnr5L6kGgJTC`.
 
+**Journey Series posts are a different format — read `docs/marketing/journey-series/README.md` before starting one.** Real-person profile carousels (e.g. "make sure it follows the wording of the X one we did"), current default is an illustrated (AI-redrawn cartoon portrait) 14-slide format, pipeline lives on the user's Desktop at `~/Desktop/nano-banana-tests/<post-slug>/`, not in this repo. Explicit CTA + URL-adjacent phrasing is fine here (the obfuscation rule above does NOT apply to this format). Every journey post also gets a matching `content/blog/<slug>.md` and 3 draft X posts — see that doc's "Turning a post into a blog post + X posts" section for the exact steps.
+
 ## Common gotchas (quick reference — full list in docs/core/PITFALLS.md)
 
 - **Streaming endpoints buffer in dev** — test `/api/search` with `curl -N`
