@@ -24,8 +24,6 @@ export interface SavedSearch {
 
 interface BillingStatus {
   plan: 'free' | 'pro' | 'max';
-  used: number;
-  cap: number;
   alertsCap: number;
 }
 
@@ -57,11 +55,11 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
     return () => { cancelled = true; };
   }, []);
 
-  // Pull billing so the "+ New alert" button can intercept quota-exceeded clicks.
+  // Pull billing so the "+ New alert" button can intercept alert-slot quota clicks.
   useEffect(() => {
     fetch('/api/billing/status')
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d) setBilling({ plan: d.plan, used: d.used, cap: d.cap, alertsCap: d.caps?.alerts ?? 2 }); })
+      .then((d) => { if (d) setBilling({ plan: d.plan, alertsCap: d.caps?.alerts ?? 2 }); })
       .catch(() => {});
   }, []);
 
@@ -71,7 +69,6 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
     // Paused alerts don't count toward the limit — only active ones occupy a slot.
     const activeAlerts = alerts.filter((a) => !a.paused).length;
 
-    // Check alert quota first — more specific reason than search quota.
     if (activeAlerts >= maxAlerts) {
       toast.error(
         isFree
@@ -83,18 +80,6 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
               duration: 8000,
             }
           : { duration: 6000 },
-      );
-      return;
-    }
-
-    // Then search quota (creation costs 1 search).
-    if (billing && billing.used >= billing.cap) {
-      toast.error(
-        `You've used all ${billing.cap} searches for this period. Creating a search alert uses 1 search.`,
-        {
-          action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing'; } },
-          duration: 8000,
-        },
       );
       return;
     }
@@ -226,7 +211,6 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
           onClose={() => setShowCreate(false)}
           onCreated={(newAlert) => {
             setAlerts((prev) => [newAlert, ...prev]);
-            setBilling((b) => (b ? { ...b, used: b.used + 1 } : b));
             setShowCreate(false);
           }}
         />

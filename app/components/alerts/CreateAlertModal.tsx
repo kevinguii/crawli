@@ -48,7 +48,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   // like "L" still pre-selects the matching option.
   const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size').toLowerCase());
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
-  const [searchesRemaining, setSearchesRemaining] = useState<number | null>(null);
   const [isPaid, setIsPaid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -63,7 +62,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
     fetch('/api/billing/status')
       .then((r) => r.json())
       .then((d) => {
-        setSearchesRemaining(Math.max(0, (d.cap ?? 10) - (d.used ?? 0)));
         setIsPaid(d.status === 'active' || d.status === 'past_due' || (d.tier && d.tier !== 'free'));
       })
       .catch(() => {});
@@ -119,9 +117,8 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
           setSubmitting(false);
           return;
         }
-        // A baseline-changing edit re-runs in the background. It's free (no
-        // search credit), so don't fire crawli:search-started — that would
-        // wrongly decrement the nav search counter.
+        // A baseline-changing edit re-runs in the background. Alerts never
+        // touch search quota, so no crawli:search-started event here.
         if (baselineChanged) {
           toast.success('Alert updated! Re-running search in the background.');
         } else {
@@ -135,8 +132,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       return;
     }
 
-    // Optimistically decrement nav search counter — the first run is charged 1 search.
-    window.dispatchEvent(new CustomEvent('crawli:search-started'));
     try {
       const res = await fetch('/api/saved-searches', {
         method: 'POST',
@@ -370,16 +365,16 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </div>
             </div>
 
-            {/* A fresh create costs 1 search. A baseline-changing edit re-runs the
-                search but is free (free tier is rate-limited by a cooldown). An
-                edit that doesn't touch query/platforms/filters is free too. */}
+            {/* Alerts run entirely in-house (no Firecrawl-metered platforms), so
+                they never consume search quota — creating, editing, and every
+                scheduled run are free regardless of tier. */}
             {isEditing && baselineChanged ? (
               <div
                 className="rounded-xl p-4 mb-5 text-sm"
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
                 <p style={{ color: 'var(--text)' }}>
-                  <strong>This won&apos;t use a search.</strong> Changing the query, platforms, or filters resets your baseline and re-runs the search.
+                  Changing the query, platforms, or filters resets your baseline and re-runs the search.
                 </p>
                 {!isPaid && (
                   <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -396,14 +391,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
               >
                 <p style={{ color: 'var(--text)' }}>
-                  <strong>1 search will be used</strong> to set up this alert.
-                </p>
-                {searchesRemaining !== null && (
-                  <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
-                    You have {searchesRemaining} search{searchesRemaining !== 1 ? 'es' : ''} remaining this month.
-                  </p>
-                )}
-                <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
                   The first run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
                 </p>
               </div>
@@ -413,7 +400,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
                 <p style={{ color: 'var(--text-muted)' }}>
-                  No changes to the query, platforms, or filters — this won&apos;t use a search.
+                  No changes to the query, platforms, or filters.
                 </p>
               </div>
             )}
@@ -438,7 +425,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={submitting || (!isEditing && searchesRemaining === 0)}
+                disabled={submitting}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
                 {isEditing

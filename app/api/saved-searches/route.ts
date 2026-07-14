@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   // Check tier cap
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status, searches_used_this_period, searches_period_start, max_searches_per_period, max_saved_searches, min_alert_cadence_hours')
+    .select('subscription_status, max_saved_searches, min_alert_cadence_hours')
     .eq('id', user.id)
     .single();
 
@@ -112,36 +112,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Quota check — first run costs 1 search. Cap + weekly reset mirror the main
-  // search route: cap is max_searches_per_period (from TIER_CAPS) and the period
-  // is a 7-day rolling window for every tier.
-  const cap = profile?.max_searches_per_period ?? 5;
-  const RESET_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
-  let used = profile?.searches_used_this_period ?? 0;
-
-  const periodStartMs = profile?.searches_period_start
-    ? new Date(profile.searches_period_start).getTime()
-    : 0;
-  if (Date.now() - periodStartMs > RESET_PERIOD_MS) {
-    await admin.from('profiles').update({
-      searches_used_this_period: 0,
-      searches_period_start: new Date().toISOString(),
-    }).eq('id', user.id);
-    used = 0;
-  }
-
-  if (used >= cap) {
-    return NextResponse.json(
-      {
-        error: 'search_quota_exceeded',
-        message: `You have used all ${cap} searches for this period.`,
-        used,
-        cap,
-      },
-      { status: 402 },
-    );
-  }
-
   // Insert the row — next_run_at is now so the first run fires immediately.
   // The client-supplied next_run_at is the *anchored* next run (e.g. tomorrow 9 AM
   // local) — alertRunner will overwrite next_run_at after the first run completes.
@@ -163,12 +133,6 @@ export async function POST(request: Request) {
   if (insertErr || !newRow) {
     return NextResponse.json({ error: insertErr?.message ?? 'insert failed' }, { status: 500 });
   }
-
-  // Charge 1 quota for the first run
-  await admin
-    .from('profiles')
-    .update({ searches_used_this_period: used + 1 })
-    .eq('id', user.id);
 
   // Run first search immediately (silent — no notification sent)
   void runAlert(newRow as SavedSearch);
