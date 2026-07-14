@@ -95,7 +95,7 @@ metadata). Shipped the gaps:
 **Socials:** x.com/thecrawli · tiktok.com/@thecrawli · instagram.com/thecrawli ·
 pinterest.com/thecrawli. (Keep `sameAs` and Footer in sync if these change.)
 
-**⚠️ OWNER TASKS STILL OPEN (off-page — the real brand-rank levers, manual):**
+**⚠️ OWNER TASKS STILL OPEN (off-page — the real brand-rank levers, manual — Phase 2 now exists, so these are UNBLOCKED):**
 1. Confirm `NEXT_PUBLIC_GSC_VERIFICATION` is set in prod (user believed so).
 2. Sitemap + indexing: **done** per owner.
 3. **Reddit/forums (highest ROI + #1 AEO lever):** value-first only — build comment
@@ -103,42 +103,43 @@ pinterest.com/thecrawli. (Keep `sameAs` and Footer in sync if these change.)
    r/vinted, r/flipping, r/Vintage, r/streetwear, r/findfashion, THEN mention
    Crawli (link the Phase 2 public page, not a signup wall) ~1 per 10 genuine
    comments. r/flipping & r/SideProject tolerate a story-first "I built this".
+   **Not started as of 2026-07-13.**
 4. **Product Hunt:** launch ONCE for the high-DA backlink + visibility day (not
    for ICP customers — PH audience = founders). Prep a 60s demo, gallery,
-   founder first-comment, 5-10 early engagers. **Do it after Phase 2 exists** so
-   there's a no-login demo.
+   founder first-comment, 5-10 early engagers. Phase 2 (no-login demo) now
+   exists, so this can be scheduled. **Not started as of 2026-07-13.**
 5. **Directories/lists:** SaaSHub, AlternativeTo (alt to Google Shopping /
    PriceCharting), "best reselling tools" listicles (email authors), Indie
    Hackers build-in-public. Small individual links, collectively build the entity.
+   **No submission kit exists yet (tagline, description, logos, screenshots) —
+   not started as of 2026-07-13.**
 - **Do NOT:** buy links, mass-submit directories, drop cold Reddit links, fiverr
   backlink packs. Penalized or useless.
 
-### Phase 2 — Public "compare" page ⏳ NOT BUILT (next, highest leverage)
+### Phase 2 — Public "compare" page ✅ BUILT (confirmed 2026-07-13)
 The keystone. A public, no-login page showing a real cross-platform price
 comparison for a specific item. Removes the activation wall AND serves as the
 backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 
-**Proposed scope (to confirm with owner before building):**
-- **URL:** `/compare/[slug]` e.g. `/compare/north-face-nuptse-jacket`. Must be an
-  indexable path — note `robots.ts` currently disallows `/search` and `?q=`
-  params, so `/compare/` is intentionally separate and crawlable.
-- **Shows:** the item, lowest price per platform, # of listings, price range, a
-  few sample cards, "last updated" timestamp. Soft CTA below ("search this live
-  / set an alert → sign up").
-- **Generation (key open decision):** live-scraping on every visitor is too
-  costly and risks the fragile `/api/search` streaming path. Recommended: a
-  **curated set of ~10-25 high-intent slugs**, each backed by a **cached
-  snapshot** refreshed on a cron (reuse `search_listings_cache` patterns). Start
-  hand-picked, then templatize.
-- **SEO/AEO:** target "[item] resale price" queries; add `ItemList`/`Offer`
-  schema + breadcrumbs; these are exactly the structured, citable pages LLMs
-  quote.
-- **Open decisions for the building session:** live vs cached (recommend cached);
-  how many slugs to seed; refresh cadence; exact data shown; whether sample
-  cards deep-link to the live listings; affiliate links (none today).
-- **Guardrail:** do not touch the `/api/search` NDJSON streaming protocol or
-  `crawl4ai-service/` internals — read `docs/core/SYSTEM_DESIGN.md` +
-  `docs/core/PLATFORM_STATUS.md` first.
+**Shipped scope:**
+- **URL:** `/compare/[slug]` (`app/compare/[slug]/page.tsx`), e.g.
+  `/compare/north-face-nuptse-jacket`. Statically generated for all enabled
+  slugs (`generateStaticParams`) with hourly ISR (`revalidate = 3600`).
+  Crawlable — not in `robots.ts`'s disallow list.
+- **Shows:** item name/category, price by platform grid (8 native platforms),
+  sample listings from the cheapest platform, "last updated" timestamp, an
+  Answer Capsule sentence stating the live price range + marketplace count +
+  cheapest platform (added 2026-07-13, for AI-answer-engine citability), and a
+  soft CTA ("search this live" / "set a price alert").
+- **Generation:** cached snapshots in Supabase `compare_snapshots`, refreshed by
+  a daily cron (`/api/compare/refresh`, 6 AM UTC) — see
+  `docs/reference/SERVER_REFERENCE.md` "Compare-pages refresh cron". Currently
+  15 enabled slugs (curated, per `HANDOFF.md`).
+- **SEO/AEO:** server-rendered JSON-LD `@graph` with `BreadcrumbList` +
+  `Product`/`AggregateOffer` (per-platform `Offer` array with `lowPrice`/
+  `highPrice`/`offerCount`) — see `app/compare/[slug]/page.tsx` lines ~214-259.
+  Also feeds the landing page's `CompareHeroWidget` (2026-07-08).
+- **Not done:** affiliate links (none today, unchanged from original scope).
 
 ### Phase 3 — Re-aim + restart content ⏳ NOT STARTED (after Phase 2)
 - Stop the obfuscation experiment (data killed it: 0 comments/55 posts).
@@ -166,10 +167,10 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 ## 5. Owner action checklist (the human-only items, in priority order)
 1. [x] Provision 3 real Stripe one-time prices in PROD + set env vars — **DONE** (confirmed 2026-06-30).
 2. [ ] Confirm `NEXT_PUBLIC_GSC_VERIFICATION` set in prod.
-3. [ ] Deploy the Phase 0/1 changes (cmd below).
-4. [ ] Start the Reddit value-first karma-building (ongoing).
-5. [ ] Product Hunt launch — after Phase 2 ships.
-6. [ ] Submit to directories / tool lists.
+3. [x] Deploy the Phase 0/1 changes — Phase 2 (`/compare/[slug]`) has since shipped and is live.
+4. [ ] Start the Reddit value-first karma-building — unblocked now that Phase 2 exists, not started as of 2026-07-13.
+5. [ ] Product Hunt launch — unblocked now that Phase 2 exists, not started as of 2026-07-13.
+6. [ ] Submit to directories / tool lists (SaaSHub, AlternativeTo, BetaList, Indie Hackers) — not started as of 2026-07-13.
 
 ## 6. Key references
 - Stripe webhook: `app/api/webhooks/stripe/route.ts` · test: `scripts/test-credit-webhook.mjs`
@@ -184,7 +185,7 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 | Phase | What | Status |
 |---|---|---|
 | 0 | Stripe credits + idempotency | ✅ fully done (code + prod prices) |
-| 1 | SEO/AEO code (llms.txt, sameAs, footer) | ✅ done · pending deploy |
-| 1 | Off-page (Reddit/PH/directories) | 📋 owner, ongoing, gated on Phase 2 |
-| 2 | Public `/compare/[slug]` page | ⏳ not built — NEXT, highest leverage |
-| 3 | Re-aimed + restarted content | ⏳ not started — after Phase 2 |
+| 1 | SEO/AEO code (llms.txt, sameAs, footer) | ✅ done and deployed |
+| 1 | Off-page (Reddit/PH/directories) | 📋 owner, unblocked (Phase 2 shipped) — not started as of 2026-07-13 |
+| 2 | Public `/compare/[slug]` page | ✅ built + live, incl. AggregateOffer schema + Answer Capsule (confirmed 2026-07-13) |
+| 3 | Re-aimed + restarted content | ⏳ not started — Phase 2 is done, this is next |

@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-13 — GEO audit of `/compare/[slug]` + added Answer Capsule; corrected stale GROWTH_PLAN.md Phase 2 status**
+- Verified existing AggregateOffer/BreadcrumbList JSON-LD (SSR, `app/compare/[slug]/page.tsx`), `public/llms.txt`, and AI-crawler-allowing `robots.ts` were all already in place. Added the one real gap: a plain-text Answer Capsule sentence (price range + marketplace count + cheapest platform) right under the H1, using values already computed for the schema — makes the price range directly citable by AI answer engines without parsing JSON-LD. `docs/planning/GROWTH_PLAN.md` had Phase 2 marked "not built" even though it shipped 2026-07-08 (feeds `CompareHeroWidget`) — corrected the phase status, owner checklist, and status snapshot table; off-page directory/Reddit/PH tasks are unblocked but still not started.
+
 **2026-07-13 — Journey Series illustrated pipeline documented + 3 posts built (Wisdom Kaye, Emma Rogue, Satu Tuohimaa)**
 - New illustrated sub-format (AI-redrawn cartoon portraits, 4:5, full-bleed, Playfair Display captions) fully written up in `docs/marketing/journey-series/README.md`, superseding the original photo-only pilot for new posts. Pipeline itself lives outside the repo at `~/Desktop/nano-banana-tests/<post-slug>/` (`process.py` + `build_cta.py`, reused per post). New step added: every journey post now also gets a matching `content/blog/<slug>.md` (real citations, FAQ schema, no forced `compareSlug`) plus 3 draft X posts. See CLAUDE.md "Social media content" for the pointer.
 

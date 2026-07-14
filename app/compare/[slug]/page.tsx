@@ -299,6 +299,14 @@ export default async function ComparePage({ params }: Props) {
               <> · <span style={{ color: 'var(--text-dim)' }}>Updated {hoursAgo(latestScrape)}</span></>
             )}
           </p>
+          {offersWithData.length > 0 && (
+            <p className="mt-3 max-w-2xl text-base" style={{ color: 'var(--text)' }}>
+              {item.name} resale prices currently range from {fmt(Math.min(...allLows))} to{' '}
+              {fmt(Math.max(...allHighs))} across {offersWithData.length} marketplaces, based on{' '}
+              {totalOfferCount} live listings. The lowest price right now is on{' '}
+              {(cheapest && (PLATFORM_NAMES[cheapest.platform] ?? cheapest.platform)) ?? 'an unlisted platform'}.
+            </p>
+          )}
           {blogSlug && (
             <Link
               href={`/blog/${blogSlug}`}
