@@ -7,8 +7,8 @@ import SearchAlertsTab from './SearchAlertsTab';
 type Tab = 'tracked' | 'search';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'tracked', label: 'Tracked listings' },
   { id: 'search', label: 'Search alerts' },
+  { id: 'tracked', label: 'Tracked listings' },
 ];
 
 export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {

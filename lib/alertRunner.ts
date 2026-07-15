@@ -168,7 +168,7 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   if (newUrls.length === 0) return 0;
 
   // Persist the new listings so they can be browsed in-app (click alert → see
-  // matches), then prune to the most recent 100 per alert to bound growth.
+  // matches), then prune to the most recent 500 per alert to bound growth.
   // Drop rows missing the NOT NULL url first — insert() is one statement, so a
   // single bad row would silently fail the whole batch otherwise (this was the
   // root cause of a real alert losing every match for weeks with no error).
@@ -210,7 +210,7 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 async function pruneAlertMatches(
   admin: ReturnType<typeof createAdminClient>,
   alertId: string,
-  keep = 100,
+  keep = 500,
 ): Promise<void> {
   const { data } = await admin
     .from('alert_matches')

@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import SavedSearchCard from './SavedSearchCard';
 import CreateAlertModal from './CreateAlertModal';
-import AlertMatchesModal from './AlertMatchesModal';
 
 export interface SavedSearch {
   id: string;
@@ -28,11 +28,11 @@ interface BillingStatus {
 }
 
 export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => void } = {}) {
+  const router = useRouter();
   const [alerts, setAlerts] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingAlert, setEditingAlert] = useState<SavedSearch | null>(null);
-  const [viewingAlert, setViewingAlert] = useState<SavedSearch | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
 
   // Report the alert count up to the alerts tab bar (for its badge).
@@ -200,7 +200,7 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
               onDelete={handleDelete}
               onTogglePause={handleTogglePause}
               onEdit={(a) => setEditingAlert(a)}
-              onViewMatches={(a) => setViewingAlert(a)}
+              onViewMatches={(a) => router.push(`/alerts/${a.id}`)}
             />
           ))}
         </div>
@@ -222,13 +222,6 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
           onClose={() => setEditingAlert(null)}
           onCreated={() => {}}
           onUpdated={handleUpdated}
-        />
-      )}
-
-      {viewingAlert && (
-        <AlertMatchesModal
-          alert={viewingAlert}
-          onClose={() => setViewingAlert(null)}
         />
       )}
     </div>

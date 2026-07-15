@@ -19,5 +19,5 @@ async function AlertsTabsClientWrapper({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  return <AlertsTabsClient initialTab={tab === 'search' ? 'search' : 'tracked'} />;
+  return <AlertsTabsClient initialTab={tab === 'tracked' ? 'tracked' : 'search'} />;
 }

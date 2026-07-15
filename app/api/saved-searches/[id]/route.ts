@@ -19,6 +19,28 @@ const patchSchema = z.object({
 // metered exactly like creating a new alert.
 const BASELINE_FIELDS = ['query', 'platforms', 'filters', 'criteria'] as const;
 
+// Single-alert fetch for the /alerts/[id] matches page (loaded standalone,
+// so it can't rely on the list already being in memory like the old modal did).
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  const { data, error } = await supabase
+    .from('saved_searches')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+  return NextResponse.json(data);
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
