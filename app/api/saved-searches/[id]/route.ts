@@ -150,8 +150,11 @@ export async function PATCH(
     return NextResponse.json({ error: updErr?.message ?? 'update failed' }, { status: 500 });
   }
 
-  // The old query's stored matches are now stale — drop them so the user doesn't
-  // see listings that don't match the new search.
+  // The old query's stored matches AND run history are now stale — drop both so
+  // the user doesn't see listings/dates that don't belong to the new search.
+  // notifications first (alert_matches.notification_id cascades), then
+  // alert_matches by alert_id as a belt-and-braces for any orphaned rows.
+  await admin.from('notifications').delete().eq('alert_id', id);
   await admin.from('alert_matches').delete().eq('alert_id', id);
 
   // Re-run immediately (silent baseline seed — last_seen_urls is null).

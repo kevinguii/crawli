@@ -169,8 +169,12 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   // Persist the new listings so they can be browsed in-app (click alert → see
   // matches), then prune to the most recent 100 per alert to bound growth.
-  await admin.from('alert_matches').insert(
-    newListings.map((l) => ({
+  // Drop rows missing the NOT NULL url first — insert() is one statement, so a
+  // single bad row would silently fail the whole batch otherwise (this was the
+  // root cause of a real alert losing every match for weeks with no error).
+  const insertRows = newListings
+    .filter((l) => !!l.url)
+    .map((l) => ({
       user_id: savedSearch.user_id,
       alert_id: savedSearch.id,
       notification_id: notif?.id ?? null,
@@ -184,8 +188,13 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
       size: l.size,
       condition: l.condition,
       color: l.color,
-    })),
-  );
+    }));
+  if (insertRows.length) {
+    const { error: insertErr } = await admin.from('alert_matches').insert(insertRows);
+    if (insertErr) {
+      console.error(`[alertRunner] alert_matches insert failed for alert=${savedSearch.id}:`, insertErr);
+    }
+  }
   await pruneAlertMatches(admin, savedSearch.id);
 
   // Email only when there are new matches.

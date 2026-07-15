@@ -23,7 +23,7 @@ interface Props {
   onUpdated?: (alert: SavedSearch) => void;
 }
 
-type Step = 'configure' | 'confirm';
+type Step = 'configure' | 'confirm' | 'reset-confirm';
 
 function critField(criteria: Record<string, unknown> | null | undefined, key: string): string {
   const v = criteria?.[key];
@@ -120,7 +120,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
         // A baseline-changing edit re-runs in the background. Alerts never
         // touch search quota, so no crawli:search-started event here.
         if (baselineChanged) {
-          toast.success('Alert updated! Re-running search in the background.');
+          toast.success('Alert updated — match history cleared, re-running as a new baseline.');
         } else {
           toast.success('Alert updated.');
         }
@@ -307,6 +307,48 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </button>
             </div>
           </>
+        ) : step === 'reset-confirm' ? (
+          <>
+            <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>
+              Clear match history?
+            </h2>
+            <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
+              This alert has results and history saved under its current search. Saving this
+              change replaces them.
+            </p>
+
+            <div
+              className="rounded-xl p-4 mb-6 text-sm"
+              style={{ background: 'color-mix(in srgb, #ff4d4d 8%, transparent)', border: '1px solid color-mix(in srgb, #ff4d4d 30%, transparent)' }}
+            >
+              <p style={{ color: 'var(--text)' }}>
+                All of this alert&apos;s saved matches and run history will be permanently deleted.
+                A fresh baseline search runs immediately, and you&apos;ll only be notified about
+                listings that show up <em>after</em> that.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep('confirm')}
+                disabled={submitting}
+                className="flex-1 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
+                style={{ background: 'var(--surface)', color: 'var(--text-muted)' }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="flex-1 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
+                style={{ background: '#ff4d4d', color: '#fff' }}
+              >
+                {submitting ? 'Saving…' : 'Yes, clear history & save'}
+              </button>
+            </div>
+          </>
         ) : (
           <>
             <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>
@@ -374,7 +416,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               >
                 <p style={{ color: 'var(--text)' }}>
-                  Changing the query, platforms, or filters resets your baseline and re-runs the search.
+                  Changing the query, platforms, or filters clears this alert&apos;s saved match history and starts a fresh baseline.
                 </p>
                 {!isPaid && (
                   <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -382,7 +424,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   </p>
                 )}
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  The re-run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
+                  Past matches won&apos;t show anymore. The re-run finds your new baseline results — you&apos;ll only be notified when <em>new</em> listings appear after that.
                 </p>
               </div>
             ) : !isEditing ? (
@@ -424,7 +466,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </button>
               <button
                 type="button"
-                onClick={handleConfirm}
+                onClick={isEditing && baselineChanged ? () => setStep('reset-confirm') : handleConfirm}
                 disabled={submitting}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
