@@ -321,17 +321,6 @@ systemctl restart n8n                                 # ⚠ activation/schedule 
 
 Reddit monitor workflow id: `URiVWju6wMJcrQiW`. Repo source-of-truth: `docs/workflows/reddit-monitor.json`.
 
-Pinterest auto-pin workflow id: `0SoGJUO8UrgPIJY7`. Repo source-of-truth: `docs/workflows/pinterest-crawli.json` — updated 2026-07-14 to call the new `/api/pinterest/generate-post-image` route (AI try-on composite) but **not yet imported to the live instance**, since that route only exists once the Next.js app is deployed; importing first would 404 the new node on every real save. To ship it once the app is deployed:
-```bash
-scp docs/workflows/pinterest-crawli.json root@5.78.187.97:/tmp/pinterest-wf-new.json
-ssh root@5.78.187.97 '
-  n8n import:workflow --input=/tmp/pinterest-wf-new.json
-  n8n update:workflow --id=0SoGJUO8UrgPIJY7 --active=true
-  systemctl restart n8n
-'
-```
-The new node authenticates via `{{ $env.CRON_SECRET }}` — `CRON_SECRET` is already set on n8n's systemd unit (`/etc/systemd/system/n8n.service`, added 2026-07-14), so no further credential setup is needed.
-
 ### Google Search Console OAuth token expiration
 
 The `weekly-seo-brief` and daily content workflows use the Google Search Console API to fetch per-page click/impression data. This uses a **separate OAuth 2.0 credential** from your user-facing Google login — it has its own refresh token that can expire independently.
