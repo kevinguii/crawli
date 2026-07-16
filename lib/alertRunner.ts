@@ -80,6 +80,28 @@ export function applyCriteria(
 // Returns the count of new matches found (0 on first run — suppressed).
 export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   const admin = createAdminClient();
+
+  // Claim this row before doing any work: an optimistic-concurrency UPDATE that
+  // only succeeds if next_run_at still matches what the caller read. This is the
+  // only guard against double-processing — the real next_run_at (computed at the
+  // end of this function) isn't written until after the search + email finish,
+  // so without a claim, an overlapping invocation of /api/cron/run-alerts (e.g. a
+  // request that outlives nginx's proxy timeout while the batch is still running)
+  // would find the same row still "due" and re-run + re-email it. 10 minutes is
+  // comfortably longer than a single alert's search but short enough that a
+  // crashed run self-heals on the next cron tick instead of getting stuck.
+  const claimUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const { data: claimed } = await admin
+    .from('saved_searches')
+    .update({ next_run_at: claimUntil })
+    .eq('id', savedSearch.id)
+    .eq('next_run_at', savedSearch.next_run_at)
+    .select('id');
+  if (!claimed || claimed.length === 0) {
+    console.log(`[alertRunner] alert=${savedSearch.id} already claimed by another run, skipping`);
+    return 0;
+  }
+
   const isFirstRun = !savedSearch.last_seen_urls;
 
   const platforms = savedSearch.platforms.filter(
