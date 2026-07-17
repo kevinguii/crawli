@@ -84,6 +84,9 @@ Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.
 
 ## Recent changes
 
+**2026-07-17 — Fixed stale free-tier column defaults on `public.profiles`**
+Two users who signed up 2026-07-16 got 3 searches/1 saved search/10 native results cap instead of the current free tier (5/2/15) — the live table's column `DEFAULT`s were never updated when `TIER_CAPS.free` in `lib/stripe.ts` was bumped, and new-signup profile rows fall through to those defaults. Backfilled both affected users; DDL fix applied via Supabase SQL editor (`docs/migrations/fix-free-tier-column-defaults.sql`) and verified live — defaults now read 5/2/15. See `docs/core/PITFALLS.md` "Payments + Supabase" for the full writeup and the diagnostic technique (PostgREST OpenAPI introspection for live column defaults without a DB connection).
+
 **2026-07-15 — Fixed silent `alert_matches` insert failures + full history reset on baseline edits**
 Found via a user report: an alert had been reporting "N new matches" correctly every day for ~20 days while storing zero rows in `alert_matches` the whole time (unchecked `supabase-js` insert error — see `docs/core/PITFALLS.md`). Fixed the silent failure, and separately made baseline-changing edits (query/platforms/filters/criteria) wipe `notifications` history too, not just matches, so old dates don't linger with "No longer available." `CreateAlertModal` now has an explicit `reset-confirm` step requiring "Yes, clear history & save" before a destructive edit applies.
 

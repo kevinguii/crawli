@@ -124,6 +124,9 @@ A test credit-pack purchase completes on Stripe but `profiles.search_credits` st
 **Stripe webhook is idempotent via `stripe_webhook_events`**
 The webhook claims each `event.id` (PK insert) before processing and skips duplicates (Stripe delivers at-least-once; the credit grant is a non-idempotent read-modify-write). On processing failure the claim is deleted so Stripe's retry re-runs. New table `public.stripe_webhook_events`, service_role-only. Migration: `docs/migrations/stripe-webhook-idempotency.sql`.
 
+**`profiles` column DEFAULTs drift from `TIER_CAPS.free` when pricing changes (found 2026-07-17)**
+New signups get their `profiles` row created by a Supabase-side trigger (not tracked in this repo) that doesn't explicitly set the cap columns — it relies on the table's column-level `DEFAULT`. When the free tier's numbers were bumped in `lib/stripe.ts` (`TIER_CAPS.free`: 3→5 searches, 1→2 saved searches, 10→15 native results cap), nobody ran a matching `ALTER COLUMN ... SET DEFAULT` on the live table, so every new free signup kept silently getting the OLD limits. Caught because two users who signed up 2026-07-16 had 3/1/10 instead of 5/2/15. `docs/migrations/three-tier.sql` is explicitly historical/stale on this — it still shows the old `DEFAULT 3`. Diagnosed by hitting the PostgREST root endpoint (`GET {SUPABASE_URL}/rest/v1/` with the service role key) and reading `definitions.profiles.properties.<col>.default` from the returned OpenAPI spec — this is the fastest way to check live column defaults without a direct Postgres connection or Supabase MCP. Fix + backfill: `docs/migrations/fix-free-tier-column-defaults.sql`. **Lesson: any future `TIER_CAPS` change must be paired with an `ALTER COLUMN SET DEFAULT` on `public.profiles`, or new signups on that tier silently get stale caps until someone notices.**
+
 ---
 
 ## Infrastructure
