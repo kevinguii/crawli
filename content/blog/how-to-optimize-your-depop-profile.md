@@ -2,7 +2,7 @@
 title: "How to Optimize Your Depop Profile for More Sales"
 description: "Good photos alone aren't enough. Here's how keyword-driven titles, a consistent visual style, and a real bio turn a Depop profile from ignored to followed."
 date: "2026-06-16"
-updated: "2026-07-06"
+updated: "2026-07-17"
 cover: "/blog/images/depop-profile-cover.svg"
 tags: ["resellers", "depop", "profile-optimization", "selling-tips"]
 faq:
@@ -27,6 +27,14 @@ Depop's search ranks listings on relevance to what's typed, not just recency. A 
 Build every title around three things, in this order: **brand, item type, distinguishing detail** (color, era, size, style). "Levi's 501 vintage 90s mom jeans size 27" will out-rank "vintage jeans, so cute!" every time, because it matches actual search behavior instead of marketing language.
 
 Carry the same logic into your bio. A bio that reads "thrifted finds, Y2K and 90s streetwear, size S-M, ships within 2 days" tells both buyers and Depop's search what your shop is about. A bio that's just an emoji string tells it nothing.
+
+The title formula is always the same: **brand, then item type, then distinguishing detail.** Here is what that looks like in practice:
+
+| Weak title | Optimized title | Why it wins |
+|---|---|---|
+| cute jeans | Levi's 501 vintage 90s mom jeans size 27 | Matches the brand, era, and size buyers actually type |
+| ribbed tank top | Brandy Melville white ribbed tank one size | Leads with the brand people search by name |
+| cozy sweater | Ralph Lauren wool cable-knit sweater size M | Names the material and fit a buyer filters for |
 
 ## Profile optimization checklist
 

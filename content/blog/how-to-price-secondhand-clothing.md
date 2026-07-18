@@ -2,7 +2,7 @@
 title: "How to Price Secondhand Clothing for Faster Sales"
 description: "Most resellers overprice based on what they paid, not what the market will pay. Here's a practical framework for pricing secondhand clothing that sells."
 date: "2026-06-12"
-updated: "2026-06-12"
+updated: "2026-07-17"
 cover: "/blog/images/pricing-secondhand-cover.svg"
 tags: ["resellers", "pricing", "selling-tips"]
 faq:
@@ -16,7 +16,7 @@ faq:
     answer: "Yes. eBay's sold-listing filter, Poshmark's sold comps, and Depop's search with the sold toggle all show real transaction prices. For cross-platform pricing, tools that pull live listings across multiple marketplaces let you see where your item is positioned against all active and sold comps at once."
 ---
 
-**Short answer:** Accurate pricing for secondhand clothing requires understanding current market demand, not the original purchase cost. What you paid is irrelevant to what a buyer will offer.
+**Short answer:** To price secondhand clothing for a fast sale, search the same item's sold listings on your platform, take the median sold price, and list within 10 to 15% of it, then adjust for condition, season, and platform fees. What you originally paid is irrelevant to what a buyer will offer, so set the price from the market, not from your receipt.
 
 Research from Depop's 2022 seller data shows items priced competitively against current market comps sell approximately 30% faster than items priced based on original purchase cost. The psychology is simple: buyers know what things are worth. They've searched the same item. They've seen the sold prices. If your listing is 25% above market, they move on and don't send an offer.
 
@@ -26,7 +26,20 @@ Research from Depop's 2022 seller data shows items priced competitively against 
 2. **Condition:** this is the most subjective factor and where sellers consistently over-rate their own items. "Like new" should mean no signs of wear whatsoever. Most sellers call "good" what buyers call "well-worn." Be more conservative than you think you need to be.
 3. **Current demand:** seasonal and trend-driven. A linen blazer in April will move faster and at a higher price than the same blazer in November. Vintage silhouettes that just hit a trend cycle (oversized leather jackets, for example) sell at a premium for 12 to 18 months, then flatten.
 4. **Seasonality:** list warm-weather pieces in spring, heavy outerwear in September. Listing out of season is fine if you're patient and price 15 to 20% below market. Buyers do stock up, but they want a discount for the wait.
-5. **Platform fees:** Poshmark takes 20% on anything over $15. Depop takes 10%. Mercari takes 10%. Your list price needs to account for fees so you're pricing against net proceeds, not gross.
+5. **Platform fees:** these vary widely and come straight off your payout, so price against net proceeds, not gross. Poshmark takes 20% over $15, Mercari 10%, eBay about 13%, while Depop and Vinted now charge sellers little or nothing. See the table below.
+
+## Platform seller fees at a glance
+
+| Platform | Seller fee | Notes |
+|---|---|---|
+| Vinted | 0% | No seller fees at all; your list price is your payout |
+| Depop | ~3.3% + $0.45 | US/UK dropped commission to $0 in 2024; you pay only processing |
+| Grailed | 9% + ~3.5% processing | 6% under $120; strongest for menswear and streetwear |
+| Mercari | 10% | No separate processing fee |
+| eBay | ~13.25% + $0.40 | Fashion category, no Store subscription |
+| Poshmark | 20% (flat $2.95 under $15) | Highest rate, but the largest US buyer base |
+
+Fees verified June 2026. A higher fee is not automatically worse: Poshmark's 20% buys access to a large, active buyer base that often sells a piece faster than a lower-fee platform with less traffic.
 
 ## A practical pricing formula
 

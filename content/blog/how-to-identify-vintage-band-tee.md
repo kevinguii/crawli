@@ -2,7 +2,7 @@
 title: "Vintage Band Tee or Reprint? Tell in 10 Seconds"
 description: "Flip the hem inside out. One row of stitching usually means genuine vintage; two rows means a later reprint. The fastest way to spot a fake tour tee."
 date: "2026-07-02"
-updated: "2026-07-06"
+updated: "2026-07-17"
 cover: "/blog/images/vintage-band-tee-cover.svg"
 tags: ["category-deep-guide", "how-to-identify-vintage-band-t-shirt", "vintage-tee-authentication"]
 faq:
@@ -39,6 +39,18 @@ It's not a perfect, universal rule on its own, some genuinely older garments use
 ## Tag Types and the Years They Were Used
 
 Licensed band merchandise as an organized industry took shape through the 1970s and 1980s, with companies like Brockum and Winterland producing official tour merchandise sold at concerts and select retail. These tags remain one of the most reliable dating tools specifically because later reprints and unlicensed bootlegs almost never replicate the original manufacturer tags accurately, either using a generic blank tag, a different maker entirely, or a close-but-not-quite recreation that doesn't hold up under close comparison to a verified original.
+
+Use the maker on the tag as a first-pass date range, then narrow it with the specific tag design:
+
+| Tag maker | Typical era | Notes |
+|---|---|---|
+| Winterland | Late 1970s to early 1990s | Concert and tour merch; a strong original-era signal |
+| Screen Stars | Late 1970s to early 1990s | Fruit of the Loom label; "Screen Stars Best" skews later 1980s to 1990s |
+| Brockum | Mid 1980s to 1990s | Major tour-merch producer of the era |
+| Anvil | 1970s to present | Long run, so lean on tag design and stitch count, not the name alone |
+| Giant | 1990s onward | Points toward a later reprint rather than a 1970s or 1980s original |
+
+Treat these as ranges, not proof. Tag font and layout changed within a single maker's history, so matching the exact tag style to a verified reference photo gives a tighter date than the maker name on its own.
 
 ## Single-Stitch vs. Double-Stitch, Side by Side
 

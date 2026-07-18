@@ -2,7 +2,7 @@
 title: "Cavalry Twill Fabric Guide: Why It Outlasts Others"
 description: "Cavalry twill is a heavy, diagonal ribbed wool fabric used for military riding breeches and civilian trousers, known for its steep twill line and dense hand."
 date: "2026-06-25"
-updated: "2026-07-06"
+updated: "2026-07-17"
 cover: "/blog/images/cavalry-twill-cover.svg"
 tags: ["material-guide", "cavalry-twill-guide", "vintage-menswear"]
 faq:
@@ -84,20 +84,20 @@ A simple rule: if the diagonal is steep and unmistakable, and the fabric feels d
 
 Cavalry twill is scattered but underpriced:
 
-- **eBay bulk lots** - military surplus batches containing mixed-era trousers; cavalry twill pieces get lost in the lot pricing
-- **Estate sales and auctions** - old menswear from professional men's closets; cavalry twill dresses trousers often appear
-- **Thrift stores** - because thrift workers do not identify the material, cavalry twill sits on the regular rack, not the premium section
-- **Depop and Poshmark** - vintage menswear is less popular than womenswear on these platforms, so prices lag
+- **eBay bulk lots:** military surplus batches containing mixed-era trousers, where cavalry twill pieces get lost in the lot pricing
+- **Estate sales and auctions:** old menswear from professional men's closets, where cavalry twill dress trousers often appear
+- **Thrift stores:** because thrift workers do not identify the material, cavalry twill sits on the regular rack, not the premium section
+- **Depop and Poshmark:** vintage menswear is less popular than womenswear on these platforms, so prices lag
 
 A pair of 1960s Hickey Freeman cavalry twill officer's trousers, in good condition, might be priced at $40 on Depop, $80 on eBay, and $200 at a Savile Row-adjacent vintage retailer. The same trousers. The knowledge gap drives the price variance.
 
 ## What to Look for When Buying Vintage Cavalry Twill
 
-1. **Check the label for fiber content** - 100% wool is ideal; some nylon blends are fine, but pure wool has aged better
-2. **Feel for the diagonal** - Run your hand across the fabric; you should feel the pronounced ridge
-3. **Check the seams** - Seams should be strong, not frayed; the stitching should be tight and even
-4. **Look at the creases** - A pair with still-sharp creases has aged well; creases that have faded but hold their line are normal
-5. **Verify the waist and length** - Vintage sizing is different; these trousers cannot be easily let out or taken in due to the weight of the fabric
+1. **Check the label for fiber content:** 100% wool is ideal; some nylon blends are fine, but pure wool has aged better
+2. **Feel for the diagonal:** run your hand across the fabric; you should feel the pronounced ridge
+3. **Check the seams:** seams should be strong, not frayed; the stitching should be tight and even
+4. **Look at the creases:** a pair with still-sharp creases has aged well; creases that have faded but hold their line are normal
+5. **Verify the waist and length:** vintage sizing is different; these trousers cannot be easily let out or taken in due to the weight of the fabric
 
 Price range to target:
 - Unlabeled but identified cavalry twill: $20-$60 (steal range)

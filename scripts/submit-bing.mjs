@@ -25,7 +25,15 @@ const envPath = path.join(__dirname, '..', '.env');
 const env = dotenv.parse(fs.readFileSync(envPath, 'utf8'));
 
 const API_KEY = env.BING_WMT_API_KEY;
-const SITE_URL = (env.NEXT_PUBLIC_SITE_URL || 'https://thecrawli.com').replace(/\/$/, '');
+// Bing authorizes the request against the verified property, and rejects URLs
+// that aren't on it. NEXT_PUBLIC_SITE_URL is localhost in a dev .env, which
+// makes Bing 400 with NotAuthorized — so ignore localhost/empty values and
+// force the production domain. A non-localhost env value still wins (e.g. a
+// staging property), matching how this runs on the server.
+const RAW_SITE = env.NEXT_PUBLIC_SITE_URL || '';
+const SITE_URL = (!RAW_SITE || /localhost|127\.0\.0\.1/.test(RAW_SITE))
+  ? 'https://thecrawli.com'
+  : RAW_SITE.replace(/\/$/, '');
 
 const inputs = process.argv.slice(2);
 

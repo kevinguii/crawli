@@ -70,6 +70,15 @@ function fmtLocal(price: number | null, currency: string): string {
   return `${sym}${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+// Grammatical comma list: ["A"] → "A", ["A","B"] → "A and B",
+// ["A","B","C"] → "A, B, and C". Used for the data-driven FAQ answers.
+function formatList(names: string[]): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+}
+
 // Ordered list of native platforms for display
 const NATIVE_PLATFORM_ORDER = [
   'grailed', 'depop', 'poshmark', 'mercari', 'vinted',
@@ -218,6 +227,48 @@ export default async function ComparePage({ params }: Props) {
   const allLows = offersWithData.map((s) => s.min_price_usd as number);
   const allHighs = offersWithData.map((s) => s.max_price_usd ?? (s.min_price_usd as number));
   const totalOfferCount = offersWithData.reduce((sum, s) => sum + (s.listing_count ?? 0), 0);
+
+  // Data-driven FAQ. Answers are computed from the same live snapshot the page
+  // renders, so the visible text below and the FAQPage JSON-LD stay identical
+  // (Google requires the structured FAQ to mirror on-page text). Built only when
+  // there is price data — an empty snapshot renders neither the block nor schema.
+  const lowPrice = offersWithData.length > 0 ? Math.min(...allLows) : 0;
+  const highPrice = offersWithData.length > 0 ? Math.max(...allHighs) : 0;
+  const marketCount = offersWithData.length;
+  const cheapestName = cheapest
+    ? PLATFORM_NAMES[cheapest.platform] ?? cheapest.platform
+    : 'an unlisted platform';
+  const cheapestMinStr = cheapest ? fmt(cheapest.min_price_usd) : fmt(lowPrice);
+  const platformList = formatList(
+    offersWithData.map((s) => PLATFORM_NAMES[s.platform] ?? s.platform),
+  );
+  const priceSpread = highPrice - lowPrice;
+
+  const faqItems: { q: string; a: string }[] =
+    offersWithData.length > 0
+      ? [
+          {
+            q: `How much does a ${item.name} cost secondhand?`,
+            a: `Secondhand ${item.name} listings currently range from ${fmt(lowPrice)} to ${fmt(highPrice)}, based on ${totalOfferCount.toLocaleString()} live listings across ${marketCount} marketplace${marketCount === 1 ? '' : 's'}. Where a specific listing falls in that range depends mostly on condition, size, and which platform it is on.`,
+          },
+          {
+            q: `Where is the cheapest place to buy a ${item.name}?`,
+            a: `Right now the lowest ${item.name} price is on ${cheapestName}, with listings starting around ${cheapestMinStr}. The cheapest platform shifts as inventory turns over, so comparing all ${marketCount} marketplace${marketCount === 1 ? '' : 's'} at once is the reliable way to find the current floor.`,
+          },
+          {
+            q: `Which marketplaces sell the ${item.name} secondhand?`,
+            a: `The ${item.name} is currently listed on ${platformList}. Prices, fees, and authentication differ across these platforms, so the same piece can cost noticeably more on one than on another.`,
+          },
+          {
+            q: `Is buying a ${item.name} secondhand worth it?`,
+            a:
+              priceSpread > 0
+                ? `For most buyers, yes. The same ${item.name} spans about ${fmt(priceSpread)} between the lowest and highest listings right now, so checking every marketplace before buying is the difference between paying the low and the high end of that range.`
+                : `For most buyers, yes. Prices vary by platform, seller, and condition, so checking every marketplace before buying is the reliable way to avoid overpaying.`,
+          },
+        ]
+      : [];
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -253,6 +304,16 @@ export default async function ComparePage({ params }: Props) {
                 itemCondition: 'https://schema.org/UsedCondition',
               })),
             },
+          }
+        : null,
+      faqItems.length > 0
+        ? {
+            '@type': 'FAQPage',
+            mainEntity: faqItems.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
           }
         : null,
     ].filter(Boolean),
@@ -356,6 +417,28 @@ export default async function ComparePage({ params }: Props) {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {cheapestListings.slice(0, 4).map((listing, i) => (
                 <CompareListingCard key={listing.url ?? i} listing={listing} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* FAQ — data-driven, mirrors the FAQPage JSON-LD above. Plain server-
+            rendered Q&A (no JS gating) so AI answer engines can extract it. */}
+        {faqItems.length > 0 && (
+          <section className="mb-12">
+            <h2 className="mb-5 text-lg font-semibold" style={{ color: 'var(--text)' }}>
+              Frequently asked questions
+            </h2>
+            <div className="flex flex-col gap-5">
+              {faqItems.map((f) => (
+                <div key={f.q}>
+                  <h3 className="mb-1.5 text-base font-semibold" style={{ color: 'var(--text)' }}>
+                    {f.q}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    {f.a}
+                  </p>
+                </div>
               ))}
             </div>
           </section>
