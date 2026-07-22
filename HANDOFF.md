@@ -3,7 +3,7 @@
 **Last updated:** 2026-07-09
 
 ## How to use this file
-
+ 
 **HANDOFF.md is the current-state hub** — what is true right now, what is broken, what is open. It is NOT a changelog.
 
 - Architecture and search internals → [`docs/core/SYSTEM_DESIGN.md`](docs/core/SYSTEM_DESIGN.md)
