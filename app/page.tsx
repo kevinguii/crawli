@@ -20,12 +20,18 @@ import Reveal from '@/app/components/landing/Reveal';
 // visible cross-platform price spread, verified live against compare_snapshots
 // on 2026-07-08. Keep this list in sync with docs/superpowers/plans/2026-07-08-landing-page-priority-redesign.md
 // if items are swapped in/out later.
+//
+// Weighted toward luxury as of 2026-07-25: every top AI grounding query Bing
+// reports for this domain is luxury resale ("compare luxury resale prices
+// including fees", "best marketplaces to resell luxury handbags"), and none are
+// streetwear. Two streetwear items stay for category spread. All five verified
+// at 8/8 platforms before being added.
 const HERO_COMPARE_SLUGS = [
+  'chanel-classic-flap',
+  'hermes-birkin',
+  'louis-vuitton-neverfull',
   'jordan-1-retro-high',
-  'bape-shark-hoodie',
-  'carhartt-wip-jacket',
   'nike-dunk-low',
-  'supreme-box-logo-hoodie',
 ];
 
 export default async function LandingPage() {

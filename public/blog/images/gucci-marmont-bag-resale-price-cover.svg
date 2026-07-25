@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Cross-platform price comparison for Gucci Marmont, same day, from $316 to $5,999">
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- low price marker -->
+  <circle cx="330" cy="300" r="120" fill="#f5f3ff"/>
+  <text x="330" y="285" font-family="Arial, sans-serif" font-size="60" font-weight="800" fill="#7c3aed" text-anchor="middle">$316</text>
+  <text x="330" y="335" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#7c3aed" text-anchor="middle" opacity="0.75">Depop floor</text>
+
+  <!-- arrow across the spread -->
+  <path d="M470 300 L720 300" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round"/>
+  <path d="M700 282 L724 300 L700 318" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="595" y="278" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827" text-anchor="middle">19x</text>
+
+  <!-- high price marker -->
+  <circle cx="870" cy="300" r="120" fill="none" stroke="#7c3aed" stroke-width="10"/>
+  <text x="870" y="285" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="#111827" text-anchor="middle">$5,999</text>
+  <text x="870" y="335" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#6b7280" text-anchor="middle">Poshmark floor</text>
+
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#111827" text-anchor="middle">Gucci Marmont, same day</text>
+</svg>

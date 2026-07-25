@@ -48,6 +48,8 @@ The specialist Hermes community, by contrast, consists overwhelmingly of people 
 
 The eBay listing, priced identically to the others, drew barely any engagement over two full weeks, a result that would be easy to misread as "the scarf isn't in demand" if it were the only platform tested.
 
+That experiment ran on a single scarf. For the current asking-price range across platforms rather than one seller's outcome, [see the live Hermes silk scarf price comparison](/compare/hermes-silk-scarf), refreshed daily.
+
 ## Why the Smallest Community Won
 
 Buying intent, not audience size, decided the outcome. Members of the specialist community weren't discovering Hermes scarves for the first time; they were actively watching for specific patterns and colorways to become available, which meant the listing reached genuinely ready buyers within hours instead of relying on the slower process of a casual browser stumbling onto it and then educating themselves about why it was worth the asking price.

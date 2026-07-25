@@ -43,6 +43,8 @@ That difference in buyer mindset is the core reason curated platforms can produc
 
 Fee structures shift periodically on all of these platforms, so confirm current rates directly before listing, particularly on 1stDibs, where terms vary by seller plan and negotiated arrangement.
 
+Before you accept any consignment offer, sanity-check it against [the live Cartier Tank price comparison](/compare/cartier-tank-watch): a quote well under the lowest legitimate listing there is worth questioning, and a "deal" far under it is worth authenticating before you send money.
+
 ## Why Provenance and Original Accessories Close the Sale
 
 Across every platform, the presence of the original box, papers, and a Cartier-signed strap or bracelet has an outsized effect on both sell-through speed and final price for a vintage Tank. Buyers on curated platforms in particular are paying partly for confidence that what they're buying is exactly what it's described as, and a complete original set, combined with a precise, correct model name rather than a generic "vintage Cartier watch" description, does most of the work of establishing that confidence before a buyer ever has to ask a question.

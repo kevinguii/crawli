@@ -19,6 +19,65 @@ const DISPLAY_LIMIT = 6;   // listings stored per platform for page display
 const SCRAPE_LIMIT  = 10;  // listings requested from sidecar per platform (kept low — single browser pool)
 const CONCURRENCY   = 4;   // platforms scraped in parallel per slug
 
+// A "brand + model" search query (e.g. "cartier tank watch") legitimately
+// surfaces listings that share those tokens but aren't the item itself — real
+// wallets, dust bags, charms — and, for luxury specifically, listings that
+// openly signal they're not the genuine article ("dupe", "inspired", "style").
+// Left unfiltered, the page's headline "lowest price" becomes something like a
+// $39 "Rolex Datejust" that's actually a framed print ad, which is worse than
+// no data: it's a wrong answer on the exact question ("is this a counterfeit")
+// these pages exist to help answer. Scoped to this refresh path only — does
+// not touch lib/parse.ts or live search, which has no equivalent problem
+// because a searcher sees full listing titles and photos, not a single
+// aggregated "floor" number.
+// Applies to every luxury category regardless of item type — an openly
+// not-authentic listing is never a valid comp. "shufirst" is a manufacturer
+// name specific to the replica market, not a brand; "like hermes" etc. catch
+// the "[bag] like [brand]" phrasing replica sellers use to surface in brand
+// searches without naming the brand as their own.
+const REPLICA_SIGNALS = [
+  'dupe', 'inspired by', ' inspired', 'replica', '1:1', 'aaa quality',
+  'mirror quality', 'reps ', 'not authentic', 'faux ', 'vibe', ' style',
+  'lookalike', 'look alike', 'homage', 'super fake', 'superfake', 'shufirst',
+  'like hermes', 'like chanel', 'like gucci', 'like cartier', 'like rolex',
+  'like dior', 'like prada', 'like celine', 'like fendi', 'like goyard',
+  'like ysl', 'like saint laurent', 'like louis vuitton', 'like lv',
+];
+
+// Also applies everywhere — a dust bag or a framed print ad is never the
+// item, whatever category the item is. Kept separate from REPLICA_SIGNALS
+// because these are genuine products, just not the one being priced.
+const NON_ITEM_SIGNALS = ['dust bag', 'dustbag', 'print ad'];
+
+const CATEGORY_EXCLUDE_TERMS: Record<string, string[]> = {
+  'luxury-handbags': [
+    'wallet', 'card holder', 'cardholder', 'charm', 'keychain', 'key chain',
+    'ring', 'necklace', 'belt', 'waist bag', 'book', 'coffee table book',
+    'jacket', 'hoodie', 't-shirt', 'shirt', 'pants', 'trousers', 'gift box',
+  ],
+  'luxury-watches': [
+    'book', 'coffee table book', 'jacket', 'bomber', 'bracelet', 'necklace',
+    'ring', 'gift box', 'strap only', 'band only', 'case only',
+  ],
+  'luxury-jewelry': ['book', 'gift box', 'watch'],
+  'luxury-accessories': ['gift box', 'book'],
+};
+
+/** Drops listings that share the query's brand/model tokens but are a
+ * different item, an accessory, or an openly-not-authentic replica. Only
+ * applied to `category`s registered above (the luxury set) — streetwear
+ * items keep their existing behavior unchanged. */
+function filterAuthentic(listings: Listing[], category: string | null): Listing[] {
+  const categoryTerms = category ? (CATEGORY_EXCLUDE_TERMS[category] ?? []) : [];
+  if (categoryTerms.length === 0) return listings;
+
+  const excludeTerms = [...REPLICA_SIGNALS, ...NON_ITEM_SIGNALS, ...categoryTerms];
+  return listings.filter((l) => {
+    const title = l.title.toLowerCase();
+    return !excludeTerms.some((term) => title.includes(term));
+  });
+}
+
 function computeStats(listings: Listing[]): {
   minPriceUsd: number | null;
   maxPriceUsd: number | null;
@@ -50,7 +109,8 @@ async function refreshSlug(
 
   const tasks = platforms.map((platform) => async () => {
     const scraped = await scrapeSearchPageViaSidecar(platform, item.query, SCRAPE_LIMIT, 2);
-    const listings = parseScrapedListings(scraped, platform, item.query);
+    const rawListings = parseScrapedListings(scraped, platform, item.query);
+    const listings = filterAuthentic(rawListings, item.category);
     const stats = computeStats(listings);
 
     // Sort by price asc (cheapest first) for display
@@ -92,11 +152,20 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const { data: items, error } = await admin
-    .from('compare_items')
-    .select('*')
-    .eq('enabled', true)
-    .order('slug');
+  // Optional `{ "slugs": [...] }` body restricts the run to specific items. The
+  // daily cron posts no body and so still refreshes every enabled item; this is
+  // only for backfilling newly-added slugs without re-scraping the whole set
+  // (a full run is ~35s/slug and long outlives nginx's 300s proxy_read_timeout).
+  const body = (await request.json().catch(() => null)) as { slugs?: unknown } | null;
+  const slugFilter =
+    Array.isArray(body?.slugs) && body.slugs.every((s): s is string => typeof s === 'string')
+      ? body.slugs
+      : null;
+
+  let query = admin.from('compare_items').select('*').eq('enabled', true).order('slug');
+  if (slugFilter && slugFilter.length > 0) query = query.in('slug', slugFilter);
+
+  const { data: items, error } = await query;
 
   if (error || !items?.length) {
     return NextResponse.json({ error: error?.message ?? 'no items' }, { status: 500 });

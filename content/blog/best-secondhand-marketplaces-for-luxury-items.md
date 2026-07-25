@@ -74,6 +74,18 @@ The trade-off is that there's no authentication. You're relying on seller reputa
 
 The other undervalued move: search the same piece across all platforms before committing. Price spreads on authenticated luxury are real and consistent. The same authenticated Louis Vuitton Speedy 30 in good condition can run from $450 to $750 depending on which platform surfaces it first. Finding the bottom of that spread is the whole game.
 
+## See the live spread on a specific piece
+
+Platform rankings age quickly. The current asking prices do not, so these pages refresh daily and show the lowest, average, and highest listing per marketplace for one item at a time:
+
+**Handbags:** [Chanel Classic Flap](/compare/chanel-classic-flap) · [Hermès Birkin](/compare/hermes-birkin) · [Louis Vuitton Neverfull](/compare/louis-vuitton-neverfull) · [Louis Vuitton Speedy](/compare/louis-vuitton-speedy) · [Gucci Marmont](/compare/gucci-marmont-bag) · [Dior Saddle Bag](/compare/dior-saddle-bag) · [Prada Re-Edition](/compare/prada-re-edition-nylon-bag) · [Celine Triomphe](/compare/celine-triomphe-bag) · [Bottega Veneta Cassette](/compare/bottega-veneta-cassette-bag) · [Fendi Baguette](/compare/fendi-baguette-bag) · [Goyard St Louis](/compare/goyard-st-louis-tote) · [YSL Loulou](/compare/ysl-loulou-bag)
+
+**Watches and jewelry:** [Rolex Datejust](/compare/rolex-datejust) · [Cartier Tank](/compare/cartier-tank-watch) · [Omega Speedmaster](/compare/omega-speedmaster) · [Cartier Love Bracelet](/compare/cartier-love-bracelet)
+
+**Accessories:** [Hermès Silk Scarf](/compare/hermes-silk-scarf) · [Louis Vuitton Wallet](/compare/louis-vuitton-wallet)
+
+The gaps are larger than most buyers expect. On the Chanel Classic Flap the lowest listing across the eight marketplaces we track sat at a small fraction of the highest on the same day, which is the whole argument for checking more than one site before you buy.
+
 ## Where to go next
 
 - Hunting older or archival pieces rather than current-season luxury? See [why niche vintage marketplaces are where the rarest finds surface](/blog/best-niche-marketplaces-for-vintage-finds).

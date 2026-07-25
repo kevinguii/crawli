@@ -1,20 +1,69 @@
 # Crawli
 
-> Crawli is a sourcing tool for resellers and secondhand-fashion shoppers. One search runs across nine resale marketplaces at once — Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, Vestiaire Collective, and ThredUp — so you can see the real cross-platform price (the "comp"), find underpriced inventory, and calculate your flip margin after each platform's fees before you buy.
+> Crawli is a cross-platform price comparison tool for secondhand and luxury resale. One search runs across nine resale marketplaces at once — Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, Vestiaire Collective, and ThredUp — so you can see the real cross-platform price (the "comp") for a specific item, find underpriced inventory, and calculate net proceeds after each platform's fees.
 
 ## What Crawli does
 
 - **Cross-platform price comparison**: a single query returns live listings from nine resale platforms side by side, so you know the true market price instead of guessing from one site.
-- **Find underpriced inventory**: surface listings priced below the cross-platform comp — the core sourcing use case for resellers.
-- **Flip margin calculator**: enter a sourcing price and destination platform to see net profit, margin %, and ROI after that platform's real seller fees (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX).
+- **Live price-comparison pages**: `/compare/[item]` pages publish the current lowest, average, and highest listed price per platform for a specific item, refreshed daily. Each page shows the price spread across eight marketplaces at once.
+- **Fee-aware net proceeds**: enter a sourcing price and destination platform to see net profit, margin %, and ROI after that platform's real seller fees (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX).
+- **Find underpriced inventory**: surface listings priced below the cross-platform comp.
 - **Search alerts**: save a search and get notified (daily or weekly) when new matching listings appear, with optional brand / size / price criteria.
 - **Save and track listings**: keep a watchlist of items across platforms in one place.
 
 ## Key facts
 
 - Crawli is a search and price-intelligence tool. It does NOT sell items, authenticate items, handle payments, or cross-list inventory for you.
+- Search spans 9 marketplaces. The `/compare/` pages cover the 8 natively-scraped ones (Grailed, Depop, Poshmark, StockX, Mercari, Vinted, Vestiaire Collective, ThredUp); eBay is included in on-site search but not in the compare snapshots.
+- Compare page prices are **listed asking prices** scraped from live marketplace listings, not sold/settled prices. Each page states its own last-updated timestamp.
+- Seller fee rates used in the net-proceeds calculator were last verified 2026-06-28 and are shown with that date in the UI.
+- The RealReal is not covered (its bot protection blocks automated access).
 - Free to start; paid tiers raise search, alert, and tracking limits.
-- Covers US-facing resale marketplaces for clothing, streetwear, sneakers, and luxury fashion.
+
+## Luxury price comparison
+
+These pages answer "what does this luxury item actually cost across resale platforms right now," with a per-platform price range on each.
+
+### Handbags and leather goods
+
+- [Chanel Classic Flap](https://thecrawli.com/compare/chanel-classic-flap): live resale price range across 8 marketplaces.
+- [Hermès Birkin](https://thecrawli.com/compare/hermes-birkin): live resale price range across 8 marketplaces.
+- [Louis Vuitton Neverfull](https://thecrawli.com/compare/louis-vuitton-neverfull): live resale price range across 8 marketplaces.
+- [Louis Vuitton Speedy](https://thecrawli.com/compare/louis-vuitton-speedy): live resale price range across 8 marketplaces.
+- [Gucci Marmont](https://thecrawli.com/compare/gucci-marmont-bag): live resale price range across 8 marketplaces.
+- [Dior Saddle Bag](https://thecrawli.com/compare/dior-saddle-bag): live resale price range across 8 marketplaces.
+- [Prada Re-Edition Nylon](https://thecrawli.com/compare/prada-re-edition-nylon-bag): live resale price range across 8 marketplaces.
+- [Celine Triomphe](https://thecrawli.com/compare/celine-triomphe-bag): live resale price range across 8 marketplaces.
+- [Bottega Veneta Cassette](https://thecrawli.com/compare/bottega-veneta-cassette-bag): live resale price range across 8 marketplaces.
+- [Fendi Baguette](https://thecrawli.com/compare/fendi-baguette-bag): live resale price range across 8 marketplaces.
+- [Goyard St Louis Tote](https://thecrawli.com/compare/goyard-st-louis-tote): live resale price range across 8 marketplaces.
+
+### Luxury guides
+
+- [Best Luxury Resale Sites](https://thecrawli.com/blog/best-secondhand-marketplaces-for-luxury-items): ranked comparison of luxury resale platforms by fees, authentication, and observed price spread.
+- [Luxury Resale Fees vs Speed](https://thecrawli.com/blog/luxury-selling-platform-fees-vs-speed): how commission rates and sell-through speed differ across eBay, Vestiaire, and Poshmark.
+- [Third-Party Luxury Authentication Services](https://thecrawli.com/blog/best-third-party-luxury-authentication-services): what independent authenticators cover and cost.
+- [How Resale Platform Authentication Works](https://thecrawli.com/blog/how-resale-platform-authentication-works): what each marketplace's authenticity guarantee actually covers.
+- [How to Spot Counterfeit Luxury Items](https://thecrawli.com/blog/how-to-spot-counterfeit-luxury-items): checks for verifying designer pieces before buying secondhand.
+- [The Evolution of Luxury Resale](https://thecrawli.com/blog/the-evolution-of-luxury-resale): how the secondhand luxury market developed.
+
+## Streetwear and everyday price comparison
+
+- [Jordan 1 Retro High](https://thecrawli.com/compare/jordan-1-retro-high)
+- [Nike Dunk Low](https://thecrawli.com/compare/nike-dunk-low)
+- [Nike Air Force 1](https://thecrawli.com/compare/nike-air-force-1)
+- [Adidas Samba](https://thecrawli.com/compare/adidas-samba)
+- [New Balance 550](https://thecrawli.com/compare/new-balance-550)
+- [Supreme Box Logo Hoodie](https://thecrawli.com/compare/supreme-box-logo-hoodie)
+- [BAPE Shark Hoodie](https://thecrawli.com/compare/bape-shark-hoodie)
+- [Fear of God Essentials Hoodie](https://thecrawli.com/compare/fear-of-god-essentials-hoodie)
+- [Stussy Hoodie](https://thecrawli.com/compare/stussy-hoodie)
+- [Carhartt WIP Jacket](https://thecrawli.com/compare/carhartt-wip-jacket)
+- [North Face Nuptse Jacket](https://thecrawli.com/compare/north-face-nuptse-jacket)
+- [Patagonia Better Sweater](https://thecrawli.com/compare/patagonia-better-sweater)
+- [Levi's 501 Jeans](https://thecrawli.com/compare/levis-501-jeans)
+- [Ralph Lauren Polo Shirt](https://thecrawli.com/compare/ralph-lauren-polo-shirt)
+- [Vintage Band Tee](https://thecrawli.com/compare/vintage-band-tee)
 
 ## Pages
 

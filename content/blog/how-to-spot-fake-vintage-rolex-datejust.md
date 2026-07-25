@@ -50,6 +50,10 @@ Beyond the visual second-hand tell, a genuine automatic Rolex movement has a dis
 
 Watch-industry data underscores how large this problem has become. Watchfinder & Co. has estimated that over 23 million counterfeit watches circulate in the US market, and separate 2025 reporting from the watch marketplace Bezel found that roughly a third to nearly 40% of Rolex and other major-brand watches submitted for authentication failed the check. Rolex alone accounts for roughly half of the fakes identified across all luxury brands, according to Watchfinder's data, which is a direct consequence of how desirable and recognizable the brand is to counterfeiters and buyers alike.
 
+## Price as a Fake Detector
+
+Price is one of the fastest tells. [Check the live Rolex Datejust price comparison](/compare/rolex-datejust) before you buy: a genuine Datejust priced far below the lowest legitimate listing there is the single most common signature of a counterfeit. Legitimate sellers who need a fast sale price near the bottom of the range, not a small fraction of it.
+
 ## What to Do Before You Pay
 
 Ask the seller for a close-up video, not just static photos, showing the second hand in motion and the cyclops lens from a straight-on angle. Request the caseback and any visible serial or reference numbers between the lugs. Cross-check the specific reference number against known production years and dial variants before assuming a "vintage" claim is accurate. For anything above a few hundred dollars, an independent watch authenticator's in-person inspection is worth the fee, since photos alone cannot confirm weight, movement sound, or internal construction.

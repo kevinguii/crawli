@@ -52,4 +52,6 @@ Every platform prices based on its own internal comps, which means a Vestiaire s
 
 If you're buying instead of selling, see our guide to [the best secondhand marketplaces for luxury items](/blog/best-secondhand-marketplaces-for-luxury-items) for the authentication and pricing side of this from a buyer's seat.
 
+To put a real number against the fee tables above, these pages show what each piece is currently listed at on every marketplace we track, refreshed daily: [Chanel Classic Flap](/compare/chanel-classic-flap), [Hermès Birkin](/compare/hermes-birkin), [Louis Vuitton Neverfull](/compare/louis-vuitton-neverfull), [Gucci Marmont](/compare/gucci-marmont-bag), [Dior Saddle Bag](/compare/dior-saddle-bag), [Rolex Datejust](/compare/rolex-datejust), and [Cartier Love Bracelet](/compare/cartier-love-bracelet). A platform's higher commission only costs you more if its listing prices are not correspondingly higher, and that is a question the live spread answers directly.
+
 The fastest way to find where your bag belongs is to look before you list. [Crawli](/) searches active and recently sold listings for the same item across marketplaces at once, so you can see where the demand for your exact bag is concentrated before you commit to a platform and its fee structure.
