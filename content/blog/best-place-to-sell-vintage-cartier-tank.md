@@ -43,7 +43,7 @@ That difference in buyer mindset is the core reason curated platforms can produc
 
 Fee structures shift periodically on all of these platforms, so confirm current rates directly before listing, particularly on 1stDibs, where terms vary by seller plan and negotiated arrangement.
 
-Before you accept any consignment offer, sanity-check it against [the live Cartier Tank price comparison](/compare/cartier-tank-watch): a quote well under the lowest legitimate listing there is worth questioning, and a "deal" far under it is worth authenticating before you send money.
+Before you accept any consignment offer, sanity-check it against [the live Cartier Tank resale price comparison](/blog/cartier-tank-watch-resale-price): a quote well under the lowest legitimate listing there is worth questioning, and a "deal" far under it is worth authenticating before you send money.
 
 ## Why Provenance and Original Accessories Close the Sale
 

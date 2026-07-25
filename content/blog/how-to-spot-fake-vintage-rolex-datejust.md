@@ -52,7 +52,7 @@ Watch-industry data underscores how large this problem has become. Watchfinder &
 
 ## Price as a Fake Detector
 
-Price is one of the fastest tells. [Check the live Rolex Datejust price comparison](/compare/rolex-datejust) before you buy: a genuine Datejust priced far below the lowest legitimate listing there is the single most common signature of a counterfeit. Legitimate sellers who need a fast sale price near the bottom of the range, not a small fraction of it.
+Price is one of the fastest tells. [Check the live Rolex Datejust resale price comparison](/blog/rolex-datejust-resale-price) before you buy: a genuine Datejust priced far below the lowest legitimate listing there is the single most common signature of a counterfeit. Legitimate sellers who need a fast sale price near the bottom of the range, not a small fraction of it.
 
 ## What to Do Before You Pay
 
