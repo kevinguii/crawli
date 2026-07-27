@@ -14,9 +14,11 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 | `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
 
 **Supporting docs:**
+- `SCALING.md` (repo root) — tier playbook: hosting, throughput, infra choices at scale X. **Read before answering any scaling/hosting/throughput question and quote it — do not improvise scaling advice from training data.** Referenced from `app/api/watchlist/refresh/route.ts`.
 - `docs/reference/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
 - `docs/reference/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
 - `docs/reference/FIRECRAWL_PRICING.md` — Firecrawl credit costs
+- `docs/reference/CLEANUP.md` — freeing ports 3000/8000 before finishing a session
 - `docs/marketing/POSTS_README.md` — carousel batch operation
 - `docs/planning/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
 
