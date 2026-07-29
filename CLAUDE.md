@@ -7,7 +7,7 @@
 The project uses four focused docs. Read what's relevant to your task — don't read all four every session.
 
 | File | What's in it | Read when |
-|---|---|---|
+|---|---|---| 
 | `HANDOFF.md` | Current platform state, open issues, recent changes, env setup | Every session |
 | `docs/core/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase | 
 | `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
