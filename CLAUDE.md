@@ -12,7 +12,7 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 | `docs/core/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase | 
 | `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
 | `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
- 
+
 **Supporting docs:**
 - `SCALING.md` (repo root) — tier playbook: hosting, throughput, infra choices at scale X. **Read before answering any scaling/hosting/throughput question and quote it — do not improvise scaling advice from training data.** Referenced from `app/api/watchlist/refresh/route.ts`.
 - `docs/reference/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
