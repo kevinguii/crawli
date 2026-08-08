@@ -212,21 +212,51 @@ The entire plan branches on this. Cost: a few hours.
 
 This is the one feature that changes what Crawli is. Scope it small.
 
-1. **Start with eBay only.** eBay's sold-listings filter (`LH_Sold=1&LH_Complete=1`)
-   is the single richest sold-price source and covers most categories including the
-   non-fashion queries already in the logs. Note: eBay is Avenue B (Firecrawl) and
-   already Akamai-blocks ~1 in 5 — budget for that, and evaluate the eBay Browse /
-   Marketplace Insights API as the durable path.
-2. **Then StockX**, which publishes explicit last-sale and sale history — the
-   cheapest win after eBay and already natively scraped.
-3. **Then Poshmark and Grailed**, both of which surface sold listings and both of
-   which already have sold-status detection in `structured_extractors.py`.
-4. Output the three numbers a flip decision actually needs: **median sold price,
-   sell-through rate, days-to-sell**. Feed the median into the existing
-   `netFlipProfit()` calculator so the margin panel is grounded in real sales rather
-   than live asks.
-5. Follow the project workflow for this: `/superpowers:brainstorming` → spec → plan →
-   worktree → subagent execution. It is a multi-day change touching the sidecar.
+**Platform order: Poshmark + Mercari + Grailed → eBay → StockX.** This is an
+implementation-cost ordering, and it is deliberately *not* a data-richness ordering
+(an earlier draft of this doc said eBay first — that was wrong for the reasons
+below).
+
+- **Native platforms are cheap.** Every one builds its search URL from a plain query
+  param (`poshmark_search_url` → `/search?query=…&type=listings`, `mercari_search_url`
+  → `/search/?keyword=…`, `grailed_search_url` → `/shop?query=…`), and
+  `structured_extractors.py` already parses sold signals for Poshmark, Grailed and
+  StockX for watchlist purposes. Sold comps there is a URL-param change plus a DOM check.
+- **eBay is the richest source and the most expensive.** It is the only platform with
+  no native extractor (Avenue B, Firecrawl-only, ~1 in 5 Akamai 403s per Open Issues).
+  `LH_Sold=1&LH_Complete=1` is real but is the most heavily guarded URL on the site.
+  The eBay **Browse API does not expose sold data**; Marketplace Insights does but is
+  restricted-access and requires an application. Do not start here.
+- **StockX drops to last.** It is a market with one lowest-ask per SKU, so its price
+  is already effectively a comp, and it is sneakers-only. Low incremental value.
+
+Tasks:
+
+1. **Probe first, no code.** Throwaway script: fetch each native search URL with a
+   candidate sold filter, dump HTML. Confirm per platform (a) the filter param exists,
+   (b) the sold grid reuses the card selectors the existing extractor targets, and
+   (c) **whether a sale date is in the DOM**. (c) is the gate on days-to-sell — if no
+   platform exposes it, ship median sold price + sell-through only and say so rather
+   than promising a number you cannot compute. Nothing here gets assumed (CLAUDE.md rule 1).
+2. **Extend the sidecar path, do not fork it.** Add `sold: bool` to
+   `ScrapeSearchRequest`, thread into `search_url_for(platform, query, sold=False)`.
+   Extractors mostly unchanged — they already emit `isSold`. Cache key becomes
+   `platform::query::sold` so sold and live results cannot collide in `_search_cache`.
+3. **New aggregate endpoint, separate from search.** `POST /sold-comps {query, platforms}`
+   → `{medianSold, n, sellThroughPct, daysToSell|null, perPlatform[]}`. Sell-through is
+   computable without a sale date: sold count over (sold + live) count for the same query.
+4. **Wire into the margin calc.** `netFlipProfit()` (`lib/marketplaceFees.ts:201`) takes
+   `resalePrice` as a plain number, so it does not change. The change is in
+   `PriceSummary.tsx` — `FlipMargin` currently defaults `resale` to
+   `averagePrice ?? priceRange.max`, i.e. average *asking* price. Default it to median
+   sold; keep average-ask as the secondary one-tap option.
+5. **eBay last, as its own decision.** By then you will know whether sold comps moves
+   retention on the free platforms. If it does, eBay justifies a residential proxy or
+   the Marketplace Insights application. If it does not, that fight was avoided.
+
+Tasks 2-4 touch the sidecar and the streaming search path: use
+`/superpowers:brainstorming` → spec → plan → worktree → subagent execution. Task 1 is
+a scratchpad script.
 
 ### Step 2 — Make alerts the front door, not search
 
@@ -234,15 +264,30 @@ Alerts are the cheapest feature to run (shared scrape), the stickiest, the one
 competitors do worse, and they have 2 users. That ratio is the biggest unforced
 error in the product.
 
-1. **Alerts should be the first thing a new user creates, not the fourth.** Today
-   onboarding drops users into a search box; 10 of 26 search once and never return.
-   An alert is the only artifact that brings someone back on day 2.
-2. Move alert creation into the signup flow, and let a **logged-out visitor create
-   one with just an email**. Search results are the expensive thing to give away
-   free; an alert is nearly free and is a captured email either way.
-3. Market the compound criteria explicitly. "Alert me when a Grailed *or* Vinted
-   listing matches brand=Stussy, size=M, under $80" is something neither Beni nor
-   Gem can express.
+**The problem is structural, not copy.** `app/login/page.tsx:69` pushes new users to
+`/search`, and `CreateAlertModal` is mounted only inside `SearchSection` and
+`SearchAlertsTab`, both behind `(protected)`. So an alert can only be created *after*
+a search, inside the app. The cheapest, stickiest feature sits downstream of the most
+expensive, rate-limited one. That explains 2-user adoption better than any UI issue.
+
+In order of impact:
+
+1. **Public alert creation, no account.** A create-an-alert form on the landing page:
+   query, platforms, email. It creates the alert and sends a confirmation email, and
+   clicking that link *is* the signup. Inverts the funnel from search-gate → signup →
+   maybe alert, to alert → email → account. An alert costs almost nothing to run
+   (`withListingsCache` fans one scrape to every user watching the same query) whereas
+   a free search is the real COGS. Today the expensive thing is given away and the
+   cheap one is gated.
+2. **First alert run immediate, and email the baseline.** Today the first run
+   establishes a baseline silently and only later runs email. A "here are the 15
+   listings matching this right now across 6 marketplaces" email within a minute of
+   signup is the activation moment, and nothing currently plays that role.
+3. **Then the post-signup redirect** (`/search` → alert creation). Pure routing, and
+   third because it only helps people who already cleared signup.
+4. Surface the compound criteria. `applyCriteria()` already supports brand AND size AND
+   price AND keyword and is buried in an optional modal section. Neither Beni nor Gem
+   exposes this.
 
 ### Step 3 — Stop writing blog posts
 
@@ -258,9 +303,22 @@ SERPs and the July rewrite did not dislodge it.
   a community problem (r/Flipping, Discord servers, YouTube reseller channels), not
   a keyword problem.
 
-### Step 4 — Rewrite positioning after Step 0 confirms, not before
+### Step 4 — Rewrite positioning after Step 1 ships, not before
 
-Once the audience question is settled, update in this order:
+**Sequencing matters here and an earlier draft got it wrong** (it said "after Step 0
+confirms"). The 2026-06-29 reseller-only framing was copy on top of a buyer-shaped
+product: the same 9-platform live-asking-price search, relabeled. It did not convert,
+and re-running it tomorrow would fail identically, because live asking prices do not
+answer a reseller's question. Sold comps is what makes the narrow claim *true*. Ship
+it first, then narrow.
+
+Note also what the 2026-07-11 walk-back actually rested on: GSC showed no ranking
+equity tied to the reseller-first title. But there is no equity in *either* framing —
+the domain has 39 clicks in 90 days. "No equity in the reseller title" and "no equity,
+period" are indistinguishable in that data, so the walk-back was made on a null result
+rather than on evidence that the broader framing works.
+
+Once sold comps ships, update in this order:
 `B2B_FEATURE_TRUTH.md` §5 → `app/layout.tsx` metadata → `Hero.tsx` →
 `faqData.ts` → `PricingCards`. Two claims to lead with, both defensible today:
 
