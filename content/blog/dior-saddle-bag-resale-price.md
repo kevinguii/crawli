@@ -1,8 +1,8 @@
 ---
-title: "Dior Saddle Bag Resale Price: Live Spread 2026"
-description: "The same Dior Saddle Bag ranges from about $125 on Mercari to over $6,000 on Vestiaire right now. A live cross-platform breakdown of the resale spread."
+title: "How to Vet a Cheap Dior Saddle Bag"
+description: "The Saddle Bag spans an original run and a 2018 revival, priced very differently, and both are heavily faked. How to date a listing and check its hardware."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/dior-saddle-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "dior", "luxury-handbags"]
 compareSlug: "dior-saddle-bag"

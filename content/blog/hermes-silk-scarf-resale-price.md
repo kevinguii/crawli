@@ -1,8 +1,8 @@
 ---
-title: "Hermes Silk Scarf Resale Price: Live Spread 2026"
-description: "The same Hermes silk scarf ranges from about $22 on Depop to over $1,100 on Mercari right now. A live cross-platform breakdown of the resale spread."
+title: "How to Vet a Cheap Hermès Scarf Listing"
+description: "Hand-rolled hems, colorway, and design era separate a $60 Hermès scarf from a $600 one, and separate real silk from a print copy. What to look for in listing photos."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/hermes-silk-scarf-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "hermes", "luxury-accessories"]
 compareSlug: "hermes-silk-scarf"

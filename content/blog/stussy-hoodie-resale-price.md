@@ -1,8 +1,8 @@
 ---
-title: "Stussy Hoodie Resale Price: Cheapest Sites 2026"
-description: "The same Stussy hoodie ranges from a ~$22 floor on Depop to ~$94 on Vestiaire right now. A live cross-platform breakdown of where to buy one cheap."
+title: "How to Spot a Fake Stussy Hoodie Listing"
+description: "Stussy is one of the most bootlegged labels in secondhand. Stitching, tag generation, and print texture tells that separate a real hoodie from a knockoff."
 date: "2026-07-06"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/stussy-hoodie-resale-price-cover.svg"
 tags: ["guides", "hoodies", "price-comparison", "stussy"]
 compareSlug: "stussy-hoodie"

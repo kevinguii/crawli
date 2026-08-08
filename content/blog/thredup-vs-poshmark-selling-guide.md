@@ -2,7 +2,7 @@
 title: "ThredUp vs Poshmark: Which Should You Sell On?"
 description: "ThredUp and Poshmark have different fee structures, audiences, and selling processes. Here's what the comparison looks like before you commit your inventory."
 date: "2026-06-12"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/thredup-vs-poshmark-cover.svg"
 tags: ["resellers", "platform-comparison", "poshmark", "thredup"]
 faq:
@@ -49,7 +49,7 @@ ThredUp's model only pays off in specific scenarios:
 Poshmark's economics are better for almost any item above $30 where you're willing to put in the listing work:
 
 - **Mid-value items ($30 to $150):** This is where Poshmark's flat 20% creates a meaningful advantage. A $60 dress nets you $48 on Poshmark. On ThredUp it might net you $15 to $25.
-- **Brand-driven or niche pieces:** Poshmark's search and community are good at surfacing the right buyer for specific items. A lululemon Define jacket or a Patagonia fleece has a ready audience on Poshmark that will find it, check [current cross-platform Patagonia Better Sweater resale prices](/blog/patagonia-better-sweater-resale-price) before you set your listing price so you're not underselling it.
+- **Brand-driven or niche pieces:** Poshmark's search and community are good at surfacing the right buyer for specific items. A lululemon Define jacket or a Patagonia fleece has a ready audience on Poshmark that will find it, check [current cross-platform Patagonia Better Sweater resale prices](/compare/patagonia-better-sweater) before you set your listing price so you're not underselling it.
 - **Anything you want control over:** ThredUp can reject your items, price them below what you'd accept, or hold inventory for months. Poshmark keeps you in control.
 
 ## The practical decision

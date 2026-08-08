@@ -2,7 +2,7 @@
 title: "Vintage Workwear Resale Value: Price Drivers"
 description: "Discontinued colorways and 'Union Made in USA' tags push some vintage chore coats far above near-identical-looking pieces. Here's what actually separates them."
 date: "2026-06-22"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/vintage-workwear-cover.svg"
 tags: ["guides", "workwear", "fashion-history"]
 faq:
@@ -49,4 +49,4 @@ Vintage-buying communities run on exactly this kind of identification. Threads a
 
 Because the price spread between "common" and "collector-grade" workwear is so wide, the same jacket can be priced completely differently depending on whether the seller (or the platform's buyers) recognize what they have. That cuts both ways: sometimes you'll find a genuinely rare piece underpriced because nobody flagged the details, and sometimes you'll see a perfectly ordinary chore coat priced like it's rare.
 
-Knowing the signals above is the first step. The second is actually comparing what's out there before you commit. If you want a live sense of where current Carhartt pricing sits across platforms, [check today's Carhartt WIP jacket resale prices](/blog/carhartt-wip-jacket-resale-price): vintage Detroit-era pieces trade on their own premium above that baseline, but it's a useful reference point. [Crawli](/) searches vintage workwear listings across marketplaces at once, so you can see where a specific piece actually sits in the spread before you buy.
+Knowing the signals above is the first step. The second is actually comparing what's out there before you commit. If you want a live sense of where current Carhartt pricing sits across platforms, [check today's Carhartt WIP jacket resale prices](/compare/carhartt-wip-jacket): vintage Detroit-era pieces trade on their own premium above that baseline, but it's a useful reference point. [Crawli](/) searches vintage workwear listings across marketplaces at once, so you can see where a specific piece actually sits in the spread before you buy.

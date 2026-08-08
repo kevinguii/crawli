@@ -2,7 +2,7 @@
 title: "How Resale Site Authentication Actually Works"
 description: "Not every platform inspects every item. Some check photos, some check physically, some only above a price threshold. Here's what each resale site actually does."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-08-08"
 cover: "/blog/images/authentication-process-cover.svg"
 tags: ["guides", "luxury", "authentication", "platform-deepdive"]
 faq:
@@ -46,4 +46,6 @@ What's less obvious is what happens on platforms, or at price points, where no p
 
 Don't treat "authenticated" as a single, uniform guarantee. Ask two questions before you trust it: did this specific platform physically inspect this specific item, and was the price high enough to trigger that inspection in the first place? A $300 Vestiaire listing and a $1,200 Vestiaire listing go through genuinely different processes. A $400 Poshmark handbag and a $600 one do too.
 
-Knowing which platforms actually inspect what you're buying matters as much as the price tag. [Crawli](/) lets you compare the same item across The RealReal, Vestiaire, StockX, eBay, Poshmark, and more in one search, so you can weigh authentication coverage against price instead of guessing at either.
+Knowing which platforms actually inspect what you're buying matters as much as the price tag, and the two are linked: the same bag sitting near the bottom of the market on a platform that never inspected it is a different proposition from the same number on a platform that did. The [live Chanel Classic Flap price comparison](/compare/chanel-classic-flap) shows that gap clearly across eight marketplaces, refreshed daily.
+
+[Crawli](/) lets you compare the same item across The RealReal, Vestiaire, StockX, eBay, Poshmark, and more in one search, so you can weigh authentication coverage against price instead of guessing at either.

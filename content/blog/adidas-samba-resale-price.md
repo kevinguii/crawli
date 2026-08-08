@@ -1,8 +1,8 @@
 ---
-title: "Adidas Samba Resale Price: Cheapest Sites (2026)"
-description: "The same Adidas Samba ranges from a ~$16 floor on Depop to ~$64 on Vestiaire right now. A live cross-platform breakdown of where to buy one cheap."
+title: "How to Vet a Cheap Adidas Samba Listing"
+description: "The Samba is the most-copied silhouette in sneakers right now. Gum sole, stitching, and tongue-tag details that reveal a replica in listing photos."
 date: "2026-07-06"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/adidas-samba-resale-price-cover.svg"
 tags: ["guides", "sneakers", "price-comparison", "adidas"]
 compareSlug: "adidas-samba"

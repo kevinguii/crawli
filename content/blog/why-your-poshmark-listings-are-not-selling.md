@@ -2,7 +2,7 @@
 title: "Poshmark Listings Aren't Selling (Not Price)"
 description: "Most stuck Poshmark sellers blame pricing first, but the real problem is often timing. Here's how to get listings seen when buyers are actually browsing."
 date: "2026-06-12"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/poshmark-timing-cover.svg"
 tags: ["resellers", "poshmark", "selling-tips"]
 faq:
@@ -51,4 +51,4 @@ Poshmark's buyer base skews toward the East Coast, where a large share of the US
 
 Pull up your three slowest-moving listings. Check when you originally posted them. If they went up on a weekday morning or mid-afternoon, that's your answer. Relist them Sunday between 1 and 3 PM, share the closet at 8 PM that evening, and send offers to any likers within the hour. That sequence alone will outperform another 10% price drop.
 
-Understanding when buyers are active is one half of selling on Poshmark. Finding what they're actually searching for is the other half. [Crawli](/) shows you what's selling across platforms so you can price and time with real data.
+Understanding when buyers are active is one half of selling on Poshmark. Finding what they're actually searching for is the other half. [Crawli](/) shows you what's selling across platforms so you can price and time with real data, and the [live cross-platform price comparisons](/compare) give you the current range on the most-listed pieces before you set yours.

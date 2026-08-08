@@ -1,8 +1,8 @@
 ---
-title: "Cartier Love Bracelet Resale Price: Live Spread 2026"
-description: "A genuine Cartier Love bracelet lists from about $1,880 on Poshmark to nearly $9,900 on ThredUp right now. A live cross-platform breakdown, plus why anything priced far lower is almost certainly not solid 18k gold."
+title: "How to Verify a Cartier Love Bracelet"
+description: "Screw alignment, hallmark placement, and gold weight are where Love bracelet replicas fail. What to check before paying, and why a cheap one is never a bargain."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/cartier-love-bracelet-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "cartier", "luxury-jewelry"]
 compareSlug: "cartier-love-bracelet"

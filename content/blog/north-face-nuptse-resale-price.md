@@ -1,8 +1,8 @@
 ---
-title: "North Face Nuptse Resale Price: Cheapest Sites 2026"
-description: "The same North Face Nuptse ranges from a ~$31 floor on Mercari to ~$154 on StockX right now. A live cross-platform breakdown of where to actually buy one cheap."
+title: "How to Spot a Fake North Face Nuptse"
+description: "Nuptse counterfeits are everywhere and the good ones are convincing. Baffle construction, logo embroidery, and fill tells to check before buying secondhand."
 date: "2026-07-06"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/nuptse-resale-price-cover.svg"
 tags: ["guides", "outerwear", "price-comparison", "north-face"]
 compareSlug: "north-face-nuptse-jacket"

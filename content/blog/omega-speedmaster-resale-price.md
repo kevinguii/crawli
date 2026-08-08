@@ -1,8 +1,8 @@
 ---
-title: "Omega Speedmaster Resale Price: Live Spread 2026"
-description: "A genuine steel Omega Speedmaster Professional lists from about $3,165 on Vestiaire to over $14,500 on Grailed. A live cross-platform breakdown, plus the MoonSwatch mixup to watch for."
+title: "How to Vet a Cheap Omega Speedmaster"
+description: "Redials, swapped bezels, and franken-builds are the real risk on a cheap Speedmaster, not obvious counterfeits. What to check before you buy one secondhand."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/omega-speedmaster-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "omega", "luxury-watches"]
 compareSlug: "omega-speedmaster"

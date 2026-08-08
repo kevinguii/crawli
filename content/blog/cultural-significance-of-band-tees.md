@@ -2,7 +2,7 @@
 title: "Why Band Tees Are More Than Just Fashion Statements"
 description: "A band tee is merchandise, memorabilia, and a public signal of taste all at once, which is why the right one can outsell almost anything in a vintage closet."
 date: "2026-06-19"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/band-tees-cover.svg"
 tags: ["vintage", "band-tees", "fashion-history", "buying-guide"]
 faq:
@@ -41,6 +41,6 @@ Streetwear and high fashion both absorbed the band tee aesthetic well beyond its
 
 ## Pricing factors in the band tee resale market
 
-Beyond rarity and condition, current relevance matters: a band experiencing a resurgence (through a reunion tour, a sync placement, or a new generation of fans discovering the catalog) tends to see tee prices rise alongside renewed interest. Condition grading is also stricter for band tees than for plain vintage apparel, since collectors are scrutinizing print cracking and fading closely. If you want a sense of where prices actually sit right now, [see live vintage band tee resale prices](/blog/vintage-band-tee-resale-price) pulled from current marketplace listings.
+Beyond rarity and condition, current relevance matters: a band experiencing a resurgence (through a reunion tour, a sync placement, or a new generation of fans discovering the catalog) tends to see tee prices rise alongside renewed interest. Condition grading is also stricter for band tees than for plain vintage apparel, since collectors are scrutinizing print cracking and fading closely. If you want a sense of where prices actually sit right now, [see live vintage band tee resale prices](/compare/vintage-band-tee) pulled from current marketplace listings.
 
 Finding a specific tour tee or band print means searching broadly, since inventory is scattered across platforms and sellers. [Crawli](/) lets you search Depop, Poshmark, Grailed, eBay, and more at once, for free, so you can track down the exact piece instead of checking each app separately.

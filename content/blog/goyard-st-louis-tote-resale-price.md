@@ -1,8 +1,8 @@
 ---
-title: "Goyard St Louis Tote Resale Price: Live Spread 2026"
-description: "The full-size Goyard St Louis tote starts around $800 on Poshmark and runs to about $4,900 on Grailed. A live cross-platform breakdown, plus the pouch-versus-tote mixup to watch for."
+title: "How to Vet a Cheap Goyard St Louis Listing"
+description: "Goyard has no official resale channel, which makes the St Louis one of the most-faked totes online. The chevron, stitching, and tag details that give a replica away."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/goyard-st-louis-tote-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "goyard", "luxury-handbags"]
 compareSlug: "goyard-st-louis-tote"

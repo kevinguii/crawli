@@ -2,7 +2,7 @@
 title: "How to Optimize Your Depop Profile for More Sales"
 description: "Good photos alone aren't enough. Here's how keyword-driven titles, a consistent visual style, and a real bio turn a Depop profile from ignored to followed."
 date: "2026-06-16"
-updated: "2026-07-17"
+updated: "2026-08-08"
 cover: "/blog/images/depop-profile-cover.svg"
 tags: ["resellers", "depop", "profile-optimization", "selling-tips"]
 faq:
@@ -56,4 +56,4 @@ Photography reinforces the same thing. Try-on or worn shots consistently outperf
 
 Pick a niche your existing inventory already leans toward. Rewrite your bio around it. Go back through your last 10 listings and rewrite titles to lead with brand and item type. Shoot one consistent background setup and reshoot anything currently using random backgrounds. Then list on a regular cadence instead of in batches.
 
-None of this requires new inventory, just a clearer presentation of what you already have. If you're also trying to figure out what similar items are actually selling for elsewhere before you price your next drop, [Crawli](/) compares listings across Depop and other resale platforms at once. Start your search at [thecrawli.com](https://thecrawli.com).
+None of this requires new inventory, just a clearer presentation of what you already have. If you're also trying to figure out what similar items are actually selling for elsewhere before you price your next drop, [Crawli](/) compares listings across Depop and other resale platforms at once, and the [live price comparisons](/compare) cover the most-searched pieces without you having to run a search at all. Start your search at [thecrawli.com](https://thecrawli.com).

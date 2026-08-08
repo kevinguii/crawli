@@ -1,8 +1,8 @@
 ---
-title: "Chanel Classic Flap Resale Price: Live Spread 2026"
-description: "The same Chanel Classic Flap lists from about $410 on Depop to over $18,000 on StockX. A live cross-platform breakdown of the real luxury resale spread."
+title: "How to Vet a Cheap Chanel Classic Flap"
+description: "The Classic Flap is faked at every price point, and the good replicas are convincing. Serial stickers, quilting alignment, and hardware tells to check in listing photos."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/chanel-classic-flap-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "chanel", "luxury-handbags"]
 compareSlug: "chanel-classic-flap"

@@ -1,8 +1,8 @@
 ---
-title: "Celine Triomphe Bag Resale Price: Live Spread 2026"
-description: "The same Celine Triomphe bag ranges from about $90 on Mercari to almost $4,000 on Poshmark right now. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap Celine Triomphe Real?"
+description: "\"Triomphe\" covers several very different bags, and the name gets attached to replicas constantly. How to tell which model a listing is really selling."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/celine-triomphe-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "celine", "luxury-handbags"]
 compareSlug: "celine-triomphe-bag"

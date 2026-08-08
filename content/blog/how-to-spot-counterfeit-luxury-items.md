@@ -2,7 +2,7 @@
 title: "How to Spot Counterfeit Luxury Secondhand Items"
 description: "Counterfeits have gotten good enough that brand-specific checklists alone aren't reliable. Here are the buyer-side habits that catch fakes regardless of brand."
 date: "2026-06-18"
-updated: "2026-06-18"
+updated: "2026-08-08"
 cover: "/blog/images/spotting-counterfeits-cover.svg"
 tags: ["authentication", "luxury", "buying-guide"]
 faq:
@@ -46,4 +46,4 @@ This doesn't mean visual checks are useless, it means they should be one layer o
 
 No single layer catches everything. Together, they catch most of what a checklist alone misses, because counterfeiters who've solved the visual details haven't necessarily solved the seller-behavior and pricing signals.
 
-For a deeper look at what platform-side authentication actually verifies and where it has known gaps, see [how authentication actually works on resale sites](/blog/how-authentication-works-on-resale-sites). When you're comparing a listing against the broader market to sanity-check the price, [Crawli](/) searches multiple platforms at once so an unusually low price stands out immediately instead of after you've already paid. Start at [thecrawli.com](https://thecrawli.com).
+For a deeper look at what platform-side authentication actually verifies and where it has known gaps, see [how authentication actually works on resale sites](/blog/how-authentication-works-on-resale-sites). When you're comparing a listing against the broader market to sanity-check the price, [Crawli](/) searches multiple platforms at once so an unusually low price stands out immediately instead of after you've already paid, and the [live resale price comparisons](/compare) show what genuine pieces actually cost across eight marketplaces so you know what "unusually low" means before you start. Start at [thecrawli.com](https://thecrawli.com).

@@ -2,7 +2,7 @@
 title: "Why Vintage Clothing Holds Its Value"
 description: "Vintage isn't just nostalgia. Scarcity, construction quality, and a real shift toward sustainable buying are why well-chosen vintage pieces hold or gain value."
 date: "2026-06-18"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/vintage-value-cover.svg"
 tags: ["vintage", "sustainable-fashion", "buying-guide"]
 faq:
@@ -22,7 +22,7 @@ Most clothing depreciates the moment it leaves the store. Vintage is the excepti
 
 ## The supply side: nobody's making more of it
 
-A 2003 Levi's 501 is a fixed quantity. There will never be more of that exact production run, that exact wash, those exact details. ([See where Levi's 501 resale prices sit right now](/blog/levis-501-resale-price) if you want a sense of what that scarcity actually trades for.) Every other piece of new clothing sold today has the opposite problem: the brand can simply make more if demand goes up, which caps how much any single piece can appreciate.
+A 2003 Levi's 501 is a fixed quantity. There will never be more of that exact production run, that exact wash, those exact details. ([See where Levi's 501 resale prices sit right now](/compare/levis-501-jeans) if you want a sense of what that scarcity actually trades for.) Every other piece of new clothing sold today has the opposite problem: the brand can simply make more if demand goes up, which caps how much any single piece can appreciate.
 
 This scarcity is the foundation of vintage value, but it only matters for pieces people actually want. A fixed supply of something nobody's looking for isn't valuable, it's just old. Scarcity plus demand is the combination that matters.
 

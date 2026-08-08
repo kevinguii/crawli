@@ -1,8 +1,8 @@
 ---
-title: "Prada Re-Edition Nylon Bag Resale Price: Live Spread 2026"
-description: "The same Prada Re-Edition nylon bag ranges from about $69 on Mercari to over $2,600 on StockX right now. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap Prada Re-Edition Real?"
+description: "The Re-Edition nylon bag is cheap enough to fake profitably and simple enough to fake well. Hardware, lettering, and lining details that separate real from replica."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/prada-re-edition-nylon-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "prada", "luxury-handbags"]
 compareSlug: "prada-re-edition-nylon-bag"

@@ -1,8 +1,8 @@
 ---
-title: "Gucci Marmont Bag Resale Price: Live Spread 2026"
-description: "The same Gucci GG Marmont bag ranges from about $316 on Depop to nearly $6,000 on Poshmark right now. A live cross-platform breakdown of the resale spread."
+title: "How to Vet a Cheap Gucci Marmont"
+description: "Chevron alignment, GG hardware finish, and interior stamping are where Marmont replicas give themselves away. What to verify before you buy secondhand."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/gucci-marmont-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "gucci", "luxury-handbags"]
 compareSlug: "gucci-marmont-bag"

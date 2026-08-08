@@ -1,8 +1,8 @@
 ---
-title: "Louis Vuitton Neverfull Resale Price: Live Spread 2026"
-description: "The same Louis Vuitton Neverfull ranges from a roughly $293 floor on Depop to about $8,000 on Poshmark right now. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap Neverfull Real? How to Check"
+description: "The Neverfull is the most counterfeited bag in resale. Date codes, canvas grain, and stitch counts you can verify from listing photos before you commit."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/louis-vuitton-neverfull-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "louis-vuitton", "luxury-handbags"]
 compareSlug: "louis-vuitton-neverfull"

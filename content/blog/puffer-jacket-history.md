@@ -2,7 +2,7 @@
 title: "Puffer Jacket History: From Survival Gear to Grail"
 description: "Eddie Bauer designed the first quilted down jacket after a near-fatal hike in 1936. Here's how survival gear became archive-collector fashion."
 date: "2026-06-23"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/puffer-jacket-cover.svg"
 tags: ["guides", "outerwear", "vintage-history"]
 faq:
@@ -44,7 +44,7 @@ Three details do most of the work. The zipper brand (YKK, Riri, or Talon, each t
 
 These pieces sit at the intersection of two collector instincts: nostalgia for 90s technical and skate-adjacent style, and genuine scarcity, since none of these exact runs are back in production. Moncler in particular has built a documented secondary market, with used jackets spanning a wide range from budget-friendly common styles up to serious money for rare archive and runway pieces. Helly Hansen and Napapijri vintage puffers trade lower on average but have climbed as 90s outdoor aesthetics came back into rotation. Early Supreme outerwear, where it crosses over with puffer silhouettes, draws a similar collector premium for the same reason: limited production that can't be reissued exactly.
 
-The North Face's Nuptse, the brand's signature baffled 700-fill puffer, has built its own resale market distinct from the runway-house players above, and it's a good example of why checking one platform isn't enough: the same jacket can list for wildly different prices depending on where you look. [See live North Face Nuptse resale prices across platforms](/blog/north-face-nuptse-resale-price) before you decide what a "fair" price actually looks like.
+The North Face's Nuptse, the brand's signature baffled 700-fill puffer, has built its own resale market distinct from the runway-house players above, and it's a good example of why checking one platform isn't enough: the same jacket can list for wildly different prices depending on where you look. [See live North Face Nuptse resale prices across platforms](/compare/north-face-nuptse-jacket) before you decide what a "fair" price actually looks like.
 
 ## Down fill, quality inspection, and warning signs
 

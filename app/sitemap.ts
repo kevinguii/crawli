@@ -27,6 +27,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const compareItems = await getAllCompareItems();
   const compareLastUpdated = await getCompareLastUpdated();
+
+  // The /compare hub's real freshness is its newest child scrape, not its source
+  // file — the page is a directory of live data, so a git date would understate it.
+  const newestCompareScrape = [...compareLastUpdated.values()].sort().pop();
+
   const comparePages: MetadataRoute.Sitemap = compareItems.map((item) => ({
     url: `${SITE_URL}/compare/${item.slug}`,
     lastModified: new Date(compareLastUpdated.get(item.slug) ?? Date.now()),
@@ -44,6 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     ...blogPosts,
+    {
+      url: `${SITE_URL}/compare`,
+      lastModified: new Date(newestCompareScrape ?? Date.now()),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
     ...comparePages,
     {
       url: `${SITE_URL}/`,

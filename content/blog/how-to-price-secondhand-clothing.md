@@ -2,7 +2,7 @@
 title: "How to Price Secondhand Clothing for Faster Sales"
 description: "Most resellers overprice based on what they paid, not what the market will pay. Here's a practical framework for pricing secondhand clothing that sells."
 date: "2026-06-12"
-updated: "2026-07-17"
+updated: "2026-08-08"
 cover: "/blog/images/pricing-secondhand-cover.svg"
 tags: ["resellers", "pricing", "selling-tips"]
 faq:
@@ -68,4 +68,4 @@ If an item hasn't sold in four weeks, run this diagnosis:
 - **Likes but no offers:** you're close to the buyer's threshold. Send a small offer to likers (Poshmark makes this easy), often converts within 24 hours.
 - **Nothing at all (no views, no likes, no offers):** either very niche or the listing has a photo or title problem. Reshoot with a plain background and rewrite the title with the brand, style name, and condition.
 
-Finding the right price starts with knowing what real buyers are paying right now. [Crawli](/) shows you live and sold listings across Depop, Poshmark, Grailed, eBay, and more so you can price from actual data instead of guesswork.
+Finding the right price starts with knowing what real buyers are paying right now. If you are pricing one of the pieces that moves most often in resale, the [live resale price comparisons](/compare) already show the current range on each one across eight marketplaces, refreshed daily, so you can anchor to the market before you list. For anything else, [Crawli](/) shows you live and sold listings across Depop, Poshmark, Grailed, eBay, and more so you can price from actual data instead of guesswork.

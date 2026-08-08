@@ -1,8 +1,8 @@
 ---
-title: "YSL Loulou Bag Resale Price: Live Spread 2026"
-description: "The same Saint Laurent Loulou bag ranges from about $800 on Vinted to roughly $3,600 on Grailed right now. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap YSL Loulou Bag Real?"
+description: "Quilting alignment, hardware weight, and the YSL monogram finish are where Loulou replicas fall down. How to vet a listing before you pay."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/ysl-loulou-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "saint-laurent", "luxury-handbags"]
 compareSlug: "ysl-loulou-bag"

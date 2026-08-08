@@ -2,7 +2,7 @@
 title: "Cavalry Twill Fabric Guide: Why It Outlasts Others"
 description: "Cavalry twill is a heavy, diagonal ribbed wool fabric used for military riding breeches and civilian trousers, known for its steep twill line and dense hand."
 date: "2026-06-25"
-updated: "2026-07-17"
+updated: "2026-08-08"
 cover: "/blog/images/cavalry-twill-cover.svg"
 tags: ["material-guide", "cavalry-twill-guide", "vintage-menswear"]
 faq:
@@ -112,4 +112,4 @@ Wear them. They will outlast everything else in your closet.
 
 This is really the same buying logic that applies across vintage workwear generally: fabric weight, weave density, and construction quality predict resale value and longevity far better than brand recognition alone. Our guide to [why vintage workwear is having a moment](/blog/vintage-workwear-resale-value) breaks down that pricing logic across other durable fabrics and garment types if cavalry twill has you thinking about buying for durability first.
 
-Vintage cavalry twill trousers are scattered across eBay, Etsy, and specialty vintage shops at wildly different prices depending on the seller's knowledge. A pair listed as "wool vintage pants" at $40 might be the same quality as one labeled "Hickey Freeman cavalry twill" at $180. Cross-platform searching reveals these gaps. Crawli searches all platforms simultaneously for free so you can spot the underpriced cavalry twill before another collector finds it. Search free at [thecrawli.com](/).
+Vintage cavalry twill trousers are scattered across eBay, Etsy, and specialty vintage shops at wildly different prices depending on the seller's knowledge. A pair listed as "wool vintage pants" at $40 might be the same quality as one labeled "Hickey Freeman cavalry twill" at $180. Durable workwear fabrics show the same pattern wherever you look: [today's Carhartt WIP jacket prices across platforms](/compare/carhartt-wip-jacket) spread just as widely on a garment far easier to identify than cavalry twill. Cross-platform searching reveals these gaps. Crawli searches all platforms simultaneously for free so you can spot the underpriced cavalry twill before another collector finds it. Search free at [thecrawli.com](/).

@@ -1,8 +1,8 @@
 ---
-title: "Cartier Tank Watch Resale Price: Live Spread 2026"
-description: "A genuine Cartier Tank lists from about $328 on Vestiaire to over $27,000 on Grailed right now. A live cross-platform breakdown, plus how to avoid a strap-only or wrong-model listing."
+title: "How to Vet a Cheap Cartier Tank Listing"
+description: "Cheap Tank listings are usually quartz reissues, aftermarket cases, or outright fakes. What to check on the caseback, dial, and movement before you send money."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/cartier-tank-watch-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "cartier", "luxury-watches"]
 compareSlug: "cartier-tank-watch"

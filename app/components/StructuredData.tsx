@@ -61,14 +61,10 @@ export default function StructuredData() {
       description:
         "Compare resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, eBay and Vestiaire in one search.",
       publisher: { "@id": `${SITE_URL}/#organization` },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: {
-          "@type": "EntryPoint",
-          urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
-        },
-        "query-input": "required name=search_term_string",
-      },
+      // No SearchAction / sitelinks-searchbox here on purpose: /search is
+      // auth-gated and Disallow'd in robots.ts, so the searchbox could never
+      // function, and Google was crawling the literal "{search_term_string}"
+      // template as a URL (surfaced in GSC "Blocked by robots.txt", 2026-08).
     },
     {
       "@type": "SoftwareApplication",

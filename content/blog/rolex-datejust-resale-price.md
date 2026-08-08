@@ -1,8 +1,8 @@
 ---
-title: "Rolex Datejust Resale Price: Live Spread 2026"
-description: "A genuine Rolex Datejust lists from about $4,100 on Vinted to over $31,000 on Grailed right now. A live cross-platform breakdown, plus why any far-lower listing is a red flag."
+title: "How to Vet a Cheap Rolex Datejust Listing"
+description: "A Datejust priced like a fashion watch is never a real Datejust. The case engravings, cyclops, and movement tells that separate a genuine listing from a homage or a fake."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/rolex-datejust-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "rolex", "luxury-watches"]
 compareSlug: "rolex-datejust"

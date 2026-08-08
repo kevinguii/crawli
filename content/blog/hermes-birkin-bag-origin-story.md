@@ -2,7 +2,7 @@
 title: "Hermes Birkin Bag History: The True Origin Story"
 description: "The Hermes Birkin was born in 1983 when Jane Birkin told CEO Jean-Louis Dumas she couldn't find a practical bag, and he sketched it on an airsickness bag."
 date: "2026-07-02"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/birkin-bag-history-cover.svg"
 tags: ["fashion-history", "hermes-birkin-history", "luxury-handbags"]
 faq:
@@ -49,7 +49,7 @@ Exact measurements vary slightly by production era and leather, and rare skins (
 
 Hermes does not operate a public waitlist in the way outsiders imagine. There is no sign-up sheet. Bags are allocated by sales associates to clients with an established purchase history at the brand, a practice that has drawn criticism and, at times, legal scrutiny, but that Hermes has maintained largely unchanged. For buyers without that retail relationship, the resale market is often the only realistic path to owning one, which is a significant part of why platforms specializing in luxury resale have built entire verification and authentication infrastructures specifically around Birkin and Kelly bags. Those infrastructures aren't foolproof, and vintage Birkins with decades-old repairs or replaced hardware can trip up the same checks meant to catch fakes; see our breakdown of [how resale platform authentication actually works on bags like these](/blog/how-resale-platform-authentication-works) before you buy one secondhand.
 
-Want the current asking-price range instead of the history? [See the live Hermes Birkin resale price comparison](/blog/hermes-birkin-resale-price), refreshed daily across 8 resale marketplaces.
+Want the current asking-price range instead of the history? [See the live Hermes Birkin resale price comparison](/compare/hermes-birkin), refreshed daily across 8 resale marketplaces.
 
 ## The Bag as an Investment Asset
 

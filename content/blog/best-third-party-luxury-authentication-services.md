@@ -2,7 +2,7 @@
 title: "Best Third-Party Luxury Authentication Services"
 description: "Poshmark only authenticates orders over $500, and Depop offers none, so an independent authenticator is often the only check on a peer-to-peer luxury sale."
 date: "2026-07-13"
-updated: "2026-07-13"
+updated: "2026-08-08"
 cover: "/blog/images/third-party-authentication-cover.svg"
 tags: ["item-guide", "third-party-authentication-providers", "luxury-resale"]
 faq:
@@ -66,5 +66,7 @@ Costs and turnaround shift often, so confirm current pricing on each provider's 
 ## Check for Red Flags Before You Even Pay for Authentication
 
 Before spending $15 to $55 on a third-party check, it's worth ruling out the cheapest tell first: the same photos showing up on more than one platform under different sellers. [Cross-platform scam spotting](/blog/cross-platform-scam-spotting) walks through exactly what that pattern looks like and why it's one of the fastest fraud signals available, faster than any paid authentication.
+
+The other free check is price. A listing well under the legitimate floor for its model is usually telling you something an authentication fee would only confirm later, and the [live resale price comparisons](/compare) show where that floor actually sits across eight marketplaces, refreshed daily.
 
 [Crawli](/) can't authenticate your purchase, but it can search Depop, eBay, Poshmark, and more at once to check whether the exact bag you're about to pay to authenticate is also listed elsewhere under a different seller, a red flag worth catching before the authentication fee is even spent.

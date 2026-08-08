@@ -1,8 +1,8 @@
 ---
-title: "Louis Vuitton Wallet Resale Price: Live Spread 2026"
-description: "The same Louis Vuitton wallet ranges from about $35 on Mercari to over $1,700 on StockX right now. A live cross-platform breakdown of the resale spread."
+title: "How to Vet a Cheap Louis Vuitton Wallet"
+description: "\"Louis Vuitton wallet\" covers everything from a card holder to a full organizer, and fakes cluster at the low end. How to tell which model you are actually being sold."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/louis-vuitton-wallet-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "louis-vuitton", "luxury-accessories"]
 compareSlug: "louis-vuitton-wallet"

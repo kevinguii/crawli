@@ -15,6 +15,15 @@
 **IndexNow alone doesn't get URLs crawled promptly on a young domain (found 2026-07-09)**
 "Discovered but not crawled" in Bing Webmaster Tools can persist for days/weeks even with IndexNow firing correctly — IndexNow only notifies Bing a URL changed, it doesn't force a recrawl, and Bing gates actual crawling by domain authority. For any real content change (new/edited blog post, new compare item, title/description edit), also run `node scripts/submit-bing.mjs <path...>` — the Bing Webmaster Submission API, which is the same "Request Indexing" action as the WMT UI button. See `docs/reference/SERVER_REFERENCE.md` "Bing priority reindex" for quota details (shared with manual UI submissions, don't resubmit unchanged URLs).
 
+**A blog post and its `compareSlug` page cannibalize each other (found 2026-08-08)**
+Every `<item>-resale-price.md` post and its `/compare/<slug>` page targeted the identical head term ("<item> resale price"), and GSC shows Google indexing **exactly one page per pair, almost never both**: of 22 luxury pairs, 8 had only the blog indexed, 3 only the compare page, 1 both, and 10 neither. When adding a new compare item + guide post, the compare page owns `"<item> resale price"` and the post must be titled for a different intent — the "how to vet a cheap listing" angle these posts already contain works well. Don't ship a pair whose two `<title>`s differ only by suffix.
+
+**Whole publish batches get "Discovered — currently not indexed" (found 2026-08-08)**
+The 18 luxury compare items added in one day on 2026-07-25 went almost entirely unindexed (16 of 18), while every compare page from the 2026-06-30 batch is indexed. Same template, same word count (~1,950), 200s, correct canonicals, sub-600ms TTFB, all in the sitemap — so **don't go looking for a technical bug**. It's crawl budget plus a large same-day batch of same-shaped pages in a high-competition vertical on a low-authority domain. Ship new compare items and price-guide posts in small batches spread over weeks, and give each one an inbound link from a page that already earns impressions.
+
+**No `SearchAction` / sitelinks-searchbox schema (removed 2026-08-08)**
+`StructuredData.tsx` used to declare a `SearchAction` pointing at `/search?q={search_term_string}`. `/search` is auth-gated and `Disallow`ed in `robots.ts`, so the searchbox could never work, and Google crawled the literal `{search_term_string}` placeholder as a URL (it shows up in GSC "Blocked by robots.txt"). Don't re-add it unless `/search` becomes public and crawlable.
+
 **All root layout `<title>` metadata gets `· Crawli` appended (found 2026-07-09)**
 `app/layout.tsx` defines `title: { default, template: "%s · Crawli" }`. Any child page/post that sets its own `title` string gets `· Crawli` (9 chars) auto-appended by Next.js — this is easy to forget when checking a title against Bing's ~60-char limit. Always check the *rendered* `<title>` (`curl -s <url> | grep -oE '<title>.*</title>'`), not just the raw frontmatter/string value. Blog post frontmatter titles should stay ≤51 chars so the rendered title (with suffix) stays ≤60.
 

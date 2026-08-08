@@ -2,7 +2,7 @@
 title: "Best Luxury Resale Sites: Same Bag, $600 Price Gap"
 description: "The same Chanel bag: $2,800 on one platform, $3,400 on another. A ranked comparison of 7 luxury resale sites by fees, authentication, and price spread."
 date: "2026-06-12"
-updated: "2026-07-17"
+updated: "2026-08-08"
 cover: "/blog/images/luxury-marketplaces-cover.svg"
 tags: ["guides", "luxury", "best-sites"]
 faq:
@@ -76,13 +76,13 @@ The other undervalued move: search the same piece across all platforms before co
 
 ## See the live spread on a specific piece
 
-Platform rankings age quickly. The current asking prices do not, so these pages refresh daily and show the lowest, average, and highest listing per marketplace for one item at a time:
+Platform rankings age quickly. The current asking prices do not, so these pages refresh daily and show the lowest, average, and highest listing per marketplace for one item at a time. The full set lives on the [resale price comparison index](/compare); the luxury pieces are below.
 
-**Handbags:** [Chanel Classic Flap](/blog/chanel-classic-flap-resale-price) · [Hermès Birkin](/blog/hermes-birkin-resale-price) · [Louis Vuitton Neverfull](/blog/louis-vuitton-neverfull-resale-price) · [Louis Vuitton Speedy](/blog/louis-vuitton-speedy-resale-price) · [Gucci Marmont](/blog/gucci-marmont-bag-resale-price) · [Dior Saddle Bag](/blog/dior-saddle-bag-resale-price) · [Prada Re-Edition](/blog/prada-re-edition-nylon-bag-resale-price) · [Celine Triomphe](/blog/celine-triomphe-bag-resale-price) · [Bottega Veneta Cassette](/blog/bottega-veneta-cassette-bag-resale-price) · [Fendi Baguette](/blog/fendi-baguette-bag-resale-price) · [Goyard St Louis](/blog/goyard-st-louis-tote-resale-price) · [YSL Loulou](/blog/ysl-loulou-bag-resale-price)
+**Handbags:** [Chanel Classic Flap](/compare/chanel-classic-flap) · [Hermès Birkin](/compare/hermes-birkin) · [Louis Vuitton Neverfull](/compare/louis-vuitton-neverfull) · [Louis Vuitton Speedy](/compare/louis-vuitton-speedy) · [Gucci Marmont](/compare/gucci-marmont-bag) · [Dior Saddle Bag](/compare/dior-saddle-bag) · [Prada Re-Edition](/compare/prada-re-edition-nylon-bag) · [Celine Triomphe](/compare/celine-triomphe-bag) · [Bottega Veneta Cassette](/compare/bottega-veneta-cassette-bag) · [Fendi Baguette](/compare/fendi-baguette-bag) · [Goyard St Louis](/compare/goyard-st-louis-tote) · [YSL Loulou](/compare/ysl-loulou-bag)
 
-**Watches and jewelry:** [Rolex Datejust](/blog/rolex-datejust-resale-price) · [Cartier Tank](/blog/cartier-tank-watch-resale-price) · [Omega Speedmaster](/blog/omega-speedmaster-resale-price) · [Cartier Love Bracelet](/blog/cartier-love-bracelet-resale-price)
+**Watches and jewelry:** [Rolex Datejust](/compare/rolex-datejust) · [Cartier Tank](/compare/cartier-tank-watch) · [Omega Speedmaster](/compare/omega-speedmaster) · [Cartier Love Bracelet](/compare/cartier-love-bracelet)
 
-**Accessories:** [Hermès Silk Scarf](/blog/hermes-silk-scarf-resale-price) · [Louis Vuitton Wallet](/blog/louis-vuitton-wallet-resale-price)
+**Accessories:** [Hermès Silk Scarf](/compare/hermes-silk-scarf) · [Louis Vuitton Wallet](/compare/louis-vuitton-wallet)
 
 The gaps are larger than most buyers expect. On the Chanel Classic Flap the lowest listing across the eight marketplaces we track sat at a small fraction of the highest on the same day, which is the whole argument for checking more than one site before you buy.
 

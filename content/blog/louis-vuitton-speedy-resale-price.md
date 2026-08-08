@@ -1,8 +1,8 @@
 ---
-title: "Louis Vuitton Speedy Resale Price: Live Spread 2026"
-description: "The same Louis Vuitton Speedy ranges from about $190 on Depop to roughly $10,000 for a common size on Poshmark. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap LV Speedy Real? How to Check"
+description: "The Speedy is the most replicated bag Louis Vuitton makes. Date codes, canvas grain, and stitch counts you can verify before committing to a listing."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/louis-vuitton-speedy-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "louis-vuitton", "luxury-handbags"]
 compareSlug: "louis-vuitton-speedy"

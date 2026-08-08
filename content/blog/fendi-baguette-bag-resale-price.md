@@ -1,8 +1,8 @@
 ---
-title: "Fendi Baguette Bag Resale Price: Live Spread 2026"
-description: "The same Fendi Baguette ranges from about $90 on Depop to over $6,000 on StockX right now. A live cross-platform breakdown of the resale spread."
+title: "Is That Cheap Fendi Baguette Real?"
+description: "The Baguette spans two decades of production, and the vintage ones are faked hardest. How to date a listing and check the hardware before you buy."
 date: "2026-07-25"
-updated: "2026-07-25"
+updated: "2026-08-08"
 cover: "/blog/images/fendi-baguette-bag-resale-price-cover.svg"
 tags: ["guides", "luxury", "price-comparison", "fendi", "luxury-handbags"]
 compareSlug: "fendi-baguette-bag"

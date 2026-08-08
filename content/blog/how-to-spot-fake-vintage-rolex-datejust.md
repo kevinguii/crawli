@@ -2,7 +2,7 @@
 title: "How to Spot a Fake Vintage Rolex Datejust"
 description: "A genuine vintage Rolex Datejust has a smooth sweeping second hand, a cyclops lens that magnifies the date 2.5 times, and clean, deep caseback engravings."
 date: "2026-07-02"
-updated: "2026-07-02"
+updated: "2026-08-08"
 cover: "/blog/images/rolex-authentication-cover.svg"
 tags: ["item-guide", "fake-vintage-rolex-spotting", "watch-buying-guide"]
 faq:
@@ -52,7 +52,7 @@ Watch-industry data underscores how large this problem has become. Watchfinder &
 
 ## Price as a Fake Detector
 
-Price is one of the fastest tells. [Check the live Rolex Datejust resale price comparison](/blog/rolex-datejust-resale-price) before you buy: a genuine Datejust priced far below the lowest legitimate listing there is the single most common signature of a counterfeit. Legitimate sellers who need a fast sale price near the bottom of the range, not a small fraction of it.
+Price is one of the fastest tells. [Check the live Rolex Datejust resale price comparison](/compare/rolex-datejust) before you buy: a genuine Datejust priced far below the lowest legitimate listing there is the single most common signature of a counterfeit. Legitimate sellers who need a fast sale price near the bottom of the range, not a small fraction of it.
 
 ## What to Do Before You Pay
 

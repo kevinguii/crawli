@@ -2,7 +2,7 @@
 title: "Vintage Levi's 501s: Measure, Don't Trust the Tag"
 description: "When buying vintage Levi's 501s online, ignore the tag size. Shrinkage alters the fit, so always request the exact waist measurement laid flat."
 date: "2026-06-29"
-updated: "2026-07-06"
+updated: "2026-08-08"
 cover: "/blog/images/vintage-levis-sizing-cover.svg"
 tags: ["item-guide", "vintage-levis-sizing", "denim-buying-guide"]
 faq:
@@ -64,4 +64,4 @@ When you are comparing multiple listings for the same era and style, the measure
 
 [Crawli](/) saves you from scrolling three apps for a 1980s 501 with a measured 30-inch waist and an intact red tab: you search once and compare across platforms, finding the sellers who actually provided tape-measure documentation without having to check each app individually.
 
-Once you've found the right measurements and era markers, [see current 501 resale prices across platforms](/blog/levis-501-resale-price) to check whether the pair you're eyeing is priced fairly for an everyday wear or a genuinely rare collector piece.
+Once you've found the right measurements and era markers, [see current 501 resale prices across platforms](/compare/levis-501-jeans) to check whether the pair you're eyeing is priced fairly for an everyday wear or a genuinely rare collector piece.
