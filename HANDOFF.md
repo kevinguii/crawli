@@ -22,7 +22,7 @@
 4. If you fix an open issue below, remove it from the list
 
 ---
-
+ 
 ## Current state (2026-07-26)
 
 **Platforms: 9 total, 8 native (Avenue A), 1 Firecrawl-only (Avenue B)**
