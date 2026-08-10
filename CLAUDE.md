@@ -1,4 +1,4 @@
-# Claude Code Guidelines for This Project
+ # Claude Code Guidelines for This Project
 
 **Read this file at the start of every session.**
 
