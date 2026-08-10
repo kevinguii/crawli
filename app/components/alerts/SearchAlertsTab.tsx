@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
@@ -27,13 +27,25 @@ interface BillingStatus {
   alertsCap: number;
 }
 
-export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => void } = {}) {
+export default function SearchAlertsTab({
+  onCount,
+  autoCreate = null,
+}: {
+  onCount?: (n: number) => void;
+  autoCreate?: { query: string; platforms: string[] } | null;
+} = {}) {
   const router = useRouter();
   const [alerts, setAlerts] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingAlert, setEditingAlert] = useState<SavedSearch | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+  // Prefill carried over from the results-page CTA. A ref, not state: the URL is
+  // cleaned as soon as the modal opens (so a refresh doesn't reopen a dismissed
+  // form), and the showCreate state change is what re-renders — the ref only has
+  // to hold the value across that render, never drive one.
+  const prefillRef = useRef<{ query: string; platforms: string[] } | null>(null);
+  const autoCreateHandled = useRef(false);
 
   // Report the alert count up to the alerts tab bar (for its badge).
   useEffect(() => {
@@ -63,7 +75,26 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
       .catch(() => {});
   }, []);
 
-  function handleNewAlertClick() {
+  // Arrived from the results-page CTA: open the create form pre-filled, but only
+  // once the alerts list and billing have loaded, so the same quota gate a manual
+  // click goes through still applies. Runs once — the ref survives the URL clean
+  // and any re-render.
+  useEffect(() => {
+    if (!autoCreate || autoCreateHandled.current) return;
+    if (loading || !billing) return;
+    autoCreateHandled.current = true;
+    // Drop the query params before opening so a refresh or back-navigation
+    // doesn't reopen the form.
+    router.replace('/alerts', { scroll: false });
+    prefillRef.current = autoCreate;
+    // Quota gate applies exactly as it would to a manual "+ New alert" click.
+    if (!handleNewAlertClick()) prefillRef.current = null;
+    // handleNewAlertClick is recreated every render but reads only current state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCreate, loading, billing, router]);
+
+  /** Opens the create modal, or blocks with a quota toast. Returns whether it opened. */
+  function handleNewAlertClick(): boolean {
     const isFree = billing?.plan === 'free';
     const maxAlerts = billing?.alertsCap ?? 2;
     // Paused alerts don't count toward the limit — only active ones occupy a slot.
@@ -81,10 +112,11 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
             }
           : { duration: 6000 },
       );
-      return;
+      return false;
     }
 
     setShowCreate(true);
+    return true;
   }
 
   // Realtime: update cards when rows change (e.g. first run completes, unread count changes)
@@ -172,7 +204,13 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
             How alerts work
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Alerts check on your chosen schedule (daily or weekly) at 9 AM in your timezone. You'll receive an email <strong>only when new listings are found</strong>. The first check establishes your baseline — no email then.
+            The first check runs immediately and we email you everything matching right now. After that,
+            alerts recheck on your schedule (daily or weekly) at 9 AM in your timezone and you only hear
+            from us <strong>when new listings appear</strong>.
+          </p>
+          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            You can stack conditions on one alert — search terms <strong>AND</strong> size{' '}
+            <strong>AND</strong> a price range — so only listings worth buying reach your inbox.
           </p>
         </div>
       )}
@@ -208,10 +246,12 @@ export default function SearchAlertsTab({ onCount }: { onCount?: (n: number) => 
 
       {showCreate && (
         <CreateAlertModal
-          onClose={() => setShowCreate(false)}
+          prefill={prefillRef.current ?? undefined}
+          onClose={() => { setShowCreate(false); prefillRef.current = null; }}
           onCreated={(newAlert) => {
             setAlerts((prev) => [newAlert, ...prev]);
             setShowCreate(false);
+            prefillRef.current = null;
           }}
         />
       )}

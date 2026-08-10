@@ -1,12 +1,18 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { SearchResponse, SearchStreamEvent } from '@/lib/types';
 import SearchForm from './SearchForm';
 import SearchProgress, { CheckpointStatus } from './SearchProgress';
 import ResultsDisplay from './ResultsDisplay';
+import AlertCtaBanner from './AlertCtaBanner';
 import { FilterState, emptyFilterState } from './FilterPanel';
-import CreateAlertModal from './alerts/CreateAlertModal';
+
+/** Case/whitespace-insensitive match, so "Nike  Dunk" finds an alert on "nike dunk". */
+function normalizeQuery(q: string): string {
+  return q.trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 interface ProgressState {
   platforms: string[];
@@ -23,8 +29,11 @@ export default function SearchSection() {
   const [searchFilters, setSearchFilters] = useState<FilterState | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [lastQuery, setLastQuery] = useState<{ query: string; platforms: string[] } | null>(null);
-  const [showAlertModal, setShowAlertModal] = useState(false);
   const [nativeResultsCap, setNativeResultsCap] = useState<number | null>(null);
+  const router = useRouter();
+  // Whether an alert already covers the query just run — flips the CTA above the
+  // results from a pitch to a quiet confirmation.
+  const [hasAlert, setHasAlert] = useState(false);
 
   function handleCancel() {
     abortControllerRef.current?.abort();
@@ -35,6 +44,31 @@ export default function SearchSection() {
     setResults(data);
     setSearchFilters(filters);
     setLastQuery({ query, platforms });
+
+    // Reuse the existing alerts list endpoint rather than adding one; the user's
+    // alert count is capped at 20 on the largest tier, so this is a small read.
+    const target = normalizeQuery(query);
+    fetch('/api/saved-searches')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((alerts) => {
+        if (!Array.isArray(alerts)) return;
+        setHasAlert(alerts.some((a) => normalizeQuery(a?.query ?? '') === target));
+      })
+      .catch(() => {});
+  }
+
+  // Creating an alert happens on /alerts, not in a modal over the results. The
+  // alerts page is where the alert then lives, so the user lands somewhere that
+  // makes sense afterwards instead of being dropped back on a stale result grid.
+  // Query and platforms ride along so the form opens pre-filled.
+  function goCreateAlert() {
+    if (!lastQuery) return;
+    const params = new URLSearchParams({
+      new: '1',
+      query: lastQuery.query,
+      platforms: lastQuery.platforms.join(','),
+    });
+    router.push(`/alerts?${params.toString()}`);
   }
 
   function handleError(msg: string) {
@@ -48,6 +82,7 @@ export default function SearchSection() {
       setResults(null);
       setError(null);
       setSearchFilters(null);
+      setHasAlert(false);
       setNativeResultsCap(event.nativeResultsCap);
       const statuses: Record<string, CheckpointStatus> = {};
       for (const p of event.platforms) statuses[p] = 'loading';
@@ -120,34 +155,19 @@ export default function SearchSection() {
 
       {results && (
         <>
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowAlertModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              Save as alert
-            </button>
-          </div>
+          {lastQuery && (
+            <AlertCtaBanner
+              query={lastQuery.query}
+              hasAlert={hasAlert}
+              onCreateAlert={goCreateAlert}
+            />
+          )}
           <ResultsDisplay
             data={results}
             minPrice={searchFilters?.minPrice}
             maxPrice={searchFilters?.maxPrice}
           />
         </>
-      )}
-
-      {showAlertModal && lastQuery && (
-        <CreateAlertModal
-          prefill={lastQuery}
-          onClose={() => setShowAlertModal(false)}
-          onCreated={() => setShowAlertModal(false)}
-        />
       )}
     </div>
   );

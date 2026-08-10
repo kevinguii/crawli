@@ -2,8 +2,31 @@
 
 import { useState } from 'react';
 import { PLATFORM_NAMES } from '@/lib/types';
+import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
 import { formatNextRun, cadenceScheduleLabel } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
+
+/**
+ * The AND-only sourcing criteria stored on the alert, as readable chips.
+ * Without this the compound conditions were invisible after creation — the card
+ * showed only the query, so a "size L AND under $150" alert looked identical to
+ * a bare keyword one.
+ */
+function describeCriteria(criteria: Record<string, unknown> | null): string[] {
+  if (!criteria) return [];
+  const out: string[] = [];
+  const size = criteria.size;
+  if (typeof size === 'string' && size.trim()) {
+    const opt = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS].find((o) => o.key === size);
+    out.push(`size ${opt?.label ?? size}`);
+  }
+  const min = typeof criteria.minPrice === 'number' ? criteria.minPrice : null;
+  const max = typeof criteria.maxPrice === 'number' ? criteria.maxPrice : null;
+  if (min != null && max != null) out.push(`$${min} to $${max}`);
+  else if (max != null) out.push(`under $${max}`);
+  else if (min != null) out.push(`over $${min}`);
+  return out;
+}
 
 function relativeTime(iso: string | null): string {
   if (!iso) return 'never';
@@ -33,6 +56,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
     .join(', ');
 
   const scheduleLabel = cadenceScheduleLabel(alert.cadence_hours);
+  const criteriaClauses = describeCriteria(alert.criteria);
 
   const tz = alert.notify_timezone;
   const nextRunLabel =
@@ -156,6 +180,23 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
         <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
           {platformLabels} · {scheduleLabel}
         </div>
+        {criteriaClauses.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {criteriaClauses.map((clause, i) => (
+              <span key={clause} className="flex items-center gap-1">
+                {i > 0 && (
+                  <span className="text-[10px] font-medium" style={{ color: 'var(--text-dim)' }}>AND</span>
+                )}
+                <span
+                  className="rounded px-1.5 py-0.5 text-[11px] font-medium"
+                  style={{ background: 'var(--accent-soft)', color: 'var(--accent-text)' }}
+                >
+                  {clause}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
         {isInitializing ? (
           <div className="mt-2">
             <div

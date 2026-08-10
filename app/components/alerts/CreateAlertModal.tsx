@@ -47,6 +47,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   // (e.g. 'l', 'm7_5'); lowercased on load so a pre-dropdown free-text value
   // like "L" still pre-selects the matching option.
   const [critSize, setCritSize] = useState(critField(editingAlert?.criteria, 'size').toLowerCase());
+  const [minPrice, setMinPrice] = useState(critField(editingAlert?.criteria, 'minPrice'));
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [isPaid, setIsPaid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,10 +81,35 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   function buildCriteria(): Record<string, unknown> | undefined {
     const criteria: Record<string, unknown> = {};
     if (critSize.trim()) criteria.size = critSize.trim();
-    const mp = parseFloat(maxPrice);
-    if (!isNaN(mp) && mp > 0) criteria.maxPrice = mp;
+    const lo = parseFloat(minPrice);
+    if (!isNaN(lo) && lo > 0) criteria.minPrice = lo;
+    const hi = parseFloat(maxPrice);
+    if (!isNaN(hi) && hi > 0) criteria.maxPrice = hi;
     return Object.keys(criteria).length ? criteria : undefined;
   }
+
+  // Plain-English rendering of the full AND-chain, so the compound nature of an
+  // alert is visible while it's being built rather than only in the summary step.
+  // The query is the first condition — criteria narrow it, they don't replace it.
+  function criteriaClauses(): string[] {
+    const clauses: string[] = [];
+    const c = buildCriteria() ?? {};
+    if (c.size) {
+      const opt = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS].find((o) => o.key === c.size);
+      clauses.push(`size ${opt?.label ?? c.size}`);
+    }
+    if (c.minPrice != null && c.maxPrice != null) clauses.push(`$${c.minPrice} to $${c.maxPrice}`);
+    else if (c.maxPrice != null) clauses.push(`under $${c.maxPrice}`);
+    else if (c.minPrice != null) clauses.push(`over $${c.minPrice}`);
+    return clauses;
+  }
+
+  const clauses = criteriaClauses();
+  const priceRangeInvalid = (() => {
+    const lo = parseFloat(minPrice);
+    const hi = parseFloat(maxPrice);
+    return !isNaN(lo) && !isNaN(hi) && lo > 0 && hi > 0 && lo > hi;
+  })();
 
   // When editing, did the user change a baseline field (query/platforms/criteria)?
   // If so the edit re-runs the search to reset the baseline. This is free (no
@@ -151,7 +177,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
         setSubmitting(false);
         return;
       }
-      toast.success('Alert created! First search is running in the background.');
+      toast.success('Alert created. We are searching now and will email you what matches.');
       onCreated(data as SavedSearch);
     } catch {
       toast.error('Something went wrong.');
@@ -221,44 +247,86 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </div>
             </div>
 
-            {/* Sourcing criteria (optional, AND-only) */}
-            <div className="mb-4">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Sourcing filters <span style={{ color: 'var(--text-dim)' }}>(optional)</span>
+            {/* Sourcing criteria (optional, AND-only). Given its own bordered
+                block and a live plain-English readout because this compound
+                matching is the one alert capability the browser extensions
+                don't have, and it was previously easy to scroll straight past. */}
+            <div
+              className="mb-4 rounded-xl p-3"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+            >
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                Narrow it down <span style={{ color: 'var(--text-dim)' }}>(optional)</span>
               </label>
-              <p className="text-[11px] mb-2" style={{ color: 'var(--text-dim)' }}>
-                Only notify when a listing matches all of these. e.g. size AND under $X.
+              <p className="text-[11px] mb-2.5" style={{ color: 'var(--text-muted)' }}>
+                Stack conditions and only hear about listings that match <strong>all</strong> of them.
+                Your search terms already carry the brand and keywords.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={critSize}
-                  onChange={(e) => setCritSize(e.target.value)}
-                  className="rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  <option value="">Any size</option>
-                  <optgroup label="Clothing">
-                    {CLOTHING_SIZE_OPTIONS.map((o) => (
-                      <option key={o.key} value={o.key}>{o.label}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Shoes">
-                    {SHOE_SIZE_OPTIONS.map((o) => (
-                      <option key={o.key} value={o.key}>{o.label}</option>
-                    ))}
-                  </optgroup>
-                </select>
+
+              <select
+                value={critSize}
+                onChange={(e) => setCritSize(e.target.value)}
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              >
+                <option value="">Any size</option>
+                <optgroup label="Clothing">
+                  {CLOTHING_SIZE_OPTIONS.map((o) => (
+                    <option key={o.key} value={o.key}>{o.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Shoes">
+                  {SHOE_SIZE_OPTIONS.map((o) => (
+                    <option key={o.key} value={o.key}>{o.label}</option>
+                  ))}
+                </optgroup>
+              </select>
+
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder="Min $"
+                  aria-label="Minimum price"
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+                <span className="text-xs" style={{ color: 'var(--text-dim)' }}>to</span>
                 <input
                   type="number"
                   inputMode="decimal"
                   min="0"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="Max price ($)"
-                  className="rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  placeholder="Max $"
+                  aria-label="Maximum price"
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 />
               </div>
+
+              {priceRangeInvalid ? (
+                <p className="mt-2 text-[11px]" style={{ color: 'var(--danger)' }}>
+                  Min price is above max price — nothing can match both.
+                </p>
+              ) : (
+                <p className="mt-2 text-[11px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+                  Alert me when a listing matches{' '}
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {query.trim() ? `“${query.trim()}”` : 'your search'}
+                  </span>
+                  {clauses.map((c) => (
+                    <span key={c}>
+                      {' '}<span style={{ color: 'var(--text-dim)' }}>AND</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>{c}</span>
+                    </span>
+                  ))}
+                  {clauses.length === 0 && ' — add a size or price to narrow it further.'}
+                </p>
+              )}
             </div>
 
             {/* Cadence */}
@@ -300,7 +368,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <button
                 type="button"
                 onClick={() => setStep('confirm')}
-                disabled={!query.trim() || platforms.length === 0}
+                disabled={!query.trim() || platforms.length === 0 || priceRangeInvalid}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
                 Next
@@ -373,24 +441,14 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   {platforms.map((p) => PLATFORM_NAMES[p] ?? p).join(', ')}
                 </span>
               </div>
-              {(() => {
-                const c = buildCriteria();
-                if (!c) return null;
-                const parts: string[] = [];
-                if (c.size) {
-                  const opt = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS].find((o) => o.key === c.size);
-                  parts.push(`size: ${opt?.label ?? c.size}`);
-                }
-                if (c.maxPrice != null) parts.push(`under $${c.maxPrice}`);
-                return (
-                  <div className="flex justify-between gap-3">
-                    <span style={{ color: 'var(--text-muted)' }}>Filters</span>
-                    <span className="text-right text-xs" style={{ color: 'var(--text)' }}>
-                      {parts.join(' · ')}
-                    </span>
-                  </div>
-                );
-              })()}
+              {clauses.length > 0 && (
+                <div className="flex justify-between gap-3">
+                  <span style={{ color: 'var(--text-muted)' }}>Must also match</span>
+                  <span className="text-right text-xs" style={{ color: 'var(--text)' }}>
+                    {clauses.join(' AND ')}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
                 <span style={{ color: 'var(--text)' }}>
@@ -424,7 +482,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   </p>
                 )}
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  Past matches won&apos;t show anymore. The re-run finds your new baseline results — you&apos;ll only be notified when <em>new</em> listings appear after that.
+                  Past matches won&apos;t show anymore. The re-run emails you the new baseline — everything matching the changed search right now — and after that you&apos;ll only hear about <em>new</em> listings.
                 </p>
               </div>
             ) : !isEditing ? (
@@ -433,7 +491,8 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
               >
                 <p style={{ color: 'var(--text)' }}>
-                  The first run finds your baseline results. You&apos;ll only be notified when <em>new</em> listings appear after that.
+                  The first check runs straight away and we&apos;ll email you everything matching right now.
+                  After that you&apos;ll only hear about <em>new</em> listings.
                 </p>
               </div>
             ) : (

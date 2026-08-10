@@ -6,7 +6,7 @@ import type { Listing } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
 import { matchListingSize } from '@/lib/sizeFilter';
 import { Resend } from 'resend';
-import { buildAlertEmailHtml } from '@/lib/email/alertEmailTemplate';
+import { buildAlertEmailHtml, buildBaselineEmailHtml } from '@/lib/email/alertEmailTemplate';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
 import { nextAnchoredRunAt } from '@/lib/alertSchedule';
 import { TIER_CAPS, type Tier } from '@/lib/stripe';
@@ -168,8 +168,16 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
     })
     .eq('id', savedSearch.id);
 
-  // First run seeds the baseline silently — no notification, no email.
-  if (isFirstRun) return 0;
+  // First run seeds the baseline. No in-app notification and no match rows —
+  // "new" is still defined strictly as "appeared after the baseline" — but we do
+  // send one activation email showing what matches right now, so creating an
+  // alert pays off immediately instead of going quiet for a day. This also fires
+  // after a baseline-resetting edit (PATCH nulls last_seen_urls), which is the
+  // intended behaviour: the alert now watches something different.
+  if (isFirstRun) {
+    void sendBaselineEmail(savedSearch, listings, platforms.length);
+    return 0;
+  }
 
   const newListings = listings.filter((l) => newUrls.includes(l.url));
 
@@ -244,6 +252,81 @@ async function pruneAlertMatches(
   if (stale.length) {
     await admin.from('alert_matches').delete().in('id', stale);
   }
+}
+
+/**
+ * One-off "your alert is live, here is what matches today" email, sent at the
+ * end of an alert's first (baseline) run. Deliberately separate from
+ * sendAlertEmail: the copy has to make clear these are the starting point, not
+ * new finds, or the next real new-matches email reads as a duplicate.
+ */
+async function sendBaselineEmail(
+  savedSearch: SavedSearch,
+  listings: Awaited<ReturnType<typeof runSearchJob>>,
+  platformCount: number,
+) {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) return;
+
+  const admin = createAdminClient();
+  const { data: authUser } = await admin.auth.admin.getUserById(savedSearch.user_id);
+  const email = authUser?.user?.email;
+  if (!email) return;
+
+  const total = listings.length;
+  const shown = listings.slice(0, 5);
+  const cadenceWord = savedSearch.cadence_hours === 168 ? 'weekly' : 'daily';
+
+  const subject = total === 0
+    ? `Your alert for "${savedSearch.query}" is live`
+    : `${total} listing${total === 1 ? '' : 's'} match "${savedSearch.query}" right now`;
+
+  const listingLines = shown.map((l) =>
+    `• ${l.title ?? 'Item'} — ${l.price != null ? `$${l.price}` : 'Price unavailable'}\n  ${l.url}`,
+  ).join('\n\n');
+
+  const text = total === 0
+    ? [
+        `Hi,`,
+        ``,
+        `Your Crawli alert for "${savedSearch.query}" is live, watching ${platformCount} marketplace${platformCount === 1 ? '' : 's'}.`,
+        ``,
+        `Nothing matches right now. We'll email you the moment something does. If it stays quiet, try a broader query or loosen the size and price filters.`,
+        ``,
+        `Edit this alert: https://thecrawli.com/alerts`,
+        ``,
+        `— Crawli`,
+      ].join('\n')
+    : [
+        `Hi,`,
+        ``,
+        `Your Crawli alert for "${savedSearch.query}" is live. Right now ${total} listing${total === 1 ? '' : 's'} match across ${platformCount} marketplace${platformCount === 1 ? '' : 's'}:`,
+        ``,
+        listingLines,
+        total > shown.length ? `\n…and ${total - shown.length} more matching right now.` : '',
+        ``,
+        `These are your starting point, not new finds. From here we recheck ${cadenceWord} and only email you listings that appear after today.`,
+        ``,
+        `Manage this alert: https://thecrawli.com/alerts`,
+        ``,
+        `— Crawli`,
+      ].join('\n');
+
+  await new Resend(resendKey).emails.send({
+    from: 'Crawli Alerts <alerts@thecrawli.com>',
+    to: email,
+    subject,
+    text,
+    html: buildBaselineEmailHtml({
+      query: savedSearch.query,
+      totalCount: total,
+      platformCount,
+      listings: shown,
+      cadenceWord,
+    }),
+  }).catch((err) => {
+    console.error(`[alertRunner] baseline email failed for alert=${savedSearch.id}:`, err);
+  });
 }
 
 async function sendAlertEmail(

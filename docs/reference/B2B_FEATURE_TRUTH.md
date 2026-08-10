@@ -115,19 +115,33 @@ constants (keep in sync on change). Sample output:
 
 ## 3. Alerts — boolean sourcing criteria (flagship Max feature)
 
-AND-only criteria layered on saved searches: brand AND keywords AND size AND price bound.
-OR-within-a-field is a flagged later extension.
+AND-only criteria layered on saved searches: the alert's **search terms** AND size AND a
+price range. OR-within-a-field is a flagged later extension.
+
+> **Corrected 2026-08-10.** This section previously read "brand AND keywords AND size AND
+> price bound" and described brand/keywords criteria *fields*. **Those fields do not exist
+> and never shipped.** `AlertCriteria` is `{ size, minPrice, maxPrice }` — verify against
+> `lib/alertRunner.ts` before writing copy from this section. Brand and keywords are
+> carried by the alert's `query` string, which the platform searches themselves match, not
+> by `applyCriteria()`. Marketing copy must not imply four independent criteria fields.
 
 - **Type + logic:** `AlertCriteria` + `applyCriteria()` in `lib/alertRunner.ts`. Applied as a
   **post-filter over the listings returned by `runSearchJob`** — never inside searchWorker
-  (Session 4 owns that). Brand/keywords matched case-insensitively against `listing.title`;
-  size prefers the structured field, falls back to a **whole-word** title match (so "M" does
-  not match inside "atom"); price bounds compared on USD-normalized price (`convertToUSD`),
-  null-price listings fail when a bound is set. Null criteria = legacy behavior (no-op).
+  (Session 4 owns that). Size prefers the structured field, falls back to a **whole-word**
+  title match via `matchListingSize` (so "M" does not match inside "atom"); price bounds are
+  compared on USD-normalized price (`convertToUSD`), and null-price listings fail when a
+  bound is set. Null criteria = legacy behavior (no-op).
 - **Storage:** `saved_searches.criteria jsonb` (nullable, backward-compatible).
-- **API:** `app/api/saved-searches` POST + `[id]` PATCH accept optional `criteria`.
-- **UI:** `CreateAlertModal.tsx` adds optional brand / size / max-price / keywords fields and a
-  confirm-step summary ("brand: X · size: M · under $150"). eBay exclusion + 24h cadence unchanged.
+- **API:** `app/api/saved-searches` POST + `[id]` PATCH accept optional `criteria`
+  (`size`, `minPrice`, `maxPrice`).
+- **UI (expanded 2026-08-10):** `CreateAlertModal.tsx` has a bordered "Narrow it down" block
+  with a size dropdown, a min/max price pair (`minPrice` was accepted by the API from the
+  start but had no input until now), a min > max guard, and a live plain-English readout of
+  the whole AND-chain; the confirm step shows "Must also match: size L AND $50 to $150".
+  `SavedSearchCard.tsx` renders the same criteria as AND-joined chips so they stay visible
+  after creation. eBay exclusion + daily/weekly cadence unchanged.
+- **First run:** immediate, and now sends a baseline email (`buildBaselineEmailHtml`). It
+  writes no `notifications`/`alert_matches` rows, so "new matches" keeps its strict meaning.
 
 Verified: 7/7 logic unit cases pass (incl. the brand+size+price example and currency-normalized
 range); modal fields + confirm summary render in-browser.

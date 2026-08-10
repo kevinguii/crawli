@@ -11,7 +11,19 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'tracked', label: 'Tracked listings' },
 ];
 
-export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
+export interface AutoCreate {
+  query: string;
+  platforms: string[];
+}
+
+export default function AlertsTabsClient({
+  initialTab,
+  autoCreate = null,
+}: {
+  initialTab: Tab;
+  /** Set when arriving from the results-page CTA — opens the create form pre-filled. */
+  autoCreate?: AutoCreate | null;
+}) {
   const [active, setActive] = useState<Tab>(initialTab);
   const [counts, setCounts] = useState<{ tracked: number | null; search: number | null }>({
     tracked: null,
@@ -78,7 +90,7 @@ export default function AlertsTabsClient({ initialTab }: { initialTab: Tab }) {
         <WatchlistTab onCount={onTrackedCount} />
       </div>
       <div style={{ display: active === 'search' ? 'block' : 'none' }}>
-        <SearchAlertsTab onCount={onSearchCount} />
+        <SearchAlertsTab onCount={onSearchCount} autoCreate={autoCreate} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import MockFrame from './MockFrame';
 
@@ -84,15 +85,15 @@ function AlertsPanel() {
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
           Daily auto-check · Pro: 8 alerts · Max: 20 alerts
         </span>
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-hidden
+        {/* Was a dead aria-hidden button inside the mock. It reads as the one
+            actionable control in this section, so it now goes to signup. */}
+        <Link
+          href="/login?tab=signup"
           className="rounded-md px-3 py-1.5 text-xs font-semibold text-white"
           style={{ background: 'var(--accent)' }}
         >
           + New alert
-        </button>
+        </Link>
       </div>
     </div>
   );
