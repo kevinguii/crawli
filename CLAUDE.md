@@ -21,6 +21,7 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 - `docs/reference/CLEANUP.md` — freeing ports 3000/8000 before finishing a session
 - `docs/marketing/POSTS_README.md` — carousel batch operation
 - `docs/planning/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
+- `docs/planning/COMPETITIVE_POSITIONING.md` — competitive analysis (Beni/Gem/Underpriced AI), the positioning decision, and **§6 value-prop ledger + experiment log**. **Read §6 before any onboarding, landing-copy, or marketing work, and log every experiment there.** Copy may only use a claim the ledger marks Validated.
 
 ## Available MCP tools
 

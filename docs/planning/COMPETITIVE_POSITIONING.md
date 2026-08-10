@@ -212,32 +212,68 @@ The entire plan branches on this. Cost: a few hours.
 
 This is the one feature that changes what Crawli is. Scope it small.
 
-**Platform order: Poshmark + Mercari + Grailed → eBay → StockX.** This is an
-implementation-cost ordering, and it is deliberately *not* a data-richness ordering
-(an earlier draft of this doc said eBay first — that was wrong for the reasons
-below).
+**Scope: Poshmark + Mercari + Grailed ONLY. eBay and StockX are out of scope**
+(owner decision, 2026-08-10). Do not add them back without an explicit decision.
 
-- **Native platforms are cheap.** Every one builds its search URL from a plain query
-  param (`poshmark_search_url` → `/search?query=…&type=listings`, `mercari_search_url`
-  → `/search/?keyword=…`, `grailed_search_url` → `/shop?query=…`), and
-  `structured_extractors.py` already parses sold signals for Poshmark, Grailed and
-  StockX for watchlist purposes. Sold comps there is a URL-param change plus a DOM check.
-- **eBay is the richest source and the most expensive.** It is the only platform with
-  no native extractor (Avenue B, Firecrawl-only, ~1 in 5 Akamai 403s per Open Issues).
-  `LH_Sold=1&LH_Complete=1` is real but is the most heavily guarded URL on the site.
-  The eBay **Browse API does not expose sold data**; Marketplace Insights does but is
-  restricted-access and requires an application. Do not start here.
-- **StockX drops to last.** It is a market with one lowest-ask per SKU, so its price
-  is already effectively a comp, and it is sneakers-only. Low incremental value.
+Why these three and not the obvious ones:
+
+- **These three are cheap.** Each builds its search URL from a plain query param
+  (`poshmark_search_url` → `/search?query=…&type=listings`, `mercari_search_url` →
+  `/search/?keyword=…`, `grailed_search_url` → `/shop?query=…`). Sold comps here is a
+  URL-param change plus a DOM check.
+
+**Correction (2026-08-10) — what sold detection already exists.** An earlier draft
+said sold signals exist for "Poshmark and Grailed." That understated it, and the
+two layers behave oppositely:
+
+| Layer | File | Sold detection today |
+|---|---|---|
+| **Listing detail** (watchlist refresh, one URL at a time) | `structured_extractors.py` | **7 platforms**: Depop, Grailed, ThredUp, eBay, Vestiaire (shared JSON-LD `_availability_is_sold`), Poshmark (JSON-LD, 12/12 verified, + legacy `data-et-prop-inventory_status` fallback), Mercari (status enum). **Not** StockX (`:334`) or Vinted (`:541`) — both hardcode `False`. |
+| **Search grid** (what sold comps needs) | `search_page_extractors.py` | **ThredUp only** (JSON-LD `offers.availability`). RealReal too, but disabled. Grailed, Mercari, Depop, Vestiaire, Vinted, Poshmark, StockX **all hardcode `"isSold": False`**. |
+
+The layers answer different questions, which is why broad detail-layer coverage does
+not make this feature free. Detail-layer answers *"is this one listing I track now
+gone?"*. Sold comps needs *"give me N sold listings matching this query"* — a
+sold-filtered search URL plus a grid that reads sold state off cards. Only ThredUp
+does the latter, and even it cannot filter to sold; it just labels cards correctly.
+
+Two consequences:
+
+- **Add ThredUp to the probe.** Its grid already parses real availability from JSON-LD,
+  so it may be the cheapest platform of all. Caveat: ThredUp is source-only and
+  deliberately absent from the fee calculator, and its inventory is women's
+  mass-market — cheap data that may not be the data resellers want. Probe it, decide
+  after.
+- **`watchlist` is a second sold-data source you already own.** It carries
+  `created_at`, `price_at_add`, `price_current`, `is_sold`, `last_checked_at`. Every
+  tracked item that flips to sold is a real sold price *with an observed duration*,
+  which makes **days-to-sell derivable even if no platform exposes a sale date** — the
+  clean path around the risk in task 1(c). Long-game asset, not v1: 10 rows today.
+  Do not scope it into this build; do make sure the schema keeps the flip timestamp.
+- **eBay: deferred, not rejected.** Richest sold data anywhere, and the most expensive
+  to get. Only platform with no native extractor (Avenue B, Firecrawl-only, ~1 in 5
+  Akamai 403s per Open Issues). `LH_Sold=1&LH_Complete=1` is real but is the most
+  heavily guarded URL on the site. The eBay **Browse API does not expose sold data**;
+  Marketplace Insights does but is restricted-access and needs an application.
+  Revisit only if the three-platform version proves the demand.
+- **StockX: deferred.** One lowest-ask per SKU means its price is already effectively
+  a comp, and it is sneakers-only. Low incremental value.
+
+An honest consequence of this scope: **the three in-scope platforms skew women's
+resale (Poshmark), general goods (Mercari) and menswear/streetwear (Grailed).** That
+is a coherent slice, but it is not "every marketplace," and the marketing claim in
+Step 4 must not overstate it. See the value-prop ledger in §6.
 
 Tasks:
 
-1. **Probe first, no code.** Throwaway script: fetch each native search URL with a
-   candidate sold filter, dump HTML. Confirm per platform (a) the filter param exists,
-   (b) the sold grid reuses the card selectors the existing extractor targets, and
-   (c) **whether a sale date is in the DOM**. (c) is the gate on days-to-sell — if no
-   platform exposes it, ship median sold price + sell-through only and say so rather
-   than promising a number you cannot compute. Nothing here gets assumed (CLAUDE.md rule 1).
+1. **Probe first, no code.** Throwaway script: fetch each search URL (Poshmark,
+   Mercari, Grailed, **plus ThredUp**) with a candidate sold filter, dump HTML. Confirm
+   per platform (a) the filter param exists, (b) the sold grid reuses the card
+   selectors the existing extractor targets, and (c) **whether a sale date is in the
+   DOM**. (c) is the gate on days-to-sell — if no platform exposes it, ship median sold
+   price + sell-through only and say so, rather than promising a number you cannot
+   compute (`watchlist` is the eventual path to it, see above). Nothing here gets
+   assumed (CLAUDE.md rule 1).
 2. **Extend the sidecar path, do not fork it.** Add `sold: bool` to
    `ScrapeSearchRequest`, thread into `search_url_for(platform, query, sold=False)`.
    Extractors mostly unchanged — they already emit `isSold`. Cache key becomes
@@ -250,9 +286,9 @@ Tasks:
    `PriceSummary.tsx` — `FlipMargin` currently defaults `resale` to
    `averagePrice ?? priceRange.max`, i.e. average *asking* price. Default it to median
    sold; keep average-ask as the secondary one-tap option.
-5. **eBay last, as its own decision.** By then you will know whether sold comps moves
-   retention on the free platforms. If it does, eBay justifies a residential proxy or
-   the Marketplace Insights application. If it does not, that fight was avoided.
+5. **Log the result in the §6 ledger** before deciding anything about eBay. The whole
+   point of the three-platform scope is to learn whether sold comps changes behaviour
+   at all, cheaply. If it does not, eBay would not have saved it.
 
 Tasks 2-4 touch the sidecar and the streaming search path: use
 `/superpowers:brainstorming` → spec → plan → worktree → subagent execution. Task 1 is
@@ -264,30 +300,86 @@ Alerts are the cheapest feature to run (shared scrape), the stickiest, the one
 competitors do worse, and they have 2 users. That ratio is the biggest unforced
 error in the product.
 
-**The problem is structural, not copy.** `app/login/page.tsx:69` pushes new users to
-`/search`, and `CreateAlertModal` is mounted only inside `SearchSection` and
-`SearchAlertsTab`, both behind `(protected)`. So an alert can only be created *after*
-a search, inside the app. The cheapest, stickiest feature sits downstream of the most
-expensive, rate-limited one. That explains 2-user adoption better than any UI issue.
+**Revised 2026-08-10 (owner challenge, correctly).** An earlier draft argued the
+problem was structural — that `app/login/page.tsx:69` pushes new users to `/search`
+and `CreateAlertModal` is mounted only behind `(protected)`, so alerts sit downstream
+of the expensive gated feature. That reasoning was about *acquiring new users* and it
+does not survive contact with the actual population:
 
-In order of impact:
+> **26 users have searched. 2 have alerts. So 24 people were already inside the app,
+> past the auth wall, on a results page, and did not create an alert.**
 
-1. **Public alert creation, no account.** A create-an-alert form on the landing page:
-   query, platforms, email. It creates the alert and sends a confirmation email, and
-   clicking that link *is* the signup. Inverts the funnel from search-gate → signup →
-   maybe alert, to alert → email → account. An alert costs almost nothing to run
-   (`withListingsCache` fans one scrape to every user watching the same query) whereas
-   a free search is the real COGS. Today the expensive thing is given away and the
-   cheap one is gated.
-2. **First alert run immediate, and email the baseline.** Today the first run
-   establishes a baseline silently and only later runs email. A "here are the 15
-   listings matching this right now across 6 marketplaces" email within a minute of
-   signup is the activation moment, and nothing currently plays that role.
-3. **Then the post-signup redirect** (`/search` → alert creation). Pure routing, and
-   third because it only helps people who already cleared signup.
-4. Surface the compound criteria. `applyCriteria()` already supports brand AND size AND
-   price AND keyword and is buried in an optional modal section. Neither Beni nor Gem
+Those 24 cleared every gate the structural argument blamed. So the auth wall is not
+what blocks alert adoption for people who already signed up. **Visibility and trigger
+come first; the funnel inversion is a later, separate bet.**
+
+**Settled, 2026-08-10 — landing page dead button.** `AlertsAndTrackedSection.tsx`'s
+"+ New alert" button in the alerts/tracked demo is `aria-hidden` and `tabIndex={-1}` —
+pure decoration, does nothing on click. Fix: link it to signup. No hypothesis needed
+and not logged as an experiment — it currently does nothing, so this is strictly
+better regardless of outcome.
+
+Plausible mechanism for the visibility read: the "Save as alert" CTA
+(`SearchSection.tsx:126`) is `text-sm`, right-aligned (`justify-end`), colored
+`var(--text-muted)` on a plain surface — styled as a tertiary utility control, not as
+the thing that makes the product work. That covers people *after* they've searched.
+There's an earlier, bigger version of the same gap: **alerts don't exist at all in a
+new user's world until after their first search.**
+
+Revised order, framed by moment in the user's journey:
+
+1. **Onboarding flow — the moment signup completes.** Traced through the actual auth
+   code, not assumed: password signup requires email confirmation (Turnstile-gated
+   `signUp()` at `login/page.tsx:72`, confirmation link routes through
+   `auth/callback/route.ts`); Google OAuth (`handleGoogle`, `login/page.tsx:106`)
+   routes through the same callback. **Neither passes a `next` param today**, so both
+   fall through to the callback's default (`auth/callback/route.ts:8`:
+   `next = searchParams.get('next') ?? '/search'`) — a blank search box, alerts
+   nowhere in sight. Fix: pass `next=/onboarding` explicitly from both signup entry
+   points (`emailRedirectTo` in the `signUp()` call, `redirectTo` in
+   `signInWithOAuth()`). **Verify during implementation, don't assume:** that
+   Supabase's OAuth redirect actually preserves an appended query param on
+   `redirectTo` through the full round trip. New `/onboarding` page offers two equal
+   first choices — "Search" or "Set up an alert" — with an easy skip link so it never
+   blocks someone who genuinely just wants to search.
+   **Do not touch** the sign-in redirect (`login/page.tsx:69`, existing users signing
+   back in) or the already-has-a-session redirect (`login/page.tsx:31`) — both are a
+   separate code path from the signup/callback path above, and onboarding must only
+   show for new signups, never for returning users.
+2. **Make the alert CTA primary in the results flow**, not a ghost button above the
+   grid, and **trigger on repeat-search intent** — `search_history` shows
+   `basketball shorts` searched 6x, `fear of god essentials hoodie` 6x, `light grey
+   hoodie` 5x by single users, which is someone manually doing an alert's job by hand.
+   Cost: one query against `search_history`. No prompt exists on this today.
+3. **First alert run immediate, and email the baseline.** Today the first run sets a
+   baseline silently and only later runs email. A "here are the 15 listings matching
+   this right now across 6 marketplaces" email is the activation moment, and nothing
+   currently plays that role.
+4. **Surface the compound criteria.** `applyCriteria()` supports brand AND size AND
+   price AND keyword, buried in an optional modal section. Neither Beni nor Gem
    exposes this.
+5. **Public alert creation, no account — DEFERRED, gated on (1) and (2) both showing
+   alerts convert.** A landing page form (query, platforms, email) where the
+   confirmation email *is* the signup. The economic logic still holds: an alert costs
+   almost nothing (`withListingsCache` fans one scrape to N watchers) while a free
+   search is the real COGS, so today the expensive thing is given away and the cheap
+   one is gated. **But it only pays off if alerts are already proven desirable** — a
+   public front door to something people won't adopt even when offered directly is a
+   door to nothing.
+   - **Abuse note for whenever this is revisited:** the existing protections do NOT
+     cover it. `FREE_BASELINE_EDIT_COOLDOWN_HOURS` is a per-alert *edit* cooldown and
+     `max_saved_searches` is a per-user cap (`route.ts:102`); both key off an
+     authenticated `user_id`, which a public endpoint does not have. Needs Turnstile,
+     an IP/email rate limit, and no scrape until the email is confirmed.
+
+**Measurement note.** Items 1 and 2 are deliberately clean of each other, and worth
+keeping that way when reading results. Onboarding (1) only touches brand-new signups
+from ship date forward — it cannot affect anyone who already has an account. CTA
+prominence + repeat trigger (2) has its clean test population in the pre-existing 24
+who already searched before this ships and never see the onboarding screen (they're
+past it). Track both, but don't blend them into one number — they answer the same
+underlying question from two different entry points, and disagreement between them is
+itself informative.
 
 ### Step 3 — Stop writing blog posts
 
@@ -342,6 +434,120 @@ Once sold comps ships, update in this order:
   sold data beats 20 with asking prices.
 - **Do not add an affiliate revenue stream.** It is the one thing that would forfeit
   the trust position, and the unit economics are publicly bad.
+
+---
+
+## 6. Value-proposition ledger + experiment log
+
+**This is the live section. Everything above is analysis written once; this gets
+updated every time an onboarding or marketing experiment runs.** Its job is to stop
+the project from marketing a claim it has not earned, which is exactly what happened
+with the 2026-06-29 reseller-only copy.
+
+### 6a. Baseline — frozen 2026-08-07, before any change
+
+Every experiment below is measured against these. Do not re-baseline; add a new row
+instead, so drift stays visible.
+
+| Metric | Baseline | Source |
+|---|---|---|
+| Total users | 36 (1 paid, max tier) | `auth.users`, `profiles` |
+| Searches per user per month | **1.9** (26 searches / 14 users / 30d) | `search_history` |
+| Free-tier cap utilisation | ~9% (1.9 of ~20/mo) | vs `TIER_CAPS.free` |
+| Activation (ever searched) | 26 / 36 = 72% | `search_history` |
+| **Searched exactly once, ever** | **10 / 26 = 38%** | `search_history` |
+| **Returned on a 2nd distinct day** | **7 / 26 = 27%** | `search_history` |
+| Users with ≥1 save | 4 | `saves` |
+| Users with ≥1 alert | **2** | `saved_searches` |
+| GSC (90d) | 8,203 impr · 39 clicks · 0.48% CTR | GSC |
+| Compare pages (30d) | 696 impr · **0 clicks** · pos ~9 | GSC |
+
+**The two numbers that matter most for onboarding work: 38% one-and-done, and 27%
+second-day return.** If an onboarding change does not move those, it did not work,
+regardless of how the funnel looks.
+
+### 6b. Claim ledger — what we may and may not say
+
+Marketing copy may only use a claim at **Validated**. Anything at Hypothesis is for
+testing, not for the landing page, the metadata, or a carousel.
+
+| # | Claim | Status | Evidence / what would validate it |
+|---|---|---|---|
+| C1 | "Sold prices across Poshmark, Mercari and Grailed in one place" | **Hypothesis** | Not built. Validates if sold-comps users show higher 2nd-day return than baseline 27%. |
+| C2 | "We're paid by you, not by the marketplaces we rank" | **True but untested** | Factually correct today (subscription, zero affiliate code). Untested as a *motivator*. Validates if it measurably lifts signup or is volunteered by users unprompted. |
+| C3 | "Alerts with compound criteria (brand AND size AND price)" | **True, unadopted** | `applyCriteria()` ships and works. 2 users. Validates if public alert creation drives adoption above ~30% of new signups. |
+| C4 | "Covers marketplaces the extensions don't" (Grailed, Vinted, Vestiaire, Depop) | **True, unvalidated as a reason to switch** | Coverage is real vs Beni's partner list. Nobody has said it made them choose Crawli. |
+| C5 | "Know your real margin before you buy" | **Partially true** | `netFlipProfit()` fees are verified, but resale price defaults to average *ask*. Becomes fully true only after Step 1 task 4. |
+| C6 | "Best price on a secondhand item" (current landing framing) | **Falsified as a wedge** | Gem and Beni do this better and free. §3. Do not lead with it. |
+
+### 6c. Onboarding experiment log
+
+Append one block per experiment. Write the hypothesis and the kill criterion **before**
+shipping, not after reading the result. With ~36 users nothing here will be
+statistically significant — these are directional reads, and small-n honesty is part
+of the record.
+
+```
+### EXP-00N — <short name>
+Date started / ended:
+Claim under test:            (C1-C6 above, or new)
+Hypothesis:                  If <change>, then <metric> moves from <baseline> to <target>.
+Change shipped:              (files / commits)
+Primary metric:              (pick ONE from 6a)
+Kill criterion:              (what result means "stop", decided in advance)
+n:                           (users exposed)
+Result:                      (number, not a narrative)
+Read:                        (what it means; "inconclusive, n too small" is allowed)
+Ledger update:               (which claim moved status, if any)
+```
+
+**Queued, in order** (revised 2026-08-10 — onboarding flow added as EXP-001; public
+alert creation pushed to EXP-005, now gated on EXP-001 *and* EXP-002):
+
+- **EXP-001 — onboarding flow for new signups** (Step 2 item 1). Claim C3. Primary
+  metric: **share of new signups, from ship date forward, who create ≥1 alert in
+  their first session.** No like-for-like baseline exists yet — onboarding doesn't
+  exist today, so this experiment establishes the number. The all-time 2/36 = 6%
+  figure is cited for context only, not as a matched baseline.
+  **Kill criterion: if fewer than ~15-20% of new signups create an alert even when
+  it's offered as an equal first choice next to search, that's evidence against the
+  thesis — read together with EXP-002, not alone.**
+- **EXP-002 — alert CTA prominence + repeat-search trigger** (Step 2 item 2). Claim
+  C3. Primary metric: **share of the pre-existing 24 (searched, never alerted) who
+  create one after this ships — baseline 0/24 for that specific cohort.**
+  **Kill criterion, decided in advance: if prominent placement plus a repeat-search
+  prompt does not convert a meaningful share of that specific 24, alerts are not as
+  compelling as this doc assumes, and the entire "alerts as the front door" thesis
+  (including Step 2 item 5) needs re-examination rather than another iteration.** This
+  population is unaffected by EXP-001 — they already have accounts and never see the
+  onboarding screen — so it isolates this change cleanly. See the Measurement note in
+  Step 2.
+- **EXP-003 — immediate baseline email on first alert run** (Step 2 item 3). Claim C3.
+  Primary metric: 2nd-day return, baseline 27%.
+- **EXP-004 — sold comps in the margin panel** (Step 1 task 4). Claims C1 + C5.
+  Primary metric: searches per user per month, baseline 1.9.
+- **EXP-005 — public alert creation** (Step 2 item 5). Claim C3. **Gated on EXP-001
+  and EXP-002 both showing alerts convert.** Primary metric: signups, baseline
+  ~0.57-1/day (trending toward the higher end as of early Aug).
+
+### 6d. How marketing follows from this
+
+**No channel work starts until a claim reaches Validated.** The sequence, and the
+reason the current TikTok/blog motion has produced 39 clicks in 90 days, is that
+channel came before claim.
+
+1. **Claim validated in 6b** → then and only then it goes in copy.
+2. **Copy updated in the Step 4 order** (`B2B_FEATURE_TRUTH.md` §5 → `app/layout.tsx`
+   metadata → `Hero.tsx` → `faqData.ts` → `PricingCards`). `B2B_FEATURE_TRUTH.md`
+   stays the source of truth for what is claimable — update it first, always.
+3. **Channel chosen to match the validated claim**, not the reverse. If C1 validates,
+   the audience is resellers and the channels are r/Flipping, reseller Discords and
+   YouTube reseller channels — not SEO, which §5 Step 3 already established is
+   capped by AI Overviews on these queries.
+4. **The obfuscate-commercial-intent rule in CLAUDE.md was written for the old
+   B2C carousel motion.** If the position narrows to resellers, revisit it: that rule
+   produced 0 comments across 55 posts (GROWTH_PLAN §1), so it has already failed its
+   own stated KPI once.
 
 ---
 
