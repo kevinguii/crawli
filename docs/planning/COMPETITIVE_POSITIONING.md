@@ -18,15 +18,15 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 
 | Work | State |
 |---|---|
-| **Step 0 — audience validation** | **not started.** Blocking gate on Step 1. |
-| **Step 1 — sold comps (Poshmark/Mercari/Grailed)** | **not started.** The product gap. Largest remaining item. |
+| **Step 0 — audience validation** | **skipped 2026-08-10, owner decision.** See the note under Step 1. |
+| **Step 1 — sold comps (Grailed + Poshmark)** | **shipped 2026-08-10** · EXP-004 running. Mercari and ThredUp dropped on probe evidence. |
 | Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 running |
 | Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002 |
 | Step 2 — baseline email on first alert run | shipped 2026-08-10 · EXP-003 running |
 | **Step 2 — onboarding flow for new signups** | **deferred 2026-08-10, not built** · EXP-001 |
 | **Step 2 — public alert creation** | **deferred + gated** on EXP-001 and EXP-002 · EXP-005 |
 | Step 3 — stop writing blog posts | standing instruction |
-| **Step 4 — rewrite positioning** | **blocked on Step 1** |
+| **Step 4 — rewrite positioning** | **unblocked 2026-08-10** — Step 1 shipped. Gated on C1 reaching Validated. |
 
 ---
 
@@ -214,9 +214,18 @@ on reading (b) wastes a month.
 
 ## 5. What is left to do
 
-### Step 0 — Settle the audience question · NOT STARTED
+### Step 0 — Settle the audience question · SKIPPED 2026-08-10
 
-The entire plan branches on this. Cost: a few hours, no code.
+**Owner decision: skipped, and Step 1 was built without it.** The consequence is
+recorded here rather than lost: a null EXP-004 result is now **ambiguous**. It cannot
+separate "sold comps does not change behaviour" from "these 36 users were never
+resellers." EXP-004's own kill criterion therefore has to carry the weight this step
+was meant to carry, and it was written before shipping (§6c).
+
+If EXP-004 comes back null, run this step before iterating on the feature — the
+alternative is a second month spent on a question a few emails would have answered.
+
+The original plan, kept for whenever it is picked up:
 
 1. Email all 36 users individually (36 is small enough to do by hand, and
    hand-written converts). One question: *"Are you buying this stuff for yourself,
@@ -229,87 +238,88 @@ The entire plan branches on this. Cost: a few hours, no code.
    pull for cross-platform sold comps, stop and re-open the strategy. Do not proceed
    to Step 1 on optimism.
 
-### Step 1 — Ship sold comps · NOT STARTED
+### Step 1 — Ship sold comps · SHIPPED 2026-08-10
 
-The one feature that changes what Crawli is. Scope it small.
+The one feature that changes what Crawli is. Built and live. Design spec:
+`docs/superpowers/specs/2026-08-10-sold-comps-design.md`. Measured as EXP-004.
 
-**Scope: Poshmark + Mercari + Grailed ONLY. eBay and StockX are out of scope.**
-Owner decision. Do not add them back without an explicit decision.
+**Shipped scope: Grailed + Poshmark.** Mercari was dropped during the probe and
+ThredUp was ruled out by it. eBay and StockX remain deferred as previously decided.
 
-**Why these three:** each builds its search URL from a plain query param
-(`poshmark_search_url` → `/search?query=…&type=listings`, `mercari_search_url` →
-`/search/?keyword=…`, `grailed_search_url` → `/shop?query=…`). Sold comps here is a
-URL-param change plus a DOM check.
+**The probe overturned the plan this section used to contain.** That plan assumed
+sold comps meant adding a `sold` flag to the Python grid extractors and threading it
+through `/scrape-search`. That is the wrong layer for both shipped platforms. All
+findings below were verified live on 2026-08-10, not inferred.
 
-**What sold detection exists today.** The two layers behave oppositely, which is why
-broad detail-layer coverage does not make this feature free:
+| Platform | Sold filter | Transport | Sale price | Sale date | Days-to-sell | Outcome |
+|---|---|---|---|---|---|---|
+| **Grailed** | Algolia index `Listing_sold_production` | plain HTTPS POST | `sold_price`, the true final | `sold_at` exact | yes | **shipped** |
+| **Poshmark** | `availability=sold_out` + `sort_by=recently_sold` | plain HTTP GET | `price_amount`, the ask at time of sale | `inventory.status_changed_at` | yes | **shipped** |
+| Mercari | `itemStatuses=2` | browser render (raw-403s) | first `$` on the card | **none in the DOM** | no | **dropped** — cost + no date |
+| ThredUp | none; `availability=sold` is ignored | — | — | — | — | **ruled out** |
 
-| Layer | File | Sold detection |
-|---|---|---|
-| **Listing detail** (watchlist refresh, one URL at a time) | `structured_extractors.py` | **7 platforms**: Depop, Grailed, ThredUp, eBay, Vestiaire (shared JSON-LD `_availability_is_sold`), Poshmark (JSON-LD, 12/12 verified, + legacy `data-et-prop-inventory_status` fallback), Mercari (status enum). **Not** StockX (`:334`) or Vinted (`:541`) — both hardcode `False`. |
-| **Search grid** (what sold comps needs) | `search_page_extractors.py` | **ThredUp only** among enabled platforms (JSON-LD `offers.availability`). RealReal parses it too but the platform is disabled (PerimeterX). Grailed, Mercari, Depop, Vestiaire, Vinted, Poshmark, StockX **all hardcode `"isSold": False`**. |
+**Because both shipped platforms are plain HTTP, the Python sidecar was not touched
+at all.** No `sold` flag on `ScrapeSearchRequest`, no cache-key change, no new
+`wait_for`. The feature is entirely TypeScript in `lib/soldComps/`. A sold-comps
+lookup is two HTTP requests and roughly a second, against ~35s/platform for live
+search — the cost assumption in the old plan was backwards.
 
-Detail-layer answers *"is this one listing I track now gone?"*. Sold comps needs
-*"give me N sold listings matching this query"* — a sold-filtered search URL plus a
-grid that reads sold state off cards. Only ThredUp does the latter, and even it
-cannot filter to sold; it just labels cards correctly.
+**ThredUp is a direct correction.** This doc previously said "add ThredUp to the
+probe — its grid already parses real availability, so it may be the cheapest platform
+of all." Probed: `availability=sold` is ignored, returning 119 items of which 114
+were in stock and 5 incidentally sold. There is no sold filter. Do not re-probe
+without new evidence.
 
-**Two consequences:**
+**Deferred, unchanged:** eBay (richest sold data, most expensive to get; Browse API
+does not expose sold data, Marketplace Insights is restricted-access) and StockX
+(one lowest-ask per SKU is already effectively a comp, and it is sneakers-only).
 
-- **Add ThredUp to the probe.** Its grid already parses real availability, so it may
-  be the cheapest platform of all. Caveat: ThredUp is source-only, deliberately
-  absent from the fee calculator, and its inventory is women's mass-market — cheap
-  data that may not be the data resellers want. Probe it, decide after.
-- **`watchlist` is a second sold-data source already owned.** It carries
-  `created_at`, `price_at_add`, `price_current`, `is_sold`, `last_checked_at`. Every
-  tracked item that flips to sold is a real sold price *with an observed duration*,
-  making **days-to-sell derivable even if no platform exposes a sale date**. Long-game
-  asset, not v1: 10 rows today. Do not scope it into this build; do keep the flip
-  timestamp in the schema.
+**`watchlist` remains a second sold-data source already owned** — `created_at`,
+`price_at_add`, `is_sold`, `last_checked_at` make days-to-sell derivable from our own
+observations. Still ~10 rows. Long game, deliberately not in this build.
 
-**Deferred, with reasons (do not silently re-add):**
+#### What shipped
 
-- **eBay.** Richest sold data anywhere, most expensive to get. Only platform with no
-  native extractor (Avenue B, Firecrawl-only, ~1 in 5 Akamai 403s). `LH_Sold=1&LH_Complete=1`
-  is real but the most heavily guarded URL on the site. The eBay **Browse API does
-  not expose sold data**; Marketplace Insights does but is restricted-access and needs
-  an application. Revisit only if the three-platform version proves demand.
-- **StockX.** One lowest-ask per SKU means its price is already effectively a comp,
-  and it is sneakers-only. Low incremental value.
+1. **`lib/soldComps/`** — `grailed.ts` (Algolia + key management), `poshmark.ts`
+   (`window.__INITIAL_STATE__` parse), `aggregate.ts` (relevance, trim, windowing),
+   `index.ts`, `types.ts`.
+2. **`POST /api/sold-comps`** — auth-gated, 24h cache in the new `sold_comps_cache`
+   table, **does not consume a search credit**. Separate from `/api/search`, whose
+   streaming NDJSON path was not touched.
+3. **Margin calculator now defaults to sold price.** `FlipMargin` in
+   `PriceSummary.tsx` previously defaulted resale to `averagePrice ?? priceRange.max`
+   — average *asking* price. It now seeds from the median of completed sales, with
+   `avg ask` and `high` kept as one-tap alternatives. This is what makes C5 true.
+4. **`SoldCompsPanel.tsx`** — one row per marketplace, each with its own median,
+   p25-p75, sample size, window, and days-to-sell.
+5. **`scripts/verify-sold-comps.mts`** — 33 checks, unit plus live. Run with
+   `npx tsx scripts/verify-sold-comps.mts`.
 
-**An honest consequence of this scope:** the three in-scope platforms skew women's
-resale (Poshmark), general goods (Mercari) and menswear/streetwear (Grailed). A
-coherent slice, but not "every marketplace" — the Step 4 copy must not overstate it.
+#### Three findings that constrain what copy may claim
 
-**Tasks:**
+1. **There is deliberately no pooled cross-platform median.** For "nike air jordan 1"
+   Grailed's sold inventory is adult pairs (median $125) while Poshmark's is mostly
+   youth sizes and Mid/Low models (median $33). A pooled figure ($55) describes
+   neither market. **Report per platform or not at all.** The margin calculator seeds
+   from Grailed when it qualifies, Poshmark otherwise, and the user can switch.
+2. **Poshmark's price is the ask at the moment of sale, not the accepted offer.**
+   Poshmark hides accepted offers. Never write "what it actually sold for" about
+   Poshmark. Grailed's `sold_price` *is* the true final.
+3. **No sell-through metric shipped.** Poshmark's total is all-time-sold and caps at
+   5000; Grailed's is a true 90-day window. The denominators are not comparable and
+   one blended number would mislead.
 
-1. **Probe first, no code.** Throwaway script: fetch each search URL (Poshmark,
-   Mercari, Grailed, **plus ThredUp**) with a candidate sold filter, dump HTML.
-   Confirm per platform (a) the filter param exists, (b) the sold grid reuses the
-   card selectors the existing extractor targets, and (c) **whether a sale date is in
-   the DOM**. (c) gates days-to-sell — if no platform exposes it, ship median sold
-   price + sell-through only and say so, rather than promising a number you cannot
-   compute. Nothing here gets assumed (CLAUDE.md rule 1).
-2. **Extend the sidecar path, do not fork it.** Add `sold: bool` to
-   `ScrapeSearchRequest`, thread into `search_url_for(platform, query, sold=False)`.
-   Extractors mostly unchanged — they already emit `isSold`. Cache key becomes
-   `platform::query::sold` so sold and live results cannot collide in `_search_cache`.
-3. **New aggregate endpoint, separate from search.** `POST /sold-comps {query, platforms}`
-   → `{medianSold, n, sellThroughPct, daysToSell|null, perPlatform[]}`. Sell-through is
-   computable without a sale date: sold count over (sold + live) count for the same query.
-4. **Wire into the margin calc.** `netFlipProfit()` (`lib/marketplaceFees.ts:201`) takes
-   `resalePrice` as a plain number, so it does not change. The change is in
-   `PriceSummary.tsx` — `FlipMargin` currently defaults `resale` to
-   `averagePrice ?? priceRange.max`, i.e. average *asking* price. Default it to median
-   sold; keep average-ask as the secondary one-tap option.
-5. **Log the result in §6c** before deciding anything about eBay. The point of the
-   three-platform scope is to learn cheaply whether sold comps changes behaviour at
-   all. If it does not, eBay would not have saved it.
+#### Data-quality rules baked in
 
-Tasks 2-4 touch the sidecar and the streaming search path: use
-`/superpowers:brainstorming` → spec → plan → worktree → subagent execution. Task 1 is
-a scratchpad script.
-
+- **Window widening:** 90d, else 180d, else 365d. Every figure is displayed with the
+  window that produced it.
+- **Sample floor:** n ≥ 10 after filtering, or the platform is omitted. If neither
+  qualifies the panel does not render. Verified against a nonsense query.
+- **Relevance filtering** reuses `titleMatchesQuery` from `lib/parse.ts` (exported for
+  this). Required: Poshmark sold sorted by price returns a $1,375 median for "nike air
+  jordan 1" — bundles and wrong items. Same class of problem as `filterAuthentic()`.
+- **IQR outlier trim**, with the spread floored at 10% of the median so a degenerate
+  zero-IQR sample still fences out a 50x bundle listing.
 ### Step 2 — Alerts as the front door
 
 **Already shipped 2026-08-10 — do not redo.** Results-page alert CTA is now a
@@ -439,11 +449,11 @@ not for the landing page, the metadata, or a carousel.
 
 | # | Claim | Status | Evidence / what would validate it |
 |---|---|---|---|
-| C1 | "Sold prices across Poshmark, Mercari and Grailed in one place" | **Hypothesis** | Not built (Step 1). Validates if sold-comps users show higher 2nd-day return than baseline 27%. |
+| C1 | "Sold prices from Grailed and Poshmark in one place" | **Built, unvalidated** | Shipped 2026-08-10. **Mercari is NOT in it — do not name Mercari in copy.** Validates if sold-comps users show higher 2nd-day return than baseline 27% (EXP-004). Two hard limits on wording: never imply a single blended cross-platform price (there isn't one, and §5 explains why), and never say "what it actually sold for" about Poshmark (accepted offers are hidden — that phrasing is only true of Grailed). |
 | C2 | "We're paid by you, not by the marketplaces we rank" | **True but untested** | Factually correct today (subscription, zero affiliate code). Untested as a *motivator*. Validates if it measurably lifts signup or is volunteered by users unprompted. |
 | C3 | "Alerts with compound criteria: your search terms AND size AND a price range" | **True, unadopted** | `applyCriteria()` ships, and as of 2026-08-10 the UI exposes all of it. **It is `size` + `minPrice` + `maxPrice` only — brand and keywords live in the query string. Never write copy implying four independent criteria fields.** Still 2 users. Validates on EXP-002 / EXP-003. |
 | C4 | "Covers marketplaces the extensions don't" (Grailed, Vinted, Vestiaire, Depop) | **True, unvalidated as a reason to switch** | Coverage is real vs Beni's partner list. Nobody has said it made them choose Crawli. |
-| C5 | "Know your real margin before you buy" | **Partially true** | `netFlipProfit()` fees are verified, but resale price defaults to average *ask*. Fully true only after Step 1 task 4. |
+| C5 | "Know your real margin before you buy" | **True as of 2026-08-10** | `netFlipProfit()` fees were already verified; the remaining gap was that resale defaulted to average *ask*. It now defaults to the median of completed sales (`FlipMargin`, seeded from Grailed when it qualifies). Still unvalidated as a *motivator* — true is not the same as persuasive. |
 | C6 | "Best price on a secondhand item" (current landing framing) | **Falsified as a wedge** | Gem and Beni do this better and free (§3). Do not lead with it. |
 
 ### 6c. Experiment log
@@ -494,6 +504,49 @@ Caveats set in advance:
 ```
 
 ```
+### EXP-004 — sold comps on the results page
+Started:            2026-08-10 (open)
+Claim under test:   C1 + C5
+Hypothesis:         If a search returns what the item actually sold for and how long
+                    it took, rather than only what sellers are asking, then searching
+                    becomes worth repeating and searches per user per month moves off
+                    the 1.9 baseline.
+Shipped:            lib/soldComps/ (grailed.ts Algolia + key refresh · poshmark.ts
+                    __INITIAL_STATE__ parse · aggregate.ts relevance/trim/windowing ·
+                    index.ts · types.ts) · POST /api/sold-comps (auth-gated, 24h
+                    sold_comps_cache, no search credit charged) · SoldCompsPanel.tsx ·
+                    PriceSummary.tsx (FlipMargin resale now seeds from median sold
+                    instead of average ask; "sold" / "avg ask" / "high" chips) ·
+                    ResultsDisplay passes data.query · relevanceTokens +
+                    titleMatchesQuery exported from lib/parse.ts ·
+                    scripts/verify-sold-comps.mts (33 checks)
+Primary metric:     Searches per user per month, baseline 1.9 (6a)
+Secondary:          2nd-day return, baseline 27% (6a)
+Kill criterion:     If searches per user per month does not move off 1.9 within 30
+                    days of ship, sold comps did not change what the product is worth
+                    to the current users. Because Step 0 was skipped, that result is
+                    AMBIGUOUS by construction — it cannot distinguish "sold comps
+                    doesn't matter" from "these users were never resellers".
+                    Do NOT iterate on the feature on a null result. Run Step 0 first
+                    and only then decide whether to extend (eBay), or to stop.
+n:                  every search from 2026-08-10 forward
+Result:             pending
+Read:               pending
+Ledger update:      pending
+Caveats set in advance:
+  (a) The panel only renders when a platform clears n>=10 within 365 days, so
+      thin-catalogue queries see nothing. A null result must be read against how
+      often the panel actually rendered, not against total searches. Instrument
+      that before concluding anything.
+  (b) Grailed and Poshmark are reported separately and can differ by 3-4x on the
+      same query (real inventory difference, not error). If users find that
+      confusing rather than informative, that is a UX finding, not a data finding.
+  (c) Depends on an undocumented Grailed Algolia index and a Poshmark state blob.
+      Silent upstream breakage would look identical to "nobody engaged" in the
+      metric. Check scripts/verify-sold-comps.mts passes before reading the result.
+```
+
+```
 ### EXP-003 — immediate baseline email on first alert run
 Started:            2026-08-10 (open)
 Claim under test:   C3
@@ -529,8 +582,8 @@ Note:               Readable independently of EXP-002 — it acts only after an 
   evidence against the thesis — read together with EXP-002, not alone.** Nothing
   shipped so far touches the signup path, so this stays cleanly separable from
   EXP-002 whenever it is built.
-- **EXP-004 — sold comps in the margin panel.** Step 1 task 4. Claims C1 + C5.
-  Primary metric: searches per user per month, baseline 1.9.
+- ~~EXP-004 — sold comps in the margin panel.~~ **Shipped 2026-08-10 — moved to
+  Running above.**
 - **EXP-005 — public alert creation.** Step 2b. Claim C3. **Gated on EXP-001 and
   EXP-002 both showing alerts convert** — it does not unblock just because EXP-002
   shipped first. Primary metric: signups, baseline ~0.57-1/day.

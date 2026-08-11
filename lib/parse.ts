@@ -74,7 +74,9 @@ const BRAND_ANCHOR_OVERRIDES = new Set([
   'diesel', 'palace', 'essentials', 'gap', 'express', 'balance',
 ]);
 
-function relevanceTokens(text: string): Set<string> {
+// Exported for lib/soldComps, which needs the same anchoring rules but must NOT
+// go through parseScrapedListings (that path drops isSold listings — see below).
+export function relevanceTokens(text: string): Set<string> {
   return new Set(
     text
       .toLowerCase()
@@ -113,7 +115,7 @@ const COMPOUND_ANCHOR_FORMS: Record<string, string> = {
   shortsleeve: 'short sleeve',
 };
 
-function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
+export function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
   if (queryTokens.size === 0) return true;
   if (!title) return false;
   const titleTokens = relevanceTokens(title);

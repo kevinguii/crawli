@@ -94,6 +94,7 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   return (
     <div className="space-y-6">
       <PriceSummary
+        query={data.query}
         priceRange={dataPriceRange}
         averagePrice={averagePrice}
         totalCount={totalCount}

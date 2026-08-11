@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-07-26
+**Last updated:** 2026-08-10
 
 ## How to use this file
  
@@ -58,7 +58,10 @@ Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STAT
 
 **Alerts pipeline (recurrence is server cron, NOT Vercel):** the app is self-hosted on Hetzner via systemd — there is no Vercel Cron. `/api/cron/run-alerts` (Bearer `CRON_SECRET`) is driven by a crontab line on `5.78.187.97` (`*/15 * * * *`, logs `/var/log/crawli-alerts.log`). It selects `saved_searches` where `next_run_at <= now()` and `paused=false` (all users, ≤20/tick), runs each via `runAlert`, reschedules `next_run_at` to the next 9 AM in the owner's tz, `cadence_hours` days out (24=daily, 168=weekly — `lib/alertSchedule.ts`). Each non-first run inserts a `notifications` row (regardless of cadence, even 0 new) + `alert_matches` rows when new; email only when new. **First run (creation, or a baseline-resetting edit) writes no `notifications`/`alert_matches` rows but does send one baseline email** — "N listings match right now across M marketplaces", explicitly labelled as the starting point, with a separate zero-match variant (`buildBaselineEmailHtml` in `lib/email/alertEmailTemplate.ts`, sent from `runAlert`'s `isFirstRun` branch). **Without that crontab line nothing recurs** — this was the 28-day silent-alerts bug (next_run_at frozen in the past).
 
+**Sold comps (shipped 2026-08-10):** `lib/soldComps/` returns median completed-sale price, p25-p75, sample size, window and days-to-sell for **Grailed + Poshmark only**. Pure TypeScript, plain HTTP, **no sidecar involvement** — Grailed via its `Listing_sold_production` Algolia index, Poshmark via `availability=sold_out&sort_by=recently_sold` parsed out of `window.__INITIAL_STATE__`. Surfaced by `SoldCompsPanel.tsx` inside `PriceSummary`, and `FlipMargin` now seeds its resale price from median sold rather than average ask. `POST /api/sold-comps` is auth-gated, cached 24h in `sold_comps_cache`, and **charges no search credit**. Reported per platform — there is deliberately no pooled cross-platform median (the two carry different inventory for the same query; see PITFALLS). Mercari and ThredUp were dropped on probe evidence. Verify with `npx tsx scripts/verify-sold-comps.mts` (33 checks). Details: `docs/planning/COMPETITIVE_POSITIONING.md` §5 Step 1 + EXP-004.
+
 **Supabase tables (must exist in prod):**
+- `sold_comps_cache(key text pk, payload jsonb, expires_at timestamptz)` — 24h TTL; only successful lookups are cached, so a transient upstream failure isn't pinned for a day. (migration `docs/migrations/sold-comps-cache.sql`)
 - `search_listings_cache(key text pk, listings jsonb, expires_at timestamptz)`
 - `query_expansion_cache(query_norm text pk, payload jsonb, expires_at timestamptz)`
 - `notifications(id, user_id, alert_id, new_count, seen, created_at)` — one row per alert run; drives the nav bell badge (count of `seen=false`). In the `supabase_realtime` publication. Never pruned — also powers the per-alert run-history view (`GET /api/saved-searches/[id]/history`).
@@ -94,7 +97,16 @@ Fixed 2026-07-25 for the luxury set: `filterAuthentic()` in `app/api/compare/ref
 
 ## Recent changes
 
-**2026-08-10 (latest) — Alert-adoption pass shipped: EXP-002 + EXP-003 (onboarding deferred)**
+**2026-08-10 (latest) — Sold comps shipped (Step 1) · EXP-004 running**
+Crawli now shows what items actually sold for, not just what sellers are asking. New `lib/soldComps/` (Grailed + Poshmark), `POST /api/sold-comps`, `SoldCompsPanel.tsx`, and `FlipMargin` reseeded from median sold instead of average ask — the change that makes claim C5 true. Full writeup: `docs/planning/COMPETITIVE_POSITIONING.md` §5 Step 1; spec in `docs/superpowers/specs/2026-08-10-sold-comps-design.md`.
+- **The probe overturned the planned approach.** The old plan assumed adding a `sold` flag to the Python grid extractors. Both shipped platforms are plain HTTP instead, so **the sidecar was not touched at all** — a sold-comps lookup is two requests and ~1s, against ~35s/platform for live search.
+- **Mercari dropped, ThredUp ruled out.** Mercari's sold filter (`itemStatuses=2`) works but exposes **no sale date anywhere**, so no days-to-sell, and it needs a browser render. ThredUp has no sold filter at all — `availability=sold` is silently ignored. Both findings are in PITFALLS so they don't get re-probed.
+- **No pooled cross-platform median, deliberately.** Grailed and Poshmark carry materially different inventory for the same query (Jordan 1: $125 adult pairs vs $33 mostly youth sizes), so a blended number describes neither. Reported per platform; the calculator seeds from Grailed when it qualifies.
+- **Thin data renders nothing.** Window widens 90d → 180d → 365d, and a platform needs n≥10 after relevance filtering and IQR trimming or it's omitted entirely.
+- **Step 0 (audience validation) was skipped by owner decision.** This makes a null EXP-004 result ambiguous by construction — it can't separate "sold comps doesn't matter" from "these users were never resellers." The kill criterion in §6c says to run Step 0 before iterating rather than tuning the feature.
+- Verified: `npx tsx scripts/verify-sold-comps.mts` 33/33 pass (unit + live across 4 queries + an obscure-query negative case), `npx tsc --noEmit` clean, route returns 401 unauthenticated, cache round-trip confirmed against the real table and GRANTs. **Browser UI check (light + dark) is still the owner's to do.**
+
+**2026-08-10 — Alert-adoption pass shipped: EXP-002 + EXP-003 (onboarding deferred)**
 Three of the four planned Step 2 items are live; the onboarding flow (item 1) was deferred by the owner before implementation, so **nothing in this change touches the signup or auth path**. Full experiment blocks, metrics and kill criteria: `docs/planning/COMPETITIVE_POSITIONING.md` §6c "Running".
 - **Results-page alert CTA is now primary.** New `app/components/AlertCtaBanner.tsx` replaces the right-aligned `text-sm`/`text-muted` "Save as alert" ghost button in `SearchSection.tsx` with a full-width accent card. Two states: `watching` (an alert already covers this query — quiet confirmation + link to /alerts) and the default pitch. `hasAlert` comes from the existing `GET /api/saved-searches`, compared on normalized query strings; no new endpoint.
 - **Creating an alert now navigates to `/alerts`, it does not open a modal over the results.** The CTA pushes `/alerts?new=1&query=…&platforms=…`; `app/(protected)/alerts/page.tsx` parses those into an `autoCreate` prop threaded through `AlertsTabsClient` → `SearchAlertsTab`, which waits for the alerts list *and* billing to load, runs the same quota gate a manual "+ New alert" click goes through, then opens `CreateAlertModal` pre-filled. The URL is `router.replace`d back to `/alerts` on open so a refresh or back-nav doesn't reopen a dismissed form; the prefill is held in a ref, not state (the `showCreate` flip is what re-renders). `SearchSection` no longer imports `CreateAlertModal` at all.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Listing, PLATFORM_NAMES } from '@/lib/types';
 import type { PlatformKey } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
@@ -9,6 +9,9 @@ import {
   MARKETPLACE_FEES,
   netFlipProfit,
 } from '@/lib/marketplaceFees';
+import { useSoldComps } from '@/lib/hooks/useSoldComps';
+import SoldCompsPanel from './SoldCompsPanel';
+import type { PlatformSoldStats } from '@/lib/soldComps/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -28,6 +31,16 @@ interface Props {
   totalCount: number;
   lowSource?: string | null;
   highSource?: string | null;
+  /** The search query, used to look up completed sales. */
+  query?: string | null;
+}
+
+/** The resale figure feeding the margin calculator. `nonce` lets the user re-apply
+ *  the same platform's median after hand-editing the field. */
+interface ResaleSeed {
+  value: number;
+  platform: string;
+  nonce: number;
 }
 
 export default function PriceSummary({
@@ -36,8 +49,30 @@ export default function PriceSummary({
   totalCount,
   lowSource,
   highSource,
+  query,
 }: Props) {
+  const { data: sold } = useSoldComps(query);
+  const [seed, setSeed] = useState<ResaleSeed | null>(null);
+
+  const soldPlatforms = sold?.available ? sold.platforms : [];
+
+  // Seed once from platforms[0] (Grailed when it qualified — see lib/soldComps).
+  // Keyed on the platform name so a new search reseeds but a re-render does not
+  // clobber a value the user picked or typed.
+  const primary = soldPlatforms[0] ?? null;
+  useEffect(() => {
+    if (primary) setSeed({ value: primary.medianPrice, platform: primary.platform, nonce: 0 });
+    else setSeed(null);
+  }, [primary?.platform, primary?.medianPrice]);
+
   if (!priceRange || totalCount === 0) return null;
+
+  const selectPlatform = (p: PlatformSoldStats) =>
+    setSeed((prev) => ({
+      value: p.medianPrice,
+      platform: p.platform,
+      nonce: (prev?.nonce ?? 0) + 1,
+    }));
 
   return (
     <div className="space-y-3">
@@ -51,7 +86,13 @@ export default function PriceSummary({
         <Metric label="High" value={fmt.format(priceRange.max)} source={highSource} />
       </div>
 
-      <FlipMargin averagePrice={averagePrice} priceRange={priceRange} />
+      <SoldCompsPanel
+        platforms={soldPlatforms}
+        selected={seed?.platform ?? null}
+        onSelect={selectPlatform}
+      />
+
+      <FlipMargin averagePrice={averagePrice} priceRange={priceRange} seed={seed} />
     </div>
   );
 }
@@ -101,11 +142,15 @@ function Metric({
 function FlipMargin({
   averagePrice,
   priceRange,
+  seed,
 }: {
   averagePrice: number | null;
   priceRange: { min: number; max: number };
+  /** Median of completed sales, when we have enough of them. Null falls back to
+   *  the previous behaviour (average asking price). */
+  seed: ResaleSeed | null;
 }) {
-  const compDefault = useMemo(
+  const askDefault = useMemo(
     () => Math.round(averagePrice ?? priceRange.max),
     [averagePrice, priceRange.max],
   );
@@ -113,7 +158,14 @@ function FlipMargin({
   const [open, setOpen] = useState(false);
   const [platform, setPlatform] = useState<PlatformKey>('ebay');
   const [sourcing, setSourcing] = useState<string>('');
-  const [resale, setResale] = useState<string>(String(compDefault));
+  const [resale, setResale] = useState<string>(String(askDefault));
+
+  // Sold comps arrive after the first render, so the field starts on average ask and
+  // switches once real sale data lands. nonce is in the deps so tapping the same
+  // platform again re-applies it after a manual edit.
+  useEffect(() => {
+    if (seed) setResale(String(Math.round(seed.value)));
+  }, [seed?.value, seed?.nonce]);
 
   const sourcingNum = parseFloat(sourcing) || 0;
   const resaleNum = parseFloat(resale) || 0;
@@ -179,10 +231,13 @@ function FlipMargin({
               label="Resale price"
               hint={
                 <span className="flex gap-2">
-                  <CompChip
-                    label="avg"
-                    onClick={() => setResale(String(Math.round(averagePrice ?? priceRange.max)))}
-                  />
+                  {seed && (
+                    <CompChip
+                      label="sold"
+                      onClick={() => setResale(String(Math.round(seed.value)))}
+                    />
+                  )}
+                  <CompChip label="avg ask" onClick={() => setResale(String(askDefault))} />
                   <CompChip label="high" onClick={() => setResale(String(Math.round(priceRange.max)))} />
                 </span>
               }
