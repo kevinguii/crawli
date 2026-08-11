@@ -295,6 +295,15 @@ export default function SettingsPage() {
               {email ?? '-'}
             </span>
           </Row>
+          <Row label="Setup walkthrough" sublabel="Walk through alerts, criteria and sold prices again">
+            <Link
+              href="/onboarding?replay=1"
+              className="rounded-xl px-3 py-2 text-sm"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              Redo setup
+            </Link>
+          </Row>
         </Section>
 
         {/* ── Billing ── */}
