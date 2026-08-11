@@ -6,7 +6,6 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { stepFromIndex, needsOnboarding } from '@/lib/onboarding';
 import type { OnboardingPersona } from '@/lib/onboarding';
 import OnboardingFlow from './OnboardingFlow';
@@ -25,8 +24,7 @@ export default async function OnboardingPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/login?error=session_expired');
 
-  const admin = createAdminClient();
-  const { data: profile } = await admin
+  const { data: profile } = await supabase
     .from('profiles')
     .select('onboarding_persona, onboarding_step, onboarding_completed_at')
     .eq('id', user.id)
