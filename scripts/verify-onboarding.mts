@@ -5,6 +5,7 @@ import {
   nextStep,
   stepIndex,
   isTerminal,
+  stepFromIndex,
 } from '@/lib/onboarding';
 
 let failures = 0;
@@ -37,6 +38,18 @@ console.log('\n=== unit: step index (resume + progress bar) ===');
 check('stepIndex branch = 0', stepIndex('branch') === 0);
 check('stepIndex tail = 4', stepIndex('tail') === 4);
 check('stepIndex clamps unknown to 0', stepIndex('nonsense' as never) === 0);
+
+console.log('\n=== unit: step from index (resume-after-close) ===');
+check('stepFromIndex 0 = branch', stepFromIndex(0) === 'branch');
+check('stepFromIndex 1 = seed', stepFromIndex(1) === 'seed');
+check('stepFromIndex 2 = criteria', stepFromIndex(2) === 'criteria');
+check('stepFromIndex 3 = alert', stepFromIndex(3) === 'alert');
+check('stepFromIndex 4 = tail', stepFromIndex(4) === 'tail');
+check('stepFromIndex 5 = done', stepFromIndex(5) === 'done');
+check('stepFromIndex negative falls back to branch', stepFromIndex(-1) === 'branch');
+check('stepFromIndex NaN falls back to branch', stepFromIndex(NaN) === 'branch');
+check('stepFromIndex decimal falls back to branch', stepFromIndex(1.5) === 'branch');
+check('stepFromIndex overflow falls back to branch', stepFromIndex(ONBOARDING_STEPS.length) === 'branch');
 
 console.log(`\n${failures === 0 ? 'ALL PASSED' : failures + ' FAILURE(S)'}\n`);
 process.exit(failures === 0 ? 0 : 1);
