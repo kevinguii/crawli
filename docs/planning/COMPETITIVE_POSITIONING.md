@@ -660,8 +660,8 @@ Shipped:            lib/onboarding.ts (state machine) · four profiles.onboardin
                     "Redo setup" row (/onboarding?replay=1) ·
                     scripts/verify-onboarding.mts (unit + live auth-gate check)
 Primary metric:     Share of users completing onboarding who create ≥1 alert.
-Secondary:          First-session depth (against the §6a drift-row gradient)
-                    and 2nd-day return, baseline 27% (6a).
+Secondary:          first-session depth (against the §6a drift-row gradient) and
+                    2nd-day return (baseline 27%).
 Kill criterion:     Below ~15-20% alert creation, when an alert is created *as
                     part of the flow itself*, is evidence against the alerts
                     thesis. Note this is a stronger test than the original
