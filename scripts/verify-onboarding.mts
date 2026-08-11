@@ -51,5 +51,16 @@ check('stepFromIndex NaN falls back to branch', stepFromIndex(NaN) === 'branch')
 check('stepFromIndex decimal falls back to branch', stepFromIndex(1.5) === 'branch');
 check('stepFromIndex overflow falls back to branch', stepFromIndex(ONBOARDING_STEPS.length) === 'branch');
 
+console.log('\n=== live: onboarding endpoint is auth-gated ===');
+{
+  const base = process.env.VERIFY_BASE_URL ?? 'http://localhost:3000';
+  const res = await fetch(`${base}/api/onboarding`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step: 1 }),
+  });
+  check('unauthenticated PATCH returns 401', res.status === 401, `got ${res.status}`);
+}
+
 console.log(`\n${failures === 0 ? 'ALL PASSED' : failures + ' FAILURE(S)'}\n`);
 process.exit(failures === 0 ? 0 : 1);
