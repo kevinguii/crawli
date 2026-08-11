@@ -9,6 +9,8 @@ import {
   type OnboardingPersona,
   type OnboardingStepId,
 } from '@/lib/onboarding';
+import BranchStep from './steps/BranchStep';
+import SeedStep from './steps/SeedStep';
 
 export interface OnboardingDraft {
   persona: OnboardingPersona | null;
@@ -127,6 +129,10 @@ export default function OnboardingFlow({
 
 function StepSwitch({ step, ...rest }: StepProps & { step: OnboardingStepId }) {
   switch (step) {
+    case 'branch':
+      return <BranchStep {...rest} />;
+    case 'seed':
+      return <SeedStep {...rest} />;
     default:
       return (
         <button
