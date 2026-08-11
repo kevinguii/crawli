@@ -13,6 +13,7 @@ import BranchStep from './steps/BranchStep';
 import SeedStep from './steps/SeedStep';
 import CriteriaStep from './steps/CriteriaStep';
 import AlertStep from './steps/AlertStep';
+import TailStep from './steps/TailStep';
 
 export interface OnboardingDraft {
   persona: OnboardingPersona | null;
@@ -139,6 +140,8 @@ function StepSwitch({ step, ...rest }: StepProps & { step: OnboardingStepId }) {
       return <CriteriaStep {...rest} />;
     case 'alert':
       return <AlertStep {...rest} />;
+    case 'tail':
+      return <TailStep {...rest} />;
     default:
       return (
         <button
