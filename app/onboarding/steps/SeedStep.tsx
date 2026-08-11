@@ -7,7 +7,7 @@ import type { StepProps } from '../OnboardingFlow';
 const COPY = {
   buyer: {
     heading: 'What are you hunting?',
-    sub: 'We watch 9 marketplaces at once, including ones the shopping extensions do not cover.',
+    sub: 'We watch 9 marketplaces at once, including Grailed, Vinted and Vestiaire.',
     examples: ['carhartt wip jacket', 'levis 501', 'north face nuptse', 'sambas'],
   },
   reseller: {
