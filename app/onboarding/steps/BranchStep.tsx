@@ -2,6 +2,7 @@
 
 import type { StepProps } from '../OnboardingFlow';
 import type { OnboardingPersona } from '@/lib/onboarding';
+import StepButton from './StepButton';
 
 const OPTIONS: { id: OnboardingPersona; label: string; sub: string }[] = [
   { id: 'buyer', label: 'For myself', sub: 'Hunting specific pieces across marketplaces' },
@@ -25,6 +26,7 @@ export default function BranchStep({ draft, patch, advance, busy }: StepProps) {
             <button
               key={o.id}
               type="button"
+              aria-pressed={active}
               onClick={() => patch({ persona: o.id })}
               className="rounded-2xl px-4 py-4 text-left transition-colors"
               style={{
@@ -43,15 +45,9 @@ export default function BranchStep({ draft, patch, advance, busy }: StepProps) {
         })}
       </div>
 
-      <button
-        type="button"
-        disabled={!draft.persona || busy}
-        onClick={advance}
-        className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-        style={{ background: 'var(--accent)', color: '#fff' }}
-      >
+      <StepButton onClick={advance} disabled={!draft.persona || busy}>
         {busy ? 'Saving…' : 'Continue'}
-      </button>
+      </StepButton>
     </div>
   );
 }

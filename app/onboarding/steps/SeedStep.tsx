@@ -1,6 +1,7 @@
 'use client';
 
 import type { StepProps } from '../OnboardingFlow';
+import StepButton from './StepButton';
 
 // Copy guardrails (§6b): no "best price" framing (C6 falsified), no sold-comps
 // promise here (that lands in the tail), no Mercari.
@@ -56,15 +57,9 @@ export default function SeedStep({ draft, patch, advance, busy }: StepProps) {
         ))}
       </div>
 
-      <button
-        type="button"
-        disabled={!valid || busy}
-        onClick={advance}
-        className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-        style={{ background: 'var(--accent)', color: '#fff' }}
-      >
+      <StepButton onClick={advance} disabled={!valid || busy}>
         {busy ? 'Saving…' : 'Continue'}
-      </button>
+      </StepButton>
     </div>
   );
 }

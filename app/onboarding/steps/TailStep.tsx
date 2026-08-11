@@ -8,6 +8,7 @@ import { netFlipProfit } from '@/lib/marketplaceFees';
 import type { PlatformSoldStats } from '@/lib/soldComps/types';
 import { PLATFORM_NAMES } from '@/lib/types';
 import type { PlatformKey } from '@/lib/types';
+import StepButton from './StepButton';
 
 const fmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -61,20 +62,14 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
             className="w-full rounded-xl px-4 py-3 text-sm outline-none"
             style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
           />
-          <button
-            type="button"
-            disabled={!draft.closetQuery.trim()}
-            onClick={() => setSubmittedCloset(true)}
-            className="mt-3 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: '#fff' }}
-          >
+          <StepButton onClick={() => setSubmittedCloset(true)} disabled={!draft.closetQuery.trim()} className="mt-3">
             Check it
-          </button>
+          </StepButton>
         </div>
       )}
 
       {loading && (
-        <p className="mt-6 text-sm" style={{ color: 'var(--text-dim)' }}>
+        <p className="mt-6 text-sm" aria-live="polite" style={{ color: 'var(--text-dim)' }}>
           Checking completed sales…
         </p>
       )}
@@ -112,21 +107,15 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
       )}
 
       {!loading && compQuery && data && !data.available && (
-        <p className="mt-6 text-sm" style={{ color: 'var(--text-dim)' }}>
+        <p className="mt-6 text-sm" aria-live="polite" style={{ color: 'var(--text-dim)' }}>
           Not enough completed sales for that one yet. This works best on items with a steady
           resale market.
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={busy}
-        onClick={advance}
-        className="mt-8 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-        style={{ background: 'var(--accent)', color: '#fff' }}
-      >
+      <StepButton onClick={advance} disabled={busy} className="mt-8">
         {busy ? 'Finishing…' : 'Finish'}
-      </button>
+      </StepButton>
     </div>
   );
 }

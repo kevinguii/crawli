@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { StepProps } from '../OnboardingFlow';
+import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
+import StepButton from './StepButton';
 
 const ALERT_PLATFORMS = [
   'grailed',
@@ -17,6 +19,10 @@ const ALERT_PLATFORMS = [
 export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
   const [creating, setCreating] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+
+  const sizeLabel = draft.size
+    ? [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS].find((o) => o.key === draft.size)?.label ?? draft.size
+    : null;
 
   async function createAlert() {
     setCreating(true);
@@ -62,7 +68,7 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {draft.alertCreated
           ? 'We check every morning and email you when something new matches. Check your inbox now for what matches today.'
-          : 'We check 8 marketplaces every morning and email you when something new matches.'}
+          : 'We check 8 of them every morning (eBay is search-only) and email you when something new matches.'}
       </p>
 
       <div
@@ -73,45 +79,34 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
           {draft.query}
         </span>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          {draft.size && <Chip>size {draft.size}</Chip>}
+          {sizeLabel && <Chip>size {sizeLabel}</Chip>}
           {draft.minPrice !== null && <Chip>min ${draft.minPrice}</Chip>}
           {draft.maxPrice !== null && <Chip>max ${draft.maxPrice}</Chip>}
         </div>
       </div>
 
       {failed && (
-        <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
+        <p className="mt-3 text-xs" aria-live="polite" style={{ color: 'var(--text-dim)' }}>
           {failed} You can carry on.
         </p>
       )}
 
       {!draft.alertCreated ? (
-        <button
-          type="button"
-          disabled={creating || busy}
-          onClick={createAlert}
-          className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-          style={{ background: 'var(--accent)', color: '#fff' }}
-        >
+        <StepButton onClick={createAlert} disabled={creating || busy}>
           {creating ? 'Setting it up…' : 'Create this alert'}
-        </button>
+        </StepButton>
       ) : null}
 
       {/* Always available, even if creation failed: the flow is blocking and must
           never dead-end on an upstream error. */}
-      <button
-        type="button"
-        disabled={busy || creating}
+      <StepButton
         onClick={advance}
-        className="mt-3 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-        style={{
-          background: draft.alertCreated ? 'var(--accent)' : 'transparent',
-          border: draft.alertCreated ? 'none' : '1px solid var(--border)',
-          color: draft.alertCreated ? '#fff' : 'var(--text-dim)',
-        }}
+        disabled={busy || creating}
+        variant={draft.alertCreated ? 'primary' : 'secondary'}
+        className="mt-3"
       >
         {busy ? 'Saving…' : draft.alertCreated ? 'Continue' : 'Skip for now'}
-      </button>
+      </StepButton>
     </div>
   );
 }
