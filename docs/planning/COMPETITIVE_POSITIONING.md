@@ -329,24 +329,57 @@ which opens the form pre-filled behind the normal quota gate; the first alert ru
 sends a baseline email showing what matches right now; compound criteria are exposed
 end-to-end (min + max price input, live AND-chain readout, chips on the alert card).
 A repeat-search trigger was built and reverted the same day — two states are enough.
-Measured as EXP-002 and EXP-003 in §6c.
+Measured as EXP-003 in §6c. (EXP-002 covered the CTA-prominence half and was superseded
+2026-08-10 with zero exposure — the *code* stays live, only the experiment retired.)
 
 **Still open:**
 
-**(a) Onboarding flow for new signups — DEFERRED, not built.** Both signup paths
-(password with email confirmation, and Google OAuth) route through
-`auth/callback/route.ts` and fall through to its default `next = '/search'`
-(`:8`), because neither passes a `next` param. A new user lands on a blank search box
-with alerts nowhere in sight. When picked up: pass `next=/onboarding` from both
-signup entry points (`emailRedirectTo` in the `signUp()` call at `login/page.tsx:72`,
-`redirectTo` in `signInWithOAuth()` at `:106`). **Verify, do not assume, that
-Supabase's OAuth redirect preserves an appended query param through the full round
-trip.** The `/onboarding` page offers "Search" or "Set up an alert" as equal first
-choices with an easy skip link.
+**(a) Onboarding flow — DESIGNED 2026-08-10, not yet built.** Spec:
+`docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`. Measured as EXP-001.
+
+**The evidence that shaped it.** Every searcher bucketed by first-24-hour activity:
+
+| Searches on day 1 | Users | Ever returned |
+|---|---|---|
+| 5+ | 3 | **100%** (3/3) |
+| 4 | 5 | 60% (3/5) |
+| 2-3 | 10 | 10% (1/10) |
+| 1 | 10 | **0%** (0/10) |
+
+Monotonic, cliff between 3 and 4. **This overturns the assumption that users churn
+because they exhaust the free cap.** Only 3 of 28 ever reached 5 in a week; the other
+25 quit before reaching it. They are not hitting a wall, they are leaving before they
+find one. First-session depth is the constraint, not the cap — which is further
+evidence for §1 finding 1 and against any pricing-side fix. Small n, correlational,
+and the top cohort includes the single paid user; caveats are recorded in the spec.
+
+**Design, in brief.** Branch on question 1 ("buying for yourself, or to resell?" — this
+is Step 0's survey question, finally collected). Shared spine for both branches: seed
+query → criteria (size + min/max price) → alert created, which fires the EXP-003
+baseline email. Reseller tail adds sold comps then margin-after-fees. Buyer tail adds
+one optional screen — *"got anything sitting in your closet?"* — which is the cheapest
+available on-ramp from buyer to reseller and attacks the §4 audience tension directly.
+Ends by handing off to `/search` with the query pre-filled.
+
+**Three properties worth carrying forward:**
+
+- **It costs zero searches.** `/api/sold-comps` does not charge a credit, alert creation
+  does not charge a credit, and the flow does not run a live search — it hands off. No
+  refund mechanism, no abuse surface, and **`/api/search` is not touched.**
+- **It is gated on `profiles.onboarding_completed_at IS NULL` in
+  `(protected)/layout.tsx`**, not on a redirect param. Consequences: existing accounts
+  are onboarded too (owner requirement), and **the OAuth query-param assumption this
+  section used to carry is deleted rather than tested.** `login/page.tsx` and
+  `auth/callback/route.ts` are not modified at all, so the warning below is satisfied
+  by construction.
+- **It is blocking** (owner decision): no skip, no exit until complete, all users
+  including the existing 39. `/onboarding` therefore lives outside `(protected)/` so it
+  cannot be caught by its own gate, and every step must advance even when its upstream
+  call fails — a blocking flow with a failing step is a locked account.
 
 > **Do not touch** the sign-in redirect (`login/page.tsx:69`) or the has-session
-> redirect (`:31`). Both are a separate code path, and onboarding must show for new
-> signups only, never for returning users.
+> redirect (`:31`). The flag-driven gate makes this moot, but the constraint stands if
+> anyone revisits the redirect approach.
 
 **(b) Public alert creation, no account — DEFERRED, gated on (a) and EXP-002 both
 showing alerts convert.** A landing-page form (query, platforms, email) where the
@@ -442,6 +475,31 @@ Do not re-baseline; add a new row instead, so drift stays visible.
 **The two numbers that matter most: 38% one-and-done, and 27% second-day return.**
 If a change does not move those, it did not work, regardless of how the funnel looks.
 
+#### Drift row — 2026-08-10 (added, not a re-baseline)
+
+| Metric | 2026-08-07 | 2026-08-10 |
+|---|---|---|
+| Total users | 36 | **39** |
+| Signups /30d | 17 | **20** (~0.67/day) |
+| Searchers | 26 | **28** |
+| Users with ≥1 alert | 2 | **3** (5 alerts total) |
+
+Growth is happening with no additional promotion — posting has not restarted.
+
+**New measure, first captured 2026-08-10: first-session depth.** Share of searchers who
+ever returned, by first-24-hour search count — 1 search: **0%** (0/10) · 2-3: 10% (1/10) ·
+4: 60% (3/5) · 5+: **100%** (3/3). 21 of 28 searchers (75%) were active on exactly one
+day, ever. See §5 Step 2(a).
+
+> **Counting rule, do not get this wrong.** A `search_history` row is a distinct
+> `(user_id, query, platforms, filters)` combination — the table has a UNIQUE
+> `search_history_dedupe` index, so repeats upsert. It is **not** an attempt count
+> (true repeats were never recorded and are unrecoverable) and **not** a charge count
+> (`app/api/search/route.ts:223-252` charges only when a search returns ≥1 listing, and
+> cache hits early-return before that block). 9 rows against a cap of 5 is normal.
+> The dedupe biases the depth gradient *conservatively*: a returner re-running an old
+> query moves that row's `searched_at` forward, out of their day-1 bucket.
+
 ### 6b. Claim ledger — what we may and may not say
 
 **Marketing copy may only use a claim at Validated.** Anything else is for testing,
@@ -466,8 +524,8 @@ of the record.
 #### Running
 
 ```
-### EXP-002 — alert CTA prominence + compound criteria surfacing
-Started:            2026-08-10 (open)
+### EXP-002 — alert CTA prominence + compound criteria surfacing  [SUPERSEDED]
+Started:            2026-08-10 · Superseded 2026-08-10 (see Disposition)
 Claim under test:   C3
 Hypothesis:         If the alert CTA is the primary control on the results page rather
                     than a tertiary one, and the AND-chain is legible both while
@@ -489,10 +547,18 @@ Kill criterion:     If making the alert CTA primary does not convert a meaningfu
                     share of that specific 24, alerts are not as compelling as this
                     doc assumes, and the "alerts as the front door" thesis (including
                     EXP-005) needs re-examination rather than another iteration.
-n:                  24 (pre-existing cohort), plus new signups incidentally
-Result:             pending
-Read:               pending
-Ledger update:      pending
+n:                  0 exposed. AlertCtaBanner renders only on a results page, and none
+                    of the 24 ran a search in the ~29h between ship and 2026-08-11.
+Result:             SUPERSEDED 2026-08-10 — never independently readable.
+Read:               No observation, weak or otherwise. Owner note: no traffic because
+                    posting has not restarted. **Do NOT record this as 0/24** — that
+                    would fire the kill criterion below on zero evidence and could talk
+                    the project out of the alerts thesis for no reason.
+Disposition:        Measurement folded into EXP-001, which ships to the same cohort
+                    (onboarding is blocking and applies to existing accounts too, so
+                    the two can no longer be separated). The shipped changes stay live;
+                    only the experiment is retired.
+Ledger update:      None. C3 stays "True, unadopted".
 Caveats set in advance:
   (a) CTA prominence and criteria surfacing shipped together and both act before
       alert creation. They are NOT separable — do not attribute a split.
@@ -573,20 +639,28 @@ Note:               Readable independently of EXP-002 — it acts only after an 
 
 #### Queued
 
-- **EXP-001 — onboarding flow for new signups.** Not built (Step 2a). Claim C3.
-  Primary metric: **share of new signups, from ship date forward, who create ≥1 alert
-  in their first session.** No like-for-like baseline exists — this experiment
-  establishes the number. The all-time 2/36 = 6% figure is context only, not a
-  matched baseline. **Kill criterion: if fewer than ~15-20% of new signups create an
-  alert even when it is offered as an equal first choice next to search, that is
-  evidence against the thesis — read together with EXP-002, not alone.** Nothing
-  shipped so far touches the signup path, so this stays cleanly separable from
-  EXP-002 whenever it is built.
+- **EXP-001 — onboarding flow.** Designed 2026-08-10, not yet built (Step 2a). Claim C3.
+  Spec: `docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`.
+  - **Primary metric:** share of users completing onboarding who create ≥1 alert.
+  - **Secondary:** first-session depth (against the §6a drift-row gradient) and 2nd-day
+    return (baseline 27%).
+  - **Kill criterion:** below ~15-20% alert creation, when an alert is created *as part
+    of the flow itself*, is evidence against the alerts thesis. Note this is a stronger
+    test than the original wording — alerts are no longer merely "offered as an equal
+    choice", they are the spine of the flow, so a null result here is harder to explain
+    away than it would have been.
+  - **Scope note:** onboarding is blocking and applies to existing accounts, so EXP-001
+    now absorbs the population EXP-002 was meant to measure. It is no longer separable
+    from EXP-002 and does not need to be — see that block's Disposition.
+  - **Read it against the panel-render caveat**, same as EXP-004: the reseller tail
+    renders nothing below the n ≥ 10 sold-comps floor. Instrument how often it rendered
+    before concluding anything about the tail.
 - ~~EXP-004 — sold comps in the margin panel.~~ **Shipped 2026-08-10 — moved to
   Running above.**
-- **EXP-005 — public alert creation.** Step 2b. Claim C3. **Gated on EXP-001 and
-  EXP-002 both showing alerts convert** — it does not unblock just because EXP-002
-  shipped first. Primary metric: signups, baseline ~0.57-1/day.
+- **EXP-005 — public alert creation.** Step 2b. Claim C3. **Gated on EXP-001 alone**
+  (revised 2026-08-10: EXP-002 was superseded before it produced a reading, so it can no
+  longer be part of the gate). Primary metric: signups, baseline ~0.67/day as of the
+  §6a drift row.
 
 ### 6d. How marketing follows from this
 
