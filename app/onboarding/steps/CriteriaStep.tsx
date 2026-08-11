@@ -1,6 +1,8 @@
 'use client';
 
 import type { StepProps } from '../OnboardingFlow';
+import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
+import StepButton from './StepButton';
 
 // Copy guardrail C3: this is size + minPrice + maxPrice ONLY. Brand and keywords
 // live in the query string. Never imply four independent criteria fields.
@@ -27,14 +29,24 @@ export default function CriteriaStep({ draft, patch, advance, busy }: StepProps)
       <label className="mt-6 block text-xs" style={{ color: 'var(--text-dim)' }}>
         Size
       </label>
-      <input
+      <select
         value={draft.size ?? ''}
-        onChange={(e) => patch({ size: e.target.value.trim() === '' ? null : e.target.value })}
-        placeholder="e.g. M"
-        maxLength={40}
+        onChange={(e) => patch({ size: e.target.value === '' ? null : e.target.value })}
         className="mt-1 w-full rounded-xl px-4 py-3 text-sm outline-none"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-      />
+      >
+        <option value="">Any size</option>
+        <optgroup label="Clothing">
+          {CLOTHING_SIZE_OPTIONS.map((o) => (
+            <option key={o.key} value={o.key}>{o.label}</option>
+          ))}
+        </optgroup>
+        <optgroup label="Shoes">
+          {SHOE_SIZE_OPTIONS.map((o) => (
+            <option key={o.key} value={o.key}>{o.label}</option>
+          ))}
+        </optgroup>
+      </select>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div>
@@ -43,7 +55,7 @@ export default function CriteriaStep({ draft, patch, advance, busy }: StepProps)
           </label>
           <input
             inputMode="decimal"
-            defaultValue={draft.minPrice ?? ''}
+            value={draft.minPrice ?? ''}
             onChange={(e) => patch({ minPrice: num(e.target.value) })}
             placeholder="0"
             className="mt-1 w-full rounded-xl px-4 py-3 text-sm outline-none"
@@ -56,7 +68,7 @@ export default function CriteriaStep({ draft, patch, advance, busy }: StepProps)
           </label>
           <input
             inputMode="decimal"
-            defaultValue={draft.maxPrice ?? ''}
+            value={draft.maxPrice ?? ''}
             onChange={(e) => patch({ maxPrice: num(e.target.value) })}
             placeholder="Any"
             className="mt-1 w-full rounded-xl px-4 py-3 text-sm outline-none"
@@ -71,15 +83,9 @@ export default function CriteriaStep({ draft, patch, advance, busy }: StepProps)
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={bad || busy}
-        onClick={advance}
-        className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-50"
-        style={{ background: 'var(--accent)', color: '#fff' }}
-      >
+      <StepButton onClick={advance} disabled={bad || busy}>
         {busy ? 'Saving…' : 'Continue'}
-      </button>
+      </StepButton>
     </div>
   );
 }
