@@ -99,6 +99,9 @@ Fixed 2026-07-25 for the luxury set: `filterAuthentic()` in `app/api/compare/ref
 
 ## Recent changes
 
+**2026-08-11 — Fee rates corrected in `lib/marketplaceFees.ts` + new Settings "Platform fees" table**
+Re-verified all 7 platform fee schedules against current vendor pages/fee trackers ahead of a fee-explainer video. Two were stale: eBay's FVF was still the pre-2025-02-14 13.25% (now 13.6%), and StockX's Level-1 transaction fee was 9.5% (actual levels are 9%/8.5%/8%/7.5%/7% across Level 1→5, so Level-1 default is 9%). Poshmark, Mercari, Grailed, Depop, Vinted already matched — only their `lastVerified` dates were bumped. All entries now dated 2026-08-11; `docs/reference/B2B_FEATURE_TRUTH.md` §1 table and worked example updated to match. New "Platform fees" section added to `app/(protected)/settings/page.tsx`, reading directly from `MARKETPLACE_FEES`/`FEE_PLATFORMS` (no numbers duplicated in the component) so it can't drift from the flip-margin calculator. `npx tsc --noEmit` clean; **browser check (light + dark) still outstanding**.
+
 **2026-08-10 — Sold comps shipped (Step 1) · EXP-004 running**
 Crawli now shows what items actually sold for, not just what sellers are asking. New `lib/soldComps/` (Grailed + Poshmark), `POST /api/sold-comps`, `SoldCompsPanel.tsx`, and `FlipMargin` reseeded from median sold instead of average ask — the change that makes claim C5 true. Full writeup: `docs/planning/COMPETITIVE_POSITIONING.md` §5 Step 1; spec in `docs/superpowers/specs/2026-08-10-sold-comps-design.md`.
 - **The probe overturned the planned approach.** The old plan assumed adding a `sold` flag to the Python grid extractors. Both shipped platforms are plain HTTP instead, so **the sidecar was not touched at all** — a sold-comps lookup is two requests and ~1s, against ~35s/platform for live search.

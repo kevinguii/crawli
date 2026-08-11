@@ -48,6 +48,9 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
           ? 'Completed sales, per marketplace — not just what\'s listed today.'
           : 'Type something you own. We will show you what it has been selling for.'}
       </p>
+      <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+        This is Sold Comps — you&rsquo;ll see it automatically whenever you search for an item.
+      </p>
 
       {!isReseller && !submittedCloset && (
         <div className="mt-6">
@@ -86,6 +89,11 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
             <label className="block text-xs" style={{ color: 'var(--text-dim)' }}>
               {isReseller ? 'What would you pay for it?' : 'What did you pay for it?'}
             </label>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--text-dim)' }}>
+              {isReseller
+                ? "We'll factor in marketplace fees and show what you'd actually pocket."
+                : "We'll factor in marketplace fees and show what you could pocket if you resold it."}
+            </p>
             <input
               inputMode="decimal"
               value={buyPrice}
@@ -113,8 +121,8 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
         </p>
       )}
 
-      <StepButton onClick={advance} disabled={busy} className="mt-8">
-        {busy ? 'Finishing…' : 'Finish'}
+      <StepButton onClick={advance} disabled={busy || loading} className="mt-8">
+        {busy ? 'Finishing…' : loading ? 'Checking…' : 'Finish'}
       </StepButton>
     </div>
   );

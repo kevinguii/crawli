@@ -108,6 +108,13 @@ export default function OnboardingFlow({
 
   return (
     <div>
+      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>
+        Welcome to Crawli
+      </p>
+      <p className="mt-1 mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+        A few quick questions to get you set up.
+      </p>
+
       <div className="mb-8 flex items-center gap-2">
         {Array.from({ length: ONBOARDING_TOTAL_STEPS }).map((_, i) => (
           <span
@@ -124,7 +131,6 @@ export default function OnboardingFlow({
         </p>
       )}
 
-      {/* Step components are wired in Tasks 4-7. */}
       <StepSwitch step={step} draft={draft} patch={patch} advance={advance} busy={busy} />
     </div>
   );

@@ -27,26 +27,28 @@ rate in a component.
   disabled (PerimeterX). See `HANDOFF.md` "Current state" for the live search roster.
 - **Seller-payout fees are separated from buyer-side fees.** Net profit uses seller-side only;
   buyer-side fees are stored for context (`buyerCost()`).
-- Per-platform `lastVerified` date (all `2026-06-28`) + `FEES_LAST_VERIFIED`. Shown in the UI.
+- Per-platform `lastVerified` date (all `2026-08-11`) + `FEES_LAST_VERIFIED`. Shown in the UI.
 - Exports: `MARKETPLACE_FEES`, `sellerFee()`, `sellerPayout()`, `buyerCost()`,
   `netFlipProfit()` → `{ payout, fees, netProfit, marginPct, roiPct }`, `FEE_PLATFORMS`.
 - Non-linear schedules handled via optional `computeSellerFee` override (Poshmark threshold,
   Grailed tiered commission).
 
-**Verified rates (US, default seller status, 2026-06-28 via vendor help pages + fee trackers):**
+**Verified rates (US, default seller status, 2026-08-11 via vendor help pages + fee trackers):**
 
 | Platform | Seller commission | Seller processing | Flat | Buyer-side fee |
 |---|---|---|---|---|
-| eBay | 13.25% (fashion, no Store) | included in FVF | $0.40/order (>$10) | none |
+| eBay | 13.6% (fashion, no Store) | included in FVF | $0.40/order (>$10) | none |
 | Poshmark | flat $2.95 under $15, else 20% | none | — | none |
 | Mercari | 10% (item + buyer-paid shipping) | none | — | 3.6% buyer protection |
 | Grailed | 9% (≥$120) / 6% min $1.99 (<$120) | 3.49% | $0.49 | none (free for buyers) |
 | Depop | 0% (US/UK) | 3.3% | $0.45 | up to 5% + up to $1 |
 | Vinted | 0% (no seller fees) | none | — | ~5% + $0.70 buyer protection |
-| StockX | 9.5% (Level 1) → 8% (Level 4) | 3% | — | none |
+| StockX | 9% (Level 1) → 7% (Level 5) | 3% | — | none |
 
 Caveats live in each entry's `notes` (store subs, international/non-onboarded Grailed rates,
-StockX ship-to-auth ~$5, Depop boosted listings 12%).
+StockX ship-to-auth ~$5, Depop boosted listings 12%). eBay rate corrected 2026-08-11 (was stale
+at the pre-2025-02-14 13.25%); StockX Level 1 corrected from 9.5% to the actual 9% (levels run
+9% / 8.5% / 8% / 7.5% / 7% across Level 1 → 5, not 9.5% → 8%).
 
 **UI:** `app/components/PriceSummary.tsx` gained a collapsible "Suggested flip margin" panel
 (mounted where PriceSummary already renders in `ResultsDisplay.tsx`). Inputs: sourcing price,
@@ -54,8 +56,9 @@ destination platform (7), editable resale price defaulting to the search's avera
 switch to high). Outputs net profit / margin % / ROI %, a fee breakdown line, and the
 `lastVerified` date. Recomputed client-side. Light + dark verified.
 
-Verified live: eBay sourcing $40 / resale $100 → fees $13.65, payout $86.35, net $46.35,
-margin 46%, ROI 116%. Depop same inputs → fees $3.75, net $56.25, ROI 141%. Both match hand calc.
+Recomputed from the formula after the 2026-08-11 rate fix: eBay sourcing $40 / resale $100 →
+fees $14.00, payout $86.00, net $46.00, margin 46%, ROI 115%. Depop same inputs (unchanged) →
+fees $3.75, net $56.25, ROI 141%. Both match hand calc; still needs a manual browser check.
 
 ---
 

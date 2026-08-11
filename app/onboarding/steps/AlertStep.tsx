@@ -67,9 +67,15 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {draft.alertCreated
-          ? 'We check every morning and email you when something new matches. Check your inbox now for what matches today.'
+          ? "We're running your first search now — check your inbox in a few minutes for what matches today. After that, we check every morning and email you when something new shows up."
           : 'We check 8 of them every morning (eBay is search-only) and email you when something new matches.'}
       </p>
+
+      {draft.alertCreated && (
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+          You can find and manage this (and any future alerts) from the Alerts tab.
+        </p>
+      )}
 
       <div
         className="mt-6 rounded-2xl px-4 py-4"

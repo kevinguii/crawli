@@ -12,7 +12,7 @@
  *    the value AND the date in the same edit, and note the source in docs/reference/B2B_FEATURE_TRUTH.md.
  *
  * Rates below are US-market, default (non-store / Level-1 / non-boosted) seller
- * status, verified via vendor help pages + fee trackers on 2026-06-28. Scope and
+ * status, verified via vendor help pages + fee trackers on 2026-08-11. Scope and
  * caveats live in each entry's `notes`. See docs/reference/B2B_FEATURE_TRUTH.md for sources.
  */
 
@@ -46,7 +46,7 @@ export interface PlatformFee {
   notes?: string;
 }
 
-export const FEES_LAST_VERIFIED = '2026-06-28';
+export const FEES_LAST_VERIFIED = '2026-08-11';
 
 export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
   ebay: {
@@ -54,15 +54,16 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     // Fashion final value fee, US seller without a Store subscription. FVF is
     // inclusive of payment processing on eBay Managed Payments, so there is no
     // separate processing %. Per-order fee is $0.40 for orders over $10
-    // ($0.30 at/under $10) — we use $0.40 as the common case.
-    sellerCommissionPct: 0.1325,
+    // ($0.30 at/under $10) — we use $0.40 as the common case. Rate raised from
+    // 13.25% to 13.6% for most categories effective 2025-02-14.
+    sellerCommissionPct: 0.136,
     sellerProcessingPct: 0,
     sellerProcessingFlat: 0.4,
     buyerFeePct: 0,
     buyerFeeFlat: 0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
-      'Clothing/fashion, no Store sub. FVF 13.25% + $0.40/order (>$10). Store subs and some categories differ. Buyer pays no platform fee.',
+      'Clothing/fashion, no Store sub. FVF 13.6% + $0.40/order (>$10). Store subs and some categories (jewelry/watches 15%, books/media 15.3%) differ. Buyer pays no platform fee.',
   },
 
   poshmark: {
@@ -74,7 +75,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     computeSellerFee: (salePrice) => (salePrice < 15 ? 2.95 : salePrice * 0.2),
     buyerFeePct: 0,
     buyerFeeFlat: 0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
       'Flat $2.95 under $15, else 20%. Prepaid USPS Priority label (≤5lb) included. No buyer-side platform fee.',
   },
@@ -88,7 +89,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     sellerProcessingFlat: 0,
     buyerFeePct: 0.036,
     buyerFeeFlat: 0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
       '10% seller fee on item + buyer-paid shipping; no seller processing fee. Buyer pays 3.6% protection fee.',
   },
@@ -109,7 +110,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     },
     buyerFeePct: 0,
     buyerFeeFlat: 0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
       'Commission 9% (≥$120) / 6% min $1.99 (<$120) + Stripe 3.49% + $0.49 (US domestic, onboarded). International/non-onboarded rates higher. Free for buyers.',
   },
@@ -124,7 +125,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     sellerProcessingFlat: 0.45,
     buyerFeePct: 0.05,
     buyerFeeFlat: 1.0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
       'US/UK $0 commission; seller pays processing 3.3% + $0.45. Buyer marketplace fee up to 5% + up to $1. Non-US/UK sellers still pay 10% commission. Optional Boosted Listings 12%.',
   },
@@ -138,25 +139,25 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     sellerProcessingFlat: 0,
     buyerFeePct: 0.05,
     buyerFeeFlat: 0.7,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
       'No seller fees at all — listing price is the payout. Buyer pays ~5% + $0.70 Buyer Protection.',
   },
 
   stockx: {
     label: 'StockX',
-    // Verified Marketplace seller: transaction fee by level (9.5% at Level 1,
-    // down to 8.0% at Level 4) + flat 3% payment processing. We use the Level-1
-    // default 9.5%. Shipping-to-authentication is a separate flat cost the
+    // Verified Marketplace seller: transaction fee by level (9% at Level 1,
+    // down to 7% at Level 5) + flat 3% payment processing. We use the Level-1
+    // default 9%. Shipping-to-authentication is a separate flat cost the
     // reseller can add manually; not modeled as a % here.
-    sellerCommissionPct: 0.095,
+    sellerCommissionPct: 0.09,
     sellerProcessingPct: 0.03,
     sellerProcessingFlat: 0,
     buyerFeePct: 0,
     buyerFeeFlat: 0,
-    lastVerified: '2026-06-28',
+    lastVerified: '2026-08-11',
     notes:
-      'Level-1 default: 9.5% transaction + 3% processing = 12.5%. Drops to 8% transaction at Level 4 (50+ sales). Excludes ~$5 ship-to-auth. Buyer pays no transaction %.',
+      'Level-1 default: 9% transaction + 3% processing = 12%. Drops in 0.5pt steps to 7% transaction at Level 5 (top tier). Excludes flat $5 US shipping fee. Buyer pays no transaction %.',
   },
 };
 

@@ -9,6 +9,12 @@ import { markIntentionalSignOut } from '@/app/components/shell/nav-hooks';
 import { PLATFORM_DOMAINS, PLATFORM_NAMES } from '@/lib/types';
 import { platformStyle } from '@/app/components/platformColors';
 import { createClient } from '@/lib/supabase/client';
+import {
+  FEE_PLATFORMS,
+  FEES_LAST_VERIFIED,
+  MARKETPLACE_FEES,
+  type PlatformFee,
+} from '@/lib/marketplaceFees';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
 const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS).sort((a, b) => {
@@ -52,6 +58,27 @@ function Row({ label, sublabel, children }: { label: string; sublabel?: string; 
       <div className="min-w-0 sm:text-right">{children}</div>
     </div>
   );
+}
+
+// ── Platform fee table formatting ──────────────────────────────────────────
+/** e.g. 0.136 → "13.6%". Strips trailing zeros so 0.09 → "9%" not "9.00%". */
+function pct(n: number): string {
+  return `${Number((n * 100).toFixed(2))}%`;
+}
+
+function formatSellerLine(fee: PlatformFee): string {
+  const parts: string[] = [];
+  if (fee.sellerCommissionPct > 0) parts.push(pct(fee.sellerCommissionPct));
+  if (fee.sellerProcessingPct > 0) parts.push(pct(fee.sellerProcessingPct));
+  if (fee.sellerProcessingFlat > 0) parts.push(`$${fee.sellerProcessingFlat.toFixed(2)}`);
+  return parts.length ? parts.join(' + ') : 'Free';
+}
+
+function formatBuyerLine(fee: PlatformFee): string {
+  const parts: string[] = [];
+  if (fee.buyerFeePct > 0) parts.push(pct(fee.buyerFeePct));
+  if (fee.buyerFeeFlat > 0) parts.push(`$${fee.buyerFeeFlat.toFixed(2)}`);
+  return parts.length ? parts.join(' + ') : '—';
 }
 
 // ── Delete confirmation modal ──────────────────────────────────────────────
@@ -295,13 +322,13 @@ export default function SettingsPage() {
               {email ?? '-'}
             </span>
           </Row>
-          <Row label="Setup walkthrough" sublabel="Walk through alerts, criteria and sold prices again">
+          <Row label="Onboarding" sublabel="Retake the quick setup steps for alerts, criteria and sold prices">
             <Link
               href="/onboarding?replay=1"
               className="rounded-xl px-3 py-2 text-sm"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
             >
-              Redo setup
+              Redo onboarding
             </Link>
           </Row>
         </Section>
@@ -553,6 +580,58 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        </Section>
+
+        {/* ── Platform fees ── */}
+        <Section
+          title="Platform fees"
+          description="What each marketplace takes from a sale — the same fee data behind the flip margin calculator."
+        >
+          <div className="overflow-x-auto pt-1">
+            <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  <th className="py-2 pr-4 text-left font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Platform
+                  </th>
+                  <th className="py-2 pr-4 text-left font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Seller pays
+                  </th>
+                  <th className="py-2 pr-4 text-left font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Buyer pays
+                  </th>
+                  <th className="hidden py-2 text-left font-medium sm:table-cell" style={{ color: 'var(--text-muted)' }}>
+                    Notes
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {FEE_PLATFORMS.map((p) => {
+                  const fee = MARKETPLACE_FEES[p];
+                  return (
+                    <tr key={p} style={{ borderTop: '1px solid var(--border)' }}>
+                      <td className="whitespace-nowrap py-3 pr-4 font-medium" style={{ color: 'var(--text)' }}>
+                        {fee.label}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-4" style={{ color: 'var(--text)' }}>
+                        {formatSellerLine(fee)}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-4" style={{ color: 'var(--text-muted)' }}>
+                        {formatBuyerLine(fee)}
+                      </td>
+                      <td className="hidden py-3 text-xs leading-relaxed sm:table-cell" style={{ color: 'var(--text-muted)' }}>
+                        {fee.notes}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-[11px]" style={{ color: 'var(--text-dim)' }}>
+            Rates verified {FEES_LAST_VERIFIED}. US market, standard (non-Store / Level-1 / non-boosted) seller
+            status — see the Notes column for tiers and exceptions.
+          </p>
         </Section>
 
         {/* ── Legal ── */}
