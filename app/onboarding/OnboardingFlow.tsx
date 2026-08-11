@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   nextStep,
+  prevStep,
   stepIndex,
   ONBOARDING_TOTAL_STEPS,
   type OnboardingPersona,
@@ -104,6 +105,16 @@ export default function OnboardingFlow({
     setBusy(false);
   }, [step, draft.persona, draft.query, router]);
 
+  // Once the alert is live, earlier answers (query/size/price) can no longer
+  // change what was already created — there is no edit-on-navigate, only a
+  // fresh POST, and re-running that would create a duplicate. So back stays
+  // available everywhere except leaving the alert screen backwards once it
+  // exists; reviewing tail -> alert is still fine, nothing there is editable.
+  const canGoBack = step !== 'branch' && !(step === 'alert' && draft.alertCreated);
+  const back = useCallback(() => {
+    setStep((s) => prevStep(s));
+  }, []);
+
   const idx = stepIndex(step);
 
   return (
@@ -129,6 +140,21 @@ export default function OnboardingFlow({
         <p className="mb-4 text-xs" style={{ color: 'var(--text-dim)' }}>
           Redoing setup. Your existing alerts are untouched.
         </p>
+      )}
+
+      {canGoBack && (
+        <button
+          type="button"
+          onClick={back}
+          disabled={busy}
+          className="mb-4 flex items-center gap-1 text-xs font-medium disabled:opacity-50"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back
+        </button>
       )}
 
       <StepSwitch step={step} draft={draft} patch={patch} advance={advance} busy={busy} />

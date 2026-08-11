@@ -20,10 +20,11 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 |---|---|
 | **Step 0 — audience validation** | **skipped 2026-08-10, owner decision.** See the note under Step 1. |
 | **Step 1 — sold comps (Grailed + Poshmark)** | **shipped 2026-08-10** · EXP-004 running. Mercari and ThredUp dropped on probe evidence. |
-| Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 running |
-| Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002 |
+| Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 superseded (0 exposure, folded into EXP-001) |
+| Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002, now EXP-001 |
 | Step 2 — baseline email on first alert run | shipped 2026-08-10 · EXP-003 running |
-| **Step 2 — onboarding flow for new signups** | **shipped 2026-08-10** · EXP-001 running |
+| **Step 2 — onboarding flow for new signups** | **shipped 2026-08-10, polished 2026-08-11** · EXP-001 running |
+| Step 2 — sold comps spun off to standalone `/price-check` | shipped 2026-08-11, not a separate experiment |
 | **Step 2 — public alert creation** | **deferred + gated** on EXP-001 and EXP-002 · EXP-005 |
 | Step 3 — stop writing blog posts | standing instruction |
 | **Step 4 — rewrite positioning** | **unblocked 2026-08-10** — Step 1 shipped. Gated on C1 reaching Validated. |
@@ -382,6 +383,43 @@ Ends by handing off to `/search` with the query pre-filled.
 > redirect (`:31`). The flag-driven gate makes this moot, but the constraint stands if
 > anyone revisits the redirect approach.
 
+**Post-ship iteration, 2026-08-11 — same flow, owner walked it live.** Manual
+walkthrough surfaced gaps no task-level review could catch, because they're about
+whether the flow *feels* coherent, not whether any single screen is correct:
+
+- **No framing that this was onboarding at all.** Fixed with a persistent "Welcome to
+  Crawli — a few quick questions to get you set up" header, shown on every screen.
+- **Alert-created copy implied the inbox was ready instantly** ("check your inbox now")
+  when the baseline email actually takes a few minutes. Reworded, and the screen now
+  also says explicitly where the alert lives afterward ("find this alert, edit its
+  criteria, or create more from the Alerts tab") — the flow builds something and then
+  should say where it went, not leave the user to guess.
+- **No way back.** Added `prevStep()` to `lib/onboarding.ts` and a back link in
+  `OnboardingFlow.tsx`'s shared chrome, working across all 5 screens with one
+  deliberate lock: once the alert exists, you can still go `tail → alert` to review it,
+  but not further back to `criteria`/`seed`/`branch`. There is no edit-on-navigate, only
+  a fresh `POST`, so editing upstream answers after creation would either desync the
+  live alert from what's on screen or silently create a duplicate against the 2-alert
+  free cap. Back navigation never persists (`onboarding_step` only advances forward),
+  so resume-after-close still lands at the furthest step actually reached.
+- **The bigger finding: sold comps was search-locked for no real reason.**
+  `/api/sold-comps` is a free-standing, no-credit endpoint — the buyer tail's "got
+  anything in your closet?" screen already proved you can look up a price with nothing
+  but a typed query, no live search involved. Yet the only way to see it in the shipped
+  app was to run a search first and scroll to `PriceSummary`. Spun the
+  panel-plus-buy-price-plus-margin-calc UI out into a shared
+  `app/components/SoldCompsLookup.tsx` (fetching stays with each caller via
+  `useSoldComps`, so a caller like `TailStep` keeps control of its own loading UI — the
+  component only renders) and added a new standalone nav destination, **Price Check**
+  (`app/(protected)/price-check/page.tsx`, `AppSidebar.tsx`'s `NAV_ITEMS`), so checking
+  what something sells for no longer requires a search at all. The buy-price input now
+  links to Settings' "Platform fees" table (`/settings#platform-fees`) to show where
+  the margin numbers come from — opened in a new tab, since a same-tab link from inside
+  the still-gated onboarding flow would bounce an unfinished user back through the gate
+  and lose whatever they'd typed (see PITFALLS).
+- Settings' "Redo setup" row relabelled **"Onboarding"** (former label read as generic
+  product docs, not "retake this specific thing").
+
 **(b) Public alert creation, no account — DEFERRED, gated on (a) and EXP-002 both
 showing alerts convert.** A landing-page form (query, platforms, email) where the
 confirmation email *is* the signup. The economic logic holds: an alert costs almost
@@ -647,18 +685,25 @@ Hypothesis:         If every account, new and existing, is blocked into a
                     creation before the app is reachable, then the share of
                     users who ever create an alert moves off the "still 2
                     users" baseline noted against C3 in §6b.
-Shipped:            lib/onboarding.ts (state machine) · four profiles.onboarding_*
-                    columns — _persona, _started_at, _completed_at (the gate),
-                    _step (docs/migrations/onboarding-columns.sql) ·
-                    PATCH /api/onboarding · gate in (protected)/layout.tsx ·
+Shipped:            lib/onboarding.ts (state machine, incl. prevStep for back
+                    navigation) · four profiles.onboarding_* columns —
+                    _persona, _started_at, _completed_at (the gate), _step
+                    (docs/migrations/onboarding-columns.sql) · PATCH
+                    /api/onboarding · gate in (protected)/layout.tsx ·
                     /onboarding page, deliberately outside (protected)/ so it
                     cannot catch itself · OnboardingFlow.tsx client state
-                    machine · steps/{BranchStep,SeedStep,CriteriaStep,
-                    AlertStep,TailStep}.tsx, persona-tailored, calling only
-                    the existing free POST /api/sold-comps and POST
-                    /api/saved-searches — never /api/search · settings/page.tsx
-                    "Redo setup" row (/onboarding?replay=1) ·
-                    scripts/verify-onboarding.mts (unit + live auth-gate check)
+                    machine, back nav across all 5 screens locked only once
+                    the alert exists · steps/{BranchStep,SeedStep,
+                    CriteriaStep,AlertStep,TailStep}.tsx, persona-tailored,
+                    calling only the existing free POST /api/sold-comps and
+                    POST /api/saved-searches — never /api/search ·
+                    settings/page.tsx "Onboarding" row (/onboarding?replay=1)
+                    · scripts/verify-onboarding.mts (unit + live auth-gate
+                    check). 2026-08-11: sold comps also spun off into a
+                    standalone /price-check nav destination sharing
+                    app/components/SoldCompsLookup.tsx with TailStep — not
+                    part of this experiment's measurement, noted here only
+                    because it shares code with the tail screen.
 Primary metric:     Share of users completing onboarding who create ≥1 alert.
 Secondary:          first-session depth (against the §6a drift-row gradient) and
                     2nd-day return (baseline 27%).

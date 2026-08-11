@@ -63,7 +63,7 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
   return (
     <div>
       <h1 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>
-        {draft.alertCreated ? 'Your alert is live' : 'Get told when one shows up'}
+        {draft.alertCreated ? 'Your alert is live' : 'Set up an alert'}
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {draft.alertCreated
@@ -73,7 +73,7 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
 
       {draft.alertCreated && (
         <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-          You can find and manage this (and any future alerts) from the Alerts tab.
+          You can find this alert, edit its criteria, or create more from the Alerts tab.
         </p>
       )}
 

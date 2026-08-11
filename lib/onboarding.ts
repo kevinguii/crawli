@@ -54,3 +54,12 @@ export function stepFromIndex(i: number): OnboardingStepId {
   if (!Number.isInteger(i) || i < 0 || i >= ONBOARDING_STEPS.length) return 'branch';
   return ONBOARDING_STEPS[i];
 }
+
+/** Linear retreat, the inverse of nextStep. Clamps at 'branch' — there is
+ *  nothing before the first screen. Local navigation only: going back does
+ *  not persist, so a resume-after-close still lands at the furthest step
+ *  actually reached, not wherever the user last backed up to. */
+export function prevStep(step: OnboardingStepId): OnboardingStepId {
+  const i = stepIndex(step);
+  return ONBOARDING_STEPS[Math.max(i - 1, 0)];
+}

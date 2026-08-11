@@ -27,10 +27,11 @@ const ALL_PLATFORMS = Object.keys(PLATFORM_DOMAINS).sort((a, b) => {
 });
 
 // ── Section wrapper ────────────────────────────────────────────────────────
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({ id, title, description, children }: { id?: string; title: string; description?: string; children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl px-6 py-6"
+      id={id}
+      className="rounded-2xl px-6 py-6 scroll-mt-6"
       style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}
     >
       <div className="mb-4">
@@ -584,6 +585,7 @@ export default function SettingsPage() {
 
         {/* ── Platform fees ── */}
         <Section
+          id="platform-fees"
           title="Platform fees"
           description="What each marketplace takes from a sale — the same fee data behind the flip margin calculator."
         >

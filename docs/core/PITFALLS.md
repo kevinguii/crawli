@@ -189,7 +189,22 @@ Next.js auto-loads root `instrumentation-client.ts` — it needs no import anywh
 `/onboarding`. `/onboarding` is deliberately **outside** `app/(protected)/` so it
 cannot catch itself — moving it inside creates an infinite redirect that locks every
 user out of the entire app. Any new step added to the flow must advance even when its
-upstream call fails, for the same reason.
+upstream call fails, for the same reason. `OnboardingFlow.tsx`'s own back navigation
+(`prevStep()` in `lib/onboarding.ts`) is safe against this because it never persists —
+it only moves local `step` state, so closing the tab mid-back-navigation still resumes
+at the furthest step actually reached via `onboarding_step`, never at a stale local
+position.
+
+**Any link rendered inside an onboarding screen must open in a new tab.** A plain
+`<Link>` to any `(protected)/*` route (e.g. `/settings`) navigates the current tab away
+from `/onboarding`, and since the destination is itself gated on
+`onboarding_completed_at`, a user who hasn't finished yet gets bounced straight back to
+`/onboarding` — silently discarding whatever they'd typed into that step's local state
+(e.g. a buy-price value in `TailStep`/`SoldCompsLookup`). `SoldCompsLookup.tsx`'s
+"See the fee breakdown" link to `/settings#platform-fees` uses `target="_blank"
+rel="noopener noreferrer"` for exactly this reason — it's shared with the onboarding
+tail step, not just the standalone `/price-check` page where a same-tab link would be
+fine.
 
 ---
 

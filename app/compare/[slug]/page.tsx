@@ -286,15 +286,31 @@ export default async function ComparePage({ params }: Props) {
             name: item.name,
             description: `Cross-platform resale price comparison for ${item.name} across ${offersWithData.length} marketplaces.`,
             ...(item.category ? { category: item.category } : {}),
+            // datePublished/dateModified give AI crawlers a machine-readable
+            // freshness signal — the page already shows "Updated Xh ago" to
+            // users via latestScrape, but that string alone isn't parsed as a
+            // date. publisher stands in for author: this is live scraped
+            // market data, not an authored opinion piece, so an Organization
+            // credit is accurate where a Person byline would not be.
+            datePublished: item.created_at,
+            ...(latestScrape ? { dateModified: latestScrape } : {}),
+            // Inlined rather than an `@id` reference to /#organization — that
+            // entity is only declared in the landing page's JSON-LD graph, and
+            // this page's structured data must resolve standalone.
+            publisher: { '@type': 'Organization', name: 'Crawli', url: SITE_URL },
             offers: {
               '@type': 'AggregateOffer',
               priceCurrency: 'USD',
               lowPrice: Math.min(...allLows),
               highPrice: Math.max(...allHighs),
               offerCount: totalOfferCount,
+              // No per-offer `name` here — schema.org doesn't require one, and
+              // repeating the full item name once per platform (8x) was the
+              // main driver behind a "keyword stuffing" flag from GEO audits.
+              // The platform's identity is already conveyed by its position
+              // in the offers array plus the surrounding page structure.
               offers: offersWithData.map((s) => ({
                 '@type': 'Offer',
-                name: `${item.name} on ${PLATFORM_NAMES[s.platform] ?? s.platform}`,
                 url: `${SITE_URL}/compare/${item.slug}`,
                 lowPrice: s.min_price_usd,
                 highPrice: s.max_price_usd,

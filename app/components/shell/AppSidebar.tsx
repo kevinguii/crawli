@@ -22,6 +22,14 @@ function BellIcon() {
     </svg>
   );
 }
+function TagIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L3 3v6.59a2 2 0 0 0 .59 1.41l9.59 9.59a2 2 0 0 0 2.82 0l4.59-4.59a2 2 0 0 0 0-2.82Z" />
+      <circle cx="7.5" cy="7.5" r="1.5" />
+    </svg>
+  );
+}
 function HeartIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -49,6 +57,7 @@ function HomeIcon() {
 const NAV_ITEMS = [
   { href: '/search', label: 'Search', Icon: SearchIcon },
   { href: '/alerts', label: 'Alerts', Icon: BellIcon, badge: true as const },
+  { href: '/price-check', label: 'Price Check', Icon: TagIcon },
   { href: '/saves', label: 'Saves', Icon: HeartIcon },
   { href: '/search-history', label: 'History', Icon: ClockIcon },
 ];
