@@ -11,6 +11,8 @@ import {
 } from '@/lib/onboarding';
 import BranchStep from './steps/BranchStep';
 import SeedStep from './steps/SeedStep';
+import CriteriaStep from './steps/CriteriaStep';
+import AlertStep from './steps/AlertStep';
 
 export interface OnboardingDraft {
   persona: OnboardingPersona | null;
@@ -133,6 +135,10 @@ function StepSwitch({ step, ...rest }: StepProps & { step: OnboardingStepId }) {
       return <BranchStep {...rest} />;
     case 'seed':
       return <SeedStep {...rest} />;
+    case 'criteria':
+      return <CriteriaStep {...rest} />;
+    case 'alert':
+      return <AlertStep {...rest} />;
     default:
       return (
         <button
