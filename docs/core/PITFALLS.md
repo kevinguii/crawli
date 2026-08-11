@@ -184,6 +184,13 @@ Puppeteer's postinstall downloads Chrome and extracts it with `unzip` — if mis
 **Only one Sentry client entry point: `instrumentation-client.ts` (fixed 2026-07-08)**
 Next.js auto-loads root `instrumentation-client.ts` — it needs no import anywhere. The original Sentry install (commit `5f9f39b`) also left a legacy `sentry.client.config.ts` wired in via `app/sentry-provider.tsx`, so Sentry was initializing twice per pageload with two different, conflicting configs (the stale one ran `tracesSampleRate: 1` + `sendDefaultPii: true` unconditionally, overriding the intended prod value of `0.1`). Confirmed via a real `next build`: `.next/static/chunks/*.js` contained both configs' distinctive strings in one ~204 KB chunk — this is very likely what PageSpeed Insights was flagging as "~188 KiB unused JavaScript" on the homepage. Removed `sentry.client.config.ts` and `app/sentry-provider.tsx`; the conservative settings (env DSN, `tracesSampleRate: 0.1` in prod) now live solely in `instrumentation-client.ts`. If Sentry needs client config again, edit that file only — do not reintroduce `sentry.client.config.ts` or a wrapper component that imports it.
 
+**Onboarding gate is blocking and lives in `(protected)/layout.tsx`.** While
+`profiles.onboarding_completed_at` is null, every protected route redirects to
+`/onboarding`. `/onboarding` is deliberately **outside** `app/(protected)/` so it
+cannot catch itself — moving it inside creates an infinite redirect that locks every
+user out of the entire app. Any new step added to the flow must advance even when its
+upstream call fails, for the same reason.
+
 ---
 
 ## Content / marketing

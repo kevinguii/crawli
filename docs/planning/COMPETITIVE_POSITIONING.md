@@ -23,7 +23,7 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 | Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 running |
 | Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002 |
 | Step 2 — baseline email on first alert run | shipped 2026-08-10 · EXP-003 running |
-| **Step 2 — onboarding flow for new signups** | **deferred 2026-08-10, not built** · EXP-001 |
+| **Step 2 — onboarding flow for new signups** | **shipped 2026-08-10** · EXP-001 running |
 | **Step 2 — public alert creation** | **deferred + gated** on EXP-001 and EXP-002 · EXP-005 |
 | Step 3 — stop writing blog posts | standing instruction |
 | **Step 4 — rewrite positioning** | **unblocked 2026-08-10** — Step 1 shipped. Gated on C1 reaching Validated. |
@@ -334,8 +334,9 @@ Measured as EXP-003 in §6c. (EXP-002 covered the CTA-prominence half and was su
 
 **Still open:**
 
-**(a) Onboarding flow — DESIGNED 2026-08-10, not yet built.** Spec:
-`docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`. Measured as EXP-001.
+**(a) Onboarding flow — SHIPPED 2026-08-10.** Spec:
+`docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`. Measured as EXP-001,
+now Running in §6c.
 
 **The evidence that shaped it.** Every searcher bucketed by first-24-hour activity:
 
@@ -637,24 +638,54 @@ Note:               Readable independently of EXP-002 — it acts only after an 
                     exists, whatever caused the user to create one.
 ```
 
+```
+### EXP-001 — onboarding flow
+Started:            2026-08-10 (open)
+Claim under test:   C3
+Hypothesis:         If every account, new and existing, is blocked into a
+                    persona-branched flow whose shared spine ends in alert
+                    creation before the app is reachable, then the share of
+                    users who ever create an alert moves off the "still 2
+                    users" baseline noted against C3 in §6b.
+Shipped:            lib/onboarding.ts (state machine) · four profiles.onboarding_*
+                    columns — _persona, _started_at, _completed_at (the gate),
+                    _step (docs/migrations/onboarding-columns.sql) ·
+                    PATCH /api/onboarding · gate in (protected)/layout.tsx ·
+                    /onboarding page, deliberately outside (protected)/ so it
+                    cannot catch itself · OnboardingFlow.tsx client state
+                    machine · steps/{BranchStep,SeedStep,CriteriaStep,
+                    AlertStep,TailStep}.tsx, persona-tailored, calling only
+                    the existing free POST /api/sold-comps and POST
+                    /api/saved-searches — never /api/search · settings/page.tsx
+                    "Redo setup" row (/onboarding?replay=1) ·
+                    scripts/verify-onboarding.mts (unit + live auth-gate check)
+Primary metric:     Share of users completing onboarding who create ≥1 alert.
+Secondary:          First-session depth (against the §6a drift-row gradient)
+                    and 2nd-day return, baseline 27% (6a).
+Kill criterion:     Below ~15-20% alert creation, when an alert is created *as
+                    part of the flow itself*, is evidence against the alerts
+                    thesis. Note this is a stronger test than the original
+                    wording — alerts are no longer merely "offered as an equal
+                    choice", they are the spine of the flow, so a null result
+                    here is harder to explain away than it would have been.
+n:                  every new signup + all 39 pre-existing accounts, from
+                    2026-08-10 forward
+Result:             pending
+Read:               pending
+Ledger update:      pending
+Scope note:         Onboarding is blocking and applies to existing accounts, so
+                    EXP-001 absorbs the population EXP-002 was meant to
+                    measure. It is no longer separable from EXP-002 and does
+                    not need to be — see that block's Disposition.
+Caveats set in advance:
+  (a) Read it against the panel-render caveat, same as EXP-004: the reseller
+      tail renders nothing below the n ≥ 10 sold-comps floor. Instrument how
+      often it rendered before concluding anything about the tail.
+```
+
 #### Queued
 
-- **EXP-001 — onboarding flow.** Designed 2026-08-10, not yet built (Step 2a). Claim C3.
-  Spec: `docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`.
-  - **Primary metric:** share of users completing onboarding who create ≥1 alert.
-  - **Secondary:** first-session depth (against the §6a drift-row gradient) and 2nd-day
-    return (baseline 27%).
-  - **Kill criterion:** below ~15-20% alert creation, when an alert is created *as part
-    of the flow itself*, is evidence against the alerts thesis. Note this is a stronger
-    test than the original wording — alerts are no longer merely "offered as an equal
-    choice", they are the spine of the flow, so a null result here is harder to explain
-    away than it would have been.
-  - **Scope note:** onboarding is blocking and applies to existing accounts, so EXP-001
-    now absorbs the population EXP-002 was meant to measure. It is no longer separable
-    from EXP-002 and does not need to be — see that block's Disposition.
-  - **Read it against the panel-render caveat**, same as EXP-004: the reseller tail
-    renders nothing below the n ≥ 10 sold-comps floor. Instrument how often it rendered
-    before concluding anything about the tail.
+- ~~EXP-001 — onboarding flow.~~ **Shipped 2026-08-10 — moved to Running above.**
 - ~~EXP-004 — sold comps in the margin panel.~~ **Shipped 2026-08-10 — moved to
   Running above.**
 - **EXP-005 — public alert creation.** Step 2b. Claim C3. **Gated on EXP-001 alone**
