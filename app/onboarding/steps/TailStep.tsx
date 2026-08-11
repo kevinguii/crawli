@@ -6,6 +6,7 @@ import { useSoldComps } from '@/lib/hooks/useSoldComps';
 import SoldCompsPanel from '@/app/components/SoldCompsPanel';
 import { netFlipProfit } from '@/lib/marketplaceFees';
 import type { PlatformSoldStats } from '@/lib/soldComps/types';
+import { PLATFORM_NAMES } from '@/lib/types';
 import type { PlatformKey } from '@/lib/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
@@ -39,11 +40,11 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
   return (
     <div>
       <h1 className="text-2xl font-semibold" style={{ color: 'var(--text)' }}>
-        {isReseller ? 'What these actually sell for' : 'Got anything sitting in your closet?'}
+        {isReseller ? 'What these have been selling for' : 'Got anything sitting in your closet?'}
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {isReseller
-          ? 'Completed sales, per marketplace. Asking prices tell you what sellers want; these tell you what buyers paid.'
+          ? 'Completed sales, per marketplace — not just what\'s listed today.'
           : 'Type something you own. We will show you what it has been selling for.'}
       </p>
 
@@ -102,7 +103,7 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
 
           {flip && stats && (
             <p className="mt-3 text-sm" style={{ color: 'var(--text)' }}>
-              Sell at the {stats.platform} median of {fmt.format(stats.medianPrice)} and you keep{' '}
+              Sell at the {PLATFORM_NAMES[stats.platform] ?? stats.platform} median of {fmt.format(stats.medianPrice)} and you keep{' '}
               <strong>{fmt.format(flip.payout)}</strong> after fees, netting{' '}
               <strong>{fmt.format(flip.netProfit)}</strong>.
             </p>
