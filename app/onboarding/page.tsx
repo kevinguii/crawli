@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { stepFromIndex, needsOnboarding } from '@/lib/onboarding';
 import type { OnboardingPersona } from '@/lib/onboarding';
+import OnboardingFlow from './OnboardingFlow';
 
 export default async function OnboardingPage({
   searchParams,
@@ -39,12 +40,11 @@ export default async function OnboardingPage({
   return (
     <main className="min-h-dvh" style={{ background: 'var(--bg)' }}>
       <div className="mx-auto w-full max-w-xl px-5 py-10">
-        {/* Replaced by <OnboardingFlow /> in Task 3. */}
-        <p style={{ color: 'var(--text)' }}>
-          Onboarding shell. step={initialStep} persona=
-          {(profile?.onboarding_persona as OnboardingPersona | null) ?? 'none'} replay=
-          {String(isReplay)}
-        </p>
+        <OnboardingFlow
+          initialStep={initialStep}
+          initialPersona={(profile?.onboarding_persona as OnboardingPersona | null) ?? null}
+          replay={isReplay}
+        />
       </div>
     </main>
   );
