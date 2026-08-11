@@ -20,7 +20,7 @@ export default function PriceCheckPage() {
         Price Check
       </h1>
       <p className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.65 }}>
-        See what an item has actually sold for, per marketplace, and what you&rsquo;d pocket
+        See what an item has been selling for, per marketplace, and what you&rsquo;d pocket
         after fees if you sold it yourself.
       </p>
 

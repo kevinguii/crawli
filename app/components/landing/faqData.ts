@@ -14,7 +14,12 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "What is Crawli and who is it for?",
     answer:
-      "Crawli is a cross-platform search tool for secondhand and vintage fashion. Instead of checking 9 platforms one by one, you run a single search and Crawli pulls matching listings from Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, and eBay side by side. Resellers use the built-in flip margin calculator to see net profit after real platform fees before they buy, while shoppers who just love fashion use Crawli to find the best price on a piece across every platform at once. Crawli works for anyone comparing secondhand listings, whether you're sourcing inventory to resell or hunting for a personal grail.",
+      "Crawli is a cross-platform search tool for secondhand and vintage fashion. Instead of checking 9 platforms one by one, you run a single search and Crawli pulls matching listings from Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, and eBay side by side. Every search also surfaces Price Check, the median of what an item actually sold for on Grailed and Poshmark, not just what sellers are asking. Resellers use that real sold price to seed the built-in flip margin calculator and see net profit after real platform fees before they buy, while shoppers who just love fashion use Crawli to find the best price on a piece across every platform at once. Crawli works for anyone comparing secondhand listings, whether you're sourcing inventory to resell or hunting for a personal grail.",
+  },
+  {
+    question: "Can I see what an item actually sold for, not just what sellers are asking?",
+    answer:
+      "Yes, with Price Check. Search any item and Crawli shows the median of completed sales on Grailed and Poshmark, plus the price range, sample size, and typical days-to-sell, reported per platform since the two carry different inventory for the same query. Price Check runs automatically inside every search result's price summary and is also available as a standalone lookup at /price-check. It's included on all plans, including free, and does not use a search credit.",
   },
   {
     question: "How does the flip margin calculator work?",

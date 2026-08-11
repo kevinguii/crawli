@@ -5,6 +5,7 @@ import LandingNav from '@/app/components/landing/LandingNav';
 import Hero from '@/app/components/landing/Hero';
 import CompareSection from '@/app/components/landing/CompareSection';
 import PlatformLogos from '@/app/components/landing/PlatformLogos';
+import SoldCompsSection from '@/app/components/landing/SoldCompsSection';
 import AlertsAndTrackedSection from '@/app/components/landing/AlertsAndTrackedSection';
 import MarginSection from '@/app/components/landing/MarginSection';
 import BentoFeatures from '@/app/components/landing/BentoFeatures';
@@ -52,6 +53,7 @@ export default async function LandingPage() {
       <Hero heroItems={heroItems} />
       <Reveal><PlatformLogos /></Reveal>
       <Reveal><CompareSection items={items} teasers={teasers} priceGuideSlugs={priceGuideSlugs} /></Reveal>
+      <Reveal><SoldCompsSection /></Reveal>
       <Reveal><AlertsAndTrackedSection /></Reveal>
       <Reveal><MarginSection /></Reveal>
       <Reveal><BentoFeatures /></Reveal>
