@@ -69,7 +69,7 @@ export default function AlertCtaBanner({ query, hasAlert, onCreateAlert }: Props
       <button
         type="button"
         onClick={onCreateAlert}
-        className="btn-primary flex flex-shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
+        className="btn-primary flex flex-shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-transform duration-200 hover:scale-[1.04] hover:shadow-[0_0_18px_-2px_var(--accent)] active:scale-100"
       >
         <BellIcon size={15} />
         Create alert

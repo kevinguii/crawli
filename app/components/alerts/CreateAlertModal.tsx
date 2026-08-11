@@ -177,7 +177,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
         setSubmitting(false);
         return;
       }
-      toast.success('Alert created. We are searching now and will email you what matches.');
+      toast.success(
+        'Alert created — we’re running the first search now and will email you an initial batch of results shortly.',
+        { duration: 7000 },
+      );
       onCreated(data as SavedSearch);
     } catch {
       toast.error('Something went wrong.');
