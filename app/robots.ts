@@ -26,10 +26,16 @@ export default function robots(): MetadataRoute.Robots {
           "/settings",
           "/monitoring",
           "/watchlist-demo",
-          // Query-param traps (sort/view/filter states + raw search queries).
+          // Query-param traps (sort/view/filter states).
           "/*?*sort=",
           "/*?*view=",
-          "/*?*q=",
+          // NOTE: the old blanket "/*?*q=" rule is gone. It existed to keep raw
+          // search queries out, but /search is already fully disallowed above,
+          // so it was redundant there — and it blocked /compare/search?q=, the
+          // public search target declared as SearchAction in StructuredData.tsx.
+          // That page is crawlable on purpose but carries robots: noindex,follow,
+          // so agents can verify the search works without ?q= permutations
+          // bloating the index.
         ],
       },
     ],

@@ -87,7 +87,7 @@ function PriceCheckPanel() {
           className="rounded-md px-3 py-1.5 text-xs font-semibold text-white"
           style={{ background: 'var(--accent)' }}
         >
-          Check a price
+          Start comparing free
         </Link>
       </div>
     </div>

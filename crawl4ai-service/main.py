@@ -340,6 +340,7 @@ _PROVIDER_KEY_ENV = {
     "gemini": "GEMINI_API_KEY",
     "groq": "GROQ_API_KEY",
     "mistral": "MISTRAL_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
     "ollama": None,
 }
 

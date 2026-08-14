@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import CompareHeroWidget from './CompareHeroWidget';
+import HeroSearch, { type HeroSearchItem } from './HeroSearch';
 import type { CompareHeroItem } from '@/lib/compare';
 
 const PILLARS = [
@@ -29,7 +30,13 @@ const PILLARS = [
   },
 ];
 
-export default function Hero({ heroItems }: { heroItems: CompareHeroItem[] }) {
+export default function Hero({
+  heroItems,
+  searchItems,
+}: {
+  heroItems: CompareHeroItem[];
+  searchItems: HeroSearchItem[];
+}) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -67,6 +74,11 @@ export default function Hero({ heroItems }: { heroItems: CompareHeroItem[] }) {
             >
               Search 9 resale platforms at once, see what the market is really paying, and know your net flip profit after fees before you spend a dollar.
             </p>
+
+            {/* Public search: the one action an AI-referred visitor who already
+                knows what Crawli does can take without signing up. Matches route
+                to /compare/[slug]; misses go to /compare/search. */}
+            <HeroSearch items={searchItems} />
 
             {/* Value pillars */}
             <div className="mx-auto mt-7 flex max-w-md flex-col gap-3 sm:mx-0 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">

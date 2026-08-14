@@ -71,9 +71,12 @@ export default function LandingNav({ isAuthenticated = false }: { isAuthenticate
               </Link>
               <Link
                 href="/login?tab=signup"
-                className="btn-primary rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
+                className="btn-primary whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
               >
-                Get started
+                {/* Same action and wording as every body CTA. Shortened on
+                    mobile only, where the full label crowds out "Log in". */}
+                <span className="sm:hidden">Start free</span>
+                <span className="hidden sm:inline">Start comparing free</span>
               </Link>
             </>
           )}

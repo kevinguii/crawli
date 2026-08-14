@@ -2,7 +2,7 @@
 
 > **Maintenance rule:** update this table any time a platform's extraction method, viability, or known issues change. This is the single source of truth for per-platform state. Do not duplicate it in HANDOFF.md.
 
-Last verified: 2026-07-08
+Last verified: 2026-08-13
 
 ## Search extraction (per-platform)
 
@@ -65,6 +65,12 @@ Color is a **sort boost** (never a hard drop). Structured color reorders results
 - Raw HTTP always 403s but real browser often passes, so native render is tried first.
 - Do NOT probe Depop before render (unlike Mercari) — probe would force paid Firecrawl over a working free path.
 - Confirmed in code 2026-06-29: `depop` is in `main.py`'s `FIRECRAWL_FALLBACK_PLATFORMS` but NOT in `FIRECRAWL_PROBE_PLATFORMS` — fallback only fires on an actual native-render failure, not a pre-check.
+
+**Grailed — Tier 2 LLM extraction returns empty (found 2026-08-13, unfixed)**
+- Only matters when Tier 1 JSON-LD misses, which is rare — Tier 1 is `✅ Working` per the table above, so this is low-impact.
+- Verified by forcing `/scrape` past Tier 1 on 3 live Grailed listings: `LLMExtractionStrategy` completes in 0.00s with no LiteLLM API call ever made ("no extracted content" logged), for both `openai/gpt-4o-mini` and `deepseek/deepseek-v4-flash` — same result for both providers, so it's a scoping bug, not a provider issue.
+- Likely cause: `PLATFORM_CRAWLER_OPTIONS["grailed"]["target_elements"]` in `extractors.py` (`#listing-page`, `main`, `article`) no longer matches Grailed's current DOM, so the scoped content handed to the LLM is empty and the strategy short-circuits before calling out.
+- Not fixed — Tier 1 covers Grailed reliably today, so this is dormant risk, not an active outage. Fix by re-deriving the current listing-page container selector before Grailed's JSON-LD ever regresses.
 
 **Poshmark/StockX grid images were missing/wrong below the fold (fixed 2026-06-30)**
 Both grids lazy-load card images via IntersectionObserver: Poshmark ships `data-src` (no `src`) until a card scrolls into view; StockX ships `src` pointing at its own gray-X `Product-Placeholder-Default-*.jpg` until the real image swaps in. `wait_for` only waits for the first card to exist, so anything below the fold was captured mid-lazy-load — Poshmark showed "No image", StockX showed the gray-X graphic. Fixed in `main.py`'s `_LAZY_IMAGE_SCROLL_JS` (`js_code`, runs after `wait_for`/before HTML capture): scrolls the page in viewport steps, capped at 20 steps/~6s, before the DOM is captured. Defense-in-depth in `search_page_extractors.py`: Poshmark falls back to `data-src` if `src` is still empty; StockX nulls out `imageUrl` if it still matches the placeholder filename (some StockX listings genuinely have no real photo — verified live, this is correct behavior, not a residual bug).

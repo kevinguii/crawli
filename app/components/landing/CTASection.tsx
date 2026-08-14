@@ -20,7 +20,7 @@ export default function CTASection() {
           href="/login?tab=signup"
           className="btn-primary mt-6 inline-block rounded-xl px-7 py-3 text-sm font-semibold"
         >
-          Create free account
+          Start comparing free
         </Link>
       </div>
     </section>
