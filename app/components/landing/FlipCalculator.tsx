@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   FEE_PLATFORMS,
@@ -8,6 +7,7 @@ import {
   netFlipProfit,
 } from '@/lib/marketplaceFees';
 import type { PlatformKey } from '@/lib/types';
+import CtaLink from './CtaLink';
 
 // Order the selector so the most common flip destinations lead.
 const PLATFORM_ORDER: PlatformKey[] = [
@@ -161,8 +161,8 @@ export default function FlipCalculator() {
         {fmtMoney(result.fees)} in {MARKETPLACE_FEES[platform].label} seller fees · rates verified {MARKETPLACE_FEES[platform].lastVerified}
       </p>
 
-      <Link
-        href="/login?tab=signup"
+      <CtaLink
+        location="flip_calculator"
         className="mt-4 flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
         style={{
           background: 'linear-gradient(to right, #E24B4A, #E84D1D, #D85A30, #EF9F27)',
@@ -173,7 +173,7 @@ export default function FlipCalculator() {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
         </svg>
-      </Link>
+      </CtaLink>
     </div>
   );
 }

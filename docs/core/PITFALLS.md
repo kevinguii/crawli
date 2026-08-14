@@ -27,6 +27,9 @@ The 18 luxury compare items added in one day on 2026-07-25 went almost entirely 
 2. `robots.ts` no longer carries the blanket `/*?*q=` rule. That rule existed to block raw search queries, but `/search` is already fully disallowed, so it was redundant there while silently blocking the new page. **Don't re-add `/*?*q=`.**
 3. `/compare/search` sets `robots: { index: false, follow: true }` in its own metadata. That's what keeps arbitrary `?q=` permutations out of the index without blocking the crawl the SearchAction declaration needs to be verifiable.
 
+**`--surface` is transparent in dark mode — never use it on a floating overlay (found 2026-08-13)**
+`app/globals.css` defines `--surface` as `rgba(255, 255, 255, 0.04)` in dark and an opaque `#f4f4f3` in light. That's fine for inline cards sitting on `--bg`, but anything that floats over page content (dropdown, popover, menu, tooltip) becomes see-through in dark mode only. `HeroSearch`'s typeahead shipped with this bug — the hero's value pillars read straight through the results list, and it was invisible in light mode. Use **`--bg-elevated`** for overlays; it's a solid colour in both themes (`#161614` / `#f7f7f6`). Always check a new overlay in dark mode specifically, since light mode will look correct either way.
+
 **`/compare/search` is a sibling route on purpose, not `/compare?q=` (added 2026-08-13)**
 Reading `searchParams` inside `app/compare/page.tsx` would opt that page out of its `export const revalidate = 3600` and make the main comparison hub dynamic on every request. A static `search` segment also takes routing precedence over `[slug]`, so it never collides with `/compare/<item>`. If you ever need query params on the hub itself, move the reading into a child component wrapped in `<Suspense>` rather than putting them on the page.
 

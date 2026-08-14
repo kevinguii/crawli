@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import AuthCard, { GoogleIcon, EyeIcon, EyeOffIcon } from '@/app/components/AuthCard';
 import TurnstileWidget, { TURNSTILE_ENABLED, type TurnstileHandle } from '@/app/components/TurnstileWidget';
+import { track } from '@/lib/analytics';
 
 type Tab = 'signin' | 'signup';
 
@@ -99,6 +100,9 @@ function LoginContent() {
         );
         return;
       }
+      // Genuinely new account — the existing-account branch above returns before
+      // reaching here, so this never double-counts a re-signup attempt.
+      track({ name: 'sign_up', params: { method: 'email' } });
       router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);
     }
   }

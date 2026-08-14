@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import MockFrame from './MockFrame';
+import CtaLink from './CtaLink';
 
 type SoldStat = {
   platform: 'grailed' | 'poshmark';
@@ -82,13 +82,13 @@ function PriceCheckPanel() {
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
           Grailed + Poshmark · included on every search, no extra credit
         </span>
-        <Link
-          href="/login?tab=signup"
+        <CtaLink
+          location="sold_comps"
           className="rounded-md px-3 py-1.5 text-xs font-semibold text-white"
           style={{ background: 'var(--accent)' }}
         >
           Start comparing free
-        </Link>
+        </CtaLink>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Wordmark from './Wordmark';
+import CtaLink from './CtaLink';
 
 export default function LandingNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
@@ -69,15 +70,15 @@ export default function LandingNav({ isAuthenticated = false }: { isAuthenticate
               >
                 Log in
               </Link>
-              <Link
-                href="/login?tab=signup"
+              <CtaLink
+                location="nav"
                 className="btn-primary whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium sm:px-4"
               >
                 {/* Same action and wording as every body CTA. Shortened on
                     mobile only, where the full label crowds out "Log in". */}
                 <span className="sm:hidden">Start free</span>
                 <span className="hidden sm:inline">Start comparing free</span>
-              </Link>
+              </CtaLink>
             </>
           )}
         </div>

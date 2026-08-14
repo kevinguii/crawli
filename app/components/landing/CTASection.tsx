@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import CtaLink from './CtaLink';
 
 export default function CTASection() {
   return (
@@ -16,12 +16,12 @@ export default function CTASection() {
         >
           Free to start. No credit card required.
         </p>
-        <Link
-          href="/login?tab=signup"
+        <CtaLink
+          location="cta_section"
           className="btn-primary mt-6 inline-block rounded-xl px-7 py-3 text-sm font-semibold"
         >
           Start comparing free
-        </Link>
+        </CtaLink>
       </div>
     </section>
   );

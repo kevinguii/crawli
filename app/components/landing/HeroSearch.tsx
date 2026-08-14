@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useId, useMemo, useRef, useState } from 'react';
+import { track } from '@/lib/analytics';
 
 /**
  * Trimmed shape of a compare_items row. The landing page already loads the full
@@ -66,14 +67,17 @@ export default function HeroSearch({ items }: { items: HeroSearchItem[] }) {
   const hasResults = results.length > 0;
 
   function go(slug: string) {
+    track({ name: 'hero_search', params: { search_term: value.trim(), outcome: 'match' } });
     router.push(`/compare/${slug}`);
   }
 
   /** No catalogue match: hand the query to the public search page rather than
-   *  dead-ending an already-informed visitor on a signup wall. */
+   *  dead-ending an already-informed visitor on a signup wall. These are the
+   *  queries worth turning into new compare_items. */
   function goToSearch() {
     const q = value.trim();
     if (!q) return;
+    track({ name: 'hero_search', params: { search_term: q, outcome: 'no_match' } });
     router.push(`/compare/search?q=${encodeURIComponent(q)}`);
   }
 
@@ -161,9 +165,13 @@ export default function HeroSearch({ items }: { items: HeroSearchItem[] }) {
           role="listbox"
           className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl text-left"
           style={{
-            background: 'var(--surface)',
+            // Must be OPAQUE — this floats over page content. `--surface` is
+            // rgba(255,255,255,0.04) in dark mode, so using it here let the
+            // hero's value pillars show straight through the results.
+            // `--bg-elevated` is a solid colour in both themes.
+            background: 'var(--bg-elevated)',
             border: '1px solid var(--border)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
           }}
         >
           {hasResults ? (

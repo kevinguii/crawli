@@ -10,6 +10,7 @@ import {
   type OnboardingPersona,
   type OnboardingStepId,
 } from '@/lib/onboarding';
+import { track } from '@/lib/analytics';
 import BranchStep from './steps/BranchStep';
 import SeedStep from './steps/SeedStep';
 import CriteriaStep from './steps/CriteriaStep';
@@ -96,6 +97,11 @@ export default function OnboardingFlow({
         window.alert('Could not save your setup. Please try Finish again.');
         return;
       }
+      // Only fires once the gate actually cleared (ok === true above), and every
+      // new account passes through here regardless of auth method — so this is
+      // the method-agnostic activation count that sign_up can't give us for
+      // Google signups.
+      track({ name: 'onboarding_complete', params: { persona: draft.persona ?? 'unknown' } });
       const q = draft.query.trim();
       router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
       return;

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getAllCompareItems, getCompareTeasers, type CompareItem } from '@/lib/compare';
+import CtaLink from '@/app/components/landing/CtaLink';
 
 /**
  * Public search results for the homepage's HeroSearch box.
@@ -157,12 +158,13 @@ export default async function CompareSearchPage({
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
             One search, every marketplace, with net flip profit after fees.
           </p>
-          <Link
+          <CtaLink
+            location="compare_search_miss"
             href={`/login?tab=signup&q=${encodeURIComponent(query)}`}
             className="btn-primary mt-5 inline-block rounded-xl px-6 py-3 text-sm font-semibold"
           >
             Start comparing free
-          </Link>
+          </CtaLink>
           <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
             Free to start · No credit card required
           </p>

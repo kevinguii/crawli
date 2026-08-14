@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import CompareHeroWidget from './CompareHeroWidget';
 import HeroSearch, { type HeroSearchItem } from './HeroSearch';
+import CtaLink from './CtaLink';
 import type { CompareHeroItem } from '@/lib/compare';
 
 const PILLARS = [
@@ -97,12 +97,12 @@ export default function Hero({
 
             {/* CTAs */}
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
-              <Link
-                href="/login?tab=signup"
-                className="btn-primary w-full rounded-xl px-6 py-3 text-sm font-semibold sm:w-auto"
+              <CtaLink
+                location="hero"
+                className="btn-primary w-full rounded-xl px-6 py-3 text-center text-sm font-semibold sm:w-auto"
               >
                 Start comparing free
-              </Link>
+              </CtaLink>
               <a
                 href="#compare"
                 className="w-full rounded-xl px-6 py-3 text-center text-sm font-semibold transition-colors sm:w-auto"
