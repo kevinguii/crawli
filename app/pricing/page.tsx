@@ -1,8 +1,10 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Metadata } from 'next';
 import { PricingCards } from './PricingCards';
 import PricingCloseButton from './PricingCloseButton';
+import Wordmark from '@/app/components/landing/Wordmark';
 import type { Tier } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +48,11 @@ export default async function PricingPage({
             'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(226,75,74,0.12), transparent 60%), radial-gradient(ellipse 60% 40% at 85% 10%, rgba(239,159,39,0.08), transparent 60%)',
         }}
       />
+      <div className="absolute top-4 left-4">
+        <Link href="/" className="flex items-center">
+          <Wordmark size={28} />
+        </Link>
+      </div>
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <PricingCloseButton from={from} />
       </div>

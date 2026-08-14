@@ -1,5 +1,6 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
+import { createClient } from '@/lib/supabase/server';
+import LandingNav from '@/app/components/landing/LandingNav';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
@@ -7,23 +8,16 @@ export const metadata: Metadata = {
   alternates: { canonical: '/terms' },
 };
 
-export default function TermsPage() {
-  return (
-    <main className="min-h-screen px-4 py-16" style={{ background: 'var(--bg)' }}>
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <Link
-          href="/settings"
-          aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
-          style={{ color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-          </svg>
-        </Link>
-      </div>
+export default async function TermsPage() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  const isAuthenticated = !error && !!data.user;
 
-      <div className="mx-auto max-w-2xl">
+  return (
+    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <LandingNav isAuthenticated={isAuthenticated} />
+
+      <div className="mx-auto max-w-2xl px-4 py-16">
         <h1 className="text-3xl font-semibold tracking-tight mb-2" style={{ color: 'var(--text)' }}>
           Terms of Service
         </h1>
