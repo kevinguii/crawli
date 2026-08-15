@@ -829,29 +829,42 @@ def vinted_search_url(query: str) -> str:
 def extract_vinted_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract listings from a Vinted /catalog?search_text= page.
 
-    Source: DOM cards under div.new-item-box__container. The overlay anchor's
-    `title` attribute is a comma-structured metadata string:
+    Source: DOM cards under a container whose class contains
+    `new-item-box__container`. The overlay anchor's `title` attribute is a
+    comma-structured metadata string:
         "Listing title, brand: Brand, condition: Cond, size: Size, $price, ..."
     Used as the primary parse target because it is stable across redesigns.
 
     Card anatomy (verified 2026-06-29, 96 cards on typical query):
-        div.new-item-box__container
-          a.new-item-box__overlay[href="/items/<id>-<slug>?referrer=catalog"]
+        div[class*='new-item-box__container']
+          a[class*='new-item-box__overlay'][href="/items/<id>-<slug>?referrer=catalog"]
             @title → structured metadata string
           [data-testid$="--price-text"]     → "$35.00" price element
+
+    Class-name matching is substring-based, not an exact token/dot selector
+    (found 2026-08-15, same root cause as Depop's rotation — see PITFALLS.md
+    "Depop CSS Modules prefix rotation"): Vinted's build now glues a scoping
+    prefix directly onto the semantic name with no separating space —
+    `class="ItemBox-module-scss-module__NoC3Da__new-item-box__container"` is
+    a single class *token*, so a `div.new-item-box__container` dot-selector
+    (exact-token match) stopped matching even though the substring is right
+    there in the attribute. `[class*=...]` matches raw substrings within the
+    whole class attribute regardless of token boundaries, so it survives
+    both this "glued, no space" rotation and Depop's "different prefix
+    entirely" rotation.
     """
     if not html:
         return []
     soup = BeautifulSoup(html, "lxml")
 
-    containers = soup.select("div.new-item-box__container")
+    containers = soup.select("div[class*='new-item-box__container']")
     if not containers:
         log.warning("[vinted-grid] no new-item-box__container cards found")
         return []
 
     results: list[dict] = []
     for container in containers:
-        overlay = container.select_one("a.new-item-box__overlay")
+        overlay = container.select_one("a[class*='new-item-box__overlay']")
         if not overlay:
             continue
         href = overlay.get("href", "")
