@@ -13,7 +13,7 @@ Read order for a cold session: this doc → `HANDOFF.md` → the specific file y
 touching. The *product* is feature-complete; this plan is about **distribution
 and conversion**, not new features.
 
----
+--- 
 
 ## 1. The diagnosis (why this plan exists)
 
