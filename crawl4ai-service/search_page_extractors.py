@@ -593,21 +593,36 @@ def _depop_title_from_slug(href: str) -> Optional[str]:
 def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract listings from a Depop `/search/?q=...` results page.
 
-    Source: DOM cards under `div[class*='styles_productCardRoot']`. Depop uses
-    CSS Modules — class names get hash suffixes that change every deploy —
-    so we match on the prefix and use `aria-description` on price elements
-    (stable accessibility attribute) to disambiguate sale prices.
+    Source: DOM cards under `div[class*='productCardRoot']`. Depop uses CSS
+    Modules — class names get a scoping prefix/hash that changes across
+    deploys — so we match on the semantic suffix only, not any particular
+    prefix, and use `aria-description` on price elements (stable
+    accessibility attribute) to disambiguate sale prices.
 
     Verified card structure (2026-05-27, dump in debug_dumps/):
-        div[class*='styles_productCardRoot']
+        div[class*='productCardRoot']
           a[href*='/products/']                              → URL (relative)
           img[class*='_mainImage']                           → imageUrl (src)
-          div[class*='styles_productAttributes']
-            p[class*='styles_brandName']                     → brand (e.g. "Fear of God")
-            p[class*='styles_sizeAttributeText']             → size (e.g. "S", "XL")
+          div[class*='productAttributes']
+            p[class*='brandName']                            → brand (e.g. "Fear of God")
+            p[class*='sizeAttributeText']                    → size (e.g. "S", "XL")
             p[aria-description='Price']                      → current price (no sale)
             p[aria-description='Discounted price']           → current price (sale)
             p[aria-description='Full price']                 → original price (strikethrough; ignore)
+
+    Class-name prefix rotated 2026-08-15: Depop shipped a build where the
+    old `styles_productCardRoot__<hash>` (and sibling `styles_brandName`,
+    `styles_sizeAttributeText`) scoping changed to
+    `styles-module__<hash>__productCardRoot` — a different hash *position*
+    relative to the semantic name, not just a different hash value. Matching
+    on the bare prefix (`styles_...`) silently returned 0 cards despite a
+    fully-rendered, 200 OK page with real listings still present (24 intact
+    `/products/` links, just not wrapped in a div our old selector matched)
+    — see PITFALLS.md "Depop CSS Modules prefix rotation". Selectors below
+    intentionally drop the `styles_`/`styles-module__` prefix and match only
+    on the semantic suffix, since that's the part Depop's own markup keeps
+    stable across rebuilds; re-verify this docstring's structure dump if
+    extraction silently drops to 0 again.
 
     Title: Depop search cards genuinely have no title field — img alt is
     empty, anchor aria-label is empty, no title <p>. We synthesise from the
@@ -621,7 +636,7 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
         return []
     soup = BeautifulSoup(html, "lxml")
 
-    cards = soup.select("div[class*='styles_productCardRoot']")
+    cards = soup.select("div[class*='productCardRoot']")
     if not cards:
         log.warning("[depop-grid] no productCardRoot cards found — page may not have rendered")
         return []
@@ -650,10 +665,10 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
                 except ValueError:
                     price = None
 
-        brand_el = card.select_one("p[class*='styles_brandName']")
+        brand_el = card.select_one("p[class*='brandName']")
         brand = brand_el.get_text(strip=True) if brand_el else None
 
-        size_el = card.select_one("p[class*='styles_sizeAttributeText']")
+        size_el = card.select_one("p[class*='sizeAttributeText']")
         size = size_el.get_text(strip=True) if size_el else None
 
         img_el = card.select_one("img[class*='_mainImage']") or card.find("img")

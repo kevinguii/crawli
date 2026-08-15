@@ -16,11 +16,13 @@ LLM key is configured.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import logging
 import os
 import re
 import threading
+import time
 from contextlib import asynccontextmanager
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
@@ -152,6 +154,30 @@ _pool_cycle = None                              # itertools.cycle iterator over 
 _pool_pick_lock: Optional[asyncio.Lock] = None  # serializes round-robin picks
 _restart_tasks: dict[int, asyncio.Task] = {}    # per-index restart task tracking
 
+# B5: periodic session refresh. A pool member is a single long-lived browser
+# context reused for every render of its lifetime (crawl4ai's BrowserManager
+# caches one context per config signature — see PITFALLS.md "Depop pooled-
+# context soft-block"). If a platform's anti-bot layer ever soft-flags that
+# context (200 OK, no crawl4ai error, but the real content never renders —
+# confirmed live on Depop 2026-08-15: a fresh one-off crawler with the exact
+# same config succeeded every time while the long-lived pool member kept
+# returning empty grids indefinitely), the flag persists for the rest of the
+# process's uptime because nothing ever resets that context. Recycling the
+# browser periodically bounds how long a flagged session can stay stuck.
+# 0 disables either trigger.
+SIDECAR_POOL_RECYCLE_AFTER_REQUESTS = max(0, int(os.environ.get("SIDECAR_POOL_RECYCLE_AFTER_REQUESTS", "25")))
+SIDECAR_POOL_RECYCLE_AFTER_SECONDS = max(0, int(os.environ.get("SIDECAR_POOL_RECYCLE_AFTER_SECONDS", "1800")))
+
+_pool_request_counts: dict[int, int] = {}       # renders served since last recycle, per index
+_pool_started_at: dict[int, float] = {}         # monotonic timestamp of last (re)start, per index
+
+# Records which pool index actually served the current render, so a caller
+# several stack frames away (the /scrape-search endpoint, after extraction)
+# can act on it — e.g. force a recycle when the grid came back empty despite
+# a "successful" render. A ContextVar (not a plain global) so concurrent
+# in-flight requests each see only their own render's index.
+_last_render_idx: contextvars.ContextVar[int] = contextvars.ContextVar("_last_render_idx", default=-1)
+
 
 def _pool_status() -> tuple[int, int]:
     """Return (alive_count, total_count) for the in-flight log + /health."""
@@ -251,20 +277,32 @@ def _looks_like_driver_death(error_message: Optional[str]) -> bool:
     return any(pat in error_message for pat in _DRIVER_DEAD_PATTERNS)
 
 
-async def _restart_crawler_once(idx: int) -> None:
-    """A3+B1: rebuild a specific pool member after its driver subprocess died.
+async def _restart_crawler_once(idx: int, *, force: bool = False, reason: str = "driver dead") -> None:
+    """A3+B1+B5: rebuild a specific pool member — either recovering a dead
+    driver subprocess, or (force=True) proactively refreshing a healthy one
+    to drop whatever browser-context state (cookies, an anti-bot flag) it has
+    accumulated. Same rebuild either way; only the gate differs.
 
     Guarded by `_restart_lock` so concurrent observers all wait on the same
-    recovery rather than each spawning their own. If `start()` fails the
-    index stays in `_dead_pool_indices` so the next request retries — we
+    rebuild rather than each spawning their own. If `start()` fails the index
+    stays marked dead (crash path only) so the next request retries — we
     never crash the FastAPI process trying to recover.
     """
     global crawler, _driver_dead
     assert _restart_lock is not None
     async with _restart_lock:
-        if idx not in _dead_pool_indices or idx >= len(_crawler_pool):
+        if not force and (idx not in _dead_pool_indices or idx >= len(_crawler_pool)):
             return
-        log.warning("[crawler] pool[%d] driver dead — restarting Chromium", idx)
+        if idx >= len(_crawler_pool):
+            return
+        # Mark unavailable for the duration of the swap, same as the crash
+        # path, so `_pick_crawler()` doesn't hand a concurrent request the
+        # browser mid-close/mid-start ("Browser is not available... may have
+        # been closed" — hit this exact race testing the force=True path
+        # against 3 back-to-back requests before adding this line).
+        _dead_pool_indices.add(idx)
+        _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool)
+        log.warning("[crawler] pool[%d] restarting Chromium (%s)", idx, reason)
         try:
             old = _crawler_pool[idx]
             if old is not None:
@@ -283,6 +321,8 @@ async def _restart_crawler_once(idx: int) -> None:
             await new_c.start()
             _crawler_pool[idx] = new_c
             _dead_pool_indices.discard(idx)
+            _pool_request_counts[idx] = 0
+            _pool_started_at[idx] = time.monotonic()
             # Back-compat: `crawler` global mirrors pool[0].
             if idx == 0:
                 crawler = new_c
@@ -292,11 +332,13 @@ async def _restart_crawler_once(idx: int) -> None:
             log.exception("[crawler] pool[%d] restart failed — will retry on next request", idx)
 
 
-def _trigger_restart_in_background(idx: Optional[int] = None) -> None:
-    """Fire-and-forget the recovery coroutine for a specific pool member.
-    Idempotent — duplicate calls for the same index bounce off the existing
-    task. When idx is None, queues a restart for every currently-dead member
-    (used by the endpoint-level short-circuit which doesn't know specifics).
+def _trigger_restart_in_background(idx: Optional[int] = None, *, force: bool = False, reason: str = "driver dead") -> None:
+    """Fire-and-forget the recovery/recycle coroutine for a specific pool
+    member. Idempotent — duplicate calls for the same index bounce off the
+    existing task. When idx is None, queues a restart for every currently-dead
+    member (used by the endpoint-level short-circuit which doesn't know
+    specifics) — force is ignored in that form, since dead members always
+    restart regardless.
     """
     if idx is None:
         for dead_idx in list(_dead_pool_indices):
@@ -305,7 +347,7 @@ def _trigger_restart_in_background(idx: Optional[int] = None) -> None:
     existing = _restart_tasks.get(idx)
     if existing is None or existing.done():
         try:
-            _restart_tasks[idx] = asyncio.create_task(_restart_crawler_once(idx))
+            _restart_tasks[idx] = asyncio.create_task(_restart_crawler_once(idx, force=force, reason=reason))
         except RuntimeError:
             # No running loop — next request will trigger it.
             pass
@@ -320,6 +362,51 @@ def _mark_driver_dead(idx: int, error_message: str) -> None:
         log.error("[crawler] pool[%d] detected driver death: %s", idx, error_message[:200])
     _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool) and len(_crawler_pool) > 0
     _trigger_restart_in_background(idx)
+
+
+def _maybe_recycle_pool_member(idx: int) -> None:
+    """B5: after a render, check whether this pool member is due for a
+    proactive session refresh (age or request-count threshold) and, if so,
+    queue a background restart. Runs in the background so it never adds
+    latency to the request that tripped the threshold — the fresh browser is
+    ready for the *next* render, not this one.
+    """
+    if idx < 0 or idx in _dead_pool_indices:
+        return
+    count = _pool_request_counts.get(idx, 0) + 1
+    _pool_request_counts[idx] = count
+    started = _pool_started_at.get(idx, time.monotonic())
+    age_s = time.monotonic() - started
+    due_by_count = SIDECAR_POOL_RECYCLE_AFTER_REQUESTS > 0 and count >= SIDECAR_POOL_RECYCLE_AFTER_REQUESTS
+    due_by_age = SIDECAR_POOL_RECYCLE_AFTER_SECONDS > 0 and age_s >= SIDECAR_POOL_RECYCLE_AFTER_SECONDS
+    if due_by_count or due_by_age:
+        log.info(
+            "[pool] crawler[%d] due for session refresh (requests=%d age=%.0fs) — recycling in background",
+            idx, count, age_s,
+        )
+        _trigger_restart_in_background(idx, force=True, reason="periodic session refresh")
+
+
+async def _clear_context_cookies(c) -> None:
+    """B5: drop cookies from every browser context this pool member has
+    cached (crawl4ai keys one persistent context per CrawlerRunConfig
+    signature — see BrowserManager.contexts_by_config). Best-effort and never
+    raises — called after every Depop/Mercari search-page render so a
+    Cloudflare-side flag set on one request's context doesn't ride along on
+    the next one via a stale cookie, without needing a full browser restart.
+    """
+    try:
+        manager = getattr(getattr(c, "crawler_strategy", None), "browser_manager", None)
+        contexts = getattr(manager, "contexts_by_config", None)
+        if not contexts:
+            return
+        for ctx in list(contexts.values()):
+            try:
+                await ctx.clear_cookies()
+            except Exception:  # noqa: BLE001 — best effort, never break the render path
+                pass
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # A6: response caches for /scrape (per URL) and /scrape-search (per
@@ -394,6 +481,8 @@ async def lifespan(app: FastAPI):
         c = AsyncWebCrawler(config=browser_cfg)
         await c.start()
         _crawler_pool.append(c)
+        _pool_request_counts[i] = 0
+        _pool_started_at[i] = time.monotonic()
         log.info("[pool] crawler[%d] started", i)
     # Back-compat: `crawler` mirrors pool[0] for any code path still referencing it.
     crawler = _crawler_pool[0]
@@ -823,6 +912,7 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
         if c is None:
             # Race: pool died between endpoint-level check and now.
             raise RuntimeError("crawler pool unavailable — all members dead")
+    _last_render_idx.set(idx)
 
     cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target, search_page=search_page)
     async with _scheduled_render(platform, url):
@@ -843,12 +933,26 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
             if c2 is None:
                 return result
             idx, c = idx2, c2
+            _last_render_idx.set(idx)
         async with _scheduled_render(platform, url):
             result = await c.arun(url=url, config=cfg)
         err = (result.error_message or "") if result is not None else ""
         if _looks_like_driver_death(err):
             if idx >= 0:
                 _mark_driver_dead(idx, err)
+
+    # B5: proactive session hygiene for the pool member that actually served
+    # this render (driver-death already returned early above, so idx here is
+    # a live crawler). Cookie-clearing is scoped to the search-page grid path
+    # on the platforms with observed soft-block susceptibility (Depop,
+    # Mercari) — see PITFALLS.md "Depop pooled-context soft-block" — rather
+    # than applied blanket, since other platforms' `_build_run_cfg` branches
+    # (e.g. Poshmark's login/locale-wall redirect handling) may depend on
+    # cookies set during the render and haven't shown this failure mode.
+    if idx >= 0 and idx not in _dead_pool_indices:
+        _maybe_recycle_pool_member(idx)
+        if search_page and platform in FIRECRAWL_FALLBACK_PLATFORMS:
+            await _clear_context_cookies(c)
     return result
 
 
@@ -1269,6 +1373,39 @@ async def scrape_search(req: ScrapeSearchRequest):
         raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
         items = extract_search_grid(req.platform, raw_html, limit=req.limit)
         listings = [coerce_listing(item["url"], item) for item in items if isinstance(item.get("url"), str)]
+
+        if not listings and req.platform in FIRECRAWL_FALLBACK_PLATFORMS:
+            # Render reported success (200, no crawl4ai error) but the grid
+            # extractor found nothing. `result.success` can't distinguish this
+            # from a genuinely empty search. Root-caused live 2026-08-15: the
+            # actual trigger that day was Depop rotating its CSS Modules class
+            # prefix (see search_page_extractors.py's extract_depop_grid
+            # docstring + PITFALLS.md), which is now fixed at the selector —
+            # but a real platform-side anti-bot soft-block (page loads,
+            # `wait_for` is satisfied, but the real grid never hydrates) is
+            # the same observable shape and remains possible, so this branch
+            # stays as a backstop for either cause.
+            # Confirmed live on Depop 2026-08-15: a fresh one-off crawler with
+            # the identical config succeeded every time while the long-lived
+            # pool member kept returning an empty grid — see PITFALLS.md
+            # "Depop pooled-context soft-block". B5 session hygiene (periodic
+            # recycle + post-render cookie clear, above) should make this
+            # rare; this is the backstop for whatever slips through — force a
+            # recycle of the pool member that served it, and get the user
+            # real data this request via Firecrawl.
+            log.warning(
+                "[scrape-search] %s '%s' rendered successfully but grid was empty — "
+                "treating as soft-block, retrying via Firecrawl",
+                req.platform, req.query,
+            )
+            served_idx = _last_render_idx.get()
+            if served_idx >= 0:
+                _trigger_restart_in_background(served_idx, force=True, reason="empty grid despite successful render")
+            resp = await _firecrawl_fallback_response(req.platform, target_url, req.limit, cache_key)
+            if resp is not None and resp.results:
+                return resp
+            # No fallback available, or it also came back empty (genuinely no
+            # results) — fall through and return the native (empty) result.
 
         if req.platform == "realreal" and not listings:
             # First request after press-and-hold timeout may still be the PX

@@ -2,7 +2,7 @@
 
 > **Maintenance rule:** update this table any time a platform's extraction method, viability, or known issues change. This is the single source of truth for per-platform state. Do not duplicate it in HANDOFF.md.
 
-Last verified: 2026-08-13
+Last verified: 2026-08-15
 
 ## Search extraction (per-platform)
 
@@ -65,6 +65,11 @@ Color is a **sort boost** (never a hard drop). Structured color reorders results
 - Raw HTTP always 403s but real browser often passes, so native render is tried first.
 - Do NOT probe Depop before render (unlike Mercari) — probe would force paid Firecrawl over a working free path.
 - Confirmed in code 2026-06-29: `depop` is in `main.py`'s `FIRECRAWL_FALLBACK_PLATFORMS` but NOT in `FIRECRAWL_PROBE_PLATFORMS` — fallback only fires on an actual native-render failure, not a pre-check.
+
+**Depop — CSS Modules class prefix rotated, silently returning 0 results (fixed 2026-08-15)**
+- User report: "bape t shirt" (previously reliable) returned 0 Depop results. Root cause: Depop shipped a build where its scoping prefix changed from `styles_productCardRoot__<hash>` to `styles-module__<hash>__productCardRoot` — same for `brandName`/`sizeAttributeText` — so `extract_depop_grid`'s `[class*='styles_productCardRoot']` selector stopped matching even on a fully-rendered 200 OK page with 24 real `/products/` links present. `result.success` stayed `True` throughout — a render succeeding but a selector going stale look identical from the crawl4ai layer.
+- Fixed in `search_page_extractors.py`: selectors now match on the semantic suffix only (`[class*='productCardRoot']`, `[class*='brandName']`, `[class*='sizeAttributeText']`), not the `styles_`/`styles-module__` prefix, since Depop's own hashing scheme is what rotates — the human-readable name is what stays stable across rebuilds. Re-verify the docstring's card-structure dump in `extract_depop_grid` if extraction silently drops to 0 again.
+- Also added (same session, defense-in-depth, not the fix for this specific bug): `main.py`'s pool crawler now recycles a browser after `SIDECAR_POOL_RECYCLE_AFTER_REQUESTS`/`_SECONDS` (env-tunable, default 25 renders / 30 min), clears cookies on the Depop/Mercari context after every search-page render, and — when a Depop/Mercari render reports success but the grid comes back empty for any reason (selector drift, a genuine anti-bot soft-block) — force-recycles that pool member and retries once via Firecrawl before giving up. See PITFALLS.md "Depop CSS Modules prefix rotation" for the full diagnostic trail.
 
 **Grailed — Tier 2 LLM extraction returns empty (found 2026-08-13, unfixed)**
 - Only matters when Tier 1 JSON-LD misses, which is rare — Tier 1 is `✅ Working` per the table above, so this is low-impact.
