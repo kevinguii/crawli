@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { track, type CtaLocation } from '@/lib/analytics';
 
 /**
- * The unified "Start comparing free" action, wrapped so every instance reports
+ * The unified "Sign up" action, wrapped so every instance reports
  * where it was clicked. Landing sections are server components, so the click
  * handler has to live in a client boundary like this one rather than on the
  * sections themselves.

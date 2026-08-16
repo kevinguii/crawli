@@ -20,7 +20,7 @@ export default function CTASection() {
           location="cta_section"
           className="btn-primary mt-6 inline-block rounded-xl px-7 py-3 text-sm font-semibold"
         >
-          Start comparing free
+          Sign up
         </CtaLink>
       </div>
     </section>

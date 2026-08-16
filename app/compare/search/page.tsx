@@ -163,7 +163,7 @@ export default async function CompareSearchPage({
             href={`/login?tab=signup&q=${encodeURIComponent(query)}`}
             className="btn-primary mt-5 inline-block rounded-xl px-6 py-3 text-sm font-semibold"
           >
-            Start comparing free
+            Sign up
           </CtaLink>
           <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
             Free to start · No credit card required

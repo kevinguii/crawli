@@ -101,7 +101,7 @@ export default function Hero({
                 location="hero"
                 className="btn-primary w-full rounded-xl px-6 py-3 text-center text-sm font-semibold sm:w-auto"
               >
-                Start comparing free
+                Sign up
               </CtaLink>
               <a
                 href="#compare"
