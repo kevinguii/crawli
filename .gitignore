@@ -44,8 +44,11 @@ yarn-error.log*
 next-env.d.ts
 
 # python
-/python/venv
-/crawl4ai-service/venv
+# Globbed, not exact: a bare `/crawl4ai-service/venv` misses sibling copies like
+# venv.bak-stale-path, which is how a 761MB backup venv (with a 113MB patchright
+# node binary, over GitHub's 100MB file limit) once got staged and blocked a push.
+/python/venv*
+/crawl4ai-service/venv*
 /crawl4ai-service/.env.example
 /crawl4ai-service/__pycache__
 /crawl4ai-service/.crawl4ai
