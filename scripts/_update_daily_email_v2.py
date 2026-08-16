@@ -17,14 +17,12 @@ Usage: _update_daily_email_v2.py [INPUT_PATH] [OUTPUT_PATH]
 Defaults to the repo definition for both.
 Prerequisite before deploy: content_history + published_posts need a topic_key
 column (see scripts/_migrations_topic_key.sql)."""
-import json, sys
+import json, os, sys
 
 PATH = sys.argv[1] if len(sys.argv) > 1 else "docs/workflows/daily-content-email.json"
 OUT = sys.argv[2] if len(sys.argv) > 2 else PATH
 SUPA = "https://peyqxfijdrziqfjkxjsn.supabase.co"
-KEY = ("REDACTED_JWT"
-       "InBleXF4ZmlqZHJ6aXFmamt4anNuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6"
-       "MTc3ODcxODQxMSwiZXhwIjoyMDk0Mjk0NDExfQ.T-tzO0pJBanVwp-Kd4MvnXA8GXll4xV88I0NosMQY1Y")
+KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]  # service_role: never hardcode
 
 # ============================================================ Extract context
 EXTRACT_JS = r'''// ---- SEO context (may be empty on first run) ----

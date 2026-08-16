@@ -1,5 +1,5 @@
 // Sold comps: completed-sale data, as opposed to the live asking prices the rest
-// of the app deals in. See docs/superpowers/specs/2026-08-10-sold-comps-design.md.
+// of the app deals in. Rationale: docs/planning/COMPETITIVE_POSITIONING.md §5 Step 1.
 
 /** Platforms that expose usable sold data. Deliberately not PlatformKey — Mercari,
  *  ThredUp, eBay and StockX are out of scope and must not be passed here. */

@@ -1,6 +1,6 @@
 # Crawli Journey Series
 
-Pubity-style narrative carousels: one real, documented person's story told in short chronological beats, instead of the fact-carousel format's listicle structure. See `docs/superpowers/specs/2026-07-07-journey-carousel-format-design.md` for the original design rationale.
+Pubity-style narrative carousels: one real, documented person's story told in short chronological beats, instead of the fact-carousel format's listicle structure.
 
 There are two sub-formats. **The illustrated pipeline below is the current default** — use it unless the user asks for the original photo-only pilot format.
 

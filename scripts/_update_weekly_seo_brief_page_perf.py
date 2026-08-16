@@ -11,13 +11,11 @@ schedule, ids, credentials untouched).
 
 Usage: _update_weekly_seo_brief_page_perf.py [INPUT_PATH] [OUTPUT_PATH]
 """
-import json, sys
+import json, os, sys
 
 PATH = sys.argv[1] if len(sys.argv) > 1 else "docs/workflows/weekly-seo-brief.json"
 OUT = sys.argv[2] if len(sys.argv) > 2 else PATH
-KEY = ("REDACTED_JWT"
-       "InBleXF4ZmlqZHJ6aXFmamt4anNuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6"
-       "MTc3ODcxODQxMSwiZXhwIjoyMDk0Mjk0NDExfQ.T-tzO0pJBanVwp-Kd4MvnXA8GXll4xV88I0NosMQY1Y")
+KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]  # service_role: never hardcode
 
 PROCESS_GSC_JS = r'''const rows = $input.first().json.rows || [];
 const startDate = $('Date setup').first().json.startDate;

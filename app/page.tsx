@@ -20,7 +20,7 @@ import Reveal from '@/app/components/landing/Reveal';
 
 // Curated for the hero's rotating comparison widget: category diversity + a
 // visible cross-platform price spread, verified live against compare_snapshots
-// on 2026-07-08. Keep this list in sync with docs/superpowers/plans/2026-07-08-landing-page-priority-redesign.md
+// on 2026-07-08. Keep this list in sync with the landing hero rotation in HANDOFF.md.
 // if items are swapped in/out later.
 //
 // Weighted toward luxury as of 2026-07-25: every top AI grounding query Bing

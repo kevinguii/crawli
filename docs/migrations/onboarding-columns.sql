@@ -1,4 +1,4 @@
--- Onboarding flow state. See docs/superpowers/specs/2026-08-10-onboarding-flow-design.md.
+-- Onboarding flow state. See docs/planning/COMPETITIVE_POSITIONING.md §5 Step 2(a).
 --
 -- onboarding_completed_at is THE GATE: null means the user is blocked into the flow.
 -- Every existing account defaults to null, so the 39 current users are onboarded on

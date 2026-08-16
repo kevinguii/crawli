@@ -241,8 +241,7 @@ The original plan, kept for whenever it is picked up:
 
 ### Step 1 — Ship sold comps · SHIPPED 2026-08-10
 
-The one feature that changes what Crawli is. Built and live. Design spec:
-`docs/superpowers/specs/2026-08-10-sold-comps-design.md`. Measured as EXP-004.
+The one feature that changes what Crawli is. Built and live. Measured as EXP-004.
 
 **Shipped scope: Grailed + Poshmark.** Mercari was dropped during the probe and
 ThredUp was ruled out by it. eBay and StockX remain deferred as previously decided.
@@ -335,8 +334,7 @@ Measured as EXP-003 in §6c. (EXP-002 covered the CTA-prominence half and was su
 
 **Still open:**
 
-**(a) Onboarding flow — SHIPPED 2026-08-10.** Spec:
-`docs/superpowers/specs/2026-08-10-onboarding-flow-design.md`. Measured as EXP-001,
+**(a) Onboarding flow — SHIPPED 2026-08-10.** Measured as EXP-001,
 now Running in §6c.
 
 **The evidence that shaped it.** Every searcher bucketed by first-24-hour activity:

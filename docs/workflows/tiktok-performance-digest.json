@@ -151,11 +151,11 @@
             "parameters": [
               {
                 "name": "apikey",
-                "value": "REDACTED_JWT"
+                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_JWT"
+                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Content-Type",
