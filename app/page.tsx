@@ -14,7 +14,6 @@ import FounderNote from '@/app/components/landing/FounderNote';
 import CTASection from '@/app/components/landing/CTASection';
 import FAQ from '@/app/components/landing/FAQ';
 import Footer from '@/app/components/landing/Footer';
-import Testimonials from '@/app/components/landing/Testimonials';
 import StructuredData from '@/app/components/StructuredData';
 import Reveal from '@/app/components/landing/Reveal';
 
@@ -61,7 +60,6 @@ export default async function LandingPage() {
       <LandingNav isAuthenticated={isAuthenticated} />
       <Hero heroItems={heroItems} searchItems={searchItems} />
       <Reveal><PlatformLogos /></Reveal>
-      <Reveal><Testimonials /></Reveal>
       <Reveal><CompareSection items={items} teasers={teasers} priceGuideSlugs={priceGuideSlugs} /></Reveal>
       <Reveal><SoldCompsSection /></Reveal>
       <Reveal><AlertsAndTrackedSection /></Reveal>
