@@ -442,6 +442,12 @@ and the July rewrite did not dislodge it.
 - **Do** keep the 33 compare pages fresh — one cron run, and the only genuinely
   citable asset. Treat them as an AI-answer-engine surface, not a click source, and
   stop measuring them on clicks.
+  - **Partially reopened 2026-08-17 by EXP-006 (§6c), once.** The zero-click reading
+    above was taken while every compare page emitted a snippet containing no price and
+    no listing count, so "the AI Overview takes the click" and "the snippet gave nobody
+    a reason to click" were indistinguishable. EXP-006 changes only the snippet and has
+    a kill criterion that closes this permanently if clicks stay at zero. The
+    prohibition on new posts is unaffected — no pages were added.
 - Redirect the writing effort into Step 0 and Step 4. Distribution to resellers is a
   community problem (r/Flipping, Discord servers, YouTube reseller channels), not a
   keyword problem.
@@ -829,6 +835,66 @@ Caveats set in advance:
   (a) Read it against the panel-render caveat, same as EXP-004: the reseller
       tail renders nothing below the n ≥ 10 sold-comps floor. Instrument how
       often it rendered before concluding anything about the tail.
+```
+
+```
+### EXP-006 — live price data in compare-page SERP snippets
+Started:            2026-08-17 (open)
+Claim under test:   None in 6b. This tests a distribution mechanism, not a value
+                    proposition — logged here because it directly revisits the Step 3
+                    standing instruction and must not be allowed to do so silently.
+Why this reopens Step 3:
+                    Step 3 (2026-08-07) concluded "treat compare pages as an
+                    AI-answer-engine surface, not a click source, and stop measuring
+                    them on clicks", reading 696 impressions at position 9 with zero
+                    clicks as proof the AI Overview owns these SERPs. That reading has
+                    an untested confound: every compare page was emitting a static
+                    `${item.name} Resale Price` title and a generic "Compare prices
+                    across Grailed, Depop…" description carrying **no numbers at all**,
+                    on queries where the price is the entire question. "AI Overview ate
+                    the click" and "the snippet gave nobody a reason to click" predict
+                    the same zero. This separates them. It is a snippet change only —
+                    no new pages, so Step 3's actual prohibition (no posts 117 onward)
+                    is untouched.
+Shipped:            app/compare/[slug]/page.tsx generateMetadata — stocked-platform
+                    count in a length-aware cascading title, live listing count and a
+                    trimmed typical asking-price band in the description, both from the
+                    snapshot the function already loaded. New typicalPriceBand() helper
+                    (per-platform averages, drop cheapest+priciest at n≥4) because raw
+                    min/max would have published the known residual outliers — a $29
+                    Cartier Love Bracelet, a $5 Ralph Lauren Polo. See PITFALLS §SEO.
+Primary metric:     Clicks to /compare/* from GSC. Baseline is unambiguous and frozen:
+                    **0 clicks on ~370 impressions, 28d to 2026-08-16**, across 33 pages
+                    sitting at positions 4.0 to 10.9 (adidas-samba 4.0, levis-501 7.3,
+                    bape-shark-hoodie 7.5, gucci-marmont 9.3, fendi-baguette 9.1 on 58
+                    impressions). Secondary: impression-weighted CTR on the subset
+                    ranking ≤10, which is where a snippet can plausibly act.
+Read no earlier than: 2026-09-21. Google must recrawl 33 pages and the SERP must settle;
+                    reading before ~4 weeks measures crawl lag, not snippet quality.
+Kill criterion:     If pages ranking ≤10 with live prices and listing counts in the
+                    snippet still produce approximately zero clicks after a full recrawl,
+                    then Step 3 was right on the merits and the confound is resolved
+                    against me: the AI Overview genuinely takes the click on these
+                    queries. In that case stop optimizing compare pages for CTR
+                    permanently, restore the "citation surface only" framing, and do not
+                    revisit it a third time.
+Caveats set in advance:
+  (a) Not isolated. The 9 blog edits (pricing rewrite + 8 fabric-guide modules) shipped
+      in the same change and add internal links into /compare and /price-check. A rise
+      in /compare clicks is therefore NOT cleanly attributable to the snippet — check
+      GSC (search clicks) separately from GA4 internal referrals before crediting it.
+  (b) The price band moves. Snapshots refresh hourly via ISR, Google recrawls far more
+      slowly, so an indexed snippet will often be days stale. This is accepted, not
+      overlooked: the band is a trimmed multi-platform average, "asking price" is
+      explicit, and the page itself always shows current data. If GSC ever reports
+      manual action or soft-404 signals on price mismatch, kill the number immediately
+      and keep only the counts.
+  (c) Small n by construction. 370 impressions over 28 days across 33 pages means even
+      a real effect may surface as single-digit clicks. Read direction, not magnitude,
+      and do not compute a significance test on this.
+  (d) `/price-check` links added to the fabric guides point at an auth-gated route
+      (307 logged out). Bounce there is expected and is not evidence about this
+      experiment.
 ```
 
 #### Queued

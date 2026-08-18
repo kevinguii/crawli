@@ -2,7 +2,7 @@
 title: "Harris Tweed Authentication: Spot Real vs Fake"
 description: "Authentic Harris Tweed is handwoven in the Outer Hebrides and protected by law. Identify it by the orb trademark, plus its dense hand and lanolin scent."
 date: "2026-06-25"
-updated: "2026-07-06"
+updated: "2026-08-17"
 cover: "/blog/images/harris-tweed-cover.svg"
 tags: ["material-guide", "harris-tweed-authentication", "vintage-coat"]
 faq:
@@ -84,4 +84,11 @@ Authentic vintage Harris Tweed coats and jackets sell for a real premium over ge
 
 For a broader look at how resale platforms handle counterfeit detection generally, not just for tweed, see our guide on [how to avoid super fakes when buying designer secondhand](/blog/how-to-avoid-super-fakes-on-resale-apps).
 
-The Harris Tweed Orb is not enough to verify a piece on its own. But the fabric's weight, density, irregular weave, and lanolin scent are nearly impossible to counterfeit convincingly. Trust what you feel and smell more than what the label says. When you spot a tweed coat on one marketplace, cross-check the label details across others. The more listing photos you compare, the easier it is to verify authenticity without relying on one seller's word. You can search all these platforms at once for free at [thecrawli.com](/).
+The Harris Tweed Orb is not enough to verify a piece on its own. But the fabric's weight, density, irregular weave, and lanolin scent are nearly impossible to counterfeit convincingly. Trust what you feel and smell more than what the label says. When you spot a tweed coat on one marketplace, cross-check the label details across others. The more listing photos you compare, the easier it is to verify authenticity without relying on one seller's word.
+
+## What it's worth right now
+
+Once the Orb, the weave, and the weight all check out, put a number on it:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell. Genuine tweed and wool-blend lookalikes are listed at similar asks, so the sold median is where the premium actually shows up.
+- **[Compare live listings](/compare).** The current spread across eight marketplaces, refreshed daily, so an unusually low ask is easy to spot and question.
