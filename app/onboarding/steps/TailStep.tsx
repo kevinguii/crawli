@@ -53,7 +53,7 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
           query={compQuery}
           loading={loading}
           data={data}
-          buyLabel={isReseller ? 'What would you pay for it?' : 'What did you pay for it?'}
+          buyLabel={isReseller ? 'Cost to buy' : 'Your cost'}
           buyHelp={
             isReseller
               ? "We'll factor in marketplace fees and show what you'd actually pocket."

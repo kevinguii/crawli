@@ -57,7 +57,7 @@ function PriceCheck({ initialQuery }: { initialQuery: string }) {
           query={submittedQuery}
           loading={loading}
           data={data}
-          buyLabel="What would you pay for it?"
+          buyLabel="Cost to buy"
           buyHelp="We'll factor in marketplace fees and show what you'd actually pocket."
           surface="price_check"
           variant="tabbed"

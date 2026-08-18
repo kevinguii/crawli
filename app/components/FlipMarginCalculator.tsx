@@ -180,7 +180,12 @@ function Field({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
+      {/* min-h reserves room for a 2-line label so all three fields in the row
+          start their input at the same height, whether or not this particular
+          label or hint actually wraps ("Sell on" is one line, "Resale price"
+          wraps once the "sold" chip narrows it, "You pay (sourcing)" can wrap
+          depending on the caller's copy). */}
+      <div className="mb-1 flex min-h-[28px] items-start justify-between gap-2">
         <label className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
           {label}
         </label>
