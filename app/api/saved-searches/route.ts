@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { PLATFORM_DOMAINS } from '@/lib/types';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
+import { TIER_CAPS, resolveTier } from '@/lib/tierCaps';
 
 const VALID_ALERT_PLATFORMS = Object.keys(PLATFORM_DOMAINS).filter(
   (p) => !ALERT_EXCLUDED_PLATFORMS.has(p),
@@ -76,13 +77,13 @@ export async function POST(request: Request) {
   // Check tier cap
   const { data: profile } = await admin
     .from('profiles')
-    .select('subscription_status, max_saved_searches, min_alert_cadence_hours')
+    .select('subscription_status, subscription_tier, max_saved_searches, min_alert_cadence_hours')
     .eq('id', user.id)
     .single();
 
-  const maxAlerts = profile?.max_saved_searches ?? 2;
-  const minCadence = profile?.min_alert_cadence_hours ?? 24;
-  const isPro = profile?.subscription_status === 'active' || profile?.subscription_status === 'past_due';
+  const maxAlerts = profile?.max_saved_searches ?? TIER_CAPS.free.maxSavedSearches;
+  const minCadence = profile?.min_alert_cadence_hours ?? TIER_CAPS.free.minAlertCadenceHours;
+  const isPro = resolveTier(profile?.subscription_status, profile?.subscription_tier) !== 'free';
 
   // Enforce cadence floor based on tier
   if (parsed.data.cadence_hours < minCadence) {

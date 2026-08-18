@@ -86,7 +86,9 @@ export async function searchAndScrape(
   query: string,
   filters: FilterState | undefined,
   signal?: AbortSignal,
-  nativeResultsCap: number = 10,
+  // Free-tier depth. Literal rather than TIER_CAPS to keep this module free of
+  // the lib/stripe import chain; every real caller passes an explicit cap.
+  nativeResultsCap: number = 8,
 ): Promise<Listing[]> {
   await primeExpansion(query);
 
@@ -145,7 +147,9 @@ export async function runSearchJob(
   platforms: string[],
   filters: FilterState | undefined,
   signal?: AbortSignal,
-  nativeResultsCap: number = 10,
+  // Free-tier depth. Literal rather than TIER_CAPS to keep this module free of
+  // the lib/stripe import chain; every real caller passes an explicit cap.
+  nativeResultsCap: number = 8,
 ): Promise<Listing[]> {
   const platformConcurrency = Math.max(
     1,

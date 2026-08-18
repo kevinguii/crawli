@@ -55,4 +55,42 @@ export interface SoldCompsResult {
   /** Platforms that errored rather than simply having too little data. Surfaced so
    *  a silent scrape failure can't masquerade as "no sales". */
   errors: string[];
+  /** Absent or false on the full payload. See LockedSoldCompsResult. */
+  locked?: false;
+}
+
+/**
+ * What a free user gets: proof the data exists, without the data.
+ *
+ * Sample size and window are deliberately retained — "Grailed, 34 sales, last 90
+ * days" makes the lock read as a withheld answer rather than a broken feature,
+ * and neither figure is the thing being sold. Every computed price (median, p25,
+ * p75) and daysToSell is omitted server-side, so no amount of devtools recovers
+ * them.
+ */
+export interface LockedPlatformSoldStats {
+  platform: SoldCompPlatform;
+  n: number;
+  windowDays: number;
+}
+
+export interface LockedSoldCompsResult {
+  locked: true;
+  available: boolean;
+  platforms: LockedPlatformSoldStats[];
+  errors: string[];
+}
+
+/** Strip a full result down to the free-tier view. */
+export function toLockedResult(result: SoldCompsResult): LockedSoldCompsResult {
+  return {
+    locked: true,
+    available: result.available,
+    platforms: result.platforms.map((p) => ({
+      platform: p.platform,
+      n: p.n,
+      windowDays: p.windowDays,
+    })),
+    errors: result.errors,
+  };
 }

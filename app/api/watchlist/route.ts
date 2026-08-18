@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { TIER_CAPS } from '@/lib/tierCaps';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     .select('max_tracked_listings')
     .eq('id', user.id)
     .single();
-  const maxTracked = profile?.max_tracked_listings ?? 50;
+  const maxTracked = profile?.max_tracked_listings ?? TIER_CAPS.free.maxTrackedListings;
 
   const { count: currentCount } = await supabase
     .from('watchlist')

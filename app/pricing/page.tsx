@@ -5,14 +5,16 @@ import type { Metadata } from 'next';
 import { PricingCards } from './PricingCards';
 import PricingCloseButton from './PricingCloseButton';
 import Wordmark from '@/app/components/landing/Wordmark';
-import type { Tier } from '@/lib/stripe';
+import { resolveTier, type Tier } from '@/lib/tierCaps';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Pricing',
+  // Factual description of the plan matrix only. Efficacy claims are gated by the
+  // ledger in docs/planning/COMPETITIVE_POSITIONING.md §6b.
   description:
-    'Crawli pricing for resellers. Start free, no credit card. Upgrade for more searches, sourcing alerts, and the flip margin calculator.',
+    'Crawli pricing for resellers. Start free, no credit card, with search across 9 marketplaces. Pro adds sold prices, your margin after fees, and daily alerts.',
   alternates: { canonical: '/pricing' },
 };
 
@@ -33,9 +35,7 @@ export default async function PricingPage({
       .select('subscription_status, subscription_tier')
       .eq('id', user.id)
       .single();
-    const status = profile?.subscription_status ?? 'free';
-    const isPaying = status === 'active' || status === 'past_due';
-    currentTier = (profile?.subscription_tier as Tier | null) ?? (isPaying ? 'pro' : 'free');
+    currentTier = resolveTier(profile?.subscription_status, profile?.subscription_tier);
   }
 
   return (

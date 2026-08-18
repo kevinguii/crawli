@@ -59,6 +59,7 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
               ? "We'll factor in marketplace fees and show what you'd actually pocket."
               : "We'll factor in marketplace fees and show what you could pocket if you resold it."
           }
+          surface="onboarding_tail"
         />
       </div>
 

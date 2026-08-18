@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
 import { FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
+import { TIER_CAPS } from '@/lib/tierCaps';
 
 const patchSchema = z.object({
   query: z.string().min(1).max(200),
@@ -78,6 +79,34 @@ export async function PATCH(
       JSON.stringify(parsed.data[f] ?? null) !== JSON.stringify(current[f] ?? null),
   );
 
+  // Enforce the cadence floor on edit, not just on create. POST has always
+  // checked this; PATCH did not, so a free user could create a weekly alert and
+  // immediately edit it to daily. Only checked when the edit actually changes
+  // cadence, so grandfathered alerts already on a faster cadence keep working
+  // until their owner touches that field.
+  if (
+    parsed.data.cadence_hours !== undefined &&
+    parsed.data.cadence_hours !== current.cadence_hours
+  ) {
+    const admin = createAdminClient();
+    const { data: cadenceProfile } = await admin
+      .from('profiles')
+      .select('min_alert_cadence_hours')
+      .eq('id', user.id)
+      .single();
+    const minCadence =
+      cadenceProfile?.min_alert_cadence_hours ?? TIER_CAPS.free.minAlertCadenceHours;
+    if (parsed.data.cadence_hours < minCadence) {
+      return NextResponse.json(
+        {
+          error: 'cadence_not_allowed',
+          message: `Your plan requires a minimum ${minCadence}hr cadence.`,
+        },
+        { status: 403 },
+      );
+    }
+  }
+
   // Block unpause if it would push the user over their active-alert cap.
   if (parsed.data.paused === false && current.paused === true) {
     const admin = createAdminClient();
@@ -86,7 +115,7 @@ export async function PATCH(
       .select('max_saved_searches')
       .eq('id', user.id)
       .single();
-    const maxAlerts = profile?.max_saved_searches ?? 2;
+    const maxAlerts = profile?.max_saved_searches ?? TIER_CAPS.free.maxSavedSearches;
 
     const { count } = await supabase
       .from('saved_searches')

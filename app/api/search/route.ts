@@ -7,7 +7,7 @@ import { buildCacheKey, getCachedEvents, setCachedEvents } from '@/lib/searchCac
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { allSettledWithConcurrency, searchAndScrape } from '@/lib/searchWorker';
-import { TIER_CAPS } from '@/lib/stripe';
+import { TIER_CAPS, resolveTier } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,9 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'profile_unavailable' }, { status: 500 });
   }
 
-  const status = profile.subscription_status ?? 'free';
-  const isPro = status === 'active' || status === 'past_due';
-  const tier = (profile.subscription_tier as 'free' | 'pro' | 'max' | null) ?? (isPro ? 'pro' : 'free');
+  const tier = resolveTier(profile.subscription_status, profile.subscription_tier);
   const cap = profile.max_searches_per_period ?? DEFAULT_FREE_CAP;
   // Native results cap derives from the user's tier via TIER_CAPS (single
   // source of truth). The profiles.native_results_cap column is no longer

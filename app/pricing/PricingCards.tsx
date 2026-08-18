@@ -16,6 +16,11 @@ const ALERT_EMAIL_TOOLTIP = (
 type Cycle = 'weekly' | 'monthly' | 'yearly';
 type PaidTier = Exclude<Tier, 'free'>;
 
+interface FeatureGroup {
+  label: string;
+  items: string[];
+}
+
 interface TierConfig {
   tier: PaidTier;
   name: string;
@@ -24,15 +29,14 @@ interface TierConfig {
   weekly: number;
   monthly: number;
   yearly: number; // total billed yearly
-  features: string[];
+  featureGroups: FeatureGroup[];
   highlight?: boolean;
 }
 
 const NATIVE_TOOLTIP = (
   <>
     <strong style={{ color: 'var(--text)' }}>Native platforms</strong> support
-    higher result counts on Pro and Max plans. eBay returns up to 10 per search
-    on every plan.
+    higher result counts on Pro. eBay returns up to 10 per search on every plan.
     <div style={{ marginTop: '6px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
       Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX
@@ -44,49 +48,76 @@ const NATIVE_TOOLTIP = (
   </>
 );
 
+// Two plans, not three. Pro and Max previously differed only by integers — five of
+// six lines were the same feature with a bigger number — which is a volume discount
+// rather than a tier, and 0 of 46 users ever chose the middle one. Max is retired
+// from this page but stays resolvable in lib/tierCaps so no legacy price ID
+// downgrades anyone. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
+//
+// Grouped into "Basic" and "Advanced" rather than one flat list, for two reasons:
+//
+// 1. The four price-intelligence facts (sold prices, range, margin, low/median/
+//    high) are really one capability, price intelligence, described four ways.
+//    Folding them into a single "Advanced" bullet reads as one clear unlock
+//    instead of a padded bullet count or its own multi-line block.
+// 2. Basic rows are in IDENTICAL order on both cards (only the numbers change), so
+//    a reader scanning the two columns side by side sees searches-vs-searches,
+//    saves-vs-saves on the same row: a real 1:1 comparison instead of two
+//    differently-ordered lists they have to cross-reference by hand.
+//
+// Saves and tracked listings say "Unlimited" on Pro as of 2026-08-17 even though
+// TIER_CAPS.pro still hard-caps both at 500 (see lib/tierCaps.ts) — 500 is a
+// practical ceiling nobody real approaches, not a felt limit, so the marketing
+// copy and the enforced cap are allowed to diverge here. If that cap ever tightens
+// enough to be reachable, this copy needs to change with it.
+//
+// If you add or reorder a Basic row on one plan, mirror it on the other or the
+// alignment breaks.
+const BASIC_LABEL = 'Basic';
+const ADVANCED_LABEL = 'Advanced';
+
 const PAID_TIERS: TierConfig[] = [
   {
     tier: 'pro',
     name: 'Pro',
     icon: '✦',
-    tagline: 'For active resellers',
+    tagline: 'Know what it is worth before you buy',
     weekly: 3,
     monthly: 10,
     yearly: 100,
-    features: [
-      '40 searches per week',
-      '8 search alerts',
-      '500 tracked listings',
-      'Up to 60 results per native platform',
-      'Email + in-app alert notifications',
+    featureGroups: [
+      {
+        label: BASIC_LABEL,
+        items: [
+          '40 searches per week',
+          'Deeper results on every native platform',
+          '8 alerts, checked daily',
+          'Unlimited saves and tracked listings',
+          'Email + in-app alert notifications',
+        ],
+      },
+      {
+        label: ADVANCED_LABEL,
+        items: [
+          'Sold prices, price range, and your margin after real marketplace fees',
+        ],
+      },
     ],
     highlight: true,
   },
-  {
-    tier: 'max',
-    name: 'Max',
-    icon: '★',
-    tagline: 'For serious sourcing operations',
-    weekly: 10,
-    monthly: 30,
-    yearly: 300,
-    features: [
-      '120 searches per week',
-      '20 search alerts',
-      'Unlimited tracked listings',
-      'Up to 100 results per native platform',
-      'Email + in-app alert notifications',
-      'Alert health sparkline',
-    ],
-  },
 ];
 
-const FREE_FEATURES: string[] = [
-  '5 searches per week',
-  '2 search alerts',
-  '50 tracked listings',
-  'Up to 15 results per native platform',
-  'Email + in-app alert notifications',
+const FREE_FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    label: BASIC_LABEL,
+    items: [
+      '5 searches per week',
+      'Standard results on every native platform',
+      '1 alert, checked daily',
+      '10 saves · 10 tracked listings',
+      'Email + in-app alert notifications',
+    ],
+  },
 ];
 
 export function PricingCards({
@@ -207,7 +238,7 @@ export function PricingCards({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:items-start">
+      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2 md:items-start">
         {/* ── Free plan ── */}
         <PlanCard
           icon={
@@ -216,13 +247,13 @@ export function PricingCards({
             </svg>
           }
           name="Free"
-          tagline="Get started at no cost"
+          tagline="See what is listed, everywhere"
           priceLabel="$0"
           priceSubLabel="/mo"
           isCurrent={isFree}
           ctaLabel={isFree ? 'Current plan' : 'Free plan'}
           ctaDisabled
-          features={FREE_FEATURES}
+          featureGroups={FREE_FEATURE_GROUPS}
           featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
           reassurance="No credit card required"
         />
@@ -265,7 +296,7 @@ export function PricingCards({
               ctaLabel={ctaLabel}
               ctaDisabled={loading !== null}
               onCtaClick={() => (isCurrent || isOnOtherPaidPlan ? handleManage() : handleSubscribe(t.tier))}
-              features={t.features}
+              featureGroups={t.featureGroups}
               featureTooltips={{ 'Email + in-app alert notifications': ALERT_EMAIL_TOOLTIP }}
               reassurance="Cancel anytime"
             />
@@ -332,7 +363,7 @@ interface PlanCardProps {
   ctaLabel: string;
   ctaDisabled?: boolean;
   onCtaClick?: () => void;
-  features: string[];
+  featureGroups: FeatureGroup[];
   featureTooltips?: Record<string, React.ReactNode>;
   reassurance?: string;
 }
@@ -349,7 +380,7 @@ function PlanCard({
   ctaLabel,
   ctaDisabled,
   onCtaClick,
-  features,
+  featureGroups,
   featureTooltips,
   reassurance,
 }: PlanCardProps) {
@@ -430,27 +461,44 @@ function PlanCard({
       )}
       {!reassurance && <div className="mb-5" />}
 
-      <FeatureList included={features} tooltips={featureTooltips} />
+      <FeatureList groups={featureGroups} tooltips={featureTooltips} />
     </div>
   );
 }
 
-function FeatureList({ included, tooltips }: { included: string[]; tooltips?: Record<string, React.ReactNode> }) {
+// Basic rows are in identical order across plans (see BASIC_LABEL comment above
+// PAID_TIERS), so stacking each group's items in a plain vertical flow is enough
+// to keep the Free and Pro "Basic" rows lined up row-for-row — no grid/table
+// needed. Advanced only exists on Pro, so it simply extends below where Free's
+// list ends.
+function FeatureList({ groups, tooltips }: { groups: FeatureGroup[]; tooltips?: Record<string, React.ReactNode> }) {
   return (
-    <ul className="space-y-2">
-      {included.map((f) => (
-        <li key={f} className="flex items-start gap-2" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden style={{ color: 'var(--accent)', marginTop: '1px', flexShrink: 0 }}>
-            <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="flex items-center gap-1">
-            {f}
-            {tooltips?.[f] && (
-              <InfoTooltip content={tooltips[f]} label={`More info: ${f}`} />
-            )}
-          </span>
-        </li>
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <p
+            className="mb-2 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: group.label === ADVANCED_LABEL ? 'var(--accent)' : 'var(--text-dim)' }}
+          >
+            {group.label}
+          </p>
+          <ul className="space-y-2">
+            {group.items.map((f) => (
+              <li key={f} className="flex items-start gap-2" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden style={{ color: 'var(--accent)', marginTop: '1px', flexShrink: 0 }}>
+                  <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="flex items-center gap-1">
+                  {f}
+                  {tooltips?.[f] && (
+                    <InfoTooltip content={tooltips[f]} label={`More info: ${f}`} />
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

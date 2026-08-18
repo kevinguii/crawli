@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-08-15
+**Last updated:** 2026-08-17
 
 ## How to use this file
  
@@ -23,7 +23,7 @@
 
 ---
  
-## Current state (2026-08-15)
+## Current state (2026-08-17)
 
 **Platforms: 9 total, 8 native (Avenue A), 1 Firecrawl-only (Avenue B)**
 Note: Mercari and Depop are both native-first with a Firecrawl fallback — they raw-HTTP-403 the datacenter IP but real Chromium renders most searches, so they're free most of the time and only pay a Firecrawl credit on an actual render miss. (Mercari's misclassifying hard-block probe was removed 2026-06-29.) The other 6 native platforms are free always. eBay has no native path at all.
@@ -43,12 +43,33 @@ Note: Mercari and Depop are both native-first with a Firecrawl fallback — they
 
 Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md)
 
-**Tier caps (lib/stripe.ts — single source of truth; revised 2026-06-29 to pass through Avenue A cost savings):**
-- Free: 5 searches/wk, 2 alerts, 50 tracked listings, 15 native results/search
-- Pro: 40 searches/wk, 8 alerts, 500 tracked listings, 60 native results/search
-- Max: 120 searches/wk, 20 alerts, unlimited tracked listings, 100 native results/search
-- Caps are stored on `profiles` columns (`max_searches_per_period`, `max_saved_searches`, `max_tracked_listings`, `native_results_cap`) AND derived in `TIER_CAPS`. Enforcement reads DB-first, so a TIER_CAPS change needs a `profiles` backfill for existing users (done 2026-06-29 for the 19 current free users). `nativeResultsCap` is the exception — always read live from TIER_CAPS.
-- Overage: prepaid credit packs (`lib/creditPacks.ts`): 100/$10, 300/$25, 1000/$60. `priceUsd` is display-only — owner must provision matching Stripe one-time prices ($10/$25/$60) or charged ≠ displayed. Drawn from `profiles.search_credits` after the period cap.
+**Tier caps (`lib/tierCaps.ts` — single source of truth; repackaged 2026-08-17 into two plans):**
+
+| | Free | Pro ($10/mo · $3/wk · $100/yr) |
+|---|---|---|
+| Searches/week | 5 | 40 |
+| Results per native platform | **8** | 60 |
+| Alerts | **1** | 8 |
+| Alert cadence | daily or weekly | daily or weekly |
+| Saves | **10** | 500 |
+| Tracked listings | **10** | 500 |
+| Price summary · sold comps · flip margin | **🔒 locked** | ✅ |
+
+- **`max` is retired from the pricing page** but stays in `TIER_CAPS` and `tierFromPriceId` so a legacy price ID can never downgrade anyone. **No account resolves to it** — verified by `scripts/verify-paywall.mts`.
+- **Caps moved out of `lib/stripe.ts` into `lib/tierCaps.ts`** (which imports nothing) so client components and the search worker can read them without bundling the Stripe SDK. `lib/stripe.ts` re-exports everything, so existing import sites are unchanged. See PITFALLS.
+- Caps are stored on `profiles` columns (`max_searches_per_period`, `max_saved_searches`, `max_tracked_listings`, `native_results_cap`, `max_saves`, `min_alert_cadence_hours`) AND derived in `TIER_CAPS`. **Enforcement reads DB-first, so a TIER_CAPS change needs a `profiles` backfill** — done 2026-08-17 for all 46 users, and the column *defaults* were retuned too (new signups inherit them). `nativeResultsCap` is the exception — always read live from TIER_CAPS.
+- **`profiles` grants are column-level** — a new cap column needs its own `GRANT` in the same migration or it 42501s. See PITFALLS.
+- **Alerts are gated by count, not frequency** (owner decision 2026-08-17, reversing a weekly-only free floor). Alert runs are cheap — `lib/searchCache` fans one scrape out to every user watching the same query — and the alert email is the strongest driver of a second session, the metric this product is worst at. `min_alert_cadence_hours` is 24 on both tiers; the floor logic and its UI are retained and driven off `caps.minAlertCadenceHours` from `/api/billing/status`, so raising it later needs no code change.
+- Overage: prepaid credit packs (`lib/creditPacks.ts`): 100/$10, 300/$25, 1000/$60. Drawn from `profiles.search_credits` after the period cap. **Verified live and working 2026-08-17** — prod has all three `STRIPE_PRICE_PACK_*` set to live-mode one-time prices whose amounts match the displayed $10/$25/$60 exactly. (Earlier docs called this "dormant / 503s without env vars" — that was stale. Local `.env` is test-mode with *different* pack IDs, which is why it reads as unconfigured from a dev box.)
+
+**Price intelligence is paid (2026-08-17, locked-UI redesigned same day).** The governing line is *free shows you listings, Pro tells you what they mean*. `POST /api/sold-comps` resolves tier and returns a **stripped payload** for free users — platform names, sample size `n` and `windowDays` only, with `medianPrice`/`p25`/`p75`/`daysToSell` omitted server-side (`toLockedResult` in `lib/soldComps/types.ts`). Deliberately **not** a 402: the locked UI needs the sample counts to be persuasive. Both the cache-hit and fresh-compute paths exit through one `respond()` helper so there is a single place prices could leak. Verified live: the raw fetch response for a free account contains no price field anywhere.
+
+**Locked UI is a blurred backdrop + upgrade overlay, not per-field redaction.** `LockedOverlay.tsx` blurs `children` (`filter: blur(8px)`, `inert`, `aria-hidden`, `pointer-events: none`) and layers a lock icon + message + "Upgrade to Pro" button on top. The critical rule: **`children` must never contain a real number** — a CSS blur is presentation, not protection, and is one devtools click from gone. `lib/fakePricing.ts` generates deterministic-but-fabricated numbers from non-sensitive seeds (query, platform, label) so the backdrop looks like a real panel through the *same* components the unlocked view uses (`Metric`, `SoldCompsPanel`) fed fake data — real sample size (`n`/`windowDays`) passes through since that was never secret. `SoldCompsLockedPanel.tsx` composes this for the sold-comps-only surfaces (`/price-check`, onboarding tail, via `SoldCompsLookup.tsx`); `PriceSummary.tsx` composes it directly for the results-page panel (Metric grid + sold comps + a static flip-margin bar). Tier read via `lib/hooks/useTier.ts` (fails closed while loading). `UpgradeInline.tsx` was deleted — superseded by the overlay.
+
+**Two different guarantees, both land on "free never sees a real number," for different reasons — see spec §5 for the full writeup:**
+- **Sold comps: a true server gate.** `/api/sold-comps` strips every price field before the response leaves the server. The number never reaches a free user's browser at all — there's nothing for devtools to recover regardless of what happens to the blur.
+- **Price summary (low/median/high): the locked render path never constructs the real number.** These figures are legitimately computable client-side (from listings already shown to free users), so hiding them isn't structurally possible without breaking "free shows listings" — but instead of computing the true value and then choosing not to render it, the locked branch calls `fakePriceString(...)` and never touches `priceRange`/`averagePrice` when building what gets blurred. One open, accepted, disclosed gap: `PriceSummary` itself still receives the real `priceRange`/`averagePrice` as props (it needs them to decide whether to render at all) — inspectable via React DevTools on that specific component, not on the blurred children. Not a new leak: it's the same number a user could already hand-average from the visible listing prices below the panel.
+- **Pro users never touch any of this** — `unlocked=true` skips the fake-data path entirely and renders the real values straight through.
 
 **Margin calculator (lib/marketplaceFees.ts):** covers 7 sell-on platforms (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX). ThredUp is source-from only — not in the fee calc. All rates verified 2026-06-28.
 
@@ -87,6 +108,16 @@ Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STAT
 
 ## Open issues
 
+**Paywall repackaging — committed and pushed to prod, awaiting owner's manual click-through (2026-08-17)**
+Lives on branch `worktree-paywall-repackaging`, worktree at `.claude/worktrees/paywall-repackaging`. Full context: read `docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md` (design + every decision, including two same-day reversals — alert cadence and the locked-UI approach) and the "Current state" entries above (tier caps table, price-intelligence gating, locked-UI mechanism) before touching anything in this area.
+- **Database changes are already LIVE in production**, independent of the code branch — the migration (`docs/migrations/paywall-repackaging.sql`) was applied directly via Supabase MCP. All free + pro profiles are on the new caps right now. Do not re-run the migration.
+- **Code-level verification is complete**: `npx tsx scripts/verify-paywall.mts` (37/37), `npx tsc --noEmit` clean, live network checks (`/api/sold-comps` response body confirmed price-free for a free account).
+- **A same-day follow-up session found and fixed a real dev-environment crash** unrelated to the paywall logic itself: Turbopack was auto-detecting the wrong workspace root because the worktree's `node_modules` was symlinked out to the main repo, corrupting RSC debug info and throwing an intermittent `frame.join is not a function` on the landing page. Fixed by pinning `turbopack.root` in `next.config.ts` and giving the worktree a real `npm ci`'d `node_modules` — see PITFALLS.
+- **Same session also consolidated three duplicate tier-resolution call sites** (`app/api/search/route.ts`, `app/api/saved-searches/route.ts`, `app/api/billing/status/route.ts`) onto the canonical `resolveTier()` from `lib/tierCaps.ts` — they agreed with it in every case checked, but were a latent paywall-hole risk per that function's own doc comment.
+- **Pricing page copy finalized**: dropped the "Search 9 marketplaces at once" line (identical on both plans, not a differentiator), dropped raw native-results numbers in favor of "Standard" vs "Deeper results on every native platform" (the one stat with no intuitive reference point), Pro's saves/tracked listings now read "Unlimited" in copy even though `TIER_CAPS.pro` still hard-caps both at 500 (a practical ceiling nobody real approaches — if that cap ever tightens enough to be reachable, this copy needs to change with it), the four price-intelligence bullets collapsed into one bullet under a small "Advanced" label instead of a separate block, and every "Basic" row is now in identical order on both cards for a real row-by-row comparison. No em dashes anywhere in the pricing copy per standing style rule.
+- **`handle_new_user()` now fires on email confirmation, not on signup** (separate migration, `defer_profile_creation_until_email_confirmed`) — previously a typo'd/abandoned password signup created a permanent `profiles` row (with real entitlement columns) for an account nobody could ever log into, since Supabase creates the `auth.users` row on `signUp()` regardless of whether the address is deliverable. Google OAuth is unaffected (arrives pre-confirmed). Found via three of the owner's own typo'd test signups; those two dead rows were deleted.
+- Verified across mobile (375px), tablet (768px), and desktop (1440px), both themes, via Playwright — zero console errors at any size.
+
 **ACTION REQUIRED: disable Supabase's legacy API keys (found + mostly fixed 2026-08-15)**
 A `service_role` key committed in plaintext across 7 files (still in git history — `git log -S` will find it) is now dead-tree-only: `.env` (local + prod), n8n, and all consuming scripts run on a new `sb_secret_...` key, verified working. **But the leaked JWT itself is still valid** until legacy keys are disabled in Supabase's dashboard (API Keys → "Legacy anon, service_role API keys" tab → Disable) — that's the one step left. Do it once you've confirmed nothing unexpected turns up after a normal day's traffic. Rewriting git history was considered and deliberately skipped — disabling legacy keys makes the historical copy worthless, and a force-push would break existing clones. Revisit only if the repo is ever made public.
 
@@ -103,6 +134,18 @@ Fixed 2026-07-25 for the luxury set: `filterAuthentic()` in `app/api/compare/ref
 ---
 
 ## Recent changes
+
+**2026-08-17 — Paywall repackaged: three plans → two, feature gates replacing inert caps, locked UI redesigned to a blur+overlay paywall**
+46 users, 0 real payers (the one `max` account was the owner's, now moved to `pro`). Diagnosis: the free tier was not too generous on volume — **exactly 1 of 46 users had ever hit a cap** at 2.18 searches/user/month — it was that no free user had ever met a locked door, and Pro vs Max differed only by integers (5 of 6 lines were the same feature with a bigger number). Fix: gate on things felt *on use* rather than on quotas. Free result depth 15 → 8, alerts 2 → 1 (**daily, gated by count not frequency** — see below), saves capped for the first time (10) and tracked 50 → 10; **all price intelligence became paid**. Max retired from the pricing page, Pro held at $10/mo (one variable at a time — the split is what is under test). Hard cutover for all 46 accounts, but **existing data is never truncated**: the one user over the new saves cap keeps all 26 and is simply blocked from adding an 11th. Full design + decision log: `docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md`. Measured as EXP-006 in `docs/planning/COMPETITIVE_POSITIONING.md` §6c.
+- **Alert cadence gate shipped, then reversed same day (owner call).** Free was going to be weekly-only; the owner asked for free to keep daily since alert runs are cache-cheap and the email is the strongest second-visit driver in a product where only 3 of 22 users return on day 2. `TIER_CAPS.free.minAlertCadenceHours` is now `24`, equal to Pro — alerts are gated purely by count (1 vs 8). The floor-enforcement code built for the weekly-only version was kept rather than ripped out: it's the enforcement for a dial meant to stay tunable, not dead code for a reversed decision.
+- **Locked UI redesigned same day (owner call), twice.** Round 1 shipped per-field dashed redaction with sample counts left legible. The owner asked for real blur with a devtools-proof guarantee, which surfaced a genuine risk in the per-field design: even though the true price wasn't rendered as text, it was still being *constructed and passed as a prop* into the locked branch — recoverable via React DevTools even with nothing visible in the raw DOM. Round 2 (final) restructured so the locked code path never constructs a real number at all: `LockedOverlay.tsx` blurs a **fabricated** backdrop (`lib/fakePricing.ts`, deterministic from non-sensitive seeds) built from the *same* components as the real view, with a lock icon + message + "Upgrade to Pro" button crisp on top. Verified live: the real `/api/sold-comps` fetch response for a free account carries no price field at all, and forcing the blur off via `page.evaluate` reveals only fabricated numbers that don't match the real Pro-tier figures for the same query. `UpgradeInline.tsx` deleted (superseded, zero remaining references).
+- **Two bugs found while building, both pre-existing:** `PATCH /api/saved-searches/[id]` never checked the cadence floor that POST enforced, and `CreateAlertModal` offered cadence options without consulting that floor at all. Both fixed. See PITFALLS.
+- **Credit packs are live and correct, not dormant.** Verified against the Stripe API on prod: all three packs are active `one_time` prices at exactly $10/$25/$60, and Pro's $10/$100/$3 match the pricing page. The "dormant" note in earlier docs came from reading a dev box, which is test-mode with different IDs.
+- **`TIER_CAPS` moved to `lib/tierCaps.ts`** so client components can read caps without bundling the Stripe SDK; `lib/stripe.ts` re-exports it, no call sites changed.
+- **`profiles` grants turned out to be column-level**, so the new `max_saves` column needed its own GRANT — a direct consequence of the 2026-08-15 privilege-escalation fix. Documented in PITFALLS so the next column-add does not 42501.
+- **Browser check done** (Playwright, throwaway QA account created and deleted afterward — the owner's own account is Google-OAuth-only with no password, so it couldn't drive the login form directly): light and dark verified on `/price-check`, results-page price summary, and the alert modal's cadence UI. Three unrelated organic signups landed mid-check (typo'd near-duplicate emails, likely a bot) — confirmed unrelated to this work and correctly inherited the new free-tier defaults automatically.
+- Verified: `npx tsx scripts/verify-paywall.mts` **37/37** (cap invariants including the free-daily-cadence assertion, `resolveTier` table, a serialized-body check that no price string survives stripping, live backfill, no account on `max`, over-cap data intact), `npx tsc --noEmit` clean, `npm run build` clean, eslint at its pre-existing 18-error baseline with nothing new added, `/api/sold-comps` and `/api/saves` 401 unauthenticated, `/pricing` server-renders two cards with no Max.
+- **Same-day follow-up:** fixed an unrelated intermittent Turbopack dev crash (see PITFALLS), consolidated 3 duplicate tier-resolution call sites onto `resolveTier()`, finalized pricing-page copy (Basic/Advanced grouping, row-aligned comparison, "Unlimited" saves/tracked wording on Pro), and moved `handle_new_user()` to fire on email confirmation instead of signup so typo'd signups stop creating dead `profiles` rows. Branch committed and pushed to `main`.
 
 **2026-08-15 — Supabase service_role key rotated in production; CTA copy simplified to "Sign up"**
 Legacy `service_role` key (the one scrubbed from the repo earlier today) rotated via Supabase's Publishable/Secret key migration — new `sb_secret_...` key deployed to `.env` (local + prod), n8n credentials, and the daily-email/SEO-brief scripts; verified via a real logged-in `/settings` load (exercises `createAdminClient()` → `profiles`) with zero JWT/permission errors in Supabase logs afterward. Legacy keys not yet disabled in the dashboard — do that once nothing unexpected turns up. Separately, all 7 `CtaLink` instances (`Hero`, `CTASection`, `LandingNav`, `FlipCalculator`, `SoldCompsSection`, `/compare/search`) relabeled from "Start comparing free" (desktop) / "Start free" (mobile nav) to a single "Sign up" everywhere — no `href`/behavior change, all still route to `/login?tab=signup`.

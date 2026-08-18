@@ -2,15 +2,21 @@
 // NDJSON protocol there is fragile, and this has a completely different cost
 // profile (two plain HTTP requests, no browser, no Firecrawl).
 //
-// Does NOT consume a search credit. It rides along with a search the user already
-// paid for, and charging for it would suppress the exposure EXP-004 needs.
+// Does NOT consume a search credit — it is gated by tier instead. As of 2026-08-17
+// (paywall repackaging) this is a paid capability: free users receive a stripped
+// payload carrying platform names and sample sizes only, with every computed price
+// omitted server-side. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
+//
+// Deliberately NOT a 402: the client renders a locked panel that needs the sample
+// counts to be persuasive, and an error status would leave it with nothing to draw.
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getSoldComps } from '@/lib/soldComps';
+import { getSoldComps, toLockedResult } from '@/lib/soldComps';
 import type { SoldCompsResult } from '@/lib/soldComps';
+import { resolveTier, canSeePriceIntelligence } from '@/lib/stripe';
 
 const CACHE_TTL_SECONDS = 24 * 60 * 60;
 
@@ -49,6 +55,22 @@ export async function POST(request: Request) {
   const key = cacheKey(parsed.query);
   const admin = createAdminClient();
 
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('subscription_status, subscription_tier')
+    .eq('id', user.id)
+    .single();
+
+  const tier = resolveTier(profile?.subscription_status, profile?.subscription_tier);
+  const unlocked = canSeePriceIntelligence(tier);
+
+  // Free users still run the lookup and still warm the shared cache — it is two
+  // plain HTTP requests with no Firecrawl credit, and the locked panel needs real
+  // sample counts. The stripping happens on the way out, on both the cache-hit and
+  // fresh-compute paths, so there is exactly one place prices can escape.
+  const respond = (result: SoldCompsResult) =>
+    NextResponse.json(unlocked ? result : toLockedResult(result));
+
   const { data: cached } = await admin
     .from('sold_comps_cache')
     .select('payload, expires_at')
@@ -56,7 +78,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
-    return NextResponse.json(cached.payload as SoldCompsResult);
+    return respond(cached.payload as SoldCompsResult);
   }
 
   let result: SoldCompsResult;
@@ -82,5 +104,5 @@ export async function POST(request: Request) {
     if (error) console.error('[/api/sold-comps] cache write failed', error);
   }
 
-  return NextResponse.json(result);
+  return respond(result);
 }

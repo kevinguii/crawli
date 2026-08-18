@@ -64,15 +64,29 @@ fees $3.75, net $56.25, ROI 141%. Both match hand calc; still needs a manual bro
 
 ## 2. Tier / cap / overage model
 
-### Tiers and caps — UNCHANGED this session
-`TIER_CAPS` in `lib/stripe.ts` remains the single source of truth and a tunable dial. Numbers
-were NOT changed and require owner sign-off to change:
+### Tiers and caps — REPACKAGED 2026-08-17 (two plans)
 
-| Tier | searches/period (7-day) | alerts | tracked | nativeResultsCap |
-|---|---|---|---|---|
-| free | 3 | 1 | 50 | 10 |
-| pro | 20 | 3 | 200 | 40 |
-| max | 70 | 10 | 1000 | 80 |
+> **This section was stale.** It described a 3/1/50/10 free tier that had already been
+> superseded twice (2026-06-29, then 2026-08-17). `TIER_CAPS` now lives in
+> **`lib/tierCaps.ts`**, not `lib/stripe.ts` — that file constructs a Stripe client at
+> module scope, so caps were moved somewhere client components can import them.
+> `lib/stripe.ts` re-exports them. Read the live table there before writing anything
+> from this section.
+
+| Tier | searches/period (7-day) | alerts | cadence | saves | tracked | nativeResultsCap | price intelligence |
+|---|---|---|---|---|---|---|---|
+| free | 5 | 1 | daily or weekly | 10 | 10 | 8 | 🔒 |
+| pro | 40 | 8 | daily or weekly | 500 | 500 | 60 | ✅ |
+| max *(retired)* | 120 | 20 | daily or weekly | unlimited | unlimited | 100 | ✅ |
+
+**`max` is no longer offered.** It is retained in code only so a legacy Stripe price ID
+cannot downgrade someone; no account resolves to it. Do not put it in copy.
+
+**Price intelligence is the paid capability.** The price summary (low/median/high), sold
+comps, and the flip-margin calculator seeded from median sold are all Pro-only as of
+2026-08-17. `/api/sold-comps` strips every price field server-side for free users. The
+governing line is *free shows you listings, Pro tells you what they mean*.
+Full design: `docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md`.
 
 ### Overage = prepaid credit packs (debt-proof)
 Once a tier's included searches are spent, additional searches draw down **prepaid credits**

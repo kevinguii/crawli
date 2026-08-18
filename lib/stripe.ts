@@ -48,30 +48,21 @@ export const STRIPE_PRICE_MAX_MONTHLY = process.env.STRIPE_PRICE_ID_MAX_MONTHLY!
 export const STRIPE_PRICE_MAX_YEARLY = process.env.STRIPE_PRICE_ID_MAX_YEARLY!;
 export const STRIPE_PRICE_MAX_WEEKLY = process.env.STRIPE_PRICE_ID_MAX_WEEKLY!;
 
-export type Tier = 'free' | 'pro' | 'max';
 export type BillingCycle = 'weekly' | 'monthly' | 'yearly';
 
-export interface TierCaps {
-  maxSearchesPerPeriod: number;
-  maxSavedSearches: number;
-  maxTrackedListings: number;
-  nativeResultsCap: number;
-}
+// Tiers and caps live in lib/tierCaps.ts, which imports nothing — this module
+// constructs a Stripe client at import time, so client components and the search
+// worker must not pull it in. Re-exported here so existing import sites keep
+// working; prefer importing from '@/lib/tierCaps' in new code.
+export {
+  TIER_CAPS,
+  UNLIMITED,
+  resolveTier,
+  canSeePriceIntelligence,
+} from './tierCaps';
+export type { Tier, TierCaps } from './tierCaps';
 
-// UNLIMITED is a large finite sentinel (not Infinity) so it serializes to JSON
-// and stores cleanly in the integer `max_tracked_listings` column. No real
-// watchlist approaches it. Render as "Unlimited" in the UI.
-export const UNLIMITED = 1_000_000;
-
-// Caps are weekly for searches. Revised 2026-06-29 to pass through the Avenue A
-// cost savings (per-search ~$0.006 Std / ~$0.019 Hobby — see
-// scripts/cogs-per-search.mjs): more searches/alerts/tracked + deeper native
-// results, metered hardest on the one axis with real unit cost (searches).
-export const TIER_CAPS: Record<Tier, TierCaps> = {
-  free: { maxSearchesPerPeriod: 5,   maxSavedSearches: 2,  maxTrackedListings: 50,        nativeResultsCap: 15 },
-  pro:  { maxSearchesPerPeriod: 40,  maxSavedSearches: 8,  maxTrackedListings: 500,       nativeResultsCap: 60 },
-  max:  { maxSearchesPerPeriod: 120, maxSavedSearches: 20, maxTrackedListings: UNLIMITED, nativeResultsCap: 100 },
-};
+import type { Tier } from './tierCaps';
 
 export function tierFromPriceId(priceId: string | null | undefined): Tier {
   if (!priceId) return 'free';

@@ -50,6 +50,8 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   const [minPrice, setMinPrice] = useState(critField(editingAlert?.criteria, 'minPrice'));
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [isPaid, setIsPaid] = useState(false);
+  // Strictest floor until billing answers — see mayPickDaily below.
+  const [minCadence, setMinCadence] = useState(168);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [timezone] = useState<string>(
@@ -57,13 +59,26 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       : 'UTC'),
   );
-  const nextRunDate = nextAnchoredRunAt(timezone, cadence);
+  // Mirror the server's cadence floor rather than inferring it from paid-vs-free,
+  // so this UI follows TIER_CAPS if the dial ever moves. Free currently gets daily
+  // (floor 24), same as Pro — free alerts are limited by count, not frequency.
+  //
+  // Derived, not clamped through an effect: an effect would let the pre-clamp value
+  // submit on the render before it lands. Starts at the strictest floor and relaxes
+  // once billing loads, so it fails closed by construction. Editing is exempt — the
+  // API only re-checks the floor when the value actually changes, so an alert
+  // already on a faster cadence keeps it.
+  const mayPickDaily = minCadence <= 24 || !!editingAlert;
+  const effectiveCadence: 24 | 168 = !mayPickDaily && cadence === 24 ? 168 : cadence;
+
+  const nextRunDate = nextAnchoredRunAt(timezone, effectiveCadence);
 
   useEffect(() => {
     fetch('/api/billing/status')
       .then((r) => r.json())
       .then((d) => {
         setIsPaid(d.status === 'active' || d.status === 'past_due' || (d.tier && d.tier !== 'free'));
+        if (typeof d?.caps?.minAlertCadenceHours === 'number') setMinCadence(d.caps.minAlertCadenceHours);
       })
       .catch(() => {});
 
@@ -134,7 +149,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
             query,
             platforms,
             criteria: buildCriteria() ?? null,
-            cadence_hours: cadence,
+            cadence_hours: effectiveCadence,
           }),
         });
         const data = await res.json();
@@ -166,7 +181,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
           query,
           platforms,
           criteria: buildCriteria(),
-          cadence_hours: cadence,
+          cadence_hours: effectiveCadence,
           notify_timezone: timezone,
           next_run_at: nextRunDate.toISOString(),
         }),
@@ -339,24 +354,59 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               </label>
               <div className="flex gap-2">
                 {([24, 168] as const).map((h) => {
-                  const selected = cadence === h;
+                  const selected = effectiveCadence === h;
+                  // Daily is Pro. Rendered disabled rather than hidden: a locked
+                  // option the user can see is the upgrade prompt. Hiding it just
+                  // makes the free plan look like the whole product.
+                  // Mirrors the server exactly: PATCH only re-checks the floor
+                  // when cadence actually changes, so an existing daily alert
+                  // stays togglable for its owner. Inert while the free floor is
+                  // 24 — kept so raising the floor needs no UI change.
+                  const gated = h < minCadence && !mayPickDaily;
                   return (
                     <button
                       key={h}
                       type="button"
-                      onClick={() => setCadence(h)}
+                      onClick={() => { if (!gated) setCadence(h); }}
+                      disabled={gated}
+                      title={gated ? 'Daily checks are part of Pro' : undefined}
                       className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
                       style={
                         selected
                           ? { background: 'var(--accent)', color: '#fff' }
-                          : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }
+                          : {
+                              background: 'var(--surface)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-muted)',
+                              opacity: gated ? 0.55 : 1,
+                              cursor: gated ? 'not-allowed' : 'pointer',
+                            }
                       }
                     >
                       {cadenceLabel(h)}
+                      {gated && ' · Pro'}
                     </button>
                   );
                 })}
               </div>
+              {!mayPickDaily && (
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  Free alerts check weekly.{' '}
+                  <a href="/pricing" className="underline" style={{ color: 'var(--text-muted)' }}>
+                    Pro checks daily
+                  </a>
+                  .
+                </p>
+              )}
+              {mayPickDaily && !isPaid && (
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
+                  Free includes 1 alert.{' '}
+                  <a href="/pricing" className="underline" style={{ color: 'var(--text-muted)' }}>
+                    Pro gives you 8
+                  </a>
+                  .
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -455,7 +505,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <div className="flex justify-between">
                 <span style={{ color: 'var(--text-muted)' }}>Frequency</span>
                 <span style={{ color: 'var(--text)' }}>
-                  {cadenceScheduleLabel(cadence)}
+                  {cadenceScheduleLabel(effectiveCadence)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -513,7 +563,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
             {userEmail && (
               <p className="text-xs mb-5" style={{ color: 'var(--text-dim)' }}>
                 You&apos;ll get a badge on the bell icon and an email to{' '}
-                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear ({cadenceLabel(cadence).toLowerCase()}, approximately).
+                <strong style={{ color: 'var(--text-muted)' }}>{userEmail}</strong> when new matches appear ({cadenceLabel(effectiveCadence).toLowerCase()}, approximately).
               </p>
             )}
 

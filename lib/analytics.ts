@@ -40,7 +40,18 @@ type AnalyticsEvent =
   | { name: 'sign_up'; params: { method: 'email' } }
   // Every new account is gated through /onboarding regardless of auth method,
   // so this is the one reliable cross-method activation signal.
-  | { name: 'onboarding_complete'; params: { persona: string } };
+  | { name: 'onboarding_complete'; params: { persona: string } }
+  // A free user was shown a locked price-intelligence panel. Without this, a null
+  // conversion result cannot distinguish "nobody reached the wall" from "the wall
+  // does not persuade" — which is exactly the ambiguity that made EXP-002
+  // unreadable. Fires once per surface per mount, not per render.
+  | { name: 'paywall_view'; params: { surface: PaywallSurface } }
+  // Click on an upgrade CTA rendered by a locked panel.
+  | { name: 'upgrade_click'; params: { surface: PaywallSurface } };
+
+/** Where a paywall was shown or actioned. Union'd for the same reason as
+ *  CtaLocation: a typo must not silently fork the funnel in GA4. */
+export type PaywallSurface = 'search_results' | 'price_check' | 'onboarding_tail';
 
 export function track(event: AnalyticsEvent): void {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;

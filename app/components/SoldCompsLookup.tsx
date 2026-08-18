@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import SoldCompsPanel from './SoldCompsPanel';
+import SoldCompsLockedPanel from './SoldCompsLockedPanel';
 import { netFlipProfit } from '@/lib/marketplaceFees';
-import type { SoldCompsResult, PlatformSoldStats } from '@/lib/soldComps/types';
+import type { PlatformSoldStats } from '@/lib/soldComps/types';
+import type { SoldCompsResponse } from '@/lib/hooks/useSoldComps';
+import type { PaywallSurface } from '@/lib/analytics';
 import { PLATFORM_NAMES, type PlatformKey } from '@/lib/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
@@ -23,16 +26,22 @@ export interface SoldCompsLookupProps {
   /** The submitted query. Empty string renders nothing (nothing searched yet). */
   query: string;
   loading: boolean;
-  data: SoldCompsResult | null;
+  data: SoldCompsResponse | null;
   /** Label for the buy-price input, e.g. "What would you pay for it?" */
   buyLabel: string;
   /** One-line reason we ask (fees baked in, shows expected payout). */
   buyHelp: string;
+  /** Which paywall surface this instance is, for the locked-state analytics. */
+  surface: PaywallSurface;
 }
 
-export default function SoldCompsLookup({ query, loading, data, buyLabel, buyHelp }: SoldCompsLookupProps) {
+export default function SoldCompsLookup({ query, loading, data, buyLabel, buyHelp, surface }: SoldCompsLookupProps) {
   const [picked, setPicked] = useState<PlatformSoldStats | null>(null);
-  const stats = picked ?? data?.platforms[0] ?? null;
+  // Free users receive a payload with no prices in it at all, so there is nothing
+  // here to seed the margin calculator from — the locked branch renders instead.
+  const locked = data?.locked === true;
+  const unlockedData = data && !locked ? data : null;
+  const stats = picked ?? unlockedData?.platforms[0] ?? null;
   const [buyPrice, setBuyPrice] = useState('');
 
   const buy = Number(buyPrice);
@@ -55,10 +64,14 @@ export default function SoldCompsLookup({ query, loading, data, buyLabel, buyHel
         </p>
       )}
 
-      {!loading && data?.available && (
+      {!loading && locked && data.available && (
+        <SoldCompsLockedPanel platforms={data.platforms} query={query} surface={surface} />
+      )}
+
+      {!loading && unlockedData?.available && (
         <div>
           <SoldCompsPanel
-            platforms={data.platforms}
+            platforms={unlockedData.platforms}
             selected={stats?.platform ?? null}
             onSelect={setPicked}
           />

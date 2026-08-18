@@ -561,6 +561,66 @@ of the record.
 #### Running
 
 ```
+### EXP-006 — paywall repackaging: two plans, price intelligence gated
+Started:            2026-08-17
+Claim under test:   C1 + C5 as *purchase motivators* (not as facts — both are
+                    already true and shipped; what is untested is whether anyone
+                    will pay for them)
+Spec:               docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md
+
+Diagnosis this rests on (pulled 2026-08-17, 46 users):
+  · 0 real paying users. The single `max` account was the owner's own.
+  · 1 of 46 users has EVER hit a cap. Free-tier quotas were commercially inert.
+  · Pro vs Max differed only by integers — 5 of 6 lines identical but larger.
+    0 of 46 users ever chose the middle tier.
+  · 25 signups in 30d but only 6 completed onboarding.
+  · 11 of 22 recent searchers searched exactly once; 3 returned on a 2nd day.
+
+Change:             Three plans → two (Free, Pro $10/mo). Gates moved off quotas
+                    and onto things felt on every use: result depth 15→8, alerts
+                    2→1, saves capped at 10 (was ungated), tracked 50→10. All
+                    price intelligence (price summary, sold comps, flip margin)
+                    became Pro-only.
+Deliberately NOT:   slowing free alerts to weekly. It was in the original spec and
+                    was reversed before launch — alert runs are cache-cheap and the
+                    alert email is the strongest second-visit mechanism in a
+                    product where only 3 of 22 users return on a 2nd day. Alerts
+                    are gated by COUNT (1 vs 8), never by frequency. If EXP-006
+                    reads null, do not reach for this lever first.
+Deliberately NOT:   a trial or reverse trial (owner decision — and with 75% of
+                    searchers active on exactly one day, a time-boxed trial would
+                    mostly expire unwitnessed).
+
+Hypothesis:         Nobody paid because nothing was ever withheld, not because the
+                    price was wrong. Making the computed layer visible-but-locked
+                    produces the first genuine upgrade prompt in the product.
+
+Primary metric:     conversions to Pro (baseline: 0)
+Guardrail metric:   2nd-day return rate (baseline 27%) — this is the one that
+                    tells us whether the gate is suppressing activation
+Instrumentation:    `paywall_view` {surface} and `upgrade_click` {surface} via
+                    lib/analytics.ts. WITHOUT THESE a null result cannot separate
+                    "nobody reached the wall" from "the wall does not persuade" —
+                    which is exactly what made EXP-002 unreadable. Both still need
+                    marking as key events in the GA4 UI.
+
+Kill criterion (fixed 2026-08-17, before launch — do not renegotiate after
+reading the result):
+                    If at 2026-09-16 there are still zero conversions AND 2nd-day
+                    return has fallen below the 27% baseline, the gate is
+                    suppressing activation rather than converting it. Response:
+                    relax the sold-comps lock to median-visible (median + n free,
+                    spread and days-to-sell paid). Do NOT respond by tightening.
+
+Known ambiguity:    Step 0 (audience validation) was skipped back in August, so a
+                    null result still cannot distinguish "resellers won't pay for
+                    this" from "these 46 users were never resellers." Same
+                    structural weakness as EXP-004. Read accordingly.
+
+Disposition:        open
+```
+
+```
 ### EXP-002 — alert CTA prominence + compound criteria surfacing  [SUPERSEDED]
 Started:            2026-08-10 · Superseded 2026-08-10 (see Disposition)
 Claim under test:   C3

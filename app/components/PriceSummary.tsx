@@ -10,7 +10,11 @@ import {
   netFlipProfit,
 } from '@/lib/marketplaceFees';
 import { useSoldComps } from '@/lib/hooks/useSoldComps';
+import { useTier } from '@/lib/hooks/useTier';
+import { canSeePriceIntelligence } from '@/lib/tierCaps';
+import { fakePriceString, fakeSoldStats } from '@/lib/fakePricing';
 import SoldCompsPanel from './SoldCompsPanel';
+import LockedOverlay from './LockedOverlay';
 import type { PlatformSoldStats } from '@/lib/soldComps/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
@@ -52,9 +56,23 @@ export default function PriceSummary({
   query,
 }: Props) {
   const { data: sold } = useSoldComps(query);
+  const { tier } = useTier();
   const [seed, setSeed] = useState<ResaleSeed | null>(null);
 
-  const soldPlatforms = sold?.available ? sold.platforms : [];
+  // Fail closed while the tier is still resolving: show the locked view until we
+  // know otherwise, so the paid numbers never flash on screen for a free user.
+  const unlocked = tier !== null && canSeePriceIntelligence(tier);
+
+  const soldLocked = sold?.locked === true;
+  const soldPlatforms: PlatformSoldStats[] =
+    sold && !soldLocked && sold.available ? sold.platforms : [];
+
+  // Fabricated backdrop for the locked view — see lib/fakePricing.ts. Sample size
+  // and window pass through real (never secret); every price figure is invented.
+  const fakeSoldRows: PlatformSoldStats[] = useMemo(() => {
+    if (!sold || sold.locked !== true || !sold.available) return [];
+    return sold.platforms.map((p) => fakeSoldStats(p, query ?? 'x'));
+  }, [sold, query]);
 
   // Seed once from platforms[0] (Grailed when it qualified — see lib/soldComps).
   // Keyed on the platform name so a new search reseeds but a re-render does not
@@ -74,6 +92,45 @@ export default function PriceSummary({
       nonce: (prev?.nonce ?? 0) + 1,
     }));
 
+  const countLabel = `${totalCount} listing${totalCount !== 1 ? 's' : ''}`;
+
+  if (!unlocked) {
+    // One overlay, one upgrade prompt, covering the whole panel — a grid of real
+    // numbers under a CSS blur would be trivially unblurred via devtools, so the
+    // backdrop underneath is entirely fabricated (see lib/fakePricing.ts). The
+    // real priceRange/averagePrice this component received are never threaded
+    // into the blurred subtree.
+    return (
+      <LockedOverlay
+        surface="search_results"
+        title="Prices are here. The read on them is Pro."
+        body={`We found ${countLabel} for this search. Pro shows the low, median and high across them, what the item has actually been selling for, and your margin after fees.`}
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <Metric label="Low" value={fakePriceString(`${query ?? ''}-${totalCount}-low`, 20, 180)} accent />
+            <Metric label="Average" value={fakePriceString(`${query ?? ''}-${totalCount}-avg`, 60, 260)} source={countLabel} />
+            <Metric label="High" value={fakePriceString(`${query ?? ''}-${totalCount}-high`, 180, 480)} />
+          </div>
+          {fakeSoldRows.length > 0 && (
+            <SoldCompsPanel platforms={fakeSoldRows} selected={null} onSelect={() => {}} />
+          )}
+          <div
+            className="flex items-center justify-between rounded-2xl px-4 py-3"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              Suggested flip margin
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Estimate profit
+            </span>
+          </div>
+        </div>
+      </LockedOverlay>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
@@ -81,7 +138,7 @@ export default function PriceSummary({
         <Metric
           label="Average"
           value={averagePrice !== null ? fmt.format(averagePrice) : '-'}
-          source={`${totalCount} listing${totalCount !== 1 ? 's' : ''}`}
+          source={countLabel}
         />
         <Metric label="High" value={fmt.format(priceRange.max)} source={highSource} />
       </div>
@@ -91,7 +148,6 @@ export default function PriceSummary({
         selected={seed?.platform ?? null}
         onSelect={selectPlatform}
       />
-
       <FlipMargin averagePrice={averagePrice} priceRange={priceRange} seed={seed} />
     </div>
   );

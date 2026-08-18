@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ensureDefaultFolder } from '@/lib/collectionFolders';
+import { TIER_CAPS } from '@/lib/tierCaps';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -22,6 +23,45 @@ export async function POST(req: NextRequest) {
 
   if (!listing_url || !platform || !title) {
     return NextResponse.json({ error: 'missing required fields' }, { status: 400 });
+  }
+
+  // Saves cap. Ungated before 2026-08-17 (paywall repackaging).
+  //
+  // Users who were already over the new cap keep every existing save and are simply
+  // blocked from adding another until they are back under it — deleting data to
+  // enforce a new price plan turns a pricing change into a support incident.
+  // Re-saving something already saved is idempotent, not a new save, so it is
+  // allowed through even at the cap.
+  const { data: capProfile } = await supabase
+    .from('profiles')
+    .select('max_saves')
+    .eq('id', user.id)
+    .maybeSingle();
+  const maxSaves = capProfile?.max_saves ?? TIER_CAPS.free.maxSaves;
+
+  const { count: savedCount } = await supabase
+    .from('saves')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  if ((savedCount ?? 0) >= maxSaves) {
+    const { data: alreadySaved } = await supabase
+      .from('saves')
+      .select('id, folder_id')
+      .eq('user_id', user.id)
+      .eq('listing_url', listing_url)
+      .maybeSingle();
+    if (alreadySaved) {
+      return NextResponse.json({
+        save_id: alreadySaved.id,
+        folder_id: alreadySaved.folder_id,
+        already_saved: true,
+      });
+    }
+    return NextResponse.json(
+      { error: 'saves_cap_reached', cap: maxSaves, used: savedCount ?? 0 },
+      { status: 402 },
+    );
   }
 
   let targetFolderId: string | null = null;

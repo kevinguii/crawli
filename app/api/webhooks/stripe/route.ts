@@ -98,7 +98,8 @@ export async function POST(req: NextRequest) {
           max_saved_searches: TIER_CAPS.free.maxSavedSearches,
           max_tracked_listings: TIER_CAPS.free.maxTrackedListings,
           native_results_cap: TIER_CAPS.free.nativeResultsCap,
-          min_alert_cadence_hours: 24,
+          max_saves: TIER_CAPS.free.maxSaves,
+          min_alert_cadence_hours: TIER_CAPS.free.minAlertCadenceHours,
         }).eq('id', userId);
         break;
       }
@@ -167,7 +168,11 @@ async function applySubscription(
     max_saved_searches: caps.maxSavedSearches,
     max_tracked_listings: caps.maxTrackedListings,
     native_results_cap: caps.nativeResultsCap,
-    min_alert_cadence_hours: 24,
+    max_saves: caps.maxSaves,
+    // Per-tier via TIER_CAPS rather than hardcoded, so a future cadence-floor
+    // change here needs no code edit. Free currently matches pro at 24 (daily) —
+    // see the owner-decision note on TIER_CAPS in lib/tierCaps.ts.
+    min_alert_cadence_hours: caps.minAlertCadenceHours,
   }).eq('id', userId).select();
   if (error) {
     console.error(`[stripe-webhook] supabase update failed for user=${userId}:`, error);

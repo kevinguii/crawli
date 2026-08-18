@@ -3,6 +3,7 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { platformColor } from './platformColors';
 import PlatformBadge from './PlatformBadge';
+import { TIER_CAPS } from '@/lib/tierCaps';
 export type CheckpointStatus = 'loading' | 'done' | 'failed';
 
 interface Props {
@@ -44,7 +45,7 @@ export default function SearchProgress({ platforms, statuses, errors, counts, na
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {settled === total
             ? 'Search complete'
-            : `Searching platforms… (up to ${nativeResultsCap ?? 15} per native platform)`}
+            : `Searching platforms… (up to ${nativeResultsCap ?? TIER_CAPS.free.nativeResultsCap} per native platform)`}
         </p>
         <div className="flex items-center justify-between gap-3 sm:justify-end">
           {isSearching && onCancel && (

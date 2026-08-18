@@ -54,6 +54,7 @@ export default function PriceCheckPage() {
           data={data}
           buyLabel="What would you pay for it?"
           buyHelp="We'll factor in marketplace fees and show what you'd actually pocket."
+          surface="price_check"
         />
       </div>
     </div>

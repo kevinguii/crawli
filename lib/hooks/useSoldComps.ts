@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { SoldCompsResult } from '@/lib/soldComps/types';
+import type { SoldCompsResult, LockedSoldCompsResult } from '@/lib/soldComps/types';
+
+/**
+ * What /api/sold-comps returns. Free users get the locked variant, which carries
+ * platform names and sample sizes but no prices — the stripping happens server
+ * side, so this union is the honest shape of the response, not a UI convenience.
+ * Narrow with `data.locked === true` before reading any price field.
+ */
+export type SoldCompsResponse = SoldCompsResult | LockedSoldCompsResult;
 
 /**
  * Fetch sold comps for a query.
@@ -11,7 +19,7 @@ import type { SoldCompsResult } from '@/lib/soldComps/types';
  * dead upstream should leave the rest of the results page untouched.
  */
 export function useSoldComps(query: string | null | undefined) {
-  const [data, setData] = useState<SoldCompsResult | null>(null);
+  const [data, setData] = useState<SoldCompsResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -33,7 +41,7 @@ export function useSoldComps(query: string | null | undefined) {
       signal: controller.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((json: SoldCompsResult | null) => {
+      .then((json: SoldCompsResponse | null) => {
         if (!cancelled) setData(json);
       })
       .catch(() => {

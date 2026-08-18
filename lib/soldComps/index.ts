@@ -77,4 +77,10 @@ export async function getSoldComps(query: string): Promise<SoldCompsResult> {
   return { available: platforms.length > 0, platforms, errors };
 }
 
-export type { SoldCompsResult, PlatformSoldStats } from './types';
+export type {
+  SoldCompsResult,
+  PlatformSoldStats,
+  LockedSoldCompsResult,
+  LockedPlatformSoldStats,
+} from './types';
+export { toLockedResult } from './types';

@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root explicitly. Without this, Turbopack auto-detects the
+  // root by walking up for a lockfile and finds two (this worktree's and the
+  // main repo's, since git worktrees keep their own package-lock.json) — it then
+  // guesses the main repo as root while actually serving files from this
+  // worktree, corrupting the RSC debug/source-map info Turbopack attaches to
+  // each module. That mismatch is what caused the intermittent dev-only crash
+  // "TypeError: frame.join is not a function" (React's owner-stack builder
+  // reading malformed frame data) seen 2026-08-17 running dev from this worktree.
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
   },
