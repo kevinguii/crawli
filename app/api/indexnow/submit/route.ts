@@ -1,21 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getAllPosts } from '@/lib/blog';
-import { getAllCompareItems } from '@/lib/compare';
+import sitemap from '@/app/sitemap';
 import { submitToIndexNow } from '@/lib/indexnow';
 
 export const dynamic = 'force-dynamic';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
-
-// Public, indexable URLs — mirrors app/sitemap.ts. Kept in sync manually; both
-// derive from the same getAllPosts()/getAllCompareItems() sources.
+// Public, indexable URLs, derived from app/sitemap.ts rather than rebuilt here.
+// This list used to be maintained by hand and silently drifted — it omitted the
+// /compare hub, which Bing Webmaster Tools then flagged as "important page not
+// submitted via IndexNow". Reading the sitemap is the single source of truth,
+// so a new public route can never be in one list but not the other.
 async function buildAllUrls(): Promise<string[]> {
-  const posts = getAllPosts().map((p) => `${SITE_URL}/blog/${p.slug}`);
-  const compare = (await getAllCompareItems()).map((i) => `${SITE_URL}/compare/${i.slug}`);
-  const staticPages = ['', '/blog', '/pricing', '/contact', '/privacy', '/terms'].map(
-    (p) => `${SITE_URL}${p}`,
-  );
-  return [...staticPages, ...posts, ...compare];
+  return (await sitemap()).map((entry) => entry.url);
 }
 
 /**
