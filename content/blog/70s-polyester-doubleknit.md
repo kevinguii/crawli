@@ -2,7 +2,7 @@
 title: "1970s Polyester Double-Knit: Spot the Good Stuff"
 description: "Most 1970s polyester double-knit is bulk-bin filler. Some of it is heavy, sharply printed, and well made. Here's how to tell which is which."
 date: "2026-06-23"
-updated: "2026-06-23"
+updated: "2026-08-17"
 cover: "/blog/images/70s-polyester-cover.svg"
 tags: ["vintage", "polyester", "70s", "material-guide"]
 faq:
@@ -57,3 +57,10 @@ A great label doesn't save a garment with real damage. Watch for sun-faded color
 None of that means walk away from every flawed piece, but it does mean those flaws should show up in the price, not just the description.
 
 Sorting genuinely good 70s polyester from the bulk-bin version takes a closer look than most single listings give you. [Crawli](/) searches vintage clothing across Depop, Poshmark, eBay, Grailed, and Vestiaire at once, for free, so you can compare weight, print quality, and labels across multiple listings before deciding which one is actually worth it.
+
+## What it's worth right now
+
+Those flaws only show up in the price if you know what the piece should cost without them:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell.
+- **[Compare live listings](/compare).** The current spread across eight marketplaces, refreshed daily.

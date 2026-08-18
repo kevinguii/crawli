@@ -26,16 +26,72 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * Typical asking-price band across platforms, for the meta description.
+ *
+ * Deliberately built from PER-PLATFORM AVERAGES, then trimmed, rather than the
+ * raw global `min_price_usd`/`max_price_usd`. The snapshots still carry the
+ * residual outliers documented in HANDOFF.md "Compare-page floors" — a $29
+ * "Cartier Love Bracelet" on Depop, a $5 "Ralph Lauren Polo Shirt" on Vinted,
+ * a $72,530 Grailed ask on the same bracelet. Those are exactly the numbers a
+ * naive min/max would hand to Google as the headline price, so they must not
+ * reach a snippet. Averaging per platform absorbs single junk listings, and
+ * dropping the cheapest and priciest platform absorbs a wholly junk platform.
+ */
+function typicalPriceBand(
+  snapshots: CompareSnapshot[],
+): { low: number; high: number } | null {
+  const avgs = snapshots
+    .map((s) => s.avg_price_usd)
+    .filter((p): p is number => p !== null && p > 0)
+    .sort((a, b) => a - b);
+  if (avgs.length === 0) return null;
+
+  // Only trim when there are enough platforms that losing two still leaves a
+  // real band. Below 4, there is nothing safe to drop.
+  const band = avgs.length >= 4 ? avgs.slice(1, -1) : avgs;
+  return { low: Math.round(band[0]), high: Math.round(band[band.length - 1]) };
+}
+
+// Root layout applies `template: "%s · Crawli"`, so the rendered <title> is
+// always 9 chars longer than what we return here. Bing truncates around 60.
+const TITLE_BUDGET = 60 - ' · Crawli'.length;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getComparePageData(slug);
   if (!data) return {};
 
-  const { item } = data;
-  const title = `${item.name} Resale Price`;
+  const { item, snapshots } = data;
+
+  const stocked = snapshots.filter((s) => (s.listing_count ?? 0) > 0);
+  const platformCount = stocked.length;
+  const totalListings = stocked.reduce((n, s) => n + (s.listing_count ?? 0), 0);
+  const band = typicalPriceBand(stocked);
+
+  // Longest variant that still fits the budget once "· Crawli" is appended.
+  // The plain name is always the last resort, so this can never return
+  // undefined even for the longest item names.
+  const title =
+    [
+      platformCount > 0
+        ? `${item.name} Resale Price: ${platformCount} Sites Compared`
+        : null,
+      platformCount > 0
+        ? `${item.name} Resale Price, ${platformCount} Sites`
+        : null,
+      `${item.name} Resale Price`,
+    ].find((t): t is string => t !== null && t.length <= TITLE_BUDGET) ??
+    `${item.name} Resale Price`;
+
+  // "Asking price" is load-bearing: these snapshots are live listings, not
+  // completed sales. Sold data is a separate surface (/price-check) and covers
+  // only Grailed and Poshmark — see HANDOFF.md.
   const description =
-    item.description ??
-    `Compare ${item.name} resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire. Find the best deal in one search.`;
+    band && totalListings > 0
+      ? `${totalListings} live ${item.name} listings across ${platformCount} marketplaces, typical asking price $${band.low.toLocaleString('en-US')} to $${band.high.toLocaleString('en-US')}. Compare prices and find the cheapest in one search.`
+      : item.description ??
+        `Compare ${item.name} resale prices across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire. Find the best deal in one search.`;
 
   return {
     title,

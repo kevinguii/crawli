@@ -2,7 +2,7 @@
 title: "Exploring Retro Prints: Why They're Timeless"
 description: "Paisley, houndstooth, psychedelic florals: retro prints keep resurfacing because they carry an era's identity in a way that solid colors never could."
 date: "2026-06-19"
-updated: "2026-06-19"
+updated: "2026-08-17"
 cover: "/blog/images/retro-prints-cover.svg"
 tags: ["vintage", "prints", "fashion-history", "style-guide"]
 faq:
@@ -41,3 +41,10 @@ Retro prints carry meaning beyond the pattern itself. Paisley is tied to a count
 The easiest entry point is treating a print piece as the single statement item in an otherwise neutral outfit. A paisley shirt under plain denim, a houndstooth blazer over a solid tee, a tropical print piece styled with minimal accessories: in each case, the print does the work and everything else stays quiet. More advanced styling mixes two prints deliberately, usually by keeping the color palette tight so the combination feels intentional rather than accidental.
 
 Finding the print you're after, in the right scale and colorway, is easier when you can search across platforms at once. [Crawli](/) lets you compare vintage print listings from Depop, Poshmark, Grailed, eBay, and more, for free, so you can track down the exact piece instead of scrolling one app at a time.
+
+## What it's worth right now
+
+Print pieces are priced on desirability rather than brand, so comparable garments can sit a long way apart:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell.
+- **[Compare live listings](/compare).** The current spread across eight marketplaces, refreshed daily.

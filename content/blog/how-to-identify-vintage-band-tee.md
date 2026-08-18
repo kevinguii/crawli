@@ -2,7 +2,7 @@
 title: "Vintage Band Tee or Reprint? Tell in 10 Seconds"
 description: "Flip the hem inside out. One row of stitching usually means genuine vintage; two rows means a later reprint. The fastest way to spot a fake tour tee."
 date: "2026-07-02"
-updated: "2026-08-08"
+updated: "2026-08-17"
 cover: "/blog/images/vintage-band-tee-cover.svg"
 tags: ["category-deep-guide", "how-to-identify-vintage-band-t-shirt", "vintage-tee-authentication"]
 faq:
@@ -62,4 +62,9 @@ A verified original 1970s single-stitch tour tee and a well-made 1990s double-st
 
 Next time you spot a promising band tee listing across multiple platforms, [Crawli](/) lets you search all at once and compare prices, so you don't overpay for a reprint when the genuine original is listed somewhere else for less.
 
-Once you've confirmed a tee is genuinely vintage, [check current band tee resale prices across platforms](/compare/vintage-band-tee) to see whether the listing you found is actually underpriced.
+## What it's worth right now
+
+Once you've confirmed a tee is genuinely vintage, two ways to price it:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell. Band tees are one of the widest ask-to-sold gaps in resale, because reprints and originals sit in the same search results.
+- **[Compare live band tee listings](/compare/vintage-band-tee).** The current spread across eight marketplaces, refreshed daily, so you can see whether the listing you found is actually underpriced.

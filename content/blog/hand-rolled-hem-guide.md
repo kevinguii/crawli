@@ -2,7 +2,7 @@
 title: "Identify a Hand-Rolled Hem on Vintage Clothing"
 description: "Mass-market fakes almost never replicate a true hand-rolled hem. Here's how to spot one by feel and eye, and why it signals genuinely well-made vintage."
 date: "2026-06-23"
-updated: "2026-06-23"
+updated: "2026-08-17"
 cover: "/blog/images/hand-rolled-hem-cover.svg"
 tags: ["guides", "construction", "vintage-couture"]
 faq:
@@ -56,3 +56,10 @@ The best modern reproductions can fool a quick glance. Some are genuinely hand-f
 No single detail proves authenticity on its own. But a hand-rolled hem is one of the fastest, most reliable signals a dealer reaches for, precisely because it's slow and skilled enough that mass production rarely bothers to fake it.
 
 Once you know what to feel for, finding pieces worth checking is the next step. [Crawli](/) searches vintage listings across Depop, eBay, Vestiaire, and Grailed at once, so you can compare construction details and prices before you commit.
+
+## What it's worth right now
+
+A hand-rolled hem is the detail that separates a genuine silk scarf from a printed copy, and the price gap follows it:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell, so you are working from what buyers paid rather than what sellers asked.
+- **[Compare live silk scarf listings](/compare/hermes-silk-scarf).** The current spread across eight marketplaces, refreshed daily.

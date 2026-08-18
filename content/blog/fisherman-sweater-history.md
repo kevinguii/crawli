@@ -2,7 +2,7 @@
 title: "Fisherman Sweater History: Gansey and Aran Story"
 description: "The fisherman sweater, or gansey or Aran sweater, began as a thick, tightly knitted wool garment worn by fishermen in the British Isles and Brittany."
 date: "2026-06-29"
-updated: "2026-07-06"
+updated: "2026-08-17"
 cover: "/blog/images/fisherman-sweater-cover.svg"
 tags: ["fashion-history", "fisherman-sweater-history", "vintage-knitwear"]
 faq:
@@ -71,6 +71,13 @@ The lanolin content of older wools, which protected the garment in use, also act
 Knowing the construction history above matters at the point of purchase too: because wartime naval sweaters and pre-1980s ganseys carry no commercial brand name, they're the category most often misdescribed or underpriced on resale platforms by sellers who don't know what they have. The shoulder-saddle and gusset details that date a piece are the same details that tell you whether a "vintage wool sweater" listing is actually worth the asking price.
 
 When you are ready to buy, [Crawli](/) can search multiple platforms simultaneously for terms like 'gansey sweater' or 'naval jumper,' so you are not limited to a single marketplace's listing vocabulary.
+
+## What it's worth right now
+
+With no brand name to anchor the price, these knits are valued almost entirely on construction, so it pays to check the number before you buy or list:
+
+- **[Check the sold price](/price-check)** (free account). Median completed sale prices on Grailed and Poshmark, plus how long pieces took to sell.
+- **[Compare live listings](/compare).** The current spread across eight marketplaces, refreshed daily.
 
 ---
 
