@@ -76,8 +76,14 @@ fees $3.75, net $56.25, ROI 141%. Both match hand calc; still needs a manual bro
 | Tier | searches/period (7-day) | alerts | cadence | saves | tracked | nativeResultsCap | price intelligence |
 |---|---|---|---|---|---|---|---|
 | free | 5 | 1 | daily or weekly | 10 | 10 | 8 | 🔒 |
-| pro | 40 | 8 | daily or weekly | 500 | 500 | 60 | ✅ |
-| max *(retired)* | 120 | 20 | daily or weekly | unlimited | unlimited | 100 | ✅ |
+| pro | 50 (marketed "Unlimited") | 25 (marketed "Unlimited") | daily or weekly | 500 (marketed "Unlimited") | 500 (marketed "Unlimited") | 100 (marketed "Unlimited") | ✅ |
+| max *(retired)* | 120 | 30 | daily or weekly | unlimited | unlimited | 100 | ✅ |
+
+Pro's marketed "Unlimited" columns are real, finite anti-abuse backstops, not felt
+limits — see the block comment above `TIER_CAPS` in `lib/tierCaps.ts` for the
+grounding numbers behind each one (searches/results 2026-08-18, alerts 2026-08-18).
+Do not write copy from the raw numbers in this table; write "Unlimited" for those
+five columns and pull the actual figure from `lib/tierCaps.ts` if you need it.
 
 **`max` is no longer offered.** It is retained in code only so a legacy Stripe price ID
 cannot downgrade someone; no account resolves to it. Do not put it in copy.

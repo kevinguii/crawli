@@ -10,7 +10,7 @@ Founded: 2026
 
 # Pricing
 Free: 5 searches/week, 8 results per platform, 1 price alert, 10 saves, 10 tracked listings
-Pro: unlimited searches, unlimited results per platform, 8 price alerts, 500 saves, 500 tracked listings, plus sold-price comps and flip margin — $10/month ($3/week or $100/year)
+Pro: unlimited searches, unlimited results per platform, unlimited price alerts, 500 saves, 500 tracked listings, plus sold-price comps and flip margin — $10/month ($3/week or $100/year)
 
 # What is free vs paid
 Free shows you listings. Pro tells you what they mean.

@@ -12,7 +12,7 @@
     },
     {
       "question": "How do sourcing alerts work?",
-      "answer": "Save any search to create a sourcing alert. You can set precise criteria: brand, size, and a maximum price. Crawli rechecks the search daily or weekly across all platforms and notifies you by email only when a new listing appears that matches all your terms. Alerts use AND logic throughout: a listing must match brand AND size AND max-price to trigger a notification. Free accounts get 1 alert, Pro gets 8, and both tiers can check daily or weekly."
+      "answer": "Save any search to create a sourcing alert. You can set precise criteria: brand, size, and a maximum price. Crawli rechecks the search daily or weekly across all platforms and notifies you by email only when a new listing appears that matches all your terms. Alerts use AND logic throughout: a listing must match brand AND size AND max-price to trigger a notification. Free accounts get 1 alert, Pro is unlimited, and both tiers can check daily or weekly."
     },
     {
       "question": "Which platforms does Crawli search?",
@@ -24,7 +24,7 @@
     },
     {
       "question": "Is Crawli free to use?",
-      "answer": "Yes. Crawli is free to start with 5 searches per week, 8 results per platform, and 1 sourcing alert. No credit card required. Pro is $10/month ($3/week or $100/year) and adds unlimited searches, unlimited results per platform, 8 simultaneous alerts with precise criteria, and price intelligence: sold-price comps, the price summary, and your flip margin after real platform fees. The rule of thumb is that free shows you the listings and Pro tells you what they mean."
+      "answer": "Yes. Crawli is free to start with 5 searches per week, 8 results per platform, and 1 sourcing alert. No credit card required. Pro is $10/month ($3/week or $100/year) and adds unlimited searches, unlimited results per platform, unlimited simultaneous alerts with precise criteria, and price intelligence: sold-price comps, the price summary, and your flip margin after real platform fees. The rule of thumb is that free shows you the listings and Pro tells you what they mean."
     }
   ]
 }

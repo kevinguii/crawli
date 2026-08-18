@@ -402,7 +402,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
                   Free includes 1 alert.{' '}
                   <a href="/pricing" className="underline" style={{ color: 'var(--text-muted)' }}>
-                    Pro gives you 8
+                    Pro gives you unlimited
                   </a>
                   .
                 </p>

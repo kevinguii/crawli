@@ -38,7 +38,7 @@
       "price_usd_per_year": 100,
       "searches_per_week": "unlimited",
       "results_per_platform": "unlimited",
-      "alerts": 8,
+      "alerts": "unlimited",
       "saves": 500,
       "tracked_listings": 500,
       "price_intelligence": true

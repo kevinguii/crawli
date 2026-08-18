@@ -101,16 +101,26 @@ export default function SearchAlertsTab({
     const activeAlerts = alerts.filter((a) => !a.paused).length;
 
     if (activeAlerts >= maxAlerts) {
+      // Pro alerts are marketed "Unlimited" (see TIER_CAPS.pro.maxSavedSearches),
+      // so a paid user landing here has hit the anti-abuse backstop, not a real
+      // limit — same rule as /api/search's 402: never tell a paying user to
+      // "upgrade" or that they're "out" of something Pro is sold as unlimited on.
+      // The server enforces this too (POST /api/saved-searches), but a paid user
+      // should never even reach that generic wall — this client check is the one
+      // they'll actually see, so it needs the same reassurance.
       toast.error(
         isFree
           ? `Free plan allows ${maxAlerts} active search alert${maxAlerts === 1 ? '' : 's'}. Pause or delete one, or upgrade for more.`
-          : `You've reached your limit of ${maxAlerts} active alerts. Pause or delete one to create a new one.`,
+          : 'You have hit an unusually high number of saved alerts, so we have paused new ones as an anti-abuse check. Get in touch and we will lift it right away.',
         isFree
           ? {
               action: { label: 'Upgrade', onClick: () => { window.location.href = '/pricing?from=/alerts'; } },
               duration: 8000,
             }
-          : { duration: 6000 },
+          : {
+              action: { label: 'Contact us', onClick: () => { window.location.href = '/settings?from=/alerts'; } },
+              duration: 8000,
+            },
       );
       return false;
     }

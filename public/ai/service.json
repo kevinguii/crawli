@@ -79,7 +79,7 @@
       ],
       "searches_per_week": "unlimited",
       "results_per_platform": "unlimited",
-      "alerts": 8,
+      "alerts": "unlimited",
       "price_intelligence": true
     }
   ],

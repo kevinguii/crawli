@@ -83,7 +83,7 @@ function AlertsPanel() {
         style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}
       >
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Daily auto-check · Free: 1 alert · Pro: 8 alerts
+          Daily auto-check · Free: 1 alert · Pro: Unlimited alerts
         </span>
         {/* Was a dead aria-hidden button inside the mock. It reads as the one
             actionable control in this section, so it now goes to signup. */}
