@@ -53,6 +53,25 @@ export const UNLIMITED = 1_000_000;
 // further requires raising that sidecar limit, which DOES cost render time.
 // If either cap ever tightens enough to be reachable, the pricing copy must
 // change with it.
+//
+// Revised 2026-08-18 (alerts joined the "unlimited" set): maxSavedSearches
+// 8 → 25 on Pro, marketed as "Unlimited". Different cost shape from the two
+// caps above though — nativeResultsCap is free at any value (a post-fetch
+// slice) and a search is a one-off, but a saved alert is a PERMANENT recurring
+// job: every one added re-runs its query daily forever via the crontab in
+// /api/cron/run-alerts, so raising this cap is cheap-per-unit and linear, not
+// literally free the way the other two are. Grounding for "cheap":
+//   • alert runs never touch Firecrawl — ALERT_EXCLUDED_PLATFORMS excludes eBay,
+//     the only platform that's ever metered, so an alert run costs self-hosted
+//     crawl4ai compute only, and shares the same cross-user search cache live
+//     search uses
+//   • the cron is a systemd crontab on our own box (not billed per invocation),
+//     ticking every 15 min and handling ≤20 due alerts per tick — 1920/day of
+//     headroom against an actual total of 13 alerts across all 48 users
+//   • busiest real user ever = 3 alerts (the owner's own Pro account); nobody
+//     has ever approached the old cap of 8
+// 25 is a backstop for the linear cost, not a felt limit. If a real user ever
+// lands on it, raise it or drop the word — same rule as the other two caps.
 export const TIER_CAPS: Record<Tier, TierCaps> = {
   // Free keeps DAILY alerts (owner decision 2026-08-17, reversing the weekly-only
   // floor in the original spec). Alert runs are cheap — the cross-user cache in
@@ -61,8 +80,8 @@ export const TIER_CAPS: Record<Tier, TierCaps> = {
   // session, which is the metric this product is worst at (3 of 22 return). Free
   // alerts are limited by COUNT (1), not frequency.
   free: { maxSearchesPerPeriod: 5,   maxSavedSearches: 1,  maxTrackedListings: 10,        nativeResultsCap: 8,   maxSaves: 10,        minAlertCadenceHours: 24 },
-  pro:  { maxSearchesPerPeriod: 50,  maxSavedSearches: 8,  maxTrackedListings: 500,       nativeResultsCap: 100, maxSaves: 500,       minAlertCadenceHours: 24 },
-  max:  { maxSearchesPerPeriod: 120, maxSavedSearches: 20, maxTrackedListings: UNLIMITED, nativeResultsCap: 100, maxSaves: UNLIMITED, minAlertCadenceHours: 24 },
+  pro:  { maxSearchesPerPeriod: 50,  maxSavedSearches: 25, maxTrackedListings: 500,       nativeResultsCap: 100, maxSaves: 500,       minAlertCadenceHours: 24 },
+  max:  { maxSearchesPerPeriod: 120, maxSavedSearches: 30, maxTrackedListings: UNLIMITED, nativeResultsCap: 100, maxSaves: UNLIMITED, minAlertCadenceHours: 24 },
 };
 
 /**

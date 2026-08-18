@@ -101,11 +101,23 @@ export async function POST(request: Request) {
     .eq('paused', false);
 
   if ((count ?? 0) >= maxAlerts) {
+    // Pro alerts are marketed as "Unlimited" (see TIER_CAPS.pro.maxSavedSearches
+    // in lib/tierCaps.ts) over a real backstop, same rule as /api/search: a paying
+    // user must never be told to "upgrade your plan" — Pro is the top plan — and
+    // landing on this cap for real should raise it rather than stay silent about
+    // it. `isPro` here also covers legacy `max` accounts, which is correct: no
+    // paid tier should ever see upgrade copy at its own ceiling.
+    if (isPro) {
+      console.warn(
+        `[quota] PAID user hit the alerts abuse backstop — user=${user.id} count=${count} cap=${maxAlerts}. ` +
+        `Raise TIER_CAPS.pro.maxSavedSearches or drop the "Unlimited" copy.`,
+      );
+    }
     return NextResponse.json(
       {
         error: 'quota_exceeded',
         message: isPro
-          ? `You've reached your limit of ${maxAlerts} saved alert${maxAlerts === 1 ? '' : 's'}. Pause or delete one to create another, or upgrade your plan for more.`
+          ? 'You have hit an unusually high number of saved alerts, so we have paused new ones as an anti-abuse check. Get in touch and we will lift it right away.'
           : `Free includes ${maxAlerts} alert${maxAlerts === 1 ? '' : 's'}. Upgrade your plan to create more.`,
         limit: maxAlerts,
       },

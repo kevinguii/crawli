@@ -83,6 +83,13 @@ const NATIVE_TOOLTIP = (
 //   2. If a real user ever lands on either cap, raise the cap or drop the word.
 //      Do not quietly leave "Unlimited" over a limit somebody actually hit.
 //
+// ALERT COUNT joined the same day: "Unlimited alerts" over TIER_CAPS.pro's real
+// cap of 25 (lib/tierCaps.ts has the cost breakdown — it's a different cost
+// shape than the two above, cheap-per-unit and recurring rather than free-at-any-
+// value, but nowhere near real usage: busiest user ever is 3, total across all
+// 48 users is 13). Same two obligations apply — /api/saved-searches/route.ts
+// carries the tier-specific 402 copy for this one.
+//
 // If you add or reorder a Basic row on one plan, mirror it on the other or the
 // alignment breaks.
 const BASIC_LABEL = 'Basic';
@@ -103,7 +110,7 @@ const PAID_TIERS: TierConfig[] = [
         items: [
           'Unlimited searches',
           'Unlimited results on every native platform',
-          '8 alerts, checked daily',
+          'Unlimited alerts, checked daily',
           'Unlimited saves and tracked listings',
           'Email + in-app alert notifications',
         ],
