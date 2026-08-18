@@ -1,7 +1,7 @@
 {
   "name": "Crawli",
-  "tagline": "Search 8 resale marketplaces at once. Find underpriced inventory and know your flip margin.",
-  "description": "Crawli is a cross-platform resale price search engine for secondhand fashion. One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire Collective — compare prices, find the best deal, and set alerts for new listings.",
+  "tagline": "Search 9 resale marketplaces at once. Find underpriced inventory and know your flip margin before you buy.",
+  "description": "Crawli is sourcing intelligence for secondhand fashion resellers. One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, eBay, and Vestiaire Collective compares live listings side by side. Pro adds sold-price comps, price summaries, and net flip margin after real platform fees.",
   "url": "https://thecrawli.com",
   "category": "Shopping / Resale / Price Comparison",
   "founded": "2026",
@@ -18,6 +18,7 @@
     "StockX",
     "Mercari",
     "Vinted",
+    "ThredUp",
     "eBay",
     "Vestiaire Collective"
   ],
@@ -25,22 +26,25 @@
     "free": {
       "price_usd": 0,
       "searches_per_week": 5,
-      "alerts": 2,
-      "tracked_listings": 50
+      "results_per_platform": 8,
+      "alerts": 1,
+      "saves": 10,
+      "tracked_listings": 10,
+      "price_intelligence": false
     },
     "pro": {
       "price_usd_per_month": 10,
-      "searches_per_week": 40,
+      "price_usd_per_week": 3,
+      "price_usd_per_year": 100,
+      "searches_per_week": "unlimited",
+      "results_per_platform": "unlimited",
       "alerts": 8,
-      "tracked_listings": 500
-    },
-    "max": {
-      "price_usd_per_month": 30,
-      "searches_per_week": 120,
-      "alerts": 20,
-      "tracked_listings": "unlimited"
+      "saves": 500,
+      "tracked_listings": 500,
+      "price_intelligence": true
     }
   },
+  "price_intelligence_note": "Sold-price comps (median, 25th-75th percentile, days to sell), the price summary, and the flip-margin calculator seeded from real sold prices are Pro-only. Free accounts see live listings but not the computed price intelligence.",
   "contact": {
     "email": "hello@thecrawli.com"
   },

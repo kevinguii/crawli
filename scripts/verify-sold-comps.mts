@@ -1,7 +1,7 @@
 import { getSoldComps } from '@/lib/soldComps';
 import { fetchGrailedSold } from '@/lib/soldComps/grailed';
 import { fetchPoshmarkSold } from '@/lib/soldComps/poshmark';
-import { trimPriceOutliers, statsForPool, median, MIN_SAMPLE } from '@/lib/soldComps/aggregate';
+import { trimPriceOutliers, statsForPool, median, MIN_SAMPLE, SALES_ROW_CAP, salesFor } from '@/lib/soldComps/aggregate';
 import type { SoldComp } from '@/lib/soldComps/types';
 
 function comp(price: number, soldDaysAgo: number, listedDaysBefore: number | null, title = 'carhartt wip jacket'): SoldComp {
@@ -44,6 +44,23 @@ check('median even', median([1, 2, 3, 4]) === 2.5);
   check(`n<${MIN_SAMPLE} returns null`, statsForPool('grailed', few, 90) === null);
   const enough = Array.from({ length: MIN_SAMPLE }, () => comp(100, 10, 5));
   check(`n=${MIN_SAMPLE} returns stats`, statsForPool('grailed', enough, 90) !== null);
+}
+
+// rows have NO floor: the thing that makes a 2-sale query showable
+{
+  const two = [comp(120, 3, 1), comp(80, 9, 2)];
+  check('n=2 publishes no aggregate', statsForPool('grailed', two, 90) === null);
+  const rows = salesFor('grailed', two, 90);
+  check('n=2 still publishes rows', rows !== null && rows.sales.length === 2 && rows.total === 2);
+  check('rows are newest first', rows !== null && rows.sales[0].price === 120);
+  check('rows serialize soldAt as an ISO string',
+    rows !== null && typeof rows.sales[0].soldAt === 'string' && !isNaN(Date.parse(rows.sales[0].soldAt)));
+  check('rows outside the window are dropped',
+    salesFor('grailed', [comp(120, 400, 1)], 90) === null);
+  const many = Array.from({ length: SALES_ROW_CAP + 12 }, (_, i) => comp(100 + i, 5, 1));
+  const capped = salesFor('poshmark', many, 90);
+  check('rows are capped but total is not',
+    capped !== null && capped.sales.length === SALES_ROW_CAP && capped.total === SALES_ROW_CAP + 12);
 }
 
 // window widening: sales are all 120d old, so 90d must fail and 180d must succeed
@@ -110,14 +127,27 @@ for (const q of ['supreme box logo hoodie', 'nike air jordan 1', 'carhartt wip j
   const hasGrailed = r.platforms.some((p) => p.platform === 'grailed');
   check(`"${q}" grailed leads when present`, !hasGrailed || r.platforms[0].platform === 'grailed');
   check(`"${q}" every stat carries n and window`,
-    r.platforms.every((p) => p.n >= 10 && [90, 180, 365].includes(p.windowDays)));
+    r.platforms.every((p) => p.n >= MIN_SAMPLE && [90, 180, 365].includes(p.windowDays)));
+  // Rows are the evidence behind the median, so a platform with an aggregate must
+  // also come back with sales, and they must survive JSON (soldAt is an ISO string).
+  check(`"${q}" every stat platform also returns sales`,
+    r.platforms.every((p) => r.sales.some((g) => g.platform === p.platform && g.sales.length > 0)));
+  check(`"${q}" sale rows carry a parseable soldAt and a price`,
+    r.sales.every((g) => g.sales.every((sale) =>
+      typeof sale.soldAt === 'string' && !isNaN(Date.parse(sale.soldAt)) && sale.price > 0)));
+  check(`"${q}" sale rows are newest first`,
+    r.sales.every((g) => g.sales.every((sale, i) =>
+      i === 0 || Date.parse(g.sales[i - 1].soldAt) >= Date.parse(sale.soldAt))));
+  check(`"${q}" row count never exceeds the cap or the total`,
+    r.sales.every((g) => g.sales.length <= SALES_ROW_CAP && g.sales.length <= g.total));
 }
 
 {
   const q = 'zzzq nonexistent garment xyzzy';
   const r = await getSoldComps(q);
   console.log(`  "${q}" available=${r.available} platforms=${r.platforms.length} errors=${r.errors.join(',') || 'none'}`);
-  check('obscure query renders nothing', r.available === false && r.platforms.length === 0);
+  check('obscure query renders nothing',
+    r.available === false && r.platforms.length === 0 && r.sales.length === 0);
 }
 
 console.log(`\n${failures === 0 ? 'ALL PASSED' : failures + ' FAILURE(S)'}\n`);

@@ -1,28 +1,33 @@
 # Crawli — AI descriptor
-# Updated: 2026-06-30
+# Updated: 2026-08-18
 
 Name: Crawli
 URL: https://thecrawli.com
-Description: Cross-platform resale price search engine for secondhand fashion. Searches Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, and Vestiaire Collective simultaneously to compare prices and find the best deal.
+Description: Sourcing intelligence for secondhand fashion resellers. Searches Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, and eBay simultaneously to compare live prices, then shows sold-price comps and net flip margin after real platform fees.
 Category: Shopping / Resale / Price Comparison
 Target audience: Fashion resellers, vintage buyers, secondhand shoppers, streetwear collectors
 Founded: 2026
 
 # Pricing
-Free: 5 searches/week, 2 price alerts, 50 tracked listings
-Pro: 40 searches/week, 8 price alerts, 500 tracked listings — $10/month
-Max: 120 searches/week, 20 price alerts, unlimited tracked listings — $30/month
+Free: 5 searches/week, 8 results per platform, 1 price alert, 10 saves, 10 tracked listings
+Pro: unlimited searches, unlimited results per platform, 8 price alerts, 500 saves, 500 tracked listings, plus sold-price comps and flip margin — $10/month ($3/week or $100/year)
+
+# What is free vs paid
+Free shows you listings. Pro tells you what they mean.
+Free: live cross-platform listing search across all 9 marketplaces.
+Pro only: sold-price median and range, days-to-sell, price summary, and flip margin after fees.
 
 # Platforms covered
-Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay, Vestiaire Collective
+Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp, Vestiaire Collective, eBay
 
 # Key capabilities
-- Search 8 resale marketplaces simultaneously
+- Search 9 resale marketplaces simultaneously
 - Price comparison across platforms in one query
+- Sold-price comps (median, 25th-75th percentile, days to sell) on Grailed and Poshmark — Pro
+- Resale margin calculator seeded from real sold prices, net of platform fees — Pro
 - Daily and weekly price alerts for new listings
 - Save and track listings
-- Resale margin calculator (accounts for platform fees)
-- Prepaid credit packs for extra searches
+- Prepaid credit packs for extra searches on the Free plan
 
 # Structured data endpoints
 AI Summary:  https://thecrawli.com/ai/summary.json

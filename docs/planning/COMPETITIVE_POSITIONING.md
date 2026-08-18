@@ -550,6 +550,7 @@ not for the landing page, the metadata, or a carousel.
 | C4 | "Covers marketplaces the extensions don't" (Grailed, Vinted, Vestiaire, Depop) | **True, unvalidated as a reason to switch** | Coverage is real vs Beni's partner list. Nobody has said it made them choose Crawli. |
 | C5 | "Know your real margin before you buy" | **True as of 2026-08-10** | `netFlipProfit()` fees were already verified; the remaining gap was that resale defaulted to average *ask*. It now defaults to the median of completed sales (`FlipMargin`, seeded from Grailed when it qualifies). Still unvalidated as a *motivator* — true is not the same as persuasive. |
 | C6 | "Best price on a secondhand item" (current landing framing) | **Falsified as a wedge** | Gem and Beni do this better and free (§3). Do not lead with it. |
+| C7 | "Unlimited searches" / "Unlimited results per platform" (Pro) | **True in practice, finite in code** | Plan-matrix fact rather than an efficacy claim, so it is not gated the way C1-C6 are — but it is the one claim here that can *become* false. `TIER_CAPS.pro` enforces 50/week and 100 per native platform as anti-abuse backstops, ~10x the busiest user-week ever recorded (13). Wording rules: never pair it with a number, never show a paid user a depleting quota meter, and never offer a paid user search credits. **If any real user lands on either cap, raise the cap or drop the word that week** (EXP-007 kill criterion). Same standing divergence already applies to "unlimited saves and tracked listings" (enforced at 500). |
 
 ### 6c. Experiment log
 
@@ -559,6 +560,50 @@ statistically significant — these are directional reads, and small-n honesty i
 of the record.
 
 #### Running
+
+```
+### EXP-007 — Pro sold as "Unlimited" (searches + result depth)
+Started:            2026-08-18
+Claim under test:   That the remaining quota language on Pro is a purchase
+                    objection, not a value signal. EXP-006 already concluded the
+                    quotas were commercially inert as *gates*; this tests whether
+                    they are actively costing conversions as *copy*.
+Depends on:         EXP-006 (two-plan split). Do not read these two apart — if
+                    conversion moves, the split and the wording both changed
+                    within 24h and this experiment cannot separate them.
+
+Cost work this rests on (measured 2026-08-18, 47 users):
+  · Marginal cost is eBay-only and tier-independent. eBay = 4-credit Firecrawl
+    discovery at a hardcoded searchLimit=20; nativeResultsCap never reaches it.
+  · eBay is selected in 47% of searches, so blended cost is ~$0.010/search on
+    Firecrawl Hobby and ~$0.0028 on Standard — about half the all-9 figure in
+    SYSTEM_DESIGN §6.
+  · Break-even on one $10/mo sub ≈ 495 searches/month (worst case).
+  · Busiest user-week EVER recorded = 13 searches. p90 user-week = 5.9.
+    0 of 52 user-weeks have exceeded even the old cap of 40.
+  · Entire user base cost ~121 Firecrawl credits (~$0.50) over 30 days.
+  · Result depth is free at any value up to 100: the sidecar is called with a
+    hardcoded limit=100 on every tier and the cap is a post-fetch .slice().
+
+Change:             Pro searches 40/wk → 50/wk and result depth 60 → 100 per
+                    native platform, both marketed as "Unlimited". Caps stay
+                    finite as anti-abuse backstops (~10x the busiest observed
+                    behaviour). Credit packs rescoped to the Free plan and hidden
+                    from paid settings. Paid users get a support-routed 402 that
+                    never says they are out of searches.
+Deliberately NOT:   removing enforcement. The DB-first cap still applies so a
+                    runaway account is bounded; it just never presents as a
+                    product limit.
+
+Kill criterion:     Any real user actually lands on either cap → raise the cap or
+                    drop the word, same week. "Unlimited" standing over a limit
+                    somebody hit is not a tradeoff, it is a false claim.
+Read at:            2026-09-18 (30d). Primary: free→Pro conversion rate. Guardrail:
+                    max searches-per-user-per-week, and Firecrawl credits/month
+                    against Hobby's 5,000 ceiling.
+Honest caveat:      n is tiny and there is 1 existing Pro account (the owner's).
+                    Any conversion read here is directional at best.
+```
 
 ```
 ### EXP-006 — paywall repackaging: two plans, price intelligence gated

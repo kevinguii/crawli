@@ -107,10 +107,24 @@ export async function POST(request: Request) {
   const credits = profile.search_credits ?? 0;
   const usingCredit = used >= cap;
   if (usingCredit && credits <= 0) {
+    // Paid tiers are marketed as "Unlimited searches" (see PricingCards.tsx), so
+    // the cap is an abuse backstop, not a product limit — nobody real has ever
+    // come near it. Never tell a paying user they are out of searches or to
+    // "upgrade your plan" (Pro IS the top plan); tell them to reach out, and log
+    // it loudly so the ceiling gets raised rather than silently enforced.
+    const isPaid = tier !== 'free';
+    if (isPaid) {
+      console.warn(
+        `[quota] PAID user hit the abuse backstop — tier=${tier} used=${used} cap=${cap}. ` +
+        `Raise TIER_CAPS.${tier}.maxSearchesPerPeriod or drop the "Unlimited" copy.`,
+      );
+    }
     return NextResponse.json(
       {
         error: 'quota_exceeded',
-        message: `You have used all ${cap} searches for this week. Buy a credit pack to keep sourcing, or upgrade your plan.`,
+        message: isPaid
+          ? 'You have hit an unusually high number of searches this week, so we have paused new ones as an anti-abuse check. Get in touch and we will lift it right away.'
+          : `You have used all ${cap} searches for this week. Buy a credit pack to keep sourcing, or upgrade your plan.`,
         used,
         cap,
         credits,

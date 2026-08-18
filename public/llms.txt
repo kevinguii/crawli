@@ -6,7 +6,8 @@
 
 - **Cross-platform price comparison**: a single query returns live listings from nine resale platforms side by side, so you know the true market price instead of guessing from one site.
 - **Live price-comparison pages**: `/compare/[item]` pages publish the current lowest, average, and highest listed price per platform for a specific item, refreshed daily. Each page shows the price spread across eight marketplaces at once.
-- **Fee-aware net proceeds**: enter a sourcing price and destination platform to see net profit, margin %, and ROI after that platform's real seller fees (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX).
+- **Fee-aware net proceeds** (Pro): enter a sourcing price and destination platform to see net profit, margin %, and ROI after that platform's real seller fees (eBay, Poshmark, Mercari, Grailed, Depop, Vinted, StockX).
+- **Sold-price comps** (Pro): median sold price, 25th-75th percentile, sample size, and days-to-sell on Grailed and Poshmark, so you price against what actually sold rather than what is being asked.
 - **Find underpriced inventory**: surface listings priced below the cross-platform comp.
 - **Search alerts**: save a search and get notified (daily or weekly) when new matching listings appear, with optional brand / size / price criteria.
 - **Save and track listings**: keep a watchlist of items across platforms in one place.
@@ -18,7 +19,8 @@
 - Compare page prices are **listed asking prices** scraped from live marketplace listings, not sold/settled prices. Each page states its own last-updated timestamp.
 - Seller fee rates used in the net-proceeds calculator were last verified 2026-06-28 and are shown with that date in the UI.
 - The RealReal is not covered (its bot protection blocks automated access).
-- Free to start; paid tiers raise search, alert, and tracking limits.
+- Free to start. The split is that free shows you the listings and Pro tells you what they mean: live cross-platform listing search is free on all 9 marketplaces, while sold-price comps, the price summary, and the flip-margin calculator are Pro-only.
+- Two plans as of 2026-08-17. Free: 5 searches/week, 8 results per platform, 1 alert. Pro ($10/month, $3/week, or $100/year): unlimited searches, unlimited results per platform, 8 alerts, plus all price intelligence.
 
 ## Luxury price comparison
 
@@ -68,6 +70,6 @@ These pages answer "what does this luxury item actually cost across resale platf
 ## Pages
 
 - [Home](https://thecrawli.com/): product overview and live search.
-- [Pricing](https://thecrawli.com/pricing): free, Pro, and Max tiers.
+- [Pricing](https://thecrawli.com/pricing): the Free and Pro plans compared.
 - [Blog](https://thecrawli.com/blog): guides on resale sourcing, authentication, sizing, and secondhand-fashion terminology.
 - [Contact](https://thecrawli.com/contact): get in touch.

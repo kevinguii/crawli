@@ -96,6 +96,25 @@ const sample: SoldCompsResult = {
     { platform: 'grailed', medianPrice: 185, p25: 150, p75: 228, n: 34, windowDays: 90, daysToSell: 12 },
     { platform: 'poshmark', medianPrice: 140, p25: 110, p75: 175, n: 21, windowDays: 180, daysToSell: null },
   ],
+  // Individual sale rows are paid data in every column, so the locked payload must
+  // drop them wholesale rather than stripping fields off them.
+  sales: [
+    {
+      platform: 'grailed',
+      windowDays: 90,
+      total: 34,
+      sales: [
+        {
+          url: 'https://grailed.com/listings/909',
+          title: 'Carhartt WIP Detroit Jacket',
+          price: 193,
+          soldAt: '2026-08-01T00:00:00.000Z',
+          size: 'L',
+          condition: 'gently used',
+        },
+      ],
+    },
+  ],
 };
 
 const locked = toLockedResult(sample);
@@ -114,6 +133,46 @@ for (const n of forbidden) {
 for (const field of ['medianPrice', 'p25', 'p75', 'daysToSell']) {
   check(`no "${field}" key in the locked body`, !serialized.includes(field));
 }
+
+// Sale rows: not one field of one row may survive. Checked by value as well as by
+// key, since a row could otherwise be re-nested under a different key name.
+check('no "sales" key in the locked body', !serialized.includes('sales'));
+for (const leak of ['193', 'grailed.com/listings/909', 'Detroit Jacket', '2026-08-01', 'gently used']) {
+  check(`no sale-row value ${JSON.stringify(leak)} in the locked body`, !serialized.includes(leak), serialized);
+}
+
+// A thin platform — real sales, too few for a median — still gets a lock, carrying
+// the same two non-secret facts as a fat one (how many, over what window) and no
+// row data whatsoever.
+const rowsOnly = toLockedResult({
+  available: true,
+  errors: [],
+  platforms: [],
+  sales: sample.sales,
+});
+const rowsOnlySerialized = JSON.stringify(rowsOnly);
+check('rows-only result still locks', rowsOnly.available === true);
+check('rows-only lock carries the sale count', rowsOnly.platforms[0]?.n === 34);
+check('rows-only lock carries the window', rowsOnly.platforms[0]?.windowDays === 90);
+for (const leak of ['193', 'grailed.com/listings/909', 'Detroit Jacket', '2026-08-01', 'gently used', 'sales']) {
+  check(`rows-only lock leaks no ${JSON.stringify(leak)}`, !rowsOnlySerialized.includes(leak), rowsOnlySerialized);
+}
+
+// A query with genuinely nothing must NOT be locked. A paywall over data that does
+// not exist is a promise that breaks the moment somebody upgrades to reach it.
+const nothing = toLockedResult({ available: false, errors: [], platforms: [], sales: [] });
+check('empty result is not locked', nothing.available === false && nothing.platforms.length === 0);
+
+// Aggregate and rows for the same platform must collapse to one locked row, using
+// the post-trim n rather than the raw row count.
+const both = toLockedResult({
+  available: true,
+  errors: [],
+  platforms: [sample.platforms[0]],
+  sales: [{ ...sample.sales[0], total: 999 }],
+});
+check('one locked row per platform', both.platforms.length === 1);
+check('aggregate n wins over raw row count', both.platforms[0].n === 34);
 
 // ── 4. Live DB state matches the cutover ───────────────────────────────────
 console.log('\nLive profiles backfill');

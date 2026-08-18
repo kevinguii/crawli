@@ -116,6 +116,52 @@ It's hand-maintained and had drifted — missing ThredUp, describing the site as
 
 ## Payments + Supabase
 
+**Five public files duplicate the pricing matrix and nothing keeps them in sync — audit all of them on every tier change**
+A tier change is never just `lib/tierCaps.ts` + the pricing page. These AI/answer-engine-facing files each restate plans, caps, and what is free vs paid, and none of them import anything:
+- `public/.well-known/ai.txt`
+- `public/ai/summary.json`
+- `public/ai/service.json`
+- `public/ai/faq.json`
+- `public/llms.txt`
+
+Plus `app/components/landing/faqData.ts` (feeds both the visible FAQ and the FAQPage JSON-LD) and `docs/reference/B2B_FEATURE_TRUTH.md`.
+
+**Found 2026-08-18: all five had drifted past the 2026-08-17 repackaging.** They still advertised the retired `max` tier at $30/month as purchasable, listed the old free caps (2 alerts, 50 tracked), omitted ThredUp from the platform list, and — worst — `faq.json` asserted "the flip margin calculator is available on all plans including free", which the paywall had made **false**. These files are exactly what AI answer engines read when someone asks what Crawli costs, so a stale number here gets quoted back to prospects as fact. Grep before you finish:
+```
+grep -rniE "searches per week|per week|\$30|max tier|alerts" public/ app/components/landing/faqData.ts
+```
+
+**`nativeResultsCap` is a display slice, not a fetch limit — raising it costs nothing, and it never reaches eBay**
+Easy to assume "Pro gets 100 results per platform" means Pro searches cost more than Free's 8. It does not. `lib/searchWorker.ts` calls `scrapeSearchPageViaSidecar(platform, query, 100, 2, signal)` with a **hardcoded 100 on every tier**, then applies `.slice(0, nativeResultsCap)` to what came back. The scrape is identical for every tier; the cap only decides how much of an already-paid-for result set gets returned. Consequences to keep straight:
+- Raising `nativeResultsCap` up to 100 is free. Raising it *past* 100 is not — that requires changing the sidecar's limit argument, which costs render time.
+- The cap never touches eBay. eBay is non-native so it takes the other branch, which is hardcoded to `filtered.slice(0, 10)` listings, and Firecrawl URL discovery is a hardcoded `const searchLimit = 20` in `lib/firecrawl.ts` with **no tier parameter anywhere in the call chain**. Since eBay is the only platform that always costs money, this means **tier has no effect on marginal search cost at all** — only search *count* does.
+- Don't reach for `nativeResultsCap` as a cost lever. It isn't one. Model COGS off search volume and the eBay attach rate (~47% of searches select eBay as of 2026-08-18).
+
+**Marketing copy and enforced caps are allowed to diverge on Pro — but only in one direction, and it carries obligations**
+Saves, tracked listings, searches, and results depth all read "Unlimited" on `/pricing` while `TIER_CAPS.pro` enforces 500 / 500 / 50-per-week / 100-per-platform. This is deliberate (documented at the top of `app/pricing/PricingCards.tsx` and in `lib/tierCaps.ts`): the numbers are anti-abuse backstops set roughly 10× above the busiest behaviour ever observed, not felt limits. If you touch any of them:
+1. **Never let a paid user hit a wall that says they are out of something, or tells them to "upgrade your plan"** — Pro is the top plan, so that copy is nonsense to them. `/api/search`'s 402 branches on tier for exactly this reason and logs `[quota] PAID user hit the abuse backstop`. Any new paid-tier gate needs the same treatment.
+2. **If a real user ever lands on one of these caps, raise the cap or drop the word.** Do not leave "Unlimited" standing over a limit somebody actually reached.
+3. Lowering any of these caps toward reachable territory means the pricing copy has to change in the same commit.
+
+**The sold-comps paywall only ever appears where there is real data to withhold — a placeholder-everywhere version was built and reverted same day**
+Settled 2026-08-18 after two rounds. Round one made `SoldCompsLockedPanel` render on every query including ones with zero completed sales, backed by a `fakePlaceholderSoldStats()` helper that invented a fake sample size to decorate the empty case. Round two reverted it: the panel (and `PriceSummary`'s inline sold-comps sub-block) now render — blurred — only when `sold.available` is true, i.e. at least one real completed sale exists on either platform (this already covers thin platforms with just 1-2 sales, no median required — see `toLockedResult`). A query with zero sales gets the plain "not enough completed sales" note, worded **identically for free and Pro**, unblurred, no upgrade prompt. `fakePlaceholderSoldStats()` was deleted in the same session; if you're tempted to rebuild it, read the owner's own words first: "if not enough results, it shows the not enough results stuff regardless of user being premium or not but if there's actually results we paywall it and show it so the user can see a difference." A paywall over a query that has nothing behind it converts someone into a refund the moment they upgrade and search it again — don't manufacture urgency you can't deliver on.
+Do keep the one thing that survived from round one: `fakeSoldStats()` still passes the real `n`/`windowDays` through unfaked (never secret) and only invents price/spread/days-to-sell — that part was correct before this whole detour started and never changed.
+
+**`MIN_SAMPLE` gates the aggregate, never the rows — and it has a hard floor of 5 for a mechanical reason**
+Two different things live in the sold-comps payload and they are gated separately on purpose. `platforms` (median, p25-p75, days-to-sell) is a **claim** — "this sells for $X" — so it needs `MIN_SAMPLE` behind it. `sales` (the individual completed sales) is **evidence** the reader judges for themselves, so it carries no floor at all; a query with 2 sales returns 2 rows and no median. Don't "fix" a thin query by lowering the floor — add rows.
+And do not take `MIN_SAMPLE` below 5. `trimPriceOutliers()` returns its input untouched when `comps.length < 4`, so any floor under that publishes an **unfenced** median where a single bundle listing or fat-fingered price sets the answer. 5 keeps the Tukey fence live in every case that reaches it. It was 10 until 2026-08-18; the evidence for 5 is in HANDOFF's entry for that date.
+
+**Adding a field to a cached payload does not update the rows already in the cache**
+`sold_comps_cache` holds a raw jsonb `SoldCompsResult` with a 24h TTL, so for a full day after `sales` was added, every cache hit returned a payload with no `sales` key while TypeScript insisted the field was non-optional. The cache-hit path in `/api/sold-comps` normalizes (`sales: payload.sales ?? []`) rather than invalidating — a pre-existing entry is still a perfectly good aggregate. Any future field added to that payload needs the same treatment, and any client reading it should tolerate the field being absent regardless of what the type says.
+
+**A tier gate that fails closed will flash the paywall at paying users unless the loading state is its own branch (hit for real 2026-08-18)**
+`useTier()` starts at `null` and `PriceSummary` treated `null` as "not unlocked", so it rendered `LockedOverlay`. That is correct as a data guarantee and wrong as UI: `SearchSection` sets `results` to `null` on the stream's `start` event, so **`PriceSummary` unmounts and remounts on every single search**, and a Pro user got an "Upgrade to Pro" panel for the length of the `/api/billing/status` round trip, every time. Two rules for any new gated surface:
+- Fail closed to a **neutral skeleton**, not to the paywall. Three states, not two: unknown / locked / unlocked. The skeleton still renders no real figure, so nothing about the security property changes.
+- `useTier` now memoises the resolved tier at module scope (`lastTier`) and seeds `useState` from it, so a remount inside the same page session resolves synchronously. The 30s `inflight` reset still lets a later mount re-check after an upgrade.
+
+**A paid panel that renders `null` when its data is empty is indistinguishable from a broken one**
+`SoldCompsPanel` returns `null` on `platforms.length === 0`, and `PriceSummary` rendered it bare. So for a Pro user the sold-comps region showed nothing at all while `/api/sold-comps` was in flight (a separate request that lands seconds after the listings), and nothing at all when a query legitimately had under `MIN_SAMPLE = 10` comps — which reads as "the feature I paid for is missing". `PriceSummary` now renders explicit loading / not-enough-sales / failed-to-load notes in that slot, the same three states `SoldCompsLookup` has carried since `/price-check` shipped. Related: `useSoldComps` seeds `loading` from the query rather than `false`, because the effect that sets it runs after first paint and any caller keying an empty state off `!loading && !data` would flash it for one frame.
+
 **RLS alone is not enough**
 Every public table also needs explicit `GRANT SELECT/INSERT/UPDATE/DELETE ON public.<table> TO authenticated, service_role`. Without GRANTs, every request returns Postgres `42501 permission denied` — not a helpful error message. This applies to any new table you create.
 

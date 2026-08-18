@@ -106,15 +106,21 @@ are both 0.
   buttons; SearchForm enables search on credits when included cap is 0 and shows an overage
   nudge; quota-exhausted toast points to `/settings#credits`.
 
-**Proposed pack prices (PENDING SIGN-OFF — owner provisions Stripe prices + confirms numbers):**
+**Live pack prices (shipped and verified working in prod 2026-08-17 — `lib/creditPacks.ts`):**
 
 | Pack | searches | price | $/search | above worst-case marginal cost? |
 |---|---|---|---|---|
-| small | 50 | $20 | $0.40 | yes |
-| medium | 150 | $50 | $0.333 | yes |
-| large | 500 | $150 | $0.30 | yes |
+| small | 100 | $10 | $0.100 | yes |
+| medium | 300 | $25 | $0.083 | yes |
+| large | 1000 | $60 | $0.060 | yes |
 
-Worst-case marginal cost (Hobby plan, max tier) ≈ $0.28/search. All packs priced above it.
+Worst-case marginal cost (Firecrawl Hobby, all 9 platforms selected) ≈ $0.019/search under the
+current Avenue A model, so every pack clears it by 3x or more. **Packs are a Free-plan feature
+as of 2026-08-18** — Pro is sold as unlimited searches, so it is never offered credits.
+
+> Superseded: this table previously read "PENDING SIGN-OFF" with 50/$20, 150/$50, 500/$150 and a
+> $0.28/search worst case. Those were pre-Avenue-A numbers for packs that shipped at different
+> sizes. Verify against `lib/creditPacks.ts` before quoting.
 
 ### COGS readout
 `scripts/cogs-per-search.mjs` (no deps, $0 to run) prints cost-per-search per tier from the
@@ -124,13 +130,18 @@ constants (keep in sync on change). Sample output:
 
 | tier | cap | native | Hobby/srch | Std/srch | Hobby/period |
 |---|---|---|---|---|---|
-| free | 3 | 10 | $0.147 | $0.051 | $0.44 |
-| pro | 20 | 40 | $0.204 | $0.108 | $4.08 |
-| max | 70 | 80 | $0.280 | $0.184 | $19.60 |
+| free | 5 | 8 | $0.0190 | $0.0055 | $0.10 |
+| pro | 50 | 100 | $0.0190 | $0.0055 | $0.95 |
+| max | 120 | 100 | $0.0190 | $0.0055 | $2.28 |
+
+Per-search cost is identical across tiers: native result depth is free (the sidecar is called
+with a hardcoded `limit=100` on every tier and `nativeResultsCap` is a post-fetch slice), so
+only search *count* scales cost. `max` is retired and unpurchasable; it stays in the readout
+because it stays in `TIER_CAPS`.
 
 ---
 
-## 3. Alerts — boolean sourcing criteria (flagship Max feature)
+## 3. Alerts — boolean sourcing criteria (Pro feature; “Max” is retired)
 
 AND-only criteria layered on saved searches: the alert's **search terms** AND size AND a
 price range. OR-within-a-field is a flagged later extension.

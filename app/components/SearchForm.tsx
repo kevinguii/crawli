@@ -176,23 +176,33 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
         let msg = 'Search failed. Please try again.';
         let errorCode: string | undefined;
         let quotaMessage: string | undefined;
+        let quotaPlan: string | undefined;
         try {
           const data = await res.json();
           errorCode = data?.error;
           quotaMessage = data?.message;
+          quotaPlan = data?.plan;
           msg = quotaMessage ?? data?.error ?? msg;
         } catch {}
 
         // 402 quota_exceeded — show a richer toast with an Upgrade CTA
         // instead of routing through the generic onError red banner.
         if (res.status === 402 && errorCode === 'quota_exceeded') {
-          // Included cap + any prepaid credits are both exhausted. Point to
-          // settings, where the user can buy a credit pack or upgrade.
+          // Paid tiers are sold as "Unlimited searches" — the cap they just hit is
+          // an anti-abuse backstop, so do NOT offer them credits or an upgrade
+          // (Pro is the top plan). Send them to support instead. Free users get
+          // the original buy-credits path.
+          const isPaid = quotaPlan != null && quotaPlan !== 'free';
           toast.error(quotaMessage ?? 'Search limit reached.', {
-            action: {
-              label: 'Buy credits',
-              onClick: () => { window.location.href = '/settings?from=/search#credits'; },
-            },
+            action: isPaid
+              ? {
+                  label: 'Contact us',
+                  onClick: () => { window.location.href = '/settings?from=/search'; },
+                }
+              : {
+                  label: 'Buy credits',
+                  onClick: () => { window.location.href = '/settings?from=/search#credits'; },
+                },
             duration: 8000,
           });
           return;

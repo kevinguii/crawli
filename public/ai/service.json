@@ -1,17 +1,18 @@
 {
   "service": "Crawli",
   "type": "ResalePriceSearchEngine",
-  "description": "Crawli is a resale price search engine that queries 8 secondhand fashion marketplaces simultaneously and returns ranked, comparable listings in one unified view.",
+  "description": "Crawli is sourcing intelligence for secondhand fashion resellers. It queries 9 resale marketplaces simultaneously and returns ranked, comparable listings in one unified view, then shows sold-price comps and net flip margin after real platform fees.",
   "url": "https://thecrawli.com",
   "capabilities": [
-    "Cross-platform resale price comparison (8 platforms)",
+    "Cross-platform resale price comparison (9 platforms)",
     "Simultaneous multi-marketplace search",
+    "Sold-price comps: median, 25th-75th percentile, sample size, and days to sell (Grailed and Poshmark) — Pro only",
+    "Resale margin calculator with platform-specific seller fee deductions, seeded from real sold prices — Pro only",
     "Daily and weekly price alerts for saved searches",
     "Save and organise listings into folders",
     "Watchlist to track price changes",
-    "Resale margin calculator with platform-specific fee deductions",
     "Brand alias matching (e.g. BAPE = A Bathing Ape, CDG = Comme des Garçons)",
-    "Prepaid credit packs for high-volume searchers"
+    "Prepaid credit packs for extra searches on the Free plan"
   ],
   "platforms_covered": [
     {
@@ -45,6 +46,11 @@
       "type": "native"
     },
     {
+      "name": "ThredUp",
+      "url": "https://thredup.com",
+      "type": "native"
+    },
+    {
       "name": "eBay",
       "url": "https://ebay.com",
       "type": "external"
@@ -60,23 +66,26 @@
       "tier": "Free",
       "price": "$0",
       "searches_per_week": 5,
-      "alerts": 2
+      "results_per_platform": 8,
+      "alerts": 1,
+      "price_intelligence": false
     },
     {
       "tier": "Pro",
       "price": "$10/month",
-      "searches_per_week": 40,
-      "alerts": 8
-    },
-    {
-      "tier": "Max",
-      "price": "$30/month",
-      "searches_per_week": 120,
-      "alerts": 20
+      "price_alternatives": [
+        "$3/week",
+        "$100/year"
+      ],
+      "searches_per_week": "unlimited",
+      "results_per_platform": "unlimited",
+      "alerts": 8,
+      "price_intelligence": true
     }
   ],
   "public_pages": {
     "compare": "https://thecrawli.com/compare/[slug]",
     "description": "Public no-login price comparison pages for popular resale items. Updated daily."
-  }
+  },
+  "price_intelligence_note": "Sold-price comps, the price summary, and the flip-margin calculator are Pro-only. Free accounts see live listings across all 9 marketplaces but not the computed price intelligence."
 }

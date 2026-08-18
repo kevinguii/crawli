@@ -35,8 +35,9 @@ interface TierConfig {
 
 const NATIVE_TOOLTIP = (
   <>
-    <strong style={{ color: 'var(--text)' }}>Native platforms</strong> support
-    higher result counts on Pro. eBay returns up to 10 per search on every plan.
+    <strong style={{ color: 'var(--text)' }}>Native platforms</strong> return
+    unlimited results on Pro, and up to 8 per search on Free. eBay returns up to
+    10 per search on every plan.
     <div style={{ marginTop: '6px' }}>
       <span style={{ color: 'var(--text-muted)' }}>Native:</span>{' '}
       Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX
@@ -71,6 +72,17 @@ const NATIVE_TOOLTIP = (
 // copy and the enforced cap are allowed to diverge here. If that cap ever tightens
 // enough to be reachable, this copy needs to change with it.
 //
+// As of 2026-08-18 SEARCHES and RESULTS DEPTH join that list: both read
+// "Unlimited" on Pro while TIER_CAPS.pro enforces 50/week and 100 per native
+// platform. Same reasoning, and the margin work backing it is in lib/tierCaps.ts —
+// the busiest user-week ever recorded is 13 searches, nobody has ever reached even
+// the old cap of 40, and break-even on a $10/mo sub is ~495 searches/month. The
+// caps are abuse backstops. Two obligations that come with the word:
+//   1. Pro must never see a hard "you have used all N searches" wall — the 402 in
+//      app/api/search/route.ts carries tier-specific copy for this reason.
+//   2. If a real user ever lands on either cap, raise the cap or drop the word.
+//      Do not quietly leave "Unlimited" over a limit somebody actually hit.
+//
 // If you add or reorder a Basic row on one plan, mirror it on the other or the
 // alignment breaks.
 const BASIC_LABEL = 'Basic';
@@ -89,8 +101,8 @@ const PAID_TIERS: TierConfig[] = [
       {
         label: BASIC_LABEL,
         items: [
-          '40 searches per week',
-          'Deeper results on every native platform',
+          'Unlimited searches',
+          'Unlimited results on every native platform',
           '8 alerts, checked daily',
           'Unlimited saves and tracked listings',
           'Email + in-app alert notifications',
@@ -325,10 +337,10 @@ export function PricingCards({
         }}
       >
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          Need more searches? Add credit packs anytime.
+          On Free and need more searches? Add credit packs anytime.
         </p>
         <p className="mt-1.5 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Once your included searches are used up, you can buy prepaid credit packs as a one-time purchase. No subscription, no surprise charges, no debt. One credit equals one search and rolls over until used.
+          Once your Free plan searches are used up, you can buy prepaid credit packs as a one-time purchase. No subscription, no surprise charges, no debt. One credit equals one search and rolls over until used.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           {CREDIT_PACKS.map((pack) => (
@@ -344,7 +356,7 @@ export function PricingCards({
           ))}
         </div>
         <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
-          Included in all plans
+          Pro includes unlimited searches — packs are for the Free plan
         </p>
       </div>
     </>

@@ -376,14 +376,32 @@ export default function SettingsPage() {
                       </span>
                     </Row>
                     <Row
-                      label="Searches remaining"
+                      label={isPaid ? 'Searches' : 'Searches remaining'}
                       sublabel={
-                        billing.searchResetDate
+                        isPaid
+                          ? `${searchesUsed} used this week`
+                          : billing.searchResetDate
                           ? `Resets ${new Date(billing.searchResetDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
                           : 'Resets weekly'
                       }
                     >
                       {(() => {
+                        // Paid tiers are sold as "Unlimited searches" (see
+                        // app/pricing/PricingCards.tsx). Showing them a depleting
+                        // "47/50" bar that reddens as they approach the anti-abuse
+                        // backstop directly contradicts what they paid for, and is
+                        // the most visible place that divergence could leak. Show
+                        // usage as a plain fact instead of a budget.
+                        if (isPaid) {
+                          return (
+                            <span
+                              className="text-xs font-semibold"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              Unlimited
+                            </span>
+                          );
+                        }
                         const remaining = Math.max(0, searchCap - searchesUsed);
                         const remainingPct = searchCap > 0 ? remaining / searchCap : 0;
                         const barColor =
@@ -461,7 +479,7 @@ export default function SettingsPage() {
                       sublabel={
                         isPaid
                           ? 'Upgrade, switch plan, or cancel'
-                          : 'Unlock more searches, alerts, and tracked listings'
+                          : 'Unlock unlimited searches, sold prices, and your flip margin'
                       }
                     >
                       <Link
@@ -477,18 +495,22 @@ export default function SettingsPage() {
                         {isPaid ? 'Manage' : 'Upgrade'}
                       </Link>
                     </Row>
-                    <Row
-                      label="Buy more credits"
-                      sublabel="One-time credit packs, no subscription"
-                    >
-                      <Link
-                        href="/pricing?from=/settings#credits"
-                        className="text-sm font-medium underline underline-offset-2 transition-colors"
-                        style={{ color: 'var(--text-dim)' }}
+                    {/* Free plan only — selling search credits to someone whose plan
+                        says "Unlimited searches" contradicts what they bought. */}
+                    {!isPaid && (
+                      <Row
+                        label="Buy more credits"
+                        sublabel="One-time credit packs, no subscription"
                       >
-                        View packs →
-                      </Link>
-                    </Row>
+                        <Link
+                          href="/pricing?from=/settings#credits"
+                          className="text-sm font-medium underline underline-offset-2 transition-colors"
+                          style={{ color: 'var(--text-dim)' }}
+                        >
+                          View packs →
+                        </Link>
+                      </Row>
+                    )}
                   </>
                 );
               })()}

@@ -8,11 +8,11 @@
     },
     {
       "question": "How does the flip margin calculator work?",
-      "answer": "After running a search, expand the flip margin panel in the price summary. Enter your sourcing price and choose the platform you plan to sell on. Crawli calculates your net profit, margin percentage, and ROI using real seller-side fee schedules, not buyer fees or estimates. All 7 platform rates are maintained in a single source of truth and were last verified on 2026-06-28 against official vendor fee pages."
+      "answer": "The flip margin calculator is a Pro feature. After running a search, expand the flip margin panel in the price summary, enter your sourcing price, and choose the platform you plan to sell on. Crawli calculates your net profit, margin percentage, and ROI using real seller-side fee schedules, not buyer fees or estimates, and seeds the resale price from the median sold price rather than the average asking price. All 7 platform rates are maintained in a single source of truth and were last verified on 2026-06-28 against official vendor fee pages."
     },
     {
       "question": "How do sourcing alerts work?",
-      "answer": "Save any search to create a sourcing alert. You can set precise criteria: brand, size, and a maximum price. Crawli rechecks the search daily or weekly across all platforms and notifies you by email only when a new listing appears that matches all your terms. Alerts use AND logic throughout: a listing must match brand AND size AND max-price to trigger a notification."
+      "answer": "Save any search to create a sourcing alert. You can set precise criteria: brand, size, and a maximum price. Crawli rechecks the search daily or weekly across all platforms and notifies you by email only when a new listing appears that matches all your terms. Alerts use AND logic throughout: a listing must match brand AND size AND max-price to trigger a notification. Free accounts get 1 alert, Pro gets 8, and both tiers can check daily or weekly."
     },
     {
       "question": "Which platforms does Crawli search?",
@@ -20,11 +20,11 @@
     },
     {
       "question": "What happens when I run out of included searches?",
-      "answer": "Once you have used all the searches included in your plan for the week, you can continue sourcing by purchasing prepaid search credits. Credits are bought up front as a one-time payment — no surprise billing, no debt, no open-ended charges. One credit equals one search. Your weekly included searches and your credit balance are tracked separately: included searches reset each week, while credits roll over until you use them."
+      "answer": "Pro includes unlimited searches, so this only applies to the Free plan. Once you have used your 5 included searches for the week you can either upgrade to Pro or buy prepaid search credits. Credits are bought up front as a one-time payment: no surprise billing, no debt, no open-ended charges. One credit equals one search. Included searches reset each week, while credits roll over until you use them."
     },
     {
       "question": "Is Crawli free to use?",
-      "answer": "Yes. Crawli is free to start with 5 searches per week and 2 sourcing alerts. No credit card required. Paid plans add more weekly searches, more simultaneous alerts with precise criteria, and higher result counts per platform. The flip margin calculator is available on all plans including free."
+      "answer": "Yes. Crawli is free to start with 5 searches per week, 8 results per platform, and 1 sourcing alert. No credit card required. Pro is $10/month ($3/week or $100/year) and adds unlimited searches, unlimited results per platform, 8 simultaneous alerts with precise criteria, and price intelligence: sold-price comps, the price summary, and your flip margin after real platform fees. The rule of thumb is that free shows you the listings and Pro tells you what they mean."
     }
   ]
 }

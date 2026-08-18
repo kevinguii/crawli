@@ -20,12 +20,17 @@ export type SoldCompsResponse = SoldCompsResult | LockedSoldCompsResult;
  */
 export function useSoldComps(query: string | null | undefined) {
   const [data, setData] = useState<SoldCompsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Seeded from the query rather than `false`: the effect that flips this on runs
+  // after the first paint, so a `false` seed made the very first render read as
+  // "finished, no data" for one frame. Callers that render an empty state off
+  // `!loading && !data` flashed it on every mount.
+  const [loading, setLoading] = useState(() => Boolean(query?.trim()));
 
   useEffect(() => {
     const q = query?.trim();
     if (!q) {
       setData(null);
+      setLoading(false);
       return;
     }
 

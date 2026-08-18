@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Listing, PLATFORM_NAMES } from '@/lib/types';
 import type { PlatformKey } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
@@ -14,14 +15,25 @@ import { useTier } from '@/lib/hooks/useTier';
 import { canSeePriceIntelligence } from '@/lib/tierCaps';
 import { fakePriceString, fakeSoldStats } from '@/lib/fakePricing';
 import SoldCompsPanel from './SoldCompsPanel';
+import SoldSalesList from './SoldSalesList';
 import LockedOverlay from './LockedOverlay';
-import type { PlatformSoldStats } from '@/lib/soldComps/types';
+import type { PlatformSales, PlatformSoldStats } from '@/lib/soldComps/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
   maximumFractionDigits: 0,
 });
+
+/** Sale rows shown alongside search results. The full list lives on /price-check —
+ *  this panel sits above a grid of listings and is not the place for 50 rows. */
+const SEARCH_PAGE_SALE_ROWS = 5;
+
+/** Shown identically to free and Pro users on a query with no completed sales —
+ *  there's nothing there to hold back from either tier, so both get the same
+ *  words rather than one implying the other has an answer it doesn't. */
+const SOLD_NO_DATA_TEXT =
+  'Not enough completed sales for this one yet. This works best on items with a steady resale market.';
 
 const fmt2 = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -55,22 +67,37 @@ export default function PriceSummary({
   highSource,
   query,
 }: Props) {
-  const { data: sold } = useSoldComps(query);
+  const { data: sold, loading: soldLoading } = useSoldComps(query);
   const { tier } = useTier();
   const [seed, setSeed] = useState<ResaleSeed | null>(null);
 
-  // Fail closed while the tier is still resolving: show the locked view until we
-  // know otherwise, so the paid numbers never flash on screen for a free user.
+  // Fail closed while the tier is still resolving — but fail closed to a neutral
+  // skeleton, NOT to the paywall. Rendering the locked view during the
+  // /api/billing/status round trip flashed "Upgrade to Pro" at paying users on
+  // every single search (this component remounts each time, since SearchSection
+  // nulls `results` on the stream's `start` event). The skeleton carries no real
+  // figure either, so the fail-closed guarantee is unchanged.
+  const tierResolving = tier === null;
   const unlocked = tier !== null && canSeePriceIntelligence(tier);
 
   const soldLocked = sold?.locked === true;
   const soldPlatforms: PlatformSoldStats[] =
     sold && !soldLocked && sold.available ? sold.platforms : [];
+  // Individual sales carry no sample floor, so this can be populated when
+  // soldPlatforms is empty — a query with 3 sales gets rows and no median.
+  const soldSales: PlatformSales[] =
+    sold && !soldLocked && sold.available ? (sold.sales ?? []) : [];
 
   // Fabricated backdrop for the locked view — see lib/fakePricing.ts. Sample size
-  // and window pass through real (never secret); every price figure is invented.
+  // and window pass through real (never secret, and already folds in thin
+  // platforms with a sale or two — see toLockedResult); every price figure is
+  // invented. Empty when the query has no real completed sales at all: owner
+  // decision 2026-08-18 is that the paywall only appears where something real is
+  // actually being withheld, not as a blanket screen over nothing — see the
+  // shared "not enough completed sales" note below, which reads the same for
+  // free and Pro alike on a query with no data.
   const fakeSoldRows: PlatformSoldStats[] = useMemo(() => {
-    if (!sold || sold.locked !== true || !sold.available) return [];
+    if (sold?.locked !== true || sold.platforms.length === 0) return [];
     return sold.platforms.map((p) => fakeSoldStats(p, query ?? 'x'));
   }, [sold, query]);
 
@@ -94,40 +121,117 @@ export default function PriceSummary({
 
   const countLabel = `${totalCount} listing${totalCount !== 1 ? 's' : ''}`;
 
+  // Sold comps resolve on their own request, well after the listings are on screen,
+  // and can legitimately come back empty. Every one of those states has to say so:
+  // rendering nothing made an unlocked Pro panel look identical to a broken one,
+  // which is exactly how it was reported. Mirrors the states SoldCompsLookup has
+  // carried since /price-check shipped.
+  //
+  // The aggregate and the rows are independent: the median needs MIN_SAMPLE behind
+  // it, the rows need nothing, so a thin query renders rows with no median rather
+  // than the whole region collapsing.
+  const hasSales = soldSales.some((g) => g.sales.length > 0);
+  // True on the locked payload too — `available` survives stripping, so the free
+  // view can tell "we have sales for this, they're behind the lock" apart from
+  // "this item has no completed sales at all".
+  const soldHasData = sold?.available === true;
+  let soldRegion: React.ReactNode = null;
+  if (soldLoading) {
+    soldRegion = <SoldCompsNote>Checking completed sales…</SoldCompsNote>;
+  } else if (soldPlatforms.length > 0 || hasSales) {
+    soldRegion = (
+      <>
+        {soldPlatforms.length > 0 ? (
+          <SoldCompsPanel
+            platforms={soldPlatforms}
+            selected={seed?.platform ?? null}
+            onSelect={selectPlatform}
+          />
+        ) : (
+          <SoldCompsNote>
+            Too few sales here to put a median on it. These are the ones we found.
+          </SoldCompsNote>
+        )}
+        {hasSales && (
+          <SoldSalesList
+            groups={soldSales}
+            limit={SEARCH_PAGE_SALE_ROWS}
+            footer={
+              query ? (
+                <Link
+                  href={`/price-check?q=${encodeURIComponent(query)}`}
+                  className="underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  See them all in Price Check
+                </Link>
+              ) : null
+            }
+          />
+        )}
+      </>
+    );
+  } else if (sold !== null) {
+    soldRegion = <SoldCompsNote>{SOLD_NO_DATA_TEXT}</SoldCompsNote>;
+  } else if (query) {
+    // Query was sent, nothing came back: the lookup failed rather than finding no
+    // sales. Say that instead of blaming the item.
+    soldRegion = <SoldCompsNote>Completed sales could not be loaded for this search.</SoldCompsNote>;
+  }
+
+  if (tierResolving) {
+    return <PriceSummarySkeleton />;
+  }
+
   if (!unlocked) {
-    // One overlay, one upgrade prompt, covering the whole panel — a grid of real
-    // numbers under a CSS blur would be trivially unblurred via devtools, so the
-    // backdrop underneath is entirely fabricated (see lib/fakePricing.ts). The
-    // real priceRange/averagePrice this component received are never threaded
-    // into the blurred subtree.
+    // Price range and average always exist here — priceRange/totalCount are
+    // already guarded above — so that portion of the panel paywalls
+    // unconditionally, same as always. Sold comps does not: it only renders,
+    // blurred, when this specific query actually has completed sales to
+    // withhold (owner decision 2026-08-18). A query with none gets the exact
+    // same "not enough completed sales" note a Pro user sees, sitting OUTSIDE
+    // the blur below — there's nothing real there to sell as premium, so
+    // pretending otherwise with a fabricated panel is what we're not doing.
+    //
+    // One overlay, one upgrade prompt, covering the price-range panel — a grid
+    // of real numbers under a CSS blur would be trivially unblurred via
+    // devtools, so the backdrop underneath is entirely fabricated (see
+    // lib/fakePricing.ts). The real priceRange/averagePrice this component
+    // received are never threaded into the blurred subtree.
     return (
-      <LockedOverlay
-        surface="search_results"
-        title="Prices are here. The read on them is Pro."
-        body={`We found ${countLabel} for this search. Pro shows the low, median and high across them, what the item has actually been selling for, and your margin after fees.`}
-      >
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <Metric label="Low" value={fakePriceString(`${query ?? ''}-${totalCount}-low`, 20, 180)} accent />
-            <Metric label="Average" value={fakePriceString(`${query ?? ''}-${totalCount}-avg`, 60, 260)} source={countLabel} />
-            <Metric label="High" value={fakePriceString(`${query ?? ''}-${totalCount}-high`, 180, 480)} />
+      <div className="space-y-3">
+        <LockedOverlay
+          surface="search_results"
+          title="Prices are here. The read on them is Pro."
+          body={`We found ${countLabel} for this search. Pro shows the low, median and high across them, what the item has actually been selling for, and your margin after fees.`}
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <Metric label="Low" value={fakePriceString(`${query ?? ''}-${totalCount}-low`, 20, 180)} accent />
+              <Metric label="Average" value={fakePriceString(`${query ?? ''}-${totalCount}-avg`, 60, 260)} source={countLabel} />
+              <Metric label="High" value={fakePriceString(`${query ?? ''}-${totalCount}-high`, 180, 480)} />
+            </div>
+            {soldHasData && (
+              <SoldCompsPanel platforms={fakeSoldRows} selected={null} onSelect={() => {}} />
+            )}
+            <div
+              className="flex items-center justify-between rounded-2xl px-4 py-3"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+            >
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                Suggested flip margin
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Estimate profit
+              </span>
+            </div>
           </div>
-          {fakeSoldRows.length > 0 && (
-            <SoldCompsPanel platforms={fakeSoldRows} selected={null} onSelect={() => {}} />
-          )}
-          <div
-            className="flex items-center justify-between rounded-2xl px-4 py-3"
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-          >
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-              Suggested flip margin
-            </span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Estimate profit
-            </span>
-          </div>
-        </div>
-      </LockedOverlay>
+        </LockedOverlay>
+        {soldLoading && <SoldCompsNote>Checking completed sales…</SoldCompsNote>}
+        {!soldLoading && sold !== null && !soldHasData && (
+          <SoldCompsNote>{SOLD_NO_DATA_TEXT}</SoldCompsNote>
+        )}
+      </div>
     );
   }
 
@@ -143,11 +247,7 @@ export default function PriceSummary({
         <Metric label="High" value={fmt.format(priceRange.max)} source={highSource} />
       </div>
 
-      <SoldCompsPanel
-        platforms={soldPlatforms}
-        selected={seed?.platform ?? null}
-        onSelect={selectPlatform}
-      />
+      {soldRegion}
       <FlipMargin averagePrice={averagePrice} priceRange={priceRange} seed={seed} />
     </div>
   );
@@ -183,6 +283,53 @@ function Metric({
           {source}
         </p>
       )}
+    </div>
+  );
+}
+
+/** One line where the sold-comps panel would be: loading, empty, or failed. Same
+ *  card as the panel itself so the layout does not jump when data lands. */
+function SoldCompsNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <p className="text-[13px] leading-relaxed" aria-live="polite" style={{ color: 'var(--text-muted)' }}>
+        {children}
+      </p>
+    </div>
+  );
+}
+
+/** Shown only while the tier is unknown. Deliberately holds no number at all — it
+ *  stands in for both the paid and the locked view without committing to either. */
+function PriceSummarySkeleton() {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-live="polite">
+      <div className="grid grid-cols-3 gap-3">
+        {['Low', 'Average', 'High'].map((label) => (
+          <div
+            key={label}
+            className="rounded-2xl p-4"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+              {label}
+            </p>
+            <div
+              className="mt-2 h-6 w-20 rounded-md"
+              style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+            />
+          </div>
+        ))}
+      </div>
+      <div
+        className="rounded-2xl px-4 py-3"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <div className="h-4 w-40 rounded-md" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} />
+      </div>
     </div>
   );
 }

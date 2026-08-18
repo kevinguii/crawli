@@ -13,10 +13,28 @@
 //   nothing rather than something misleading.
 
 import { relevanceTokens, titleMatchesQuery } from '@/lib/parse';
-import type { PlatformSoldStats, SoldComp, SoldCompPlatform } from './types';
+import type { PlatformSales, PlatformSoldStats, SoldComp, SoldCompPlatform, SoldSale } from './types';
 
-/** Below this many sales, a platform is omitted entirely. */
-export const MIN_SAMPLE = 10;
+/**
+ * Below this many sales we publish no AGGREGATE for a platform — no median, no
+ * spread, no days-to-sell. The individual sales are still returned (see
+ * PlatformSales): the floor guards a claim we make, not data the reader judges.
+ *
+ * Lowered 10 → 5 on 2026-08-18. Measured against 20 real queries pulled from
+ * search_history: a floor of 10 produced an aggregate for 14 of them, a floor of 5
+ * for 17. The rejections at 10 were not noise — "s4lem hoodie" had 9 Grailed sales
+ * in 90 days and showed nothing.
+ *
+ * 5 is a hard lower bound, not a preference. trimPriceOutliers() returns its input
+ * untouched below 4 comps, so a floor under that publishes an UNFENCED median, and
+ * one bundle listing or fat-fingered price drags it — the exact failure this
+ * constant exists to prevent. Do not lower it further; widen the row list instead.
+ */
+export const MIN_SAMPLE = 5;
+
+/** Most sale rows returned per platform. Keeps the JSON response and the cached
+ *  jsonb payload bounded — Poshmark alone can return ~96 relevant sales. */
+export const SALES_ROW_CAP = 50;
 
 /** Tried in order. A platform stops at the first window that clears MIN_SAMPLE. */
 export const WINDOWS_DAYS = [90, 180, 365] as const;
@@ -64,7 +82,7 @@ export function filterRelevant(comps: SoldComp[], query: string): SoldComp[] {
   return comps.filter((c) => titleMatchesQuery(c.title, tokens));
 }
 
-function withinWindow(comps: SoldComp[], windowDays: number, now: number): SoldComp[] {
+export function withinWindow(comps: SoldComp[], windowDays: number, now: number): SoldComp[] {
   const cutoff = now - windowDays * DAY_MS;
   return comps.filter((c) => c.soldAt.getTime() >= cutoff);
 }
@@ -118,3 +136,32 @@ export function statsForPool(
 // There is intentionally no pooled cross-platform median here. See the note on
 // SoldCompsResult.platforms in ./types.ts — the two platforms sell materially
 // different inventory for the same query, so a combined figure is not meaningful.
+
+/**
+ * The wire shape of one platform's individual sales: windowed, newest first, capped.
+ *
+ * Returns null when nothing survives, so callers can leave the platform out
+ * entirely rather than emitting an empty group.
+ */
+export function salesFor(
+  platform: SoldCompPlatform,
+  comps: SoldComp[],
+  windowDays: number,
+  now: number = Date.now(),
+): PlatformSales | null {
+  const windowed = withinWindow(comps, windowDays, now)
+    .slice()
+    .sort((a, b) => b.soldAt.getTime() - a.soldAt.getTime());
+  if (windowed.length === 0) return null;
+
+  const sales: SoldSale[] = windowed.slice(0, SALES_ROW_CAP).map((c) => ({
+    url: c.url,
+    title: c.title,
+    price: c.price,
+    soldAt: c.soldAt.toISOString(),
+    size: c.size,
+    condition: c.condition,
+  }));
+
+  return { platform, windowDays, total: windowed.length, sales };
+}

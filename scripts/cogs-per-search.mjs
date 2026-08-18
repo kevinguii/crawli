@@ -39,8 +39,8 @@ const firecrawlCredits =
 
 // ── Mirrors lib/stripe.ts TIER_CAPS (LIVE/deployed caps; weekly searches) ───
 const TIER_CAPS = {
-  free: { maxSearchesPerPeriod: 5, nativeResultsCap: 15 },
-  pro: { maxSearchesPerPeriod: 40, nativeResultsCap: 60 },
+  free: { maxSearchesPerPeriod: 5, nativeResultsCap: 8 },
+  pro: { maxSearchesPerPeriod: 50, nativeResultsCap: 100 },
   max: { maxSearchesPerPeriod: 120, nativeResultsCap: 100 },
 };
 

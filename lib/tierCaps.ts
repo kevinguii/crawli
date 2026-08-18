@@ -37,6 +37,22 @@ export const UNLIMITED = 1_000_000;
 // `max` is retired from the pricing page and no account resolves to it. It stays
 // here so `tierFromPriceId` keeps handling a legacy price ID without downgrading
 // anyone. Do not offer it; do not delete it.
+//
+// Revised 2026-08-18 (Pro repositioned as "unlimited"): searches 40 → 50/week,
+// nativeResultsCap 60 → 100. Both are now marketed as "Unlimited" while staying
+// finite here, the same deliberate copy/cap divergence already documented for
+// saves and tracked listings in app/pricing/PricingCards.tsx — the numbers are
+// abuse backstops, not felt limits. Grounding for that, measured 2026-08-18:
+//   • busiest user-week ever recorded = 13 searches; p90 user-week = 5.9
+//   • 0 of 52 user-weeks have ever exceeded even the OLD cap of 40
+//   • break-even on one $10/mo Pro sub is ~495 searches/mo (worst case: all 9
+//     platforms every search on Firecrawl Hobby), i.e. ~10× the new 50/wk cap
+// `nativeResultsCap` costs nothing at any value: the sidecar is called with a
+// hardcoded limit=100 for every tier (lib/searchWorker.ts) and this cap is a
+// post-fetch .slice(), so 100 is the true ceiling of what is fetched. Raising it
+// further requires raising that sidecar limit, which DOES cost render time.
+// If either cap ever tightens enough to be reachable, the pricing copy must
+// change with it.
 export const TIER_CAPS: Record<Tier, TierCaps> = {
   // Free keeps DAILY alerts (owner decision 2026-08-17, reversing the weekly-only
   // floor in the original spec). Alert runs are cheap — the cross-user cache in
@@ -45,7 +61,7 @@ export const TIER_CAPS: Record<Tier, TierCaps> = {
   // session, which is the metric this product is worst at (3 of 22 return). Free
   // alerts are limited by COUNT (1), not frequency.
   free: { maxSearchesPerPeriod: 5,   maxSavedSearches: 1,  maxTrackedListings: 10,        nativeResultsCap: 8,   maxSaves: 10,        minAlertCadenceHours: 24 },
-  pro:  { maxSearchesPerPeriod: 40,  maxSavedSearches: 8,  maxTrackedListings: 500,       nativeResultsCap: 60,  maxSaves: 500,       minAlertCadenceHours: 24 },
+  pro:  { maxSearchesPerPeriod: 50,  maxSavedSearches: 8,  maxTrackedListings: 500,       nativeResultsCap: 100, maxSaves: 500,       minAlertCadenceHours: 24 },
   max:  { maxSearchesPerPeriod: 120, maxSavedSearches: 20, maxTrackedListings: UNLIMITED, nativeResultsCap: 100, maxSaves: UNLIMITED, minAlertCadenceHours: 24 },
 };
 

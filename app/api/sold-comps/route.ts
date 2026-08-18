@@ -71,6 +71,17 @@ export async function POST(request: Request) {
   const respond = (result: SoldCompsResult) =>
     NextResponse.json(unlocked ? result : toLockedResult(result));
 
+  /**
+   * Rows were added to the payload after this cache had been live for a while, so
+   * a row written before then has no `sales` key at all. Normalize on read rather
+   * than invalidating the whole cache: an old entry is still a perfectly good
+   * aggregate, it just has no individual sales to show until it expires.
+   */
+  const fromCache = (payload: SoldCompsResult): SoldCompsResult => ({
+    ...payload,
+    sales: payload.sales ?? [],
+  });
+
   const { data: cached } = await admin
     .from('sold_comps_cache')
     .select('payload, expires_at')
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
-    return respond(cached.payload as SoldCompsResult);
+    return respond(fromCache(cached.payload as SoldCompsResult));
   }
 
   let result: SoldCompsResult;
@@ -87,7 +98,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[/api/sold-comps] failed', err);
     return NextResponse.json(
-      { available: false, platforms: [], errors: ['internal'] },
+      { available: false, platforms: [], sales: [], errors: ['internal'] },
       { status: 200 },
     );
   }

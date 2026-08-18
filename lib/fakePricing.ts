@@ -58,3 +58,4 @@ export function fakeSoldStats(locked: LockedPlatformSoldStats, seedPrefix: strin
     daysToSell: fakePriceNumber(`${seedPrefix}-${locked.platform}-days`, 3, 45),
   };
 }
+

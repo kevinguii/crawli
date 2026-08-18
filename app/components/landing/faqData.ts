@@ -39,11 +39,11 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "What happens when I run out of included searches?",
     answer:
-      "Once you have used all the searches included in your plan for the week, you can continue sourcing by purchasing prepaid search credits. Credits are bought up front as a one-time payment, so there is no surprise billing, no debt, and no open-ended charges. One credit equals one search. Your weekly included searches and your credit balance are tracked separately: included searches reset each week, while credits roll over until you use them. The credits checkout returns a clear status if the feature is not yet active on your account.",
+      "Pro includes unlimited searches, so this only applies to the Free plan. Once you have used your 5 included searches for the week, you can either upgrade to Pro or keep sourcing by purchasing prepaid search credits. Credits are bought up front as a one-time payment, so there is no surprise billing, no debt, and no open-ended charges. One credit equals one search. Your weekly included searches and your credit balance are tracked separately: included searches reset each week, while credits roll over until you use them. The credits checkout returns a clear status if the feature is not yet active on your account.",
   },
   {
     question: "Is Crawli free to use?",
     answer:
-      "Yes. Crawli is free to start with 5 searches per week and 1 sourcing alert. No credit card required. Paid plans add more weekly searches, more simultaneous alerts, higher result counts per platform, and Price Check: the real sold-price median, range, and flip margin after fees on every search.",
+      "Yes. Crawli is free to start with 5 searches per week and 1 sourcing alert. No credit card required. Pro adds unlimited searches, unlimited results per platform, more simultaneous alerts, and Price Check: the real sold-price median, range, and flip margin after fees on every search.",
   },
 ];
