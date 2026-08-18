@@ -90,7 +90,18 @@ export default function SoldCompsLookup({
       </p>
     );
 
-  const salesListPane = hasSales ? <SoldSalesList groups={salesGroups} limit={salesLimit} /> : null;
+  const salesListPane = hasSales ? (
+    <SoldSalesList groups={salesGroups} limit={salesLimit} />
+  ) : (
+    // Can happen even when platforms/snapshot has data: a still-cached lookup from
+    // before the individual-sales field existed normalizes to sales: [] until it
+    // naturally expires (24h TTL). This pane must never collapse to nothing — in
+    // the tabbed variant's lg+ layout it's a standalone grid cell, not tucked
+    // under a tab, so a bare null here reads as a broken left column.
+    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+      No individual sale rows to show yet for this one.
+    </p>
+  );
 
   const marginPane = stats ? (
     <div className="space-y-3">
