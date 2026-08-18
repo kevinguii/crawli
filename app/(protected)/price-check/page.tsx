@@ -62,6 +62,7 @@ function PriceCheck({ initialQuery }: { initialQuery: string }) {
           surface="price_check"
           variant="tabbed"
           salesLimit={FULL_SALES_LIMIT}
+          salesInitialVisible={10}
           marginDefaultOpen
         />
       </div>

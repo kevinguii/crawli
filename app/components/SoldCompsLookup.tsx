@@ -44,6 +44,10 @@ export interface SoldCompsLookupProps {
   variant?: 'inline' | 'tabbed';
   /** How many individual sale rows to render. */
   salesLimit?: number;
+  /** Rows shown before a "Show all" toggle appears. Omit to always show every row
+   *  up to `salesLimit` (the default) — set this when `salesLimit` is large enough
+   *  that showing it all upfront would be overwhelming. */
+  salesInitialVisible?: number;
   /** Whether the flip calculator starts expanded. Defaults closed, matching the
    *  collapsible disclosure used everywhere else it appears. */
   marginDefaultOpen?: boolean;
@@ -58,6 +62,7 @@ export default function SoldCompsLookup({
   surface,
   variant = 'inline',
   salesLimit = DEFAULT_SALES_LIMIT,
+  salesInitialVisible,
   marginDefaultOpen = false,
 }: SoldCompsLookupProps) {
   const [picked, setPicked] = useState<PlatformSoldStats | null>(null);
@@ -91,7 +96,7 @@ export default function SoldCompsLookup({
     );
 
   const salesListPane = hasSales ? (
-    <SoldSalesList groups={salesGroups} limit={salesLimit} />
+    <SoldSalesList groups={salesGroups} limit={salesLimit} initialVisible={salesInitialVisible} />
   ) : (
     // Can happen even when platforms/snapshot has data: a still-cached lookup from
     // before the individual-sales field existed normalizes to sales: [] until it
@@ -161,14 +166,31 @@ export default function SoldCompsLookup({
             <PaneTab label="Flip margin" active={pane === 'margin'} onClick={() => setPane('margin')} />
           </div>
 
-          <div className={`${pane === 'sales' ? 'block' : 'hidden'} space-y-3 pt-4 lg:block lg:pt-0 lg:col-start-2 lg:row-start-1`}>
+          {/* Snapshot renders before the sales list in DOM order (mobile's "Recent
+              sales" tab stacks them in that order); explicit grid placement below
+              puts it in the sticky right rail regardless, at lg+. */}
+          <div className={`${pane === 'sales' ? 'block' : 'hidden'} space-y-3 pt-4 lg:hidden`}>
             {snapshotPane}
           </div>
-          <div className={`${pane === 'sales' ? 'block' : 'hidden'} pt-4 lg:block lg:pt-0 lg:col-start-1 lg:row-start-1 lg:row-span-2`}>
+
+          <div className={`${pane === 'sales' ? 'block' : 'hidden'} pt-4 lg:block lg:pt-0 lg:col-start-1 lg:row-start-1`}>
             {salesListPane}
           </div>
-          <div className={`${pane === 'margin' ? 'block' : 'hidden'} pt-4 lg:block lg:pt-0 lg:col-start-2 lg:row-start-2`}>
-            {marginPane}
+
+          {/* Right rail: sticky at lg+ so it stays visible while scrolling a long
+              sales list on the left instead of scrolling away with it. The wrapper
+              itself is NOT hidden below lg — marginPane lives here and must still
+              render under the mobile "Flip margin" tab. Snapshot is duplicated here
+              (desktop-only, hidden below lg) rather than shared with the mobile copy
+              above, since a single instance can't sit in two DOM positions across
+              the breakpoint — it's presentational (no internal state), so this is
+              safe; marginPane is never duplicated since FlipMarginCalculator does
+              carry internal state. */}
+          <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:self-start">
+            <div className="hidden lg:block">{snapshotPane}</div>
+            <div className={`${pane === 'margin' ? 'block' : 'hidden'} pt-4 lg:block lg:mt-4 lg:pt-0`}>
+              {marginPane}
+            </div>
           </div>
         </div>
       )}

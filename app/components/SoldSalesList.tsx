@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { PLATFORM_NAMES } from '@/lib/types';
 import type { PlatformSales, SoldSale } from '@/lib/soldComps/types';
 
@@ -29,13 +30,20 @@ interface Row extends SoldSale {
 export default function SoldSalesList({
   groups,
   limit,
+  initialVisible,
   footer,
 }: {
   groups: PlatformSales[];
   /** Rows to render. Anything beyond this is the caller's to link out to. */
   limit: number;
+  /** Rows shown before a "Show all" toggle appears. Omit to always show every row
+   *  up to `limit` — the search-results panel's short list has no need to collapse
+   *  further; the full /price-check list does. */
+  initialVisible?: number;
   footer?: React.ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   const rows: Row[] = groups
     .flatMap((g) => g.sales.map((s) => ({ ...s, platform: g.platform })))
     .sort((a, b) => new Date(b.soldAt).getTime() - new Date(a.soldAt).getTime());
@@ -43,6 +51,8 @@ export default function SoldSalesList({
   if (rows.length === 0) return null;
 
   const shown = rows.slice(0, limit);
+  const canCollapse = initialVisible !== undefined && initialVisible < shown.length;
+  const visible = canCollapse && !expanded ? shown.slice(0, initialVisible) : shown;
   // The true count of relevant sales, which exceeds rows.length whenever a
   // platform had more than SALES_ROW_CAP of them.
   const total = groups.reduce((sum, g) => sum + g.total, 0);
@@ -63,7 +73,7 @@ export default function SoldSalesList({
       </div>
 
       <ul className="space-y-1 px-4 pb-3 pt-2">
-        {shown.map((row) => (
+        {visible.map((row) => (
           <li key={`${row.platform}-${row.url}`}>
             <a
               href={row.url}
@@ -103,8 +113,18 @@ export default function SoldSalesList({
         style={{ color: 'var(--text-dim)' }}
       >
         <span>
-          Showing {shown.length} of {total} sale{total === 1 ? '' : 's'}
+          Showing {visible.length} of {total} sale{total === 1 ? '' : 's'}
         </span>
+        {canCollapse && (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="underline"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            {expanded ? 'Show fewer' : `Show all ${shown.length}`}
+          </button>
+        )}
         {footer}
       </div>
     </div>
