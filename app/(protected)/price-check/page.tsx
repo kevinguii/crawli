@@ -20,7 +20,7 @@ function PriceCheck({ initialQuery }: { initialQuery: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
         Price Check
       </h1>
@@ -29,7 +29,7 @@ function PriceCheck({ initialQuery }: { initialQuery: string }) {
         after fees if you sold it yourself.
       </p>
 
-      <div className="mt-6">
+      <div className="mt-6 max-w-2xl">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -62,6 +62,7 @@ function PriceCheck({ initialQuery }: { initialQuery: string }) {
           surface="price_check"
           variant="tabbed"
           salesLimit={FULL_SALES_LIMIT}
+          marginDefaultOpen
         />
       </div>
     </div>

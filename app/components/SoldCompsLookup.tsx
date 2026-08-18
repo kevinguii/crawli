@@ -5,17 +5,11 @@ import Link from 'next/link';
 import SoldCompsPanel from './SoldCompsPanel';
 import SoldCompsLockedPanel from './SoldCompsLockedPanel';
 import SoldSalesList from './SoldSalesList';
-import { netFlipProfit } from '@/lib/marketplaceFees';
+import FlipMarginCalculator from './FlipMarginCalculator';
 import type { PlatformSoldStats } from '@/lib/soldComps/types';
 import type { SoldCompsResponse } from '@/lib/hooks/useSoldComps';
 import type { PaywallSurface } from '@/lib/analytics';
-import { PLATFORM_NAMES, type PlatformKey } from '@/lib/types';
-
-const fmt = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
+import type { PlatformKey } from '@/lib/types';
 
 /** Sale rows rendered when the caller doesn't ask for more. */
 const DEFAULT_SALES_LIMIT = 5;
@@ -34,20 +28,25 @@ export interface SoldCompsLookupProps {
   query: string;
   loading: boolean;
   data: SoldCompsResponse | null;
-  /** Label for the buy-price input, e.g. "What would you pay for it?" */
+  /** Label for the flip calculator's sourcing-price field, e.g. "What would you pay
+   *  for it?" vs "What did you pay for it?" for the buyer-persona framing. */
   buyLabel: string;
   /** One-line reason we ask (fees baked in, shows expected payout). */
   buyHelp: string;
   /** Which paywall surface this instance is, for the locked-state analytics. */
   surface: PaywallSurface;
   /**
-   * `inline` stacks the comps and the margin calculator, which suits a short
-   * surface like the onboarding tail. `tabbed` splits them, for /price-check where
-   * a full sale list plus a calculator runs off the bottom of the page.
+   * `inline` stacks the market snapshot, sales, and margin calculator, which suits
+   * a short surface like the onboarding tail. `tabbed` is for /price-check: on
+   * mobile it keeps the same two-tab split, but at `lg+` it lays out as a dashboard
+   * — sales list on the left, snapshot + margin calculator stacked on the right.
    */
   variant?: 'inline' | 'tabbed';
   /** How many individual sale rows to render. */
   salesLimit?: number;
+  /** Whether the flip calculator starts expanded. Defaults closed, matching the
+   *  collapsible disclosure used everywhere else it appears. */
+  marginDefaultOpen?: boolean;
 }
 
 export default function SoldCompsLookup({
@@ -59,6 +58,7 @@ export default function SoldCompsLookup({
   surface,
   variant = 'inline',
   salesLimit = DEFAULT_SALES_LIMIT,
+  marginDefaultOpen = false,
 }: SoldCompsLookupProps) {
   const [picked, setPicked] = useState<PlatformSoldStats | null>(null);
   const [pane, setPane] = useState<Pane>('sales');
@@ -70,43 +70,31 @@ export default function SoldCompsLookup({
   // Rows carry no sample floor, so these can exist with no median to go above them.
   const salesGroups = unlockedData?.sales ?? [];
   const hasSales = salesGroups.some((g) => g.sales.length > 0);
-  const [buyPrice, setBuyPrice] = useState('');
-
-  const buy = Number(buyPrice);
-  const flip =
-    stats && Number.isFinite(buy) && buy > 0
-      ? netFlipProfit({
-          sourcingPrice: buy,
-          resalePrice: stats.medianPrice,
-          platform: stats.platform as PlatformKey,
-        })
-      : null;
 
   if (!query) return null;
 
-  const salesPane = (
-    <div className="space-y-3">
-      {unlockedData && unlockedData.platforms.length > 0 ? (
-        <SoldCompsPanel
-          platforms={unlockedData.platforms}
-          selected={stats?.platform ?? null}
-          onSelect={setPicked}
-        />
-      ) : (
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Too few sales here to put a median on it. These are the ones we found.
-        </p>
-      )}
-      {hasSales && <SoldSalesList groups={salesGroups} limit={salesLimit} />}
-    </div>
-  );
+  // Split into three pieces rather than one "sales" blob: the snapshot (per-platform
+  // median/range/sample-size cards — also the platform picker for the calculator)
+  // and the raw sale rows read as separate things on a wide screen, even though the
+  // `tabbed` variant's mobile view still groups them under one "Recent sales" tab.
+  const snapshotPane =
+    unlockedData && unlockedData.platforms.length > 0 ? (
+      <SoldCompsPanel
+        platforms={unlockedData.platforms}
+        selected={stats?.platform ?? null}
+        onSelect={setPicked}
+      />
+    ) : (
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        Too few sales here to put a median on it. These are the ones we found.
+      </p>
+    );
+
+  const salesListPane = hasSales ? <SoldSalesList groups={salesGroups} limit={salesLimit} /> : null;
 
   const marginPane = stats ? (
-    <div>
-      <label className="block text-xs" style={{ color: 'var(--text-dim)' }}>
-        {buyLabel}
-      </label>
-      <p className="mt-0.5 text-xs" style={{ color: 'var(--text-dim)' }}>
+    <div className="space-y-3">
+      <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
         {buyHelp}{' '}
         <Link
           href="/settings#platform-fees"
@@ -119,23 +107,14 @@ export default function SoldCompsLookup({
         </Link>
         .
       </p>
-      <input
-        inputMode="decimal"
-        value={buyPrice}
-        onChange={(e) => setBuyPrice(e.target.value)}
-        placeholder="0"
-        className="mt-1 w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+      <FlipMarginCalculator
+        resaleSeed={stats.medianPrice}
+        resaleSeedKey={`${stats.platform}-${stats.medianPrice}`}
+        initialPlatform={stats.platform as PlatformKey}
+        quickSets={[{ label: 'sold', value: stats.medianPrice }]}
+        sourcingLabel={buyLabel}
+        defaultOpen={marginDefaultOpen}
       />
-
-      {flip && (
-        <p className="mt-3 text-sm" style={{ color: 'var(--text)' }}>
-          Sell at the {PLATFORM_NAMES[stats.platform] ?? stats.platform} median of{' '}
-          {fmt.format(stats.medianPrice)} and you keep{' '}
-          <strong>{fmt.format(flip.payout)}</strong> after fees, netting{' '}
-          <strong>{fmt.format(flip.netProfit)}</strong>.
-        </p>
-      )}
     </div>
   ) : (
     // No aggregate cleared the sample floor, so there is no median to resell
@@ -165,19 +144,29 @@ export default function SoldCompsLookup({
       )}
 
       {!loading && unlockedData?.available && variant === 'tabbed' && (
-        <div>
-          <div className="flex gap-1" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+          <div className="col-span-full flex gap-1 lg:hidden" style={{ borderBottom: '1px solid var(--border)' }}>
             <PaneTab label="Recent sales" active={pane === 'sales'} onClick={() => setPane('sales')} />
             <PaneTab label="Flip margin" active={pane === 'margin'} onClick={() => setPane('margin')} />
           </div>
-          <div className="pt-4">{pane === 'sales' ? salesPane : marginPane}</div>
+
+          <div className={`${pane === 'sales' ? 'block' : 'hidden'} space-y-3 pt-4 lg:block lg:pt-0 lg:col-start-2 lg:row-start-1`}>
+            {snapshotPane}
+          </div>
+          <div className={`${pane === 'sales' ? 'block' : 'hidden'} pt-4 lg:block lg:pt-0 lg:col-start-1 lg:row-start-1 lg:row-span-2`}>
+            {salesListPane}
+          </div>
+          <div className={`${pane === 'margin' ? 'block' : 'hidden'} pt-4 lg:block lg:pt-0 lg:col-start-2 lg:row-start-2`}>
+            {marginPane}
+          </div>
         </div>
       )}
 
       {!loading && unlockedData?.available && variant === 'inline' && (
-        <div>
-          {salesPane}
-          <div className="mt-4">{marginPane}</div>
+        <div className="space-y-3">
+          {snapshotPane}
+          {salesListPane}
+          <div className="mt-1">{marginPane}</div>
         </div>
       )}
 

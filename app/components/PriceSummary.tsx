@@ -2,14 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Listing, PLATFORM_NAMES } from '@/lib/types';
-import type { PlatformKey } from '@/lib/types';
+import { Listing } from '@/lib/types';
 import { convertToUSD } from '@/lib/currency';
-import {
-  FEE_PLATFORMS,
-  MARKETPLACE_FEES,
-  netFlipProfit,
-} from '@/lib/marketplaceFees';
 import { useSoldComps } from '@/lib/hooks/useSoldComps';
 import { useTier } from '@/lib/hooks/useTier';
 import { canSeePriceIntelligence } from '@/lib/tierCaps';
@@ -17,6 +11,7 @@ import { fakePriceString, fakeSoldStats } from '@/lib/fakePricing';
 import SoldCompsPanel from './SoldCompsPanel';
 import SoldSalesList from './SoldSalesList';
 import LockedOverlay from './LockedOverlay';
+import FlipMarginCalculator from './FlipMarginCalculator';
 import type { PlatformSales, PlatformSoldStats } from '@/lib/soldComps/types';
 
 const fmt = new Intl.NumberFormat('en-US', {
@@ -34,12 +29,6 @@ const SEARCH_PAGE_SALE_ROWS = 5;
  *  words rather than one implying the other has an answer it doesn't. */
 const SOLD_NO_DATA_TEXT =
   'Not enough completed sales for this one yet. This works best on items with a steady resale market.';
-
-const fmt2 = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-});
 
 interface Props {
   priceRange: { min: number; max: number } | null;
@@ -235,6 +224,8 @@ export default function PriceSummary({
     );
   }
 
+  const askDefault = Math.round(averagePrice ?? priceRange.max);
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
@@ -248,7 +239,15 @@ export default function PriceSummary({
       </div>
 
       {soldRegion}
-      <FlipMargin averagePrice={averagePrice} priceRange={priceRange} seed={seed} />
+      <FlipMarginCalculator
+        resaleSeed={seed ? seed.value : askDefault}
+        resaleSeedKey={seed ? `${seed.platform}-${seed.nonce}` : `ask-${askDefault}`}
+        quickSets={[
+          ...(seed ? [{ label: 'sold', value: seed.value }] : []),
+          { label: 'avg ask', value: askDefault },
+          { label: 'high', value: Math.round(priceRange.max) },
+        ]}
+      />
     </div>
   );
 }
@@ -330,243 +329,6 @@ function PriceSummarySkeleton() {
       >
         <div className="h-4 w-40 rounded-md" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} />
       </div>
-    </div>
-  );
-}
-
-/**
- * Suggested flip margin: enter a sourcing price, pick the destination platform,
- * and see net profit after that platform's seller-side fees. The resale price
- * defaults to the cross-platform comp surfaced by this search (average, with a
- * one-tap switch to the high) and stays fully editable.
- *
- * All fee math comes from lib/marketplaceFees.ts — never hardcoded here.
- */
-function FlipMargin({
-  averagePrice,
-  priceRange,
-  seed,
-}: {
-  averagePrice: number | null;
-  priceRange: { min: number; max: number };
-  /** Median of completed sales, when we have enough of them. Null falls back to
-   *  the previous behaviour (average asking price). */
-  seed: ResaleSeed | null;
-}) {
-  const askDefault = useMemo(
-    () => Math.round(averagePrice ?? priceRange.max),
-    [averagePrice, priceRange.max],
-  );
-
-  const [open, setOpen] = useState(false);
-  const [platform, setPlatform] = useState<PlatformKey>('ebay');
-  const [sourcing, setSourcing] = useState<string>('');
-  const [resale, setResale] = useState<string>(String(askDefault));
-
-  // Sold comps arrive after the first render, so the field starts on average ask and
-  // switches once real sale data lands. nonce is in the deps so tapping the same
-  // platform again re-applies it after a manual edit.
-  useEffect(() => {
-    if (seed) setResale(String(Math.round(seed.value)));
-  }, [seed?.value, seed?.nonce]);
-
-  const sourcingNum = parseFloat(sourcing) || 0;
-  const resaleNum = parseFloat(resale) || 0;
-
-  const result = useMemo(
-    () => netFlipProfit({ sourcingPrice: sourcingNum, resalePrice: resaleNum, platform }),
-    [sourcingNum, resaleNum, platform],
-  );
-
-  const fee = MARKETPLACE_FEES[platform];
-  const hasInputs = sourcingNum > 0 && resaleNum > 0;
-  const profitColor = result.netProfit >= 0 ? '#22c55e' : '#dc2626';
-
-  return (
-    <div
-      className="rounded-2xl"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left"
-      >
-        <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-          Suggested flip margin
-        </span>
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {open ? 'Hide' : 'Estimate profit'}
-        </span>
-      </button>
-
-      {open && (
-        <div className="space-y-4 px-4 pb-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="You pay (sourcing)">
-              <NumberInput
-                value={sourcing}
-                onChange={setSourcing}
-                placeholder="0"
-              />
-            </Field>
-
-            <Field label="Sell on">
-              <select
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value as PlatformKey)}
-                className="w-full rounded-xl px-3 py-2 text-sm"
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text)',
-                }}
-              >
-                {FEE_PLATFORMS.map((p) => (
-                  <option key={p} value={p}>
-                    {PLATFORM_NAMES[p] ?? MARKETPLACE_FEES[p].label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field
-              label="Resale price"
-              hint={
-                <span className="flex gap-2">
-                  {seed && (
-                    <CompChip
-                      label="sold"
-                      onClick={() => setResale(String(Math.round(seed.value)))}
-                    />
-                  )}
-                  <CompChip label="avg ask" onClick={() => setResale(String(askDefault))} />
-                  <CompChip label="high" onClick={() => setResale(String(Math.round(priceRange.max)))} />
-                </span>
-              }
-            >
-              <NumberInput value={resale} onChange={setResale} placeholder="0" />
-            </Field>
-          </div>
-
-          {hasInputs && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <Stat label="Net profit" value={fmt2.format(result.netProfit)} color={profitColor} big />
-                <Stat label="Margin" value={`${result.marginPct.toFixed(0)}%`} />
-                <Stat label="ROI" value={`${result.roiPct.toFixed(0)}%`} />
-              </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                {fmt2.format(resaleNum)} sale − {fmt2.format(result.fees)} {fee.label} seller fees ={' '}
-                {fmt2.format(result.payout)} payout − {fmt2.format(sourcingNum)} cost.{' '}
-                <span style={{ color: 'var(--text-dim)' }}>Fees verified {fee.lastVerified}.</span>
-              </p>
-            </div>
-          )}
-
-          {!hasInputs && (
-            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Enter a sourcing price to see net profit after {fee.label} seller fees.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <label className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
-          {label}
-        </label>
-        {hint}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function NumberInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className="relative">
-      <span
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        $
-      </span>
-      <input
-        type="number"
-        inputMode="decimal"
-        min="0"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-xl py-2 pl-7 pr-3 text-sm"
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        }}
-      />
-    </div>
-  );
-}
-
-function CompChip({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-      style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  color,
-  big,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  big?: boolean;
-}) {
-  return (
-    <div className="rounded-xl p-3" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
-      <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
-        {label}
-      </p>
-      <p
-        className={`mt-1 font-semibold tracking-tight ${big ? 'text-xl' : 'text-lg'}`}
-        style={{ color: color ?? 'var(--text)' }}
-      >
-        {value}
-      </p>
     </div>
   );
 }
