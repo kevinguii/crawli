@@ -14,6 +14,7 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 | `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
 
 **Supporting docs:**
+- `docs/CHANGELOG.md` — session history older than the newest 5 entries in HANDOFF.md. **Do not read by default**; open it only to trace why a specific past change was made.
 - `SCALING.md` (repo root) — tier playbook: hosting, throughput, infra choices at scale X. **Read before answering any scaling/hosting/throughput question and quote it — do not improvise scaling advice from training data.** Referenced from `app/api/watchlist/refresh/route.ts`.
 - `docs/reference/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
 - `docs/reference/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
@@ -68,6 +69,8 @@ These MCP servers are connected in this project. Use them instead of manual API 
 
 **What NOT to do:** Don't append a big "Latest change (date): ..." block to HANDOFF.md. The new system is current-state only. Put details in the relevant doc, put a one-line bullet in "Recent changes".
 
+**Keep HANDOFF.md short.** It is read every session, so it is a context budget, not an archive. After adding your bullet, move any entry beyond the newest 5 into `docs/CHANGELOG.md` verbatim. Entries are one to three sentences: what changed and why. The details belong in PITFALLS/PLATFORM_STATUS/SYSTEM_DESIGN, not in a changelog paragraph.
+
 **4. Do NOT modify:**
 - `/api/` endpoints unless explicitly told (streaming NDJSON protocol is fragile)
 - `/lib/` utilities without understanding the full call chain
@@ -94,8 +97,8 @@ These MCP servers are connected in this project. Use them instead of manual API 
 When the user asks for social/marketing posts, a new carousel batch, or work in `docs/marketing/`, do these BEFORE generating ideas or designing slides:
 
 1. **Source fresh topics with `/last30days`** — scoped to the niche (secondhand fashion, vintage, resale). Cross-check against Supabase `content_history` (`posted = true` = already posted, never repeat).
-2. **Run the `marketing-visual-diversity` skill** — runs `node check-visual-diversity.js` to print what fonts/layout/placement to avoid. Each batch MUST differ from the last 1-2 on `font_pairing` AND `text_placement` AND `layout`.
-3. **Use the `ui-ux-pro-max` skill** for design choices — `typography.csv` (57+ pairings), `visual-history.json` (what's used up).
+2. **Run the `marketing-visual-diversity` skill** — runs `node docs/marketing/check-visual-diversity.js` to print what fonts/layout/placement to avoid. Each batch MUST differ from the last 1-2 on `font_pairing` AND `text_placement` AND `layout`.
+3. **Use the `ui-ux-pro-max` skill** for design choices — `typography.csv` (57+ pairings, ships with the skill), `docs/marketing/visual-history.json` (what's used up).
 
 **TikTok-only.** Default export: 4:5 (1080×1350). Keep headline/CTA out of bottom ~20% / right ~15% (TikTok UI). Cover = gpt-image-2 always.
 

@@ -73,9 +73,13 @@ __pycache__/
 # Sentry Config File
 .env.sentry-build-plugin
 
-# Marketing exports
+# Marketing exports. Extensions are listed exhaustively on purpose: `*.jpg` alone
+# missed `rick-hook.jpeg`, which stayed trackable long after the rule landed.
 docs/marketing/**/*.png
 docs/marketing/**/*.jpg
+docs/marketing/**/*.jpeg
+docs/marketing/**/*.webp
+docs/marketing/**/*.gif
 docs/marketing/**/*.mp4
 docs/marketing/**/*.mov
 docs/marketing/*.zip
