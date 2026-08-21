@@ -13,7 +13,7 @@ const ALERT_EMAIL_TOOLTIP = (
   </>
 );
 
-type Cycle = 'weekly' | 'monthly' | 'yearly';
+type Cycle = 'monthly' | 'yearly';
 type PaidTier = Exclude<Tier, 'free'>;
 
 interface FeatureGroup {
@@ -26,7 +26,6 @@ interface TierConfig {
   name: string;
   icon: React.ReactNode;
   tagline: string;
-  weekly: number;
   monthly: number;
   yearly: number; // total billed yearly
   featureGroups: FeatureGroup[];
@@ -76,7 +75,9 @@ const NATIVE_TOOLTIP = (
 // "Unlimited" on Pro while TIER_CAPS.pro enforces 50/week and 100 per native
 // platform. Same reasoning, and the margin work backing it is in lib/tierCaps.ts —
 // the busiest user-week ever recorded is 13 searches, nobody has ever reached even
-// the old cap of 40, and break-even on a $10/mo sub is ~495 searches/month. The
+// the old cap of 40, and break-even on a $5/mo sub (repriced 2026-08-21, see
+// lib/tierCaps.ts) is ~248 searches/month — worst case ~10% margin after Stripe
+// fees, thinner than the ~56% at the old $10 price but still positive. The
 // caps are abuse backstops. Two obligations that come with the word:
 //   1. Pro must never see a hard "you have used all N searches" wall — the 402 in
 //      app/api/search/route.ts carries tier-specific copy for this reason.
@@ -101,9 +102,8 @@ const PAID_TIERS: TierConfig[] = [
     name: 'Pro',
     icon: '✦',
     tagline: 'Know what it is worth before you buy',
-    weekly: 3,
-    monthly: 10,
-    yearly: 100,
+    monthly: 5,
+    yearly: 50,
     featureGroups: [
       {
         label: BASIC_LABEL,
@@ -146,7 +146,7 @@ export function PricingCards({
   isSignedIn: boolean;
   currentTier: Tier;
 }) {
-  const [cycle, setCycle] = useState<Cycle>('weekly');
+  const [cycle, setCycle] = useState<Cycle>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
   const [buyingPack, setBuyingPack] = useState<string | null>(null);
   const router = useRouter();
@@ -229,7 +229,7 @@ export function PricingCards({
           className="inline-flex rounded-xl p-1 gap-1"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          {(['weekly', 'monthly', 'yearly'] as Cycle[]).map((c) => (
+          {(['monthly', 'yearly'] as Cycle[]).map((c) => (
             <button
               key={c}
               type="button"
@@ -290,16 +290,11 @@ export function PricingCards({
             : isOnOtherPaidPlan
             ? (loading === 'portal' ? 'Opening…' : `Switch to ${t.name}`)
             : (loading === loadingKey ? 'Loading…' : 'Subscribe');
-          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : cycle === 'weekly' ? t.weekly : t.monthly;
+          const displayPriceNum = cycle === 'yearly' ? t.yearly / 12 : t.monthly;
           const priceLabel = `$${displayPriceNum % 1 === 0 ? displayPriceNum : displayPriceNum.toFixed(2)}`;
-          const priceSubLabel = cycle === 'weekly' ? '/wk' : '/mo';
-          // Savings hints: monthly saves vs weekly, yearly saves vs monthly
-          const monthlySavingPct = Math.round((1 - (t.monthly / (52 / 12)) / t.weekly) * 100);
+          const priceSubLabel = '/mo';
           const yearlySavingPct = Math.round((1 - (t.yearly / 12) / t.monthly) * 100);
-          const priceHint =
-            cycle === 'monthly' ? `Save ${monthlySavingPct}% vs weekly` :
-            cycle === 'yearly' ? `Save ${yearlySavingPct}% vs monthly · $${t.yearly}/yr` :
-            null;
+          const priceHint = cycle === 'yearly' ? `Save ${yearlySavingPct}% vs monthly · $${t.yearly}/yr` : null;
 
           return (
             <PlanCard

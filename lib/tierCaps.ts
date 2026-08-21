@@ -45,8 +45,13 @@ export const UNLIMITED = 1_000_000;
 // abuse backstops, not felt limits. Grounding for that, measured 2026-08-18:
 //   • busiest user-week ever recorded = 13 searches; p90 user-week = 5.9
 //   • 0 of 52 user-weeks have ever exceeded even the OLD cap of 40
-//   • break-even on one $10/mo Pro sub is ~495 searches/mo (worst case: all 9
-//     platforms every search on Firecrawl Hobby), i.e. ~10× the new 50/wk cap
+//   • Pro repriced $10 → $5/mo on 2026-08-21 (see COMPETITIVE_POSITIONING.md
+//     §6c). Break-even on $5/mo is ~248 searches/mo (worst case: all 9
+//     platforms every search on Firecrawl Hobby) — the 50/wk cap (~217/mo)
+//     stays under that, but only ~10% margin after Stripe fees in the
+//     worst case (was ~56% at $10). Still net-positive even if maxed, but
+//     the cushion is thin — if a real user ever lands on this cap, raise it
+//     or drop the word immediately, don't wait for the usual review cycle.
 // `nativeResultsCap` costs nothing at any value: the sidecar is called with a
 // hardcoded limit=100 for every tier (lib/searchWorker.ts) and this cap is a
 // post-fetch .slice(), so 100 is the true ceiling of what is fetched. Raising it

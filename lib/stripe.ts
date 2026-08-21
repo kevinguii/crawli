@@ -48,7 +48,12 @@ export const STRIPE_PRICE_MAX_MONTHLY = process.env.STRIPE_PRICE_ID_MAX_MONTHLY!
 export const STRIPE_PRICE_MAX_YEARLY = process.env.STRIPE_PRICE_ID_MAX_YEARLY!;
 export const STRIPE_PRICE_MAX_WEEKLY = process.env.STRIPE_PRICE_ID_MAX_WEEKLY!;
 
-export type BillingCycle = 'weekly' | 'monthly' | 'yearly';
+// Weekly is retired from checkout (see priceIdForTier) but the price ID
+// constants above stay recognized in tierFromPriceId — a webhook event for an
+// existing weekly subscriber must resolve to 'pro'/'max', not silently
+// downgrade to free. Same pattern as the 'max' tier's retirement from the
+// pricing page: stays resolvable, is no longer offered.
+export type BillingCycle = 'monthly' | 'yearly';
 
 // Tiers and caps live in lib/tierCaps.ts, which imports nothing — this module
 // constructs a Stripe client at import time, so client components and the search
@@ -80,11 +85,7 @@ export function tierFromPriceId(priceId: string | null | undefined): Tier {
 
 export function priceIdForTier(tier: Exclude<Tier, 'free'>, cycle: BillingCycle): string {
   if (tier === 'max') {
-    if (cycle === 'weekly') return STRIPE_PRICE_MAX_WEEKLY;
-    if (cycle === 'monthly') return STRIPE_PRICE_MAX_MONTHLY;
-    return STRIPE_PRICE_MAX_YEARLY;
+    return cycle === 'monthly' ? STRIPE_PRICE_MAX_MONTHLY : STRIPE_PRICE_MAX_YEARLY;
   }
-  if (cycle === 'weekly') return STRIPE_PRICE_WEEKLY;
-  if (cycle === 'monthly') return STRIPE_PRICE_MONTHLY;
-  return STRIPE_PRICE_YEARLY;
+  return cycle === 'monthly' ? STRIPE_PRICE_MONTHLY : STRIPE_PRICE_YEARLY;
 }

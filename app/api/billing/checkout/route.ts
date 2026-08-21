@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
     if (body.tier !== 'pro' && body.tier !== 'max') {
       return NextResponse.json({ error: 'tier must be "pro" or "max"' }, { status: 400 });
     }
-    if (body.cycle !== 'weekly' && body.cycle !== 'monthly' && body.cycle !== 'yearly') {
-      return NextResponse.json({ error: 'cycle must be "weekly", "monthly" or "yearly"' }, { status: 400 });
+    if (body.cycle !== 'monthly' && body.cycle !== 'yearly') {
+      return NextResponse.json({ error: 'cycle must be "monthly" or "yearly"' }, { status: 400 });
     }
     tier = body.tier;
     cycle = body.cycle;

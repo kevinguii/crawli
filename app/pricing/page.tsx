@@ -1,10 +1,8 @@
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Metadata } from 'next';
 import { PricingCards } from './PricingCards';
 import PricingCloseButton from './PricingCloseButton';
-import Wordmark from '@/app/components/landing/Wordmark';
 import { resolveTier, type Tier } from '@/lib/tierCaps';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +37,7 @@ export default async function PricingPage({
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-16" style={{ background: 'var(--bg)' }}>
+    <div className="relative overflow-hidden px-4 py-16" style={{ background: 'var(--bg)' }}>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -48,14 +46,15 @@ export default async function PricingPage({
             'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(226,75,74,0.12), transparent 60%), radial-gradient(ellipse 60% 40% at 85% 10%, rgba(239,159,39,0.08), transparent 60%)',
         }}
       />
-      <div className="absolute top-4 left-4">
-        <Link href="/" className="flex items-center">
-          <Wordmark size={28} />
-        </Link>
-      </div>
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <PricingCloseButton from={from} />
-      </div>
+      {/* LandingNav (in layout.tsx) already provides a way back for a normal
+          visit. The close button stays because it does something the nav
+          can't: return to the exact in-app page (settings, search, an alert
+          modal) that linked here with ?from=, not just "home" or "the app". */}
+      {from && (
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <PricingCloseButton from={from} />
+        </div>
+      )}
       <div className="relative mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <span
@@ -101,6 +100,6 @@ export default async function PricingPage({
           <p>Cancel anytime. Searches reset weekly.</p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
