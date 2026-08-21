@@ -89,3 +89,7 @@ token_usage.jsonl
 
 .playwright-mcp
 .superpowers/
+
+# Raw Reddit harvest for the audience language file: bulky and regenerable
+# via scripts/reddit-harvest.mjs. The derived language-file.md IS tracked.
+docs/marketing/audience/raw/

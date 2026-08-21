@@ -18,7 +18,7 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 
 | Work | State |
 |---|---|
-| **Step 0 — audience validation** | **skipped 2026-08-10, owner decision.** See the note under Step 1. |
+| **Step 0 — audience validation** | ~~skipped 2026-08-10~~ · **Q1 answered 2026-08-19 from `onboarding_persona`: 15 buyer / 8 reseller, and buyers are more engaged on every measure once the owner's own account is excluded. This contradicts §4.** Q2 still open, pending Reddit harvest. See Step 0 and [`AUDIENCE_AND_HOOKS_PLAN.md`](AUDIENCE_AND_HOOKS_PLAN.md) |
 | **Step 1 — sold comps (Grailed + Poshmark)** | **shipped 2026-08-10** · EXP-004 running. Mercari and ThredUp dropped on probe evidence. |
 | Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 superseded (0 exposure, folded into EXP-001) |
 | Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002, now EXP-001 |
@@ -215,7 +215,38 @@ on reading (b) wastes a month.
 
 ## 5. What is left to do
 
-### Step 0 — Settle the audience question · SKIPPED 2026-08-10
+### Step 0 — Settle the audience question · SKIPPED 2026-08-10 · **Q1 ANSWERED 2026-08-19**
+
+> **Update 2026-08-19. Question 1 is answered, and the answer contradicts §4.**
+> No email campaign was needed: `app/onboarding/steps/BranchStep.tsx:16` has been
+> asking *"Are you buying for yourself, or to resell?"* verbatim since 2026-07-16,
+> writing to `profiles.onboarding_persona`. 23 users have answered.
+>
+> **15 buyer / 8 reseller.** And once the owner's own Pro account is excluded (it
+> alone holds 51 searches and 167 saves, and was carrying the entire reseller
+> average), buyers beat resellers on every engagement measure:
+>
+> | persona | users | activation | searches/searcher | 2nd-day return | with alerts | with saves |
+> |---|---|---|---|---|---|---|
+> | buyer | 15 | **87%** | 1.92 | 2 (15%) | **8 (53%)** | 0 |
+> | reseller | 7 | 57% | 1.50 | **0** | 1 (14%) | 0 |
+>
+> Query shape is **identical** across the two personas (both type `brand + garment`:
+> `Stussy crewneck`, `Levi's baggy jeans`, `Bape college tee`), so the declared
+> persona currently predicts nothing about behaviour.
+>
+> **Small-n, directional only:** 13 searching buyers vs 4 searching resellers, and
+> 6 of 7 resellers signed up after 2026-08-14, so the 0% second-day figure is partly
+> a recency artefact. Re-pull ~2026-09-09 before treating it as settled.
+>
+> **The §3 gate is now live.** It reads: *"if fewer than 5 of 36 are resellers and the
+> Reddit threads show no pull for cross-platform sold comps, stop and re-open the
+> strategy."* The first half is met (4 searching resellers, none returning). The
+> second half is not yet tested. **Do not iterate further on reseller-only framing
+> until the Reddit half is run.**
+>
+> Question 2 (*"what do you check before you buy something to flip?"*) is still open.
+> Full working, corrections and next steps: [`AUDIENCE_AND_HOOKS_PLAN.md`](AUDIENCE_AND_HOOKS_PLAN.md).
 
 **Owner decision: skipped, and Step 1 was built without it.** The consequence is
 recorded here rather than lost: a null EXP-004 result is now **ambiguous**. It cannot

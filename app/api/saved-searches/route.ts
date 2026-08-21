@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PLATFORM_DOMAINS } from '@/lib/types';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
-import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
+import { ALERT_EXCLUDED_PLATFORMS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { TIER_CAPS, resolveTier } from '@/lib/tierCaps';
 
 const VALID_ALERT_PLATFORMS = Object.keys(PLATFORM_DOMAINS).filter(
@@ -12,7 +12,13 @@ const VALID_ALERT_PLATFORMS = Object.keys(PLATFORM_DOMAINS).filter(
 ) as [string, ...string[]];
 
 const createSchema = z.object({
-  query: z.string().min(1).max(200),
+  query: z.string().min(1).max(200).refine(
+    (q) => findAlertQueryProblem(q) === null,
+    // An alert watches one thing. A list separator survives tokenizing as a
+    // separate required anchor, so the alert could never match. Mirrors the
+    // client-side guard in CreateAlertModal via the same shared function.
+    { message: 'No symbols like , ; | / & + in an alert. Use plain words only.' },
+  ),
   platforms: z.array(z.enum(VALID_ALERT_PLATFORMS)).min(1),
   filters: z
     .object({

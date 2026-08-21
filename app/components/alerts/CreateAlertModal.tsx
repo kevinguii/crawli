@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PLATFORM_NAMES } from '@/lib/types';
 import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
-import { ALERT_EXCLUDED_PLATFORMS, FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
+import { ALERT_EXCLUDED_PLATFORMS, FREE_BASELINE_EDIT_COOLDOWN_HOURS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { createClient } from '@/lib/supabase/client';
 import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
@@ -105,6 +105,11 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
 
   // Plain-English rendering of the full AND-chain, so the compound nature of an
   // alert is visible while it's being built rather than only in the summary step.
+  // An alert watches one thing. A query containing list separators can never
+  // match anything (see findAlertQueryProblem), so it is blocked at the input
+  // rather than silently accepted and quietly returning nothing forever.
+  const queryProblem = findAlertQueryProblem(query);
+
   // The query is the first condition — criteria narrow it, they don't replace it.
   function criteriaClauses(): string[] {
     const clauses: string[] = [];
@@ -236,6 +241,17 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   color: 'var(--text)',
                 }}
               />
+              {queryProblem && (
+                <p
+                  className="mt-1.5 text-xs"
+                  role="alert"
+                  style={{ color: 'var(--danger, #dc2626)' }}
+                >
+                  No symbols like{' '}
+                  {queryProblem.separators.map((c) => `"${c}"`).join(' or ')} in an
+                  alert. Use plain words only.
+                </p>
+              )}
             </div>
 
             {/* Platforms */}
@@ -421,7 +437,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <button
                 type="button"
                 onClick={() => setStep('confirm')}
-                disabled={!query.trim() || platforms.length === 0 || priceRangeInvalid}
+                disabled={!query.trim() || platforms.length === 0 || priceRangeInvalid || queryProblem !== null}
                 className="flex-1 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-40"
               >
                 Next

@@ -3,11 +3,17 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
-import { FREE_BASELINE_EDIT_COOLDOWN_HOURS } from '@/lib/alertConstants';
+import { FREE_BASELINE_EDIT_COOLDOWN_HOURS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { TIER_CAPS } from '@/lib/tierCaps';
 
 const patchSchema = z.object({
-  query: z.string().min(1).max(200),
+  query: z.string().min(1).max(200).refine(
+    (q) => findAlertQueryProblem(q) === null,
+    // An alert watches one thing. A list separator survives tokenizing as a
+    // separate required anchor, so the alert could never match. Mirrors the
+    // client-side guard in CreateAlertModal via the same shared function.
+    { message: 'No symbols like , ; | / & + in an alert. Use plain words only.' },
+  ),
   platforms: z.array(z.string()).min(1),
   filters: z.record(z.string(), z.unknown()).nullable(),
   criteria: z.record(z.string(), z.unknown()).nullable(),
