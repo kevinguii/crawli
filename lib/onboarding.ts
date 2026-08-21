@@ -9,10 +9,11 @@
 
 export type OnboardingPersona = 'buyer' | 'reseller';
 
-export type OnboardingStepId = 'branch' | 'seed' | 'criteria' | 'alert' | 'tail' | 'done';
+export type OnboardingStepId = 'branch' | 'name' | 'seed' | 'criteria' | 'alert' | 'tail' | 'done';
 
 export const ONBOARDING_STEPS: OnboardingStepId[] = [
   'branch',
+  'name',
   'seed',
   'criteria',
   'alert',

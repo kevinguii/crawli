@@ -85,6 +85,41 @@ export function useTotalUnreadAlerts(userId: string | undefined) {
   return unread;
 }
 
+/** Profile display name, or null while loading / unset. Realtime so it
+ *  updates immediately if onboarding (or the profile page) sets it while
+ *  this tab is already open. */
+export function useDisplayName(userId: string | undefined) {
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    const supabase = createClient();
+
+    const load = () => {
+      supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .single()
+        .then(({ data }) => setDisplayName(data?.display_name ?? null));
+    };
+    load();
+
+    const channel = supabase
+      .channel(`display-name-${userId}-${Math.random().toString(36).slice(2)}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        load,
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [userId]);
+
+  return displayName;
+}
+
 /** Current billing plan, or null while loading / on error. */
 export function useBillingPlan(userId: string | undefined) {
   const [plan, setPlan] = useState<'free' | 'pro' | 'max' | null>(null);

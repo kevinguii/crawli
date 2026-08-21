@@ -12,6 +12,7 @@ import {
 } from '@/lib/onboarding';
 import { track } from '@/lib/analytics';
 import BranchStep from './steps/BranchStep';
+import NameStep from './steps/NameStep';
 import SeedStep from './steps/SeedStep';
 import CriteriaStep from './steps/CriteriaStep';
 import AlertStep from './steps/AlertStep';
@@ -19,6 +20,8 @@ import TailStep from './steps/TailStep';
 
 export interface OnboardingDraft {
   persona: OnboardingPersona | null;
+  firstName: string;
+  lastName: string;
   query: string;
   size: string | null;
   minPrice: number | null;
@@ -48,6 +51,8 @@ export default function OnboardingFlow({
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<OnboardingDraft>({
     persona: initialPersona,
+    firstName: '',
+    lastName: '',
     query: '',
     size: null,
     minPrice: null,
@@ -71,6 +76,8 @@ export default function OnboardingFlow({
     // clears the gate.
     const body: Record<string, unknown> = { step: stepIndex(target) };
     if (draft.persona) body.persona = draft.persona;
+    if (draft.firstName.trim()) body.firstName = draft.firstName.trim();
+    if (draft.lastName.trim()) body.lastName = draft.lastName.trim();
     if (done) body.complete = true;
 
     let ok = false;
@@ -109,7 +116,7 @@ export default function OnboardingFlow({
 
     setStep(target);
     setBusy(false);
-  }, [step, draft.persona, draft.query, router]);
+  }, [step, draft.persona, draft.firstName, draft.lastName, draft.query, router]);
 
   // Once the alert is live, earlier answers (query/size/price) can no longer
   // change what was already created — there is no edit-on-navigate, only a
@@ -172,6 +179,8 @@ function StepSwitch({ step, ...rest }: StepProps & { step: OnboardingStepId }) {
   switch (step) {
     case 'branch':
       return <BranchStep {...rest} />;
+    case 'name':
+      return <NameStep {...rest} />;
     case 'seed':
       return <SeedStep {...rest} />;
     case 'criteria':

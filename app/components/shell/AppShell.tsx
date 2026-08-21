@@ -11,6 +11,7 @@ import {
   useAuthUser,
   useTotalUnreadAlerts,
   useBillingPlan,
+  useDisplayName,
   markIntentionalSignOut,
   consumeIntentionalSignOut,
 } from './nav-hooks';
@@ -23,6 +24,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const unread = useTotalUnreadAlerts(user?.id);
   const plan = useBillingPlan(user?.id);
+  const displayName = useDisplayName(user?.id);
 
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -89,6 +91,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <AppSidebar
           user={user}
+          displayName={displayName}
           unread={unread}
           plan={plan}
           collapsed={collapsed}
@@ -147,6 +150,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             <AppSidebar
               user={user}
+              displayName={displayName}
               unread={unread}
               plan={plan}
               collapsed={false}

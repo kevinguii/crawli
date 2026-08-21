@@ -64,6 +64,8 @@ const NAV_ITEMS = [
 
 export interface AppSidebarProps {
   user: User | null;
+  /** profiles.display_name (owned by AppShell); falls back to email, then 'Account'. */
+  displayName: string | null;
   /** Unread alert count for the Alerts badge (owned by AppShell). */
   unread: number;
   /** Billing plan (owned by AppShell); Upgrade shows only for 'free'. */
@@ -79,6 +81,7 @@ export interface AppSidebarProps {
 
 export default function AppSidebar({
   user,
+  displayName,
   unread,
   plan,
   collapsed,
@@ -111,7 +114,8 @@ export default function AppSidebar({
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
 
-  const initial = (user?.email ?? '?').charAt(0).toUpperCase();
+  const accountLabel = displayName || user?.email || 'Account';
+  const initial = (displayName || user?.email || '?').charAt(0).toUpperCase();
   const fromParam = encodeURIComponent(pathname);
 
   return (
@@ -245,7 +249,7 @@ export default function AppSidebar({
             onClick={() => setAccountOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={accountOpen}
-            title={isCollapsed ? (user?.email ?? 'Account') : undefined}
+            title={isCollapsed ? accountLabel : undefined}
             className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 transition-colors"
             style={{ justifyContent: isCollapsed ? 'center' : 'flex-start', background: accountOpen ? 'var(--surface-hover)' : 'transparent' }}
             onMouseEnter={(e) => { if (!accountOpen) e.currentTarget.style.background = 'var(--surface-hover)'; }}
@@ -259,8 +263,8 @@ export default function AppSidebar({
             </span>
             {!isCollapsed && (
               <>
-                <span className="min-w-0 flex-1 truncate text-left text-sm" style={{ color: 'var(--text)' }} title={user?.email ?? undefined}>
-                  {user?.email ?? 'Account'}
+                <span className="min-w-0 flex-1 truncate text-left text-sm" style={{ color: 'var(--text)' }} title={accountLabel}>
+                  {accountLabel}
                 </span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   style={{ transform: accountOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms ease' }}>
