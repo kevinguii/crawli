@@ -465,11 +465,16 @@ public.profiles  (auto-created, one per user)
 │ id           uuid  PK → auth.users │
 │ email        text                  │
 │ display_name text  nullable        │
+│ first_name   text  nullable        │
+│ last_name    text  nullable        │
 │ avatar_url   text  nullable        │
 │ bio          text  nullable        │
 │ created_at   timestamptz           │
 │ updated_at   timestamptz           │
 └────────────────────────────────────┘
+first_name/last_name are collected on the onboarding 'name' step
+and required before that step advances; display_name is composed
+from them on onboarding completion if not already set manually.
 RLS: SELECT/UPDATE WHERE auth.uid() = id
 No INSERT policy — trigger is SECURITY DEFINER
 

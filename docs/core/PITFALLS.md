@@ -321,6 +321,17 @@ rel="noopener noreferrer"` for exactly this reason — it's shared with the onbo
 tail step, not just the standalone `/price-check` page where a same-tab link would be
 fine.
 
+**Inserting a new step into `ONBOARDING_STEPS` shifts what every already-persisted
+`onboarding_step` index means for anyone currently mid-flow.** `stepFromIndex()` in
+`lib/onboarding.ts` resumes purely by array position — it has no concept of "the step
+after alert," only "index 4." Adding the `name` step between `branch` and `seed`
+(2026-08-20) meant every in-progress user's saved index silently pointed one screen
+later than where they actually were. Fixed with a one-time migration resetting
+`onboarding_step = 0` for every profile with `onboarding_completed_at IS NULL AND
+onboarding_step > 0` at deploy time. **Any future step insertion (not append) needs the
+same migration**, scoped to profiles that haven't completed onboarding yet — completed
+profiles never read `onboarding_step` again so they're unaffected either way.
+
 ---
 
 ## Content / marketing
