@@ -104,10 +104,14 @@ pinterest.com/thecrawli. (Keep `sameAs` and Footer in sync if these change.)
    Crawli (link the Phase 2 public page, not a signup wall) ~1 per 10 genuine
    comments. r/flipping & r/SideProject tolerate a story-first "I built this".
    **Not started as of 2026-07-13.**
-4. **Product Hunt:** launch ONCE for the high-DA backlink + visibility day (not
-   for ICP customers — PH audience = founders). Prep a 60s demo, gallery,
-   founder first-comment, 5-10 early engagers. Phase 2 (no-login demo) now
-   exists, so this can be scheduled. **Not started as of 2026-07-13.**
+4. **Product Hunt:** ✅ **Launched** (found live 2026-08-21 during a growth-research
+   pass; docs had gone stale — this line previously said "not started"). Listed
+   under Ecommerce platforms / Marketplace sites / AI sales tools with **4
+   upvotes**, effectively unnoticed. No founder first-comment or engager push
+   visible on the listing. Not worth a second full launch (PH is once-per-product),
+   but cheap to revisit: a founder comment thread, linking it from the TikTok bio
+   or a post, and asking a few real users to upvote could still lift it above
+   background noise at near-zero cost.
 5. **Directories/lists:** SaaSHub, AlternativeTo (alt to Google Shopping /
    PriceCharting), "best reselling tools" listicles (email authors), Indie
    Hackers build-in-public. Small individual links, collectively build the entity.
@@ -169,7 +173,7 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 2. [ ] Confirm `NEXT_PUBLIC_GSC_VERIFICATION` set in prod.
 3. [x] Deploy the Phase 0/1 changes — Phase 2 (`/compare/[slug]`) has since shipped and is live.
 4. [ ] Start the Reddit value-first karma-building — unblocked now that Phase 2 exists, not started as of 2026-07-13.
-5. [ ] Product Hunt launch — unblocked now that Phase 2 exists, not started as of 2026-07-13.
+5. [x] Product Hunt launch — done (found live 2026-08-21, doc was stale; 4 upvotes, low engagement — see Phase 1 notes above for the cheap follow-up).
 6. [ ] Submit to directories / tool lists (SaaSHub, AlternativeTo, BetaList, Indie Hackers) — not started as of 2026-07-13.
 
 ## 6. Key references

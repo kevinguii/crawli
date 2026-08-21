@@ -21,7 +21,8 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 - `docs/reference/FIRECRAWL_PRICING.md` — Firecrawl credit costs
 - `docs/reference/CLEANUP.md` — freeing ports 3000/8000 before finishing a session
 - `docs/marketing/POSTS_README.md` — carousel batch operation
-- `docs/planning/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy
+- `docs/planning/GROWTH_PLAN.md` — distribution + conversion roadmap, SEO/AEO strategy. **Its TikTok numbers are the June 2026 carousel burst and are stale** — current content is a different motion, see `AUDIENCE_AND_HOOKS_PLAN.md` F6
+- `docs/planning/AUDIENCE_AND_HOOKS_PLAN.md` — **live multi-session program** with its own status board: audience research (the skipped Step 0), Reddit language file, channel ranking, video idea triage and hooks. **Read the status board before any audience, hook, or video-idea work, and update it as you go.**
 - `docs/planning/COMPETITIVE_POSITIONING.md` — competitive analysis (Beni/Gem/Underpriced AI), the positioning decision, and **§6 value-prop ledger + experiment log**. **Read §6 before any onboarding, landing-copy, or marketing work, and log every experiment there.** Copy may only use a claim the ledger marks Validated.
 
 ## Available MCP tools
@@ -33,8 +34,8 @@ These MCP servers are connected in this project. Use them instead of manual API 
 | `mcp__gsc__*` | Fetch GSC search analytics, inspect URLs, list sitemaps, check indexing |
 | `mcp__google-seo-mcp__*` | CrUX/Core Web Vitals, GA4 traffic, Lighthouse audits, SERP checks, schema validation, sitemap diffs |
 | `mcp__geo-optimizer__*` | AEO/GEO audits — AI crawler access, llms.txt, citability, brand mention signals |
-| `mcp__supabase__*` | Run SQL, apply migrations, list tables, check logs — always use over guessing schema |
-| `mcp__n8n__*` | Search/trigger n8n workflows (content brief `moMVEnr5L6kGgJTC` is the TikTok carousel brief) |
+| `mcp__claude_ai_Supabase__*` | Run SQL, apply migrations, list tables, check logs — always use over guessing schema. Project id `peyqxfijdrziqfjkxjsn`. (Older docs call this `mcp__supabase__*`; the namespace changed) |
+| `mcp__n8n__*` | Search/trigger n8n workflows (content brief `moMVEnr5L6kGgJTC` is the TikTok carousel brief). **Often not connected** — if the tool is absent, SSH to the box instead: `ssh root@5.78.187.97`, see `docs/reference/SERVER_REFERENCE.md` |
 | `mcp__playwright__*` | Browser automation — navigate, screenshot, fill forms. Use for UI verification |
 | `mcp__claude_ai_Gmail__*` | Read/send email — only when user explicitly asks |
 | `mcp__claude_ai_Google_Calendar__*` | Calendar — only when user explicitly asks |
@@ -44,7 +45,7 @@ These MCP servers are connected in this project. Use them instead of manual API 
 
 **SEO/analytics tasks:** reach for `mcp__gsc__get_search_analytics` or `mcp__google-seo-mcp__gsc_search_analytics` first — don't ask the user to copy-paste data you can fetch directly.
 
-**Supabase tasks:** use `mcp__supabase__list_tables` before writing any migration, and `mcp__supabase__execute_sql` to verify data rather than asking the user to check.
+**Supabase tasks:** use `mcp__claude_ai_Supabase__list_tables` before writing any migration, and `mcp__claude_ai_Supabase__execute_sql` to verify data rather than asking the user to check.
 
 **Skills that pair with MCPs:**
 - `/claude-seo:seo` or `/claude-seo:seo-audit` — full SEO audit, orchestrates the SEO MCP tools automatically
@@ -102,7 +103,7 @@ When the user asks for social/marketing posts, a new carousel batch, or work in 
 
 **TikTok-only.** Default export: 4:5 (1080×1350). Keep headline/CTA out of bottom ~20% / right ~15% (TikTok UI). Cover = gpt-image-2 always.
 
-**Obfuscate commercial intent:** No `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere. Crawli teased only on final slide as subtle aside, worded differently each post, present in only some posts. Goal: comment inquiries, not clicks. See `docs/reference/B2B_FEATURE_TRUTH.md` and live n8n brief `moMVEnr5L6kGgJTC`.
+**Obfuscate commercial intent: SUPERSEDED 2026-08-19, owner decision.** The old rule (no `thecrawli.com`, URL, "search Crawli", "download", or "link in bio" anywhere; Crawli teased only as a subtle final-slide aside) **no longer applies.** It produced 0 comments across 55 posts, failing its own stated KPI, and `COMPETITIVE_POSITIONING.md` §6d point 4 already instructed revisiting it. The August 2026 posts are founder-led and openly branded, so the rule was already dead in practice. Soft vs explicit CTA is now a **logged experiment** with a written kill criterion, not a standing rule. See `docs/planning/AUDIENCE_AND_HOOKS_PLAN.md` D2 and F6 before writing any caption or hook. Feature claims are still hard-gated by the §6b claim ledger and `docs/reference/B2B_FEATURE_TRUTH.md`.
 
 **Journey Series posts are a different format — read `docs/marketing/journey-series/README.md` before starting one.** Real-person profile carousels (e.g. "make sure it follows the wording of the X one we did"), current default is an illustrated (AI-redrawn cartoon portrait) 14-slide format, pipeline lives on the user's Desktop at `~/Desktop/nano-banana-tests/<post-slug>/`, not in this repo. Explicit CTA + URL-adjacent phrasing is fine here (the obfuscation rule above does NOT apply to this format). Every journey post also gets a matching `content/blog/<slug>.md` and 3 draft X posts — see that doc's "Turning a post into a blog post + X posts" section for the exact steps.
 
@@ -160,3 +161,13 @@ For medium tasks (3-4 hours of estimated work), always follow this workflow:
 - [ ] Relevant doc updated (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN)
 - [ ] HANDOFF.md "Current state" + "Recent changes" updated
 - [ ] Ports 3000 and 8000 freed before finishing (see `docs/reference/CLEANUP.md`)
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
