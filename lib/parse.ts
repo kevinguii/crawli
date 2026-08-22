@@ -71,7 +71,16 @@ const RELEVANCE_STOPWORDS = new Set([
 // database.
 const BRAND_ANCHOR_OVERRIDES = new Set([
   'nike', 'adidas', 'jordan', 'supreme', 'champion', 'guess', 'polo',
-  'diesel', 'palace', 'essentials', 'gap', 'express', 'balance',
+  'diesel', 'palace', 'essentials', 'gap', 'express', 'balance', 'acne',
+  'omega',
+  // Two-word brand phrases where BOTH halves are ordinary English words on
+  // their own (unlike e.g. "carhartt"/"vuitton"). Adding only one half still
+  // lets an unrelated brand through if it happens to share that one word
+  // (e.g. anchoring only "lauren" would match "LC Lauren Conrad" listings on
+  // a "ralph lauren" query). Requiring both halves costs nothing against true
+  // positives — a genuine listing for the brand contains both words anyway —
+  // and closes that collision.
+  'ralph', 'lauren', 'north', 'face',
 ]);
 
 // Exported for lib/soldComps, which needs the same anchoring rules but must NOT
