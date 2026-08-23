@@ -72,15 +72,21 @@ const RELEVANCE_STOPWORDS = new Set([
 const BRAND_ANCHOR_OVERRIDES = new Set([
   'nike', 'adidas', 'jordan', 'supreme', 'champion', 'guess', 'polo',
   'diesel', 'palace', 'essentials', 'gap', 'express', 'balance', 'acne',
-  'omega',
-  // Two-word brand phrases where BOTH halves are ordinary English words on
-  // their own (unlike e.g. "carhartt"/"vuitton"). Adding only one half still
-  // lets an unrelated brand through if it happens to share that one word
-  // (e.g. anchoring only "lauren" would match "LC Lauren Conrad" listings on
-  // a "ralph lauren" query). Requiring both halves costs nothing against true
-  // positives — a genuine listing for the brand contains both words anyway —
-  // and closes that collision.
+  'omega', 'casio', 'tiffany', 'shock',
+  // Two-word (or more) brand phrases where BOTH/ALL halves are ordinary
+  // English words on their own (unlike e.g. "carhartt"/"vuitton"). Adding
+  // only one half still lets an unrelated brand through if it happens to
+  // share that one word (e.g. anchoring only "lauren" would match "LC Lauren
+  // Conrad" listings on a "ralph lauren" query, or only "island" would match
+  // "Rhode Island" on a "stone island" query). Requiring every half costs
+  // nothing against true positives — a genuine listing for the brand
+  // contains all the words anyway — and closes that collision. 2026-08-22
+  // deep-dive audit across luxury/hypebeast/athletic/heritage-denim/mall/
+  // outdoor/watch brands (see PITFALLS "Relevance filtering").
   'ralph', 'lauren', 'north', 'face',
+  'chrome', 'hearts', 'fear', 'anti', 'social', 'club', 'represent',
+  'stone', 'island', 'under', 'armour', 'armor', 'lee', 'calvin', 'klein',
+  'american', 'eagle', 'banana', 'republic', 'free', 'people',
 ]);
 
 // Exported for lib/soldComps, which needs the same anchoring rules but must NOT
