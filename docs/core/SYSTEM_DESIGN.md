@@ -163,6 +163,12 @@ Browser → POST /api/watchlist/refresh
          Tier 3: LLM (if structured misses)
        → Supabase UPDATE price_current + is_sold + last_checked_at
        → NDJSON progress stream back to browser
+         start:    { total, byPlatform: { grailed: 3, ... } }  seeds one row per platform
+         progress: { completed, platform, id, title, currency,
+                     previousPrice, price, sold, ok }          one per finished listing
+         done:     { updated, failed, rows }                   full re-fetched watchlist
+       → Cancellable: the browser aborts the fetch, request.signal aborts the
+         in-flight sidecar calls, and the worker loop stops taking new rows
        → NO Firecrawl
 ```
 

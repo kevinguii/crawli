@@ -99,6 +99,10 @@ export default function SavesTab() {
         if (debouncedSearch) params.set('search', debouncedSearch);
         if (activeFolderId) params.set('folder_id', activeFolderId);
         const res = await fetch(`/api/saves${params.toString() ? `?${params}` : ''}`);
+        // Signing out gives hydrateUrls a new identity (SavesProvider flips
+        // signedIn), re-running this effect after the session is gone. A 401 is
+        // "signed out", not a load failure; AppShell owns that message.
+        if (res.status === 401) return;
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
         if (cancelled) return;

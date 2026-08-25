@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { Watchlist, Listing } from '@/lib/types';
 import { PLATFORM_NAMES } from '@/lib/types';
 import PlatformBadge from '@/app/components/PlatformBadge';
 import { useWatchlist } from '@/app/components/WatchlistProvider';
 import { useSaves } from '@/app/components/SavesProvider';
+import WatchlistRefreshProgress, {
+  emptyRefreshState,
+  type RefreshItem,
+  type RefreshState,
+} from './WatchlistRefreshProgress';
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', JPY: '¥',
@@ -37,14 +42,19 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
   const [rows, setRows] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshProgress, setRefreshProgress] = useState<{ completed: number; total: number } | null>(null);
-  const [refreshDone, setRefreshDone] = useState(false);
+  const [refreshState, setRefreshState] = useState<RefreshState | null>(null);
   const [refreshSummary, setRefreshSummary] = useState<{ changed: { title: string; from: number | null; to: number | null; currency: string }[]; sold: string[]; failed: number } | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Watchlist | null>(null);
+  // Bumped to re-run the load effect after a cancelled refresh, so the grid
+  // picks up whatever was written before the abort.
+  const [reloadNonce, setReloadNonce] = useState(0);
   const { hydrateUrls } = useWatchlist();
   const { hydrateUrls: hydrateSaveUrls } = useSaves();
+  // Cancel aborts the fetch, which aborts the request signal server-side so
+  // no further listings are scraped. Mirrors SearchSection's cancel.
+  const refreshAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
@@ -59,6 +69,11 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
         const params = new URLSearchParams();
         if (debouncedSearch) params.set('search', debouncedSearch);
         const res = await fetch(`/api/watchlist${params.toString() ? `?${params}` : ''}`);
+        // Signing out flips `signedIn` in WatchlistProvider/SavesProvider, which
+        // gives hydrateUrls a new identity and re-runs this effect while the
+        // session is already gone. A 401 here means "signed out", not a load
+        // failure, and AppShell already owns that message.
+        if (res.status === 401) return;
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
         if (cancelled) return;
@@ -75,7 +90,7 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
     };
     load();
     return () => { cancelled = true; };
-  }, [debouncedSearch, hydrateUrls, hydrateSaveUrls]);
+  }, [debouncedSearch, hydrateUrls, hydrateSaveUrls, reloadNonce]);
 
   const submitRemoveWatch = async (row: Watchlist) => {
     const prev = rows;
@@ -90,18 +105,27 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
     }
   };
 
+  const handleCancelRefresh = () => {
+    refreshAbortRef.current?.abort();
+  };
+
   const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
-    setRefreshDone(false);
     setRefreshSummary(null);
-    setRefreshProgress({ completed: 0, total: rows.length });
+    setRefreshState(null);
+
+    const controller = new AbortController();
+    refreshAbortRef.current = controller;
 
     // Snapshot prices before refresh so we can diff after
     const pricesBefore = new Map(rows.map((r) => [r.id, { price: r.price_current, sold: r.is_sold, title: r.title, currency: r.currency }]));
 
     try {
-      const res = await fetch('/api/watchlist/refresh', { method: 'POST' });
+      const res = await fetch('/api/watchlist/refresh', {
+        method: 'POST',
+        signal: controller.signal,
+      });
       if (!res.ok || !res.body) throw new Error('refresh failed');
 
       const reader = res.body.getReader();
@@ -119,17 +143,60 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed) continue;
-          let event: { type: string; total?: number; completed?: number; updated?: number; failed?: number; rows?: Watchlist[] };
+          let event: {
+            type: string;
+            total?: number;
+            byPlatform?: Record<string, number>;
+            completed?: number;
+            platform?: string;
+            id?: string;
+            title?: string;
+            currency?: string;
+            previousPrice?: number | null;
+            price?: number | null;
+            sold?: boolean;
+            ok?: boolean;
+            updated?: number;
+            failed?: number;
+            rows?: Watchlist[];
+          };
           try {
             event = JSON.parse(trimmed);
           } catch {
             continue;
           }
           if (event.type === 'start' && typeof event.total === 'number') {
-            setRefreshProgress({ completed: 0, total: event.total });
+            const byPlatform = event.byPlatform ?? {};
+            setRefreshState({
+              ...emptyRefreshState(),
+              total: event.total,
+              platforms: Object.keys(byPlatform),
+              totals: byPlatform,
+            });
           } else if (event.type === 'progress' && typeof event.completed === 'number') {
-            setRefreshProgress((prev) =>
-              prev ? { ...prev, completed: event.completed as number } : prev
+            const platform = event.platform;
+            if (!platform) continue;
+            const item: RefreshItem = {
+              id: event.id ?? '',
+              title: event.title ?? 'Listing',
+              currency: event.currency ?? 'USD',
+              previousPrice: event.previousPrice ?? null,
+              price: event.price ?? null,
+              sold: !!event.sold,
+              ok: !!event.ok,
+            };
+            const completed = event.completed;
+            setRefreshState((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    completed,
+                    items: {
+                      ...prev.items,
+                      [platform]: [...(prev.items[platform] ?? []), item],
+                    },
+                  }
+                : prev
             );
           } else if (event.type === 'done') {
             failed = event.failed ?? 0;
@@ -155,18 +222,20 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
         }
         setRefreshSummary({ changed, sold, failed });
       }
-
-      setRefreshDone(true);
-      setTimeout(() => {
-        setRefreshProgress(null);
-        setRefreshDone(false);
-      }, 2500);
-    } catch {
-      toast.error('Refresh failed. Try again.');
-      setRefreshProgress(null);
-      setRefreshDone(false);
-      setRefreshSummary(null);
+    } catch (err) {
+      // Cancel is a user action, not a failure. Whatever finished before the
+      // abort is already written, so reload the list to pick those changes up.
+      if (err instanceof Error && err.name === 'AbortError') {
+        toast('Refresh cancelled.');
+        setRefreshState(null);
+        setReloadNonce((n) => n + 1);
+      } else {
+        toast.error('Refresh failed. Try again.');
+        setRefreshState(null);
+        setRefreshSummary(null);
+      }
     } finally {
+      refreshAbortRef.current = null;
       setRefreshing(false);
     }
   };
@@ -254,40 +323,12 @@ export default function WatchlistTab({ onCount }: { onCount?: (n: number) => voi
           {rows.length} tracked
           {` · ${activeCount} active`}
           {soldCount > 0 && ` · ${soldCount} sold`}
-          {newestChecked && !refreshProgress && ` · refreshed ${relativeTime(newestChecked)}`}
+          {newestChecked && !refreshing && ` · refreshed ${relativeTime(newestChecked)}`}
         </p>
       )}
 
-      {refreshProgress && (
-        <div
-          className="rounded-xl p-3"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <div className="bar-track">
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width:
-                  refreshProgress.total > 0
-                    ? `${(refreshProgress.completed / refreshProgress.total) * 100}%`
-                    : '0%',
-                background: refreshDone ? 'var(--success, #22c55e)' : 'var(--accent)',
-                transition: 'width 250ms ease, background 250ms ease',
-              }}
-            />
-          </div>
-          <p
-            className="mt-2 text-[11px] font-medium"
-            style={{
-              color: refreshDone ? 'var(--success, #22c55e)' : 'var(--text-muted)',
-            }}
-          >
-            {refreshDone
-              ? 'All refreshed!'
-              : `${refreshProgress.completed}/${refreshProgress.total} refreshed`}
-          </p>
-        </div>
+      {refreshState && (
+        <WatchlistRefreshProgress state={refreshState} onCancel={handleCancelRefresh} />
       )}
 
       {refreshSummary && (

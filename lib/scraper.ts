@@ -66,18 +66,22 @@ export interface RefreshPriceResult {
 export async function refreshListingViaSidecar(
   url: string,
   platform: string,
-  maxAttempts = 2
+  maxAttempts = 2,
+  /** Caller-owned cancellation (the /api/watchlist/refresh request signal). */
+  signal?: AbortSignal
 ): Promise<RefreshPriceResult | null> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (signal?.aborted) return null;
     try {
+      const timeout = AbortSignal.timeout(60_000);
       const res = await fetch(`${SIDECAR_URL}/refresh-price`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url, platform }),
-        signal: AbortSignal.timeout(60_000),
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       });
       if (!res.ok) {
-        if (attempt < maxAttempts - 1 && isRetryable(res.status)) {
+        if (attempt < maxAttempts - 1 && isRetryable(res.status) && !signal?.aborted) {
           await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
           continue;
         }
@@ -98,7 +102,7 @@ export async function refreshListingViaSidecar(
         isGone: !!data.isGone,
       };
     } catch {
-      if (attempt < maxAttempts - 1) {
+      if (attempt < maxAttempts - 1 && !signal?.aborted) {
         await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
         continue;
       }
