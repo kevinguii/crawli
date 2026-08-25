@@ -32,8 +32,12 @@ export default function AlertsTabsClient({
 
   // Visiting the alerts area = the user has seen the bell. Clear unseen
   // notifications so the nav badge resets (Realtime then updates the bell).
+  // Fire-and-forget, so it swallows its own failures. Mobile Safari aborts
+  // in-flight fetches when the tab is backgrounded or the user navigates away,
+  // which otherwise surfaces as an unhandled "TypeError: Load failed" in
+  // Sentry. Missing one is harmless: the next visit clears the badge.
   useEffect(() => {
-    void fetch('/api/notifications/mark-seen', { method: 'POST' });
+    void fetch('/api/notifications/mark-seen', { method: 'POST' }).catch(() => {});
   }, []);
 
   // Stable identity so the child's onCount effect only reruns when the

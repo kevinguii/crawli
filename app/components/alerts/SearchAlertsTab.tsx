@@ -60,6 +60,11 @@ export default function SearchAlertsTab({
       try {
         const res = await fetch('/api/saved-searches');
         if (!cancelled && res.ok) setAlerts(await res.json());
+      } catch {
+        // Network failure or a request the browser aborted (mobile Safari does
+        // this on backgrounding/navigation). Leave the list empty rather than
+        // letting the rejection escape as an unhandled error; finally still
+        // clears the loading state.
       } finally {
         if (!cancelled) setLoading(false);
       }

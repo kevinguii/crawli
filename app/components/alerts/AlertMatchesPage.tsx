@@ -60,29 +60,40 @@ export default function AlertMatchesPage({ alertId }: { alertId: string }) {
   const [matches, setMatches] = useState<AlertMatch[] | null>(null);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [alertRes, matchesRes, historyRes] = await Promise.all([
-        fetch(`/api/saved-searches/${alertId}`),
-        fetch(`/api/saved-searches/${alertId}/matches`),
-        fetch(`/api/saved-searches/${alertId}/history`),
-      ]);
-      const alertData = alertRes.ok ? await alertRes.json() : null;
-      const matchesData = matchesRes.ok ? await matchesRes.json() : [];
-      const historyData: HistoryEntry[] = historyRes.ok ? await historyRes.json() : [];
-      if (!cancelled) {
-        setAlert(alertData);
-        setMatches(matchesData);
-        setHistory(historyData);
-        // history is newest-first — open just the latest run by default.
-        if (historyData.length > 0) setExpanded(new Set([historyData[0].id]));
+      try {
+        // Clear any error left over from a previous alertId (no-op on mount).
+        setLoadError(false);
+        const [alertRes, matchesRes, historyRes] = await Promise.all([
+          fetch(`/api/saved-searches/${alertId}`),
+          fetch(`/api/saved-searches/${alertId}/matches`),
+          fetch(`/api/saved-searches/${alertId}/history`),
+        ]);
+        const alertData = alertRes.ok ? await alertRes.json() : null;
+        const matchesData = matchesRes.ok ? await matchesRes.json() : [];
+        const historyData: HistoryEntry[] = historyRes.ok ? await historyRes.json() : [];
+        if (!cancelled) {
+          setAlert(alertData);
+          setMatches(matchesData);
+          setHistory(historyData);
+          // history is newest-first, so open just the latest run by default.
+          if (historyData.length > 0) setExpanded(new Set([historyData[0].id]));
+        }
+      } catch {
+        // Network failure or a request the browser aborted (mobile Safari does
+        // this on backgrounding/navigation). Without this the rejection is
+        // unhandled AND the page skeletons forever, since alert stays undefined.
+        if (!cancelled) setLoadError(true);
       }
     })();
     // Opening the page = the user has reviewed these matches. Clears the per-alert
-    // unread badge (Realtime then syncs the card).
-    void fetch(`/api/saved-searches/${alertId}/mark-seen`, { method: 'POST' });
+    // unread badge (Realtime then syncs the card). Fire-and-forget, so it swallows
+    // its own failures rather than raising an unhandled rejection.
+    void fetch(`/api/saved-searches/${alertId}/mark-seen`, { method: 'POST' }).catch(() => {});
     return () => { cancelled = true; };
   }, [alertId]);
 
@@ -114,7 +125,11 @@ export default function AlertMatchesPage({ alertId }: { alertId: string }) {
         ← Back to alerts
       </Link>
 
-      {alert === undefined || matches === null || history === null ? (
+      {loadError ? (
+        <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+          Couldn&apos;t load this alert. Check your connection and refresh.
+        </div>
+      ) : alert === undefined || matches === null || history === null ? (
         <>
           <div className="h-7 w-64 rounded animate-pulse mb-6" style={{ background: 'var(--surface)' }} />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
