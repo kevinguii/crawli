@@ -159,6 +159,15 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
             brand_name = brand_raw.get("name") if isinstance(brand_raw.get("name"), str) else None
         elif isinstance(brand_raw, str):
             brand_name = brand_raw
+        # MUST unescape before the containment check below. ThredUp ships the
+        # brand HTML-escaped ("Levi&apos;s") while `name` is already unescaped
+        # ("Levi's Blue Jeans Size 36 waist"), so the raw comparison never
+        # matched and every apostrophe brand got its escaped form prepended to
+        # a title that already contained it: "Levi&apos;s Levi's Blue Jeans".
+        # Measured 2026-08-25 on `levis 501 jeans`: 85 of 100 rows affected,
+        # entity visible verbatim in the results UI.
+        if isinstance(brand_name, str):
+            brand_name = html_module.unescape(brand_name).strip() or None
         # Prepend brand to title so downstream token-matching sees the brand name.
         # Mirrors the same pattern used by the Depop extractor.
         if brand_name and name and brand_name.lower() not in name.lower():
@@ -706,6 +715,22 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
 # ── Vestiaire Collective ─────────────────────────────────────────────────────
 
 VESTIAIRE_BASE = "https://us.vestiairecollective.com"
+
+# Vestiaire ships the brand in ALL CAPS ("LEVI'S", "DOLCE & GABBANA") and we
+# title-case it for display. Python's str.title() uppercases the letter after
+# ANY non-alpha character, so a possessive apostrophe comes out wrong:
+# "LEVI'S".title() == "Levi'S". Measured 2026-08-25: 15 of 15 rows on
+# `levis 501 jeans` rendered as "Levi'S 501 straight jeans" in the results UI.
+# Same family as the ThredUp "Levi&apos;s" bug, different mechanism.
+#
+# Repair only a lone trailing S after an apostrophe. Deliberately NOT a blanket
+# lowercase-after-apostrophe: str.title() gets "O'Neill" and "L'Occitane"
+# RIGHT, and a broader rule would break them back into "O'neill"/"L'occitane".
+_TITLECASE_POSSESSIVE_RE = re.compile(r"(['’])S\b")
+
+
+def _vestiaire_title_case(text: str) -> str:
+    return _TITLECASE_POSSESSIVE_RE.sub(lambda m: m.group(1) + "s", text.title())
 _VESTIAIRE_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
 
 
@@ -754,7 +779,7 @@ def extract_vestiaire_grid(html: str, *, limit: int = 24) -> list[dict]:
         url = urljoin(VESTIAIRE_BASE, href)
 
         brand_el = card.select_one('[data-cy="productCard__text__brand"]')
-        brand = brand_el.get_text(strip=True).title() if brand_el else None
+        brand = _vestiaire_title_case(brand_el.get_text(strip=True)) if brand_el else None
 
         name_el = card.select_one('[data-cy="productCard__text__name"]')
         name = name_el.get_text(strip=True) if name_el else None
@@ -1098,11 +1123,195 @@ def extract_stockx_grid(html: str, *, limit: int = 24) -> list[dict]:
     return results
 
 
+# ── eBay ─────────────────────────────────────────────────────────────────────
+
+EBAY_BASE = "https://www.ebay.com"
+
+# eBay seeds every SRP with one or two "Shop on eBay" promo tiles that look
+# exactly like a real card — same `.su-card-container`, same `.s-card__price`
+# — but point at the placeholder item id 123456 and carry an ebaystatic house
+# image. Verified 2026-08-25: exactly 2 of them on every query sampled. They
+# are not listings; letting them through puts a fake $20.00 "Shop on eBay"
+# row in the results and drags the price average down.
+_EBAY_DECOY_ITEM_IDS = {"123456"}
+_EBAY_DECOY_TITLES = {"shop on ebay"}
+_EBAY_HOUSE_IMAGE_HOST = "ir.ebaystatic.com"
+
+_EBAY_ITEM_ID_RE = re.compile(r"/itm/(\d+)")
+# Leading symbol + amount. eBay writes ranges as "$20.00 to $40.00" (multi-
+# variant listings); we take the low end, which is what the card leads with
+# and what a sourcing user is comparing on.
+_EBAY_PRICE_RE = re.compile(r"([$£€¥]|C\s*\$|AU\s*\$|US\s*\$)\s*([\d,]+(?:\.\d{1,2})?)")
+_EBAY_CURRENCY_BY_SYMBOL = {"$": "USD", "US$": "USD", "C$": "CAD", "AU$": "AUD", "£": "GBP", "€": "EUR", "¥": "JPY"}
+
+
+def ebay_search_url(query: str) -> str:
+    """Build the eBay onsite search URL.
+
+    Verified 2026-08-25: /sch/i.html?_nkw=<urlencoded> returns the full SRP
+    grid server-side — ~81 cards, complete with title, price, image, size and
+    condition. No JS hydration wait is needed for the cards themselves.
+
+    Why this exists: eBay used to be the one platform on the Firecrawl
+    "discover URLs then scrape each listing" path, which cost 10 Chromium
+    renders and ~60s per search against ~6 usable results. One SRP render is
+    ~5s for 40+ results. See PLATFORM_STATUS.md.
+    """
+    return f"{EBAY_BASE}/sch/i.html?_nkw={quote(query.strip())}"
+
+
+def _ebay_parse_price(text) -> tuple[Optional[float], str]:
+    """Parse an eBay price cell into (amount, ISO currency).
+
+    Falls back to USD for an unrecognised symbol rather than dropping the
+    price — the .com SRP is USD in the overwhelming majority of cases and a
+    priced listing is more useful than a null.
+    """
+    if not isinstance(text, str):
+        return None, "USD"
+    m = _EBAY_PRICE_RE.search(text)
+    if not m:
+        return None, "USD"
+    symbol = re.sub(r"\s+", "", m.group(1))
+    try:
+        amount = float(m.group(2).replace(",", ""))
+    except ValueError:
+        return None, "USD"
+    return amount, _EBAY_CURRENCY_BY_SYMBOL.get(symbol, "USD")
+
+
+def _ebay_subtitle_parts(card) -> tuple[Optional[str], Optional[str]]:
+    """Pull (condition, size) out of an eBay card subtitle.
+
+    The subtitle is a middot-joined attribute strip written by eBay in a
+    stable order but with optional members:
+        "Pre-Owned ·Size XL ·Carhartt"   → condition + size + brand
+        "Brand New"                       → condition only
+    Roughly 3 in 4 cards carry one at all, so both fields stay Optional.
+    """
+    el = card.select_one(".s-card__subtitle")
+    if el is None:
+        return None, None
+    raw = html_module.unescape(el.get_text(" ", strip=True))
+    condition: Optional[str] = None
+    size: Optional[str] = None
+    for part in (p.strip() for p in raw.split("·")):
+        if not part:
+            continue
+        low = part.lower()
+        if low.startswith("size"):
+            candidate = part[4:].strip(": ").strip()
+            size = candidate or None
+        elif condition is None and ("new" in low or "owned" in low or "used" in low or "refurb" in low or "parts" in low):
+            condition = part
+    return condition, size
+
+
+def extract_ebay_grid(html: str, *, limit: int = 24) -> list[dict]:
+    """Extract listings from an eBay /sch/i.html?_nkw= search page.
+
+    Card anatomy (verified 2026-08-25 across 3 queries, ~81 cards each):
+        .su-card-container
+          a.s-card__link[href*="/itm/<id>"]        → url (id in path)
+            img.s-card__image                      → imageUrl
+          .s-card__title > .su-styled-text         → title
+          .s-card__title > .clipped                → "Opens in a new window
+                                                      or tab" a11y text, MUST
+                                                      be excluded from title
+          .s-card__subtitle                        → "Pre-Owned ·Size XL ·Brand"
+          .s-card__price                           → "$80.00"
+
+    Two things about this markup that will bite a future editor:
+
+    1. eBay migrated off the old `s-item__*` class family. Any selector you
+       remember from a `s-item__title` era scraper matches zero nodes now;
+       `su-card-container` + `s-card__*` is the current pair.
+    2. `.s-card__title` contains a visually-hidden `.clipped` span. Calling
+       get_text() on the title node yields "…JacketOpens in a new window or
+       tab", which then fails relevance anchoring downstream. Select the
+       inner `.su-styled-text` instead.
+
+    All SRP results are active listings (sold items live behind
+    `LH_Complete=1`, which this URL does not set), so isSold is always False.
+    """
+    if not html:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+
+    cards = soup.select(".su-card-container")
+    if not cards:
+        log.warning("[ebay-grid] no su-card-container elements found — page may not have rendered")
+        return []
+
+    results: list[dict] = []
+    seen_ids: set[str] = set()
+    skipped_decoys = 0
+
+    for card in cards:
+        link = card.select_one('a[href*="/itm/"]')
+        if not link:
+            continue
+        href = link.get("href", "")
+        m = _EBAY_ITEM_ID_RE.search(href)
+        if not m:
+            continue
+        item_id = m.group(1)
+
+        title_el = card.select_one(".s-card__title .su-styled-text")
+        title = html_module.unescape(title_el.get_text(strip=True)) if title_el else None
+
+        img_el = card.select_one("img.s-card__image") or card.find("img")
+        image = img_el.get("src") if img_el else None
+
+        # Promo tile, not a listing — see _EBAY_DECOY_ITEM_IDS above.
+        if (
+            item_id in _EBAY_DECOY_ITEM_IDS
+            or (title or "").strip().lower() in _EBAY_DECOY_TITLES
+            or (image and _EBAY_HOUSE_IMAGE_HOST in image)
+        ):
+            skipped_decoys += 1
+            continue
+
+        # The href carries a multi-hundred-character `itmmeta`/`itmprp`
+        # tracking payload that differs per impression, so the same listing
+        # would dedupe as two different URLs across searches (and churn
+        # `last_seen_urls` on every alert run). The item id is the identity.
+        if item_id in seen_ids:
+            continue
+        seen_ids.add(item_id)
+        url = f"{EBAY_BASE}/itm/{item_id}"
+
+        price_el = card.select_one(".s-card__price")
+        price, currency = _ebay_parse_price(price_el.get_text(strip=True) if price_el else None)
+
+        condition, size = _ebay_subtitle_parts(card)
+
+        results.append({
+            "url": url,
+            "title": title,
+            "price": price,
+            "currency": currency,
+            "isSold": False,
+            "condition": condition,
+            "imageUrl": image,
+            "size": size,
+        })
+
+        if len(results) >= limit:
+            break
+
+    log.info(
+        "[ebay-grid] extracted %d listings (out of %d cards, %d promo tiles skipped)",
+        len(results), len(cards), skipped_decoys,
+    )
+    return results
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────────
 
 SEARCH_PAGE_PLATFORMS = {
     "thredup", "realreal", "grailed", "mercari", "depop",
-    "vestiaire", "vinted", "poshmark", "stockx",
+    "vestiaire", "vinted", "poshmark", "stockx", "ebay",
 }
 
 
@@ -1125,6 +1334,8 @@ def search_url_for(platform: str, query: str) -> Optional[str]:
         return poshmark_search_url(query)
     if platform == "stockx":
         return stockx_search_url(query)
+    if platform == "ebay":
+        return ebay_search_url(query)
     return None
 
 
@@ -1147,4 +1358,6 @@ def extract_search_grid(platform: str, html: str, *, limit: int = 24) -> list[di
         return extract_poshmark_grid(html, limit=limit)
     if platform == "stockx":
         return extract_stockx_grid(html, limit=limit)
+    if platform == "ebay":
+        return extract_ebay_grid(html, limit=limit)
     return []

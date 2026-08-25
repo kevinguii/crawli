@@ -99,7 +99,7 @@ SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_
 # nothing on the searches where native succeeds, and a platform that stops being
 # blocked silently goes back to the free native path.
 FIRECRAWL_FALLBACK_PLATFORMS = {
-    p.strip() for p in os.environ.get("FIRECRAWL_FALLBACK_PLATFORMS", "mercari,depop").split(",") if p.strip()
+    p.strip() for p in os.environ.get("FIRECRAWL_FALLBACK_PLATFORMS", "mercari,depop,ebay").split(",") if p.strip()
 }
 # HARD-blocked subset: platforms blocked even for the real-Chromium fingerprint,
 # where a fast raw-HTTP 403 probe reliably predicts native failure so we skip the
@@ -872,6 +872,30 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
         cfg_kwargs["wait_for"] = 'css:[data-testid="ProductTile"]'
         cfg_kwargs["page_timeout"] = 60_000
         cfg_kwargs["js_code"] = _LAZY_IMAGE_SCROLL_JS
+    # eBay's SRP is server-rendered — the ~81 cards are in the initial HTML,
+    # so there is nothing to hydrate and no lazy-image scroll needed (the
+    # <img src> are real CDN URLs on first paint). Wait only for the first
+    # card anchor so an Akamai interstitial fails fast against
+    # SEARCH_WAIT_FOR_TIMEOUT_MS instead of burning the full page_timeout.
+    # eBay's SRP is server-rendered: the ~81 cards are already in the HTML at
+    # domcontentloaded, so unlike every other platform here there is nothing to
+    # hydrate and DELIBERATELY no `wait_for`.
+    #
+    # Adding one is actively harmful. A wait_for that is never satisfied is how
+    # a walled page fails, and it fails slowly — 20s (SEARCH_WAIT_FOR_TIMEOUT_MS)
+    # burnt before the Firecrawl fallback even starts. Stacked under
+    # scrapeSearchPageViaSidecar's 60s abort + its second attempt, one Akamai
+    # interstitial cost ~100s end-to-end (measured 2026-08-25). With no
+    # wait_for a blocked page returns in ~2s with an empty grid, which the
+    # empty-grid branch in /scrape-search already routes to Firecrawl — eBay is
+    # in FIRECRAWL_FALLBACK_PLATFORMS for exactly this.
+    #
+    # The trade: if eBay ever moves the SRP to client-side rendering, every
+    # render silently yields an empty grid and falls through to Firecrawl. The
+    # "[ebay-grid] no su-card-container elements found" warning is the signal.
+    if search_page and platform == "ebay":
+        cfg_kwargs["page_timeout"] = 45_000
+        cfg_kwargs["delay_before_return_html"] = 1.5
 
     # Fail a blocked/anti-bot search page fast: cap the wait-for-selector wait
     # well below page_timeout so a render that will never hydrate (e.g. Mercari

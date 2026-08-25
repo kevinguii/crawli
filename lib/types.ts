@@ -36,6 +36,13 @@ export const PLATFORM_NAMES: Record<string, string> = {
 export const NATIVE_PLATFORMS = new Set<string>([
   'grailed', 'depop', 'mercari', 'thredup',
   'vestiaire', 'vinted', 'poshmark', 'stockx',
+  // eBay joined the native set 2026-08-25. It was the last platform on the
+  // Firecrawl discover-then-scrape-each-listing path, which cost ~60s and 10
+  // Chromium renders per search for ~6 usable results; its own SRP renders in
+  // ~5s and yields 40+. lib/firecrawl.ts still carries an `ebay` entry in
+  // PLATFORM_STRATEGY — that path is now unreachable for search and is kept
+  // only so a manual Avenue B fallback stays possible.
+  'ebay',
   /* realreal — PerimeterX blocks, keep disabled */
 ]);
 

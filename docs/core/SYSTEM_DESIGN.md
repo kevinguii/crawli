@@ -141,11 +141,12 @@ The Next.js server is the **orchestrator**. The Python sidecar is the **browser 
 ```
 PATH A — SEARCH (hot; cost depends on platform routing — see §6)
 Browser → POST /api/search
-       → For NATIVE_PLATFORMS (Grailed/ThredUp/Vestiaire/Vinted/Poshmark/StockX/Depop/Mercari):
-             Python sidecar /scrape-search (Playwright grid render, $0 for 6; Mercari + Depop
-             native-first with intermittent Firecrawl fallback via main.py fallback logic)
-       → For non-native (eBay only):
-             Firecrawl URL discovery (4 credits) → Python sidecar /scrape per listing
+       → For NATIVE_PLATFORMS (all 9 — Grailed/ThredUp/Vestiaire/Vinted/Poshmark/
+         StockX/Depop/Mercari/eBay):
+             Python sidecar /scrape-search (Playwright grid render, $0 for 6; Mercari,
+             Depop + eBay native-first with intermittent Firecrawl fallback via
+             main.py fallback logic)
+       → Non-native: none. Avenue B retired 2026-08-25 when eBay migrated.
        → NDJSON stream back to browser
        → NO Supabase writes (results are ephemeral)
 
@@ -236,34 +237,23 @@ Each platform_done → emit event → UI snaps row to "Done — N results"
           ┌───────────────┴────────────────┐
           │                                │
    in SEARCH_PAGE_PLATFORMS?         normal platform?
-   (as of 2026-06-29: grailed,    (ebay only — all others
-    depop, mercari, thredup,        migrated to Avenue A)
-    vestiaire, vinted, poshmark,
-    stockx)
+   (as of 2026-08-25: ALL NINE —  (none — eBay, the last
+    grailed, depop, mercari,        one, migrated 2026-08-25)
+    thredup, vestiaire, vinted,
+    poshmark, stockx, ebay)
           ▼                                ▼
    PATH A: Search-page            PATH B: Firecrawl
    extraction                     URL discovery
    (bypass Firecrawl)
 ```
 
-**Path B — Search-provider URL discovery (eBay only as of 2026-06-29):**
+**Path B — Search-provider URL discovery: RETIRED 2026-08-25.**
 
-All 8 native platforms migrated to Avenue A (Path A). eBay remains on Path B — Akamai blocking makes a single native search-page render non-viable.
+All 9 platforms are now on Avenue A (Path A). eBay was the last Path B user, and the claim that "Akamai blocking makes a single native search-page render non-viable" turned out to be **wrong** — it was never tested. eBay's SRP renders fine from the production datacenter IP (8/8 concurrent, ~4.4s, 65-82 listings), and it is the *per-listing* pages that Akamai walls, which is precisely what Path B did ten of per search.
 
-```
-searchPlatform(platform, query)   [eBay only]
-  ↓
-  Firecrawl.search("site:ebay.com <query>")
-  → returns ~20 candidate URLs (RawSearchResult[])
-  → filterListingUrls() — keeps only /itm/ URLs
-  → dedupe
-  → ~5–10 clean listing URLs
-  → scrape each (Step 3)
+The old shape, for reference: `searchPlatform()` → `Firecrawl.search("site:ebay.com <query>")` → ~20 candidate URLs → `filterListingUrls()` → dedupe → scrape each of the first 10 via the sidecar at concurrency 2. Measured cost of that: **60.2s median and ~6 usable listings**, versus ~7s and ~75 today. `searchPlatform()` and `PLATFORM_STRATEGY` still exist in `lib/firecrawl.ts` but nothing in the search path reaches them; the sidecar's own Firecrawl fallback (`_firecrawl_search_fallback`) fetches the *search page* for ~1 credit instead.
 
-Cost (eBay): ~4 Firecrawl credits/search — ~$0.005 Standard / ~$0.017 Hobby (see §6 Cost Map). Firecrawl is the only avenue for eBay.
-```
-
-**Path A — Search-page extraction (all 8 native platforms, as of 2026-06-29):**
+**Path A — Search-page extraction (all 9 platforms, as of 2026-08-25):**
 
 Each platform: `POST /scrape-search` → sidecar builds the search URL, renders once with Chromium, extracts grid → returns `ScrapedListing[]`. Cost: 0 Firecrawl credits. 1 render. No LLM.
 
@@ -660,7 +650,7 @@ EditProfileModal:
 
 ## 6. Cost Map
 
-> **Updated 2026-06-29 for the Avenue A migration.** The Brave/hybrid `SEARCH_PROVIDER` routing described in older revisions of this section (and still detailed historically in `docs/reference/FIRECRAWL_PRICING.md`) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar, never calling `lib/firecrawl.ts`'s `searchPlatform()`. That file's `PLATFORM_STRATEGY` only still executes for eBay (the one non-native platform). Figures below reflect actual current routing, verified against `crawl4ai-service/main.py` and `lib/types.ts`.
+> **Updated 2026-06-29 for the Avenue A migration.** The Brave/hybrid `SEARCH_PROVIDER` routing described in older revisions of this section (and still detailed historically in `docs/reference/FIRECRAWL_PRICING.md`) is now **dead code for every native platform** — `lib/searchWorker.ts` routes anything in `NATIVE_PLATFORMS` straight to the crawl4ai sidecar, never calling `lib/firecrawl.ts`'s `searchPlatform()`. That file's `PLATFORM_STRATEGY` is now dead for **every** platform — eBay, its last user, migrated to Avenue A on 2026-08-25. Figures below reflect actual current routing, verified against `crawl4ai-service/main.py` and `lib/types.ts`.
 
 ### Per-search cost breakdown
 

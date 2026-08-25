@@ -2,11 +2,11 @@
 
 > **Maintenance rule:** update this table any time a platform's extraction method, viability, or known issues change. This is the single source of truth for per-platform state. Do not duplicate it in HANDOFF.md.
 
-Last verified: 2026-08-15
+Last verified: 2026-08-25
 
 ## Search extraction (per-platform)
 
-All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-search`, 0 Firecrawl credits). Only eBay uses **Avenue B** (Firecrawl URL discovery + per-listing scrape).
+All 9 platforms use **Avenue A** (search-page extraction via `/scrape-search`, 0 Firecrawl credits). **Avenue B (Firecrawl URL discovery + per-listing scrape) is retired** as of 2026-08-25 — eBay was its last user. `PLATFORM_STRATEGY` in `lib/firecrawl.ts` still carries an `ebay` entry, but nothing reaches it from the search path.
 
 | Platform | Avenue | Method | Wait / Notes | Results/page | Status |
 |---|---|---|---|---|---|
@@ -18,7 +18,7 @@ All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-sea
 | **Vinted** | A | `div[class*="new-item-box__container"]` + overlay `title` attr CSV | 12s wait (SSR) | ~96 | ✅ Working |
 | **Poshmark** | A | `div.tile-grid-redesign__media--wrapper` dual-anchor | `wait_for` `a.tile-grid-redesign__meta-link` 11s | ~48 | ✅ Working |
 | **StockX** | A | `[data-testid="ProductTile"]` + `product-tile-lowest-ask-amount` | `wait_for` 12s, 60s timeout (CSR heavy) | ~40 | ✅ Working |
-| **eBay** | B | Firecrawl `site:ebay.com` → JSON-LD Product per-listing | Akamai intermittently 403s (~1 in 5 listings); structured extractor handles hits | ~8 | ✅ Working (intermittent Akamai blocks) |
+| **eBay** | A | `.su-card-container` cards on `/sch/i.html?_nkw=` (`.s-card__title .su-styled-text`, `.s-card__price`, `.s-card__subtitle` → condition + size) | **No `wait_for` — SRP is server-rendered and one is actively harmful, see PITFALLS.** Firecrawl fallback on 403 | ~75 | ✅ Working (native, migrated 2026-08-25) |
 | **RealReal** | — | Disabled | PerimeterX press-and-hold blocks headless render; returns 0 silently | — | ❌ Disabled |
 
 ## Per-listing extraction (for Avenue B / watchlist refresh)
@@ -31,7 +31,7 @@ All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-sea
 | Poshmark | `og:title` + `og:image` + `<p class="h1"><span>` price | |
 | Mercari | `__NEXT_DATA__.serverState[ItemDetail]` price in cents ÷ 100 | |
 | Vinted | Regex over escaped RSC payload | |
-| eBay | JSON-LD `Product` block | Intermittent Akamai 403; LLM fallback on failure |
+| eBay | JSON-LD `Product` block | Watchlist-refresh only now — the search path no longer scrapes eBay per-listing. Intermittent Akamai 403; LLM fallback on failure |
 | Vestiaire | JSON-LD `Product` block (`ImageObject.contentUrl` for image) | |
 | ThredUp | JSON-LD `Product` block (via `/scrape`, not used in search path) | |
 
@@ -41,7 +41,7 @@ All 8 native platforms use **Avenue A** (search-page extraction via `/scrape-sea
 |---|---|---|---|
 | ThredUp | ✅ | JSON-LD `Product.color` on grid card | title-text |
 | Poshmark | ✅ | JSON-LD per-listing | title-text |
-| eBay | ✅ (4/5) | JSON-LD per-listing | title-text |
+| eBay | ❌ on the search path | Grid cards carry no color (per-listing JSON-LD did, 4/5, but search no longer fetches it) | title-text |
 | StockX | ✅ | JSON-LD per-listing (official colorway e.g. "Diffused Blue") | title-text |
 | Vinted | ✅ | JSON-LD per-listing (`"Blue"` etc.) | title-text |
 | Mercari | Partial | Title text only on native-grid path | title-text |
@@ -53,9 +53,14 @@ Color is a **sort boost** (never a hard drop). Structured color reorders results
 
 ## Open platform issues
 
-**eBay — intermittent Akamai blocks**
-- `[structured] crawl failed` logged when 403. Cascade falls to LLM tier on partial response.
-- Options (none implemented): residential proxy; eBay Browse API (requires OAuth); paid unlocker.
+**eBay — Akamai 403s, now largely mitigated**
+- **Search path (fixed 2026-08-25):** the SRP is fetched once instead of 10 per-listing pages, so there is ~1/10th the block surface. Measured from the production Hetzner IP: **8/8 concurrent queries succeeded**, 65-82 listings each, no interstitial. When a 403 does land it is detected in ~3s (no `wait_for` to burn) and the Firecrawl fallback returns a full grid for ~1 credit.
+- **Do not add a `wait_for` to eBay's search render.** It cannot help (the cards are in the initial HTML) and it turns a 3s failure into a ~100s one. See PITFALLS.
+- **Watchlist refresh** still scrapes eBay per-listing and still sees ~1-in-5 403s there; `[structured] crawl failed` then cascades to the LLM tier.
+- Options if the SRP itself starts getting walled: residential proxy; eBay Browse API (requires OAuth); paid unlocker.
+
+**Vestiaire — brand title-casing (fixed 2026-08-25)**
+- Brands ship ALL CAPS and are title-cased for display; `str.title()` produced `"Levi'S"`. `_vestiaire_title_case()` repairs a lone trailing `S` after an apostrophe only, so `O'Neill`/`L'Occitane` stay correct. Display-only — matching was never affected. See PITFALLS.
 
 **StockX — SSR vs live price drift**
 - Possible that `trade-box-buy-amount` in SSR HTML differs from live hydrated DOM.

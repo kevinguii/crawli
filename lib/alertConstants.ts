@@ -1,12 +1,21 @@
-// Platforms excluded from alerts — eBay has intermittent Akamai blocks
-// and LLM extraction cost that makes it unsuitable for scheduled cron runs.
+// Platforms excluded from alerts.
+//
+// STALE RATIONALE, BEHAVIOUR DELIBERATELY UNCHANGED (2026-08-25): the original
+// reason was that eBay ran on the Firecrawl discover-then-scrape-each-listing
+// path — intermittent Akamai 403s on per-listing pages plus LLM extraction
+// cost, unsuitable for an unattended cron. eBay now renders its own search
+// grid natively in one request (see NATIVE_PLATFORMS in lib/types.ts), which
+// removes both objections: measured 8/8 success under concurrent load from the
+// production datacenter IP, and zero Firecrawl credits on the native path.
+// The exclusion is kept only because letting eBay into alerts raises recurring
+// cron load, which is a product call rather than a technical one.
 // Imported by both server (alertRunner.ts) and client (CreateAlertModal.tsx).
 export const ALERT_EXCLUDED_PLATFORMS = new Set(['ebay']);
 
 // Free-tier cooldown between baseline-changing alert edits (query/platforms/
 // filters/criteria), per alert. Paid tiers are uncapped. A baseline edit
-// re-runs the search in-house (crawl4ai only — eBay, the sole Firecrawl-metered
-// platform, is excluded from alerts), so the cost is marginal and we rate-limit
+// re-runs the search in-house (crawl4ai only — every alertable platform is on
+// the native path), so the cost is marginal and we rate-limit
 // velocity rather than charging a search credit.
 export const FREE_BASELINE_EDIT_COOLDOWN_HOURS = 4;
 
