@@ -8,6 +8,8 @@ import { useSaves } from './SavesProvider';
 import { useWatchlist } from './WatchlistProvider';
 import { convertToUSD } from '@/lib/currency';
 import { useScrollEdges, scrollFadeMask } from '@/lib/hooks/useScrollEdges';
+import { pickShareCardListing } from '@/lib/shareCard';
+import ShareFindButton from './ShareFindButton';
 
 interface Props {
   data: SearchResponse;
@@ -67,6 +69,14 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   const { lowSource, highSource } = useMemo(
     () => pickPriceSources(results, dataPriceRange),
     [results, dataPriceRange]
+  );
+
+  // Computed independently of `cheapestId` above: that one drives the on-screen
+  // "lowest" badge, this one always spans every platform in the response, so a
+  // change to either can never move the other.
+  const shareCardData = useMemo(
+    () => pickShareCardListing(data.query, results),
+    [data.query, results]
   );
 
   const visibleListings: Listing[] = useMemo(() => {
@@ -129,6 +139,8 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
         lowSource={lowSource ? (PLATFORM_NAMES[lowSource] ?? lowSource) : null}
         highSource={highSource ? (PLATFORM_NAMES[highSource] ?? highSource) : null}
       />
+
+      <ShareFindButton data={shareCardData} />
 
       <div
         ref={tabsRef}
