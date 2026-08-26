@@ -1,18 +1,42 @@
 // Timezone-aware scheduling for alerts.
-// All alerts anchor to 9 AM local time so we never email users at 3 AM.
+// Cadences of 24h or more anchor to 9 AM local time so we never email users at
+// 3 AM for a daily/weekly check. Cadences under 24h are deliberately NOT
+// anchored — the entire point of paying for a fast cadence is finding out the
+// moment something new appears, so a match found at 3 AM emails at 3 AM. See
+// docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md.
 // Computation works from both client and server.
 
 const ANCHOR_HOUR = 9;
 
+/** The only legal values for `saved_searches.cadence_hours`. Ascending order —
+ *  UI code iterates this directly to render preset buttons in order. */
+export const ALERT_CADENCE_PRESETS = [1, 3, 6, 12, 24, 168] as const;
+
+/** Is this cadence at or above the account's floor? The single shared
+ *  definition of "allowed" — both saved-searches API routes and the
+ *  create/edit modal's button-lock logic call this instead of each
+ *  duplicating `hours >= minCadence` inline. */
+export function isCadenceAllowed(hours: number, minCadence: number): boolean {
+  return hours >= minCadence;
+}
+
 // Returns the next Date (UTC) when an alert with this cadence should fire in
-// the given IANA timezone, starting from `base`. Defaults to next 9 AM local.
-// cadenceHours determines how many days out to land: 24 -> next 9 AM (today
-// or tomorrow), 168 (weekly) -> 9 AM, 7 days from today's tz-local date.
+// the given IANA timezone, starting from `base`.
+//
+// cadenceHours < 24: no anchor at all — fires exactly `cadenceHours` after
+// `base`, whatever the local time is when that lands.
+//
+// cadenceHours >= 24: anchors to the next 9 AM local, `round(cadenceHours/24)`
+// days out (24 -> tomorrow's or today's remaining 9 AM, 168 -> 9 AM 7 days out).
 export function nextAnchoredRunAt(
   timezone: string,
   cadenceHours: number,
   base: Date = new Date(),
 ): Date {
+  if (cadenceHours < 24) {
+    return new Date(base.getTime() + cadenceHours * 60 * 60 * 1000);
+  }
+
   const daySpan = Math.max(1, Math.round(cadenceHours / 24));
 
   // Extract the current calendar parts as seen in the target timezone.
@@ -57,14 +81,23 @@ export function nextAnchoredRunAt(
   return zonedTimeToUtc(targetYear, targetMonth, targetDay, targetHour, 0, timezone);
 }
 
-// Human-readable cadence name, e.g. "Daily" / "Weekly".
+const CADENCE_LABELS: Record<number, string> = {
+  1: 'Hourly',
+  3: 'Every 3 hours',
+  6: 'Every 6 hours',
+  12: 'Every 12 hours',
+  24: 'Daily',
+  168: 'Weekly',
+};
+
+// Human-readable cadence name, e.g. "Hourly" / "Every 6 hours" / "Daily" / "Weekly".
 export function cadenceLabel(hours: number): string {
-  return hours === 168 ? 'Weekly' : 'Daily';
+  return CADENCE_LABELS[hours] ?? `Every ${hours} hours`;
 }
 
-// e.g. "Daily at 9 AM" / "Weekly at 9 AM".
+// e.g. "Hourly" (no anchor for sub-24h) / "Daily at 9 AM" / "Weekly at 9 AM".
 export function cadenceScheduleLabel(hours: number): string {
-  return `${cadenceLabel(hours)} at 9 AM`;
+  return hours < 24 ? cadenceLabel(hours) : `${cadenceLabel(hours)} at 9 AM`;
 }
 
 // Convert a wall-clock time in the given IANA tz to a UTC Date.
