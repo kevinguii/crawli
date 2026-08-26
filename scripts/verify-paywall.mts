@@ -67,9 +67,9 @@ for (const axis of AXES) {
 // and runs are cheap thanks to the cross-user cache. Asserted rather than left
 // implicit so a future "tighten the free tier" pass has to change this on purpose.
 check(
-  'free alert cadence is never stricter than pro',
-  TIER_CAPS.free.minAlertCadenceHours <= TIER_CAPS.pro.minAlertCadenceHours,
-  `free=${TIER_CAPS.free.minAlertCadenceHours} pro=${TIER_CAPS.pro.minAlertCadenceHours}`,
+  'pro alert cadence is never stricter than free',
+  TIER_CAPS.pro.minAlertCadenceHours <= TIER_CAPS.free.minAlertCadenceHours,
+  `pro=${TIER_CAPS.pro.minAlertCadenceHours} free=${TIER_CAPS.free.minAlertCadenceHours}`,
 );
 check('free may pick daily', TIER_CAPS.free.minAlertCadenceHours <= 24);
 check('alerts are gated by count instead', TIER_CAPS.free.maxSavedSearches < TIER_CAPS.pro.maxSavedSearches);
