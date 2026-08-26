@@ -90,6 +90,14 @@ export const UNLIMITED = 1_000_000;
 // headroom against the current live-alert count — an hourly alert is at most
 // 15 minutes late to be picked up, which "hourly" in copy must be understood
 // to mean.
+//
+// Accepted, documented limitation: a downgrade resets `min_alert_cadence_hours`
+// on the profile but does NOT reclamp `cadence_hours` on that user's existing
+// `saved_searches` rows, so a Pro alert left at, say, 1h keeps running hourly
+// after the account drops to free until the user next edits it. Same
+// grandfathering shape as this file's existing over-cap-saves precedent --
+// enforcement is insert/edit-time only, never continuously re-checked against
+// rows that already exist.
 export const TIER_CAPS: Record<Tier, TierCaps> = {
   // Free keeps DAILY alerts (owner decision 2026-08-17, reversing the weekly-only
   // floor in the original spec). Alert runs are cheap — the cross-user cache in
