@@ -95,7 +95,7 @@ export const UNLIMITED = 1_000_000;
 // on the profile but does NOT reclamp `cadence_hours` on that user's existing
 // `saved_searches` rows, so a Pro alert left at, say, 1h keeps running hourly
 // after the account drops to free until the user next edits it. Same
-// grandfathering shape as this file's existing over-cap-saves precedent --
+// grandfathering shape as this file's existing over-cap-saves precedent:
 // enforcement is insert/edit-time only, never continuously re-checked against
 // rows that already exist.
 export const TIER_CAPS: Record<Tier, TierCaps> = {
