@@ -9,7 +9,7 @@ import InfoTooltip from '@/app/components/InfoTooltip';
 
 const ALERT_EMAIL_TOOLTIP = (
   <>
-    <strong style={{ color: 'var(--text)' }}>Emails only send when new listings are found.</strong> Your alert checks on schedule (daily or weekly, at 9 AM), but we only notify you if results have changed since the last check. First run establishes your baseline.
+    <strong style={{ color: 'var(--text)' }}>Emails only send when new listings are found.</strong> Your alert checks on schedule (daily or weekly at 9 AM on Free, as often as hourly on Pro), but we only notify you if results have changed since the last check. First run establishes your baseline.
   </>
 );
 
@@ -110,7 +110,7 @@ const PAID_TIERS: TierConfig[] = [
         items: [
           'Unlimited searches',
           'Unlimited results on every native platform',
-          'Unlimited alerts, checked daily',
+          'Unlimited alerts, checked as often as hourly',
           'Unlimited saves and tracked listings',
           'Email + in-app alert notifications',
         ],
