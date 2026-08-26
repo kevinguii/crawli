@@ -76,7 +76,7 @@ THEREALREAL_WARMUP_URL = "https://www.therealreal.com/"
 SIDECAR_MAX_CONCURRENT_RENDERS = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_RENDERS", "6")))
 
 # Tier-1 (plain httpx) fast path used by /refresh-price. Doesn't share the
-# render semaphore (httpx is cheap — no Chromium), but still capped so a
+# render semaphore (httpx is cheap, no Chromium), but still capped so a
 # 1000-item watchlist refresh can't open 1000 sockets at once.
 SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_HTTP", "12")))
 
@@ -91,9 +91,9 @@ SIDECAR_MAX_CONCURRENT_HTTP = max(1, int(os.environ.get("SIDECAR_MAX_CONCURRENT_
 SEARCH_WAIT_FOR_TIMEOUT_MS = max(1, int(os.environ.get("SEARCH_WAIT_FOR_TIMEOUT_MS", "20000")))
 
 # Platforms that anti-bot the datacenter IP (verified 2026-06-29: both Mercari
-# and Depop are INTERMITTENT — raw HTTP 403s the datacenter IP but real Chromium
+# and Depop are INTERMITTENT: raw HTTP 403s the datacenter IP but real Chromium
 # usually renders). When their NATIVE render actually fails, fall back to
-# Firecrawl — whose proxy infra isn't datacenter-IP blocked — to scrape the
+# Firecrawl, whose proxy infra isn't datacenter-IP blocked, to scrape the
 # search-page HTML, then run the same grid extractor on it. Costs ~1 Firecrawl
 # credit per fallback. The fallback fires ONLY on native failure, so both pay
 # nothing on the searches where native succeeds, and a platform that stops being
@@ -105,7 +105,7 @@ FIRECRAWL_FALLBACK_PLATFORMS = {
 # where a fast raw-HTTP 403 probe reliably predicts native failure so we skip the
 # ~20s render and go straight to Firecrawl. Default is EMPTY: as of 2026-06-29 no
 # platform qualifies. Mercari was here until verification showed its raw-HTTP 403
-# does NOT predict browser failure (real Chromium renders ~3/4 of the time) — so
+# does NOT predict browser failure (real Chromium renders ~3/4 of the time), so
 # probing it forced paid Firecrawl over a working free path. It now runs
 # native-first with Firecrawl fallback, exactly like Depop. Re-add a platform
 # here only if its block also defeats the real browser from the datacenter IP.
@@ -143,7 +143,7 @@ _driver_dead: bool = False
 # behaves identically to pre-B1. Flip to 2+ on a server with enough CPU/RAM
 # to power multiple browsers (see SCALING.md for per-tier recommendations).
 # All pool members share the global SIDECAR_MAX_CONCURRENT_RENDERS semaphore,
-# so total Chromium load on the box is bounded regardless of pool size — the
+# so total Chromium load on the box is bounded regardless of pool size: the
 # pool only splits *where* renders run, not *how many*. A driver crash in one
 # member takes down only that member; the rest keep serving while restart runs.
 SIDECAR_BROWSER_POOL_SIZE = max(1, int(os.environ.get("SIDECAR_BROWSER_POOL_SIZE", "1")))
@@ -156,9 +156,9 @@ _restart_tasks: dict[int, asyncio.Task] = {}    # per-index restart task trackin
 
 # B5: periodic session refresh. A pool member is a single long-lived browser
 # context reused for every render of its lifetime (crawl4ai's BrowserManager
-# caches one context per config signature — see PITFALLS.md "Depop pooled-
+# caches one context per config signature: see PITFALLS.md "Depop pooled-
 # context soft-block"). If a platform's anti-bot layer ever soft-flags that
-# context (200 OK, no crawl4ai error, but the real content never renders —
+# context (200 OK, no crawl4ai error, but the real content never renders,
 # confirmed live on Depop 2026-08-15: a fresh one-off crawler with the exact
 # same config succeeded every time while the long-lived pool member kept
 # returning empty grids indefinitely), the flag persists for the rest of the
@@ -173,7 +173,7 @@ _pool_started_at: dict[int, float] = {}         # monotonic timestamp of last (r
 
 # Records which pool index actually served the current render, so a caller
 # several stack frames away (the /scrape-search endpoint, after extraction)
-# can act on it — e.g. force a recycle when the grid came back empty despite
+# can act on it, e.g. force a recycle when the grid came back empty despite
 # a "successful" render. A ContextVar (not a plain global) so concurrent
 # in-flight requests each see only their own render's index.
 _last_render_idx: contextvars.ContextVar[int] = contextvars.ContextVar("_last_render_idx", default=-1)
@@ -189,7 +189,7 @@ def _pool_status() -> tuple[int, int]:
 # ── In-flight tracking (B3) ──────────────────────────────────────────────────
 # Simple counter so every scrape can log how many renders are active. Useful
 # in dev (visible in console) and a stepping-stone for any metrics endpoint
-# we add later (SCALING.md §3 — observability progression).
+# we add later (SCALING.md §3, observability progression).
 _in_flight: int = 0
 _in_flight_lock = threading.Lock()
 
@@ -218,7 +218,7 @@ _domain_last_request: dict[str, float] = {}
 
 def _domain_for_url(url: str) -> str:
     """Strip 'www.' from a URL's host. Subdomains otherwise stay distinct
-    (us.vestiairecollective.com ≠ www.vestiairecollective.com) — matched
+    (us.vestiairecollective.com ≠ www.vestiairecollective.com), matched
     against DOMAIN_MIN_INTERVAL_MS keys via suffix match in `_canonical_domain`.
     """
     try:
@@ -278,14 +278,14 @@ def _looks_like_driver_death(error_message: Optional[str]) -> bool:
 
 
 async def _restart_crawler_once(idx: int, *, force: bool = False, reason: str = "driver dead") -> None:
-    """A3+B1+B5: rebuild a specific pool member — either recovering a dead
+    """A3+B1+B5: rebuild a specific pool member: either recovering a dead
     driver subprocess, or (force=True) proactively refreshing a healthy one
     to drop whatever browser-context state (cookies, an anti-bot flag) it has
     accumulated. Same rebuild either way; only the gate differs.
 
     Guarded by `_restart_lock` so concurrent observers all wait on the same
     rebuild rather than each spawning their own. If `start()` fails the index
-    stays marked dead (crash path only) so the next request retries — we
+    stays marked dead (crash path only) so the next request retries, we
     never crash the FastAPI process trying to recover.
     """
     global crawler, _driver_dead
@@ -298,7 +298,7 @@ async def _restart_crawler_once(idx: int, *, force: bool = False, reason: str = 
         # Mark unavailable for the duration of the swap, same as the crash
         # path, so `_pick_crawler()` doesn't hand a concurrent request the
         # browser mid-close/mid-start ("Browser is not available... may have
-        # been closed" — hit this exact race testing the force=True path
+        # been closed", hit this exact race testing the force=True path
         # against 3 back-to-back requests before adding this line).
         _dead_pool_indices.add(idx)
         _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool)
@@ -307,7 +307,7 @@ async def _restart_crawler_once(idx: int, *, force: bool = False, reason: str = 
             old = _crawler_pool[idx]
             if old is not None:
                 await old.close()
-        except Exception:  # noqa: BLE001 — close may itself error on a dead pipe
+        except Exception:  # noqa: BLE001: close may itself error on a dead pipe
             log.exception("[crawler] pool[%d] close errored during restart (continuing)", idx)
         try:
             from crawl4ai import AsyncWebCrawler, BrowserConfig
@@ -329,15 +329,15 @@ async def _restart_crawler_once(idx: int, *, force: bool = False, reason: str = 
             _driver_dead = len(_dead_pool_indices) >= len(_crawler_pool)
             log.info("[crawler] pool[%d] restart complete", idx)
         except Exception:  # noqa: BLE001
-            log.exception("[crawler] pool[%d] restart failed — will retry on next request", idx)
+            log.exception("[crawler] pool[%d] restart failed, will retry on next request", idx)
 
 
 def _trigger_restart_in_background(idx: Optional[int] = None, *, force: bool = False, reason: str = "driver dead") -> None:
     """Fire-and-forget the recovery/recycle coroutine for a specific pool
-    member. Idempotent — duplicate calls for the same index bounce off the
+    member. Idempotent: duplicate calls for the same index bounce off the
     existing task. When idx is None, queues a restart for every currently-dead
     member (used by the endpoint-level short-circuit which doesn't know
-    specifics) — force is ignored in that form, since dead members always
+    specifics), force is ignored in that form, since dead members always
     restart regardless.
     """
     if idx is None:
@@ -349,7 +349,7 @@ def _trigger_restart_in_background(idx: Optional[int] = None, *, force: bool = F
         try:
             _restart_tasks[idx] = asyncio.create_task(_restart_crawler_once(idx, force=force, reason=reason))
         except RuntimeError:
-            # No running loop — next request will trigger it.
+            # No running loop, next request will trigger it.
             pass
 
 
@@ -368,7 +368,7 @@ def _maybe_recycle_pool_member(idx: int) -> None:
     """B5: after a render, check whether this pool member is due for a
     proactive session refresh (age or request-count threshold) and, if so,
     queue a background restart. Runs in the background so it never adds
-    latency to the request that tripped the threshold — the fresh browser is
+    latency to the request that tripped the threshold, the fresh browser is
     ready for the *next* render, not this one.
     """
     if idx < 0 or idx in _dead_pool_indices:
@@ -381,7 +381,7 @@ def _maybe_recycle_pool_member(idx: int) -> None:
     due_by_age = SIDECAR_POOL_RECYCLE_AFTER_SECONDS > 0 and age_s >= SIDECAR_POOL_RECYCLE_AFTER_SECONDS
     if due_by_count or due_by_age:
         log.info(
-            "[pool] crawler[%d] due for session refresh (requests=%d age=%.0fs) — recycling in background",
+            "[pool] crawler[%d] due for session refresh (requests=%d age=%.0fs), recycling in background",
             idx, count, age_s,
         )
         _trigger_restart_in_background(idx, force=True, reason="periodic session refresh")
@@ -390,8 +390,8 @@ def _maybe_recycle_pool_member(idx: int) -> None:
 async def _clear_context_cookies(c) -> None:
     """B5: drop cookies from every browser context this pool member has
     cached (crawl4ai keys one persistent context per CrawlerRunConfig
-    signature — see BrowserManager.contexts_by_config). Best-effort and never
-    raises — called after every Depop/Mercari search-page render so a
+    signature, see BrowserManager.contexts_by_config). Best-effort and never
+    raises, called after every Depop/Mercari search-page render so a
     Cloudflare-side flag set on one request's context doesn't ride along on
     the next one via a stale cookie, without needing a full browser restart.
     """
@@ -403,14 +403,14 @@ async def _clear_context_cookies(c) -> None:
         for ctx in list(contexts.values()):
             try:
                 await ctx.clear_cookies()
-            except Exception:  # noqa: BLE001 — best effort, never break the render path
+            except Exception:  # noqa: BLE001: best effort, never break the render path
                 pass
     except Exception:  # noqa: BLE001
         pass
 
 
 # A6: response caches for /scrape (per URL) and /scrape-search (per
-# platform+query). Cache hits skip Playwright + LLM entirely — same load
+# platform+query). Cache hits skip Playwright + LLM entirely, same load
 # surface as the semaphore, from the demand side. Misses are NOT cached so
 # transient failures can retry; only successful, non-empty results land here.
 _scrape_cache: TTLCache = TTLCache(maxsize=500, ttl=1800)   # 30 min per URL
@@ -443,7 +443,7 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
         return provider, None
     api_key = os.environ.get(key_env, "").strip()
     if not api_key:
-        log.warning("LLM_PROVIDER=%s set but %s is empty — running in stub mode", provider, key_env)
+        log.warning("LLM_PROVIDER=%s set but %s is empty, running in stub mode", provider, key_env)
         return None
     return provider, api_key
 
@@ -517,7 +517,7 @@ async def _pick_crawler() -> tuple[int, Optional[object]]:
     Returns (idx, crawler) or (-1, None) if every member is dead. Endpoint
     short-circuits at `_driver_dead_response` should prevent that second case
     in normal flow; a None here means the pool died between the endpoint
-    check and the pick (race) — caller should raise/return failure.
+    check and the pick (race), caller should raise/return failure.
     """
     if not _crawler_pool:
         return -1, None
@@ -535,10 +535,10 @@ async def _scheduled_render(platform: str, url: str):
     """Single gate for every crawler.arun() call: pace → semaphore → log.
 
     Order matters:
-      1. B2 — per-domain pacing OUTSIDE the semaphore (don't burn a slot
+      1. B2: per-domain pacing OUTSIDE the semaphore (don't burn a slot
          while waiting on the domain lock).
-      2. A1 — global render semaphore (caps total Chromium concurrency).
-      3. B3 — emit the in-flight log line so load level is visible in the
+      2. A1: global render semaphore (caps total Chromium concurrency).
+      3. B3: emit the in-flight log line so load level is visible in the
          log stream. Also bumps the counter that /health surfaces.
     """
     global _in_flight
@@ -621,9 +621,9 @@ async def _warmup_realreal(c) -> None:
         remove_overlay_elements=False,
         remove_consent_popups=True,
     )
-    log.info("[realreal] warmup nav → %s (20s — solve any press-and-hold in the Chromium window)", THEREALREAL_WARMUP_URL)
+    log.info("[realreal] warmup nav → %s (20s, solve any press-and-hold in the Chromium window)", THEREALREAL_WARMUP_URL)
     try:
-        # realreal's crawler is NOT in the pool — pacing + semaphore still
+        # realreal's crawler is NOT in the pool, pacing + semaphore still
         # apply, but a driver death here can't mark a pool index (-1 means
         # platform-specific, log-only handling).
         async with _scheduled_render("realreal", THEREALREAL_WARMUP_URL):
@@ -827,7 +827,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     if platform == "realreal":
         cfg_kwargs["page_timeout"] = 90_000
         cfg_kwargs["delay_before_return_html"] = 20.0
-    # Grailed's /shop?query= search page is client-side rendered via Algolia —
+    # Grailed's /shop?query= search page is client-side rendered via Algolia:
     # the SSR HTML ships an empty grid shell; listing cards hydrate after JS
     # runs (~2s after navigation). Wait explicitly for a listing anchor before
     # returning HTML, otherwise extract_grailed_grid sees zero cards.
@@ -838,7 +838,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     # Mercari's /search/?keyword= page is client-side rendered: the SSR HTML
     # ships a near-empty __NEXT_DATA__ and the listing grid hydrates after JS
     # runs (~5s). Wait explicitly for an ItemContainer card so the extractor
-    # doesn't see an empty grid. Verified 2026-05-27 via probe — once cards
+    # doesn't see an empty grid. Verified 2026-05-27 via probe, once cards
     # appear, 35 are present and complete.
     if search_page and platform == "mercari":
         cfg_kwargs["wait_for"] = "css:[data-testid='ItemContainer']"
@@ -846,7 +846,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     # Depop's /search/?q= page is also client-side rendered: no __NEXT_DATA__,
     # no JSON-LD, just DOM cards under div[class*='styles_productCardRoot'].
     # Wait for at least one product anchor before returning so we don't see
-    # an empty grid. Verified 2026-05-27 — 24 cards on a typical query.
+    # an empty grid. Verified 2026-05-27, 24 cards on a typical query.
     if search_page and platform == "depop":
         cfg_kwargs["wait_for"] = "css:a[href*='/products/']"
         cfg_kwargs["page_timeout"] = 60_000
@@ -856,7 +856,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
         cfg_kwargs["wait_for"] = 'css:a[data-cy^="catalog__productCard__"]'
         cfg_kwargs["page_timeout"] = 60_000
         cfg_kwargs["delay_before_return_html"] = 2.0
-    # Vinted renders 96 cards synchronously — no wait_for needed, just a timeout
+    # Vinted renders 96 cards synchronously: no wait_for needed, just a timeout
     # generous enough for the CDN-heavy page to settle.
     if search_page and platform == "vinted":
         cfg_kwargs["wait_for"] = "css:a[href*='/items/']"
@@ -872,7 +872,7 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
         cfg_kwargs["wait_for"] = 'css:[data-testid="ProductTile"]'
         cfg_kwargs["page_timeout"] = 60_000
         cfg_kwargs["js_code"] = _LAZY_IMAGE_SCROLL_JS
-    # eBay's SRP is server-rendered — the ~81 cards are in the initial HTML,
+    # eBay's SRP is server-rendered: the ~81 cards are in the initial HTML,
     # so there is nothing to hydrate and no lazy-image scroll needed (the
     # <img src> are real CDN URLs on first paint). Wait only for the first
     # card anchor so an Akamai interstitial fails fast against
@@ -882,12 +882,12 @@ def _build_run_cfg(platform: str, *, extraction_strategy=None, attempt: int = 1,
     # hydrate and DELIBERATELY no `wait_for`.
     #
     # Adding one is actively harmful. A wait_for that is never satisfied is how
-    # a walled page fails, and it fails slowly — 20s (SEARCH_WAIT_FOR_TIMEOUT_MS)
+    # a walled page fails, and it fails slowly, 20s (SEARCH_WAIT_FOR_TIMEOUT_MS)
     # burnt before the Firecrawl fallback even starts. Stacked under
     # scrapeSearchPageViaSidecar's 60s abort + its second attempt, one Akamai
     # interstitial cost ~100s end-to-end (measured 2026-08-25). With no
     # wait_for a blocked page returns in ~2s with an empty grid, which the
-    # empty-grid branch in /scrape-search already routes to Firecrawl — eBay is
+    # empty-grid branch in /scrape-search already routes to Firecrawl, eBay is
     # in FIRECRAWL_FALLBACK_PLATFORMS for exactly this.
     #
     # The trade: if eBay ever moves the SRP to client-side rendering, every
@@ -935,7 +935,7 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
         idx, c = await _pick_crawler()
         if c is None:
             # Race: pool died between endpoint-level check and now.
-            raise RuntimeError("crawler pool unavailable — all members dead")
+            raise RuntimeError("crawler pool unavailable, all members dead")
     _last_render_idx.set(idx)
 
     cfg = _build_run_cfg(platform, extraction_strategy=extraction_strategy, attempt=1, scope_to_target=scope_to_target, search_page=search_page)
@@ -969,7 +969,7 @@ async def _arun_with_retry(url: str, platform: str, *, extraction_strategy=None,
     # this render (driver-death already returned early above, so idx here is
     # a live crawler). Cookie-clearing is scoped to the search-page grid path
     # on the platforms with observed soft-block susceptibility (Depop,
-    # Mercari) — see PITFALLS.md "Depop pooled-context soft-block" — rather
+    # Mercari): see PITFALLS.md "Depop pooled-context soft-block", rather
     # than applied blanket, since other platforms' `_build_run_cfg` branches
     # (e.g. Poshmark's login/locale-wall redirect handling) may depend on
     # cookies set during the render and haven't shown this failure mode.
@@ -1008,7 +1008,7 @@ async def health():
         "provider": llm[0] if llm else None,
         # A4: distinguish "FastAPI up" from "Chromium up". When ALL pool
         # members are dead this flips to False until at least one finishes
-        # restart (~2-5s). Partial pool death keeps this True — pool_alive
+        # restart (~2-5s). Partial pool death keeps this True, pool_alive
         # tells the real story.
         "crawler_alive": not _driver_dead,
         "max_concurrent_renders": SIDECAR_MAX_CONCURRENT_RENDERS,
@@ -1027,7 +1027,7 @@ _EXPAND_PROMPT = (
     "You normalize secondhand-fashion search queries. Given a user query, return "
     "STRICT JSON with exactly two keys.\n"
     '1. "aliasesByToken": an object mapping each BRAND-bearing token in the query '
-    "to a list of alternate surface forms of that SAME brand — include the brand's "
+    "to a list of alternate surface forms of that SAME brand, include the brand's "
     "full name and common abbreviations. Example: \"bape\" -> [\"a bathing ape\", "
     '"bathing ape"]. Only include tokens that are brands; omit generic words like '
     '"shirt" or colors. If there are no brands, use an empty object.\n'
@@ -1086,7 +1086,7 @@ async def expand_query(req: ExpandQueryRequest):
             },
             normalized=ExpandedQueryNormalized(**(data.get("normalized") or {})),
         )
-    except Exception as exc:  # noqa: BLE001 — expansion is best-effort enrichment
+    except Exception as exc:  # noqa: BLE001: expansion is best-effort enrichment
         log.warning("[expand-query] failed for %r: %s", req.query, exc)
 
     with _cache_lock:
@@ -1100,7 +1100,7 @@ async def expand_query(req: ExpandQueryRequest):
 def _driver_dead_response(endpoint: str) -> Optional[JSONResponse]:
     if _driver_dead:
         _trigger_restart_in_background()
-        log.warning("[%s] short-circuit 503 — driver dead, restart in progress", endpoint)
+        log.warning("[%s] short-circuit 503: driver dead, restart in progress", endpoint)
         return JSONResponse(
             status_code=503,
             content={"error": "sidecar restarting", "endpoint": endpoint},
@@ -1121,13 +1121,13 @@ async def scrape(req: ScrapeRequest):
     # ThredUp URLs from the search-page extractor carry ?query_id=&result_id=
     # tracking params that trigger a server-side redirect. Playwright races
     # Page.content() against that redirect and throws "page is navigating".
-    # Strip all query params for ThredUp — the product ID in the path is enough.
+    # Strip all query params for ThredUp, the product ID in the path is enough.
     if req.platform == "thredup":
         parsed = urlparse(req.url)
         req = req.model_copy(update={"url": urlunparse(parsed._replace(query="", fragment=""))})
 
     # A6: response cache check. Keyed by canonical URL (post-ThredUp-strip).
-    # Cache survives induced driver death — if we have a hit, we serve it
+    # Cache survives induced driver death: if we have a hit, we serve it
     # without ever touching the crawler.
     cache_key = req.url
     with _cache_lock:
@@ -1142,12 +1142,12 @@ async def scrape(req: ScrapeRequest):
         # ── Tier 1: structured-data extraction (JSON-LD / testid CSS) ───────
         # Verified empirically: Depop/Grailed/Poshmark emit Schema.org
         # JSON-LD with offers.price; StockX exposes Lowest Ask via
-        # data-testid="trade-box-buy-amount" (None means no Ask available —
+        # data-testid="trade-box-buy-amount" (None means no Ask available,
         # that's a valid result, don't fall back to LLM and risk a guess).
         if req.platform in PLATFORM_EXTRACTORS:
             result = await _arun_with_retry(req.url, req.platform)
             if result.success:
-                # Prefer raw HTML — cleaned_html may strip <script> tags that
+                # Prefer raw HTML: cleaned_html may strip <script> tags that
                 # carry JSON-LD product data.
                 raw_html = getattr(result, "html", None) or getattr(result, "cleaned_html", None) or ""
                 extracted = _try_structured_extract(req.platform, raw_html)
@@ -1159,7 +1159,7 @@ async def scrape(req: ScrapeRequest):
                     with _cache_lock:
                         _scrape_cache[cache_key] = listing
                     return ScrapeResponse(result=listing)
-                log.info("[structured] miss for %s — falling back to LLM", req.url)
+                log.info("[structured] miss for %s, falling back to LLM", req.url)
             else:
                 log.warning("[structured] crawl failed for %s: %s", req.url, result.error_message)
 
@@ -1208,7 +1208,7 @@ async def scrape(req: ScrapeRequest):
                     strategy=strategy,
                     model=provider,
                 )
-        except Exception as _exc:  # noqa: BLE001 — tracking must never break scraping
+        except Exception as _exc:  # noqa: BLE001: tracking must never break scraping
             log.debug("token_tracker log_extraction failed: %s", _exc)
 
         if not result.success or not result.extracted_content:
@@ -1231,7 +1231,7 @@ async def scrape(req: ScrapeRequest):
             _scrape_cache[cache_key] = listing
         return ScrapeResponse(result=listing)
 
-    except Exception as exc:  # noqa: BLE001 — match firecrawl.ts swallow-and-null behaviour
+    except Exception as exc:  # noqa: BLE001: match firecrawl.ts swallow-and-null behaviour
         log.exception("scrape failed for %s: %s", req.url, exc)
         return ScrapeResponse(result=None)
 
@@ -1241,14 +1241,14 @@ async def _firecrawl_search_fallback(platform: str, url: str, limit: int):
     normal grid extractor on the returned HTML.
 
     Returns a list of coerced listings (possibly empty) on success, or None when
-    the fallback is disabled, unconfigured, or errored — callers treat None as
+    the fallback is disabled, unconfigured, or errored, callers treat None as
     "no fallback available" and fall through to []. Costs ~1 Firecrawl credit.
     """
     if not SEARCH_FIRECRAWL_FALLBACK or platform not in FIRECRAWL_FALLBACK_PLATFORMS:
         return None
     api_key = os.environ.get("FIRECRAWL_API_KEY", "").strip()
     if not api_key:
-        log.warning("[firecrawl-fallback] %s blocked but FIRECRAWL_API_KEY unset — skipping", platform)
+        log.warning("[firecrawl-fallback] %s blocked but FIRECRAWL_API_KEY unset, skipping", platform)
         return None
     import httpx  # local import mirrors the inline httpx use elsewhere in this module
     try:
@@ -1278,12 +1278,12 @@ async def _firecrawl_search_fallback(platform: str, url: str, limit: int):
 async def _datacenter_block_probe(url: str) -> bool:
     """Fast check whether the datacenter IP is hard-blocked for `url` right now.
 
-    A plain HTTP GET returns a 403 bot-wall in ~20ms for an IP-blocked platform —
+    A plain HTTP GET returns a 403 bot-wall in ~20ms for an IP-blocked platform,
     so we can route it straight to Firecrawl instead of paying the ~20s browser
     selector-wait. Returns True ONLY on a definite block (403/429); any other
     status or a probe error returns False, so the platform falls through to the
     free native render and automatically reclaims it if the block is ever lifted.
-    Only valid for FIRECRAWL_PROBE_PLATFORMS — platforms whose block also defeats
+    Only valid for FIRECRAWL_PROBE_PLATFORMS: platforms whose block also defeats
     the real-Chromium fingerprint. That set is currently EMPTY: ThredUp, Depop AND
     Mercari all raw-403 but render fine via the real browser most of the time, so
     none must be probed (it would force paid Firecrawl over the free native path).
@@ -1295,7 +1295,7 @@ async def _datacenter_block_probe(url: str) -> bool:
         async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as cx:
             r = await cx.get(url, headers={"User-Agent": _PROBE_UA})
         return r.status_code in (403, 429)
-    except Exception:  # noqa: BLE001 — probe is best-effort; on error assume not blocked
+    except Exception:  # noqa: BLE001: probe is best-effort; on error assume not blocked
         return False
 
 
@@ -1307,7 +1307,7 @@ async def _firecrawl_fallback_response(platform: str, url: str, limit: int, cach
     fb = await _firecrawl_search_fallback(platform, url, limit)
     if fb is None:
         return None
-    if fb:  # only cache non-empty — empty may be a transient block
+    if fb:  # only cache non-empty: empty may be a transient block
         with _cache_lock:
             _search_cache[cache_key] = fb
     return ScrapeSearchResponse(results=fb)
@@ -1318,7 +1318,7 @@ async def scrape_search(req: ScrapeSearchRequest):
     """Render a platform's onsite search page and pull a grid of listings.
 
     Used for platforms (e.g. ThredUp, The RealReal) whose individual listing URLs
-    aren't discoverable via Firecrawl's `site:` search — instead, every listing
+    aren't discoverable via Firecrawl's `site:` search: instead, every listing
     card on the search page carries the data we need (price, image, title, URL).
     """
     dead = _driver_dead_response("scrape-search")
@@ -1332,7 +1332,7 @@ async def scrape_search(req: ScrapeSearchRequest):
         return ScrapeSearchResponse(results=[])
 
     # A6: cache by (platform, normalized query). Same render is re-requested
-    # every time someone types the same search — watchlist refresh and back-
+    # every time someone types the same search, watchlist refresh and back-
     # nav hammer this without it.
     cache_key = f"{req.platform}::{req.query.strip().lower()}"
     with _cache_lock:
@@ -1348,12 +1348,12 @@ async def scrape_search(req: ScrapeSearchRequest):
     # Route TRR through its managed-profile crawler with warmup.
     crawler_override = None
     if req.platform == "realreal":
-        # TRR is DEFERRED — PerimeterX press-and-hold defeats UndetectedAdapter
+        # TRR is DEFERRED: PerimeterX press-and-hold defeats UndetectedAdapter
         # + managed profile in our toolkit. See HANDOFF §7 (G). Set
         # REALREAL_ENABLED=1 in .env to re-attempt (e.g. after upgrading crawl4ai
         # or adding a CAPTCHA-solving provider).
         if not os.environ.get("REALREAL_ENABLED"):
-            log.info("[realreal] search skipped — deferred (set REALREAL_ENABLED=1 to retry)")
+            log.info("[realreal] search skipped, deferred (set REALREAL_ENABLED=1 to retry)")
             return ScrapeSearchResponse(results=[])
         crawler_override = await _ensure_realreal_crawler()
         if crawler_override is None:
@@ -1363,11 +1363,11 @@ async def scrape_search(req: ScrapeSearchRequest):
     # Fast-path: if a hard-blocked platform is blocking the datacenter IP right
     # now, skip the ~20s native render and go straight to Firecrawl. A non-403
     # probe means it's reachable (e.g. unblocked again) so we fall through to
-    # the free native render below. Only hard-blocked platforms are probed —
+    # the free native render below. Only hard-blocked platforms are probed:
     # intermittent ones (Depop) try native first to keep the free path.
     if SEARCH_FIRECRAWL_FALLBACK and req.platform in FIRECRAWL_PROBE_PLATFORMS:
         if await _datacenter_block_probe(target_url):
-            log.info("[scrape-search] %s hard-blocked (probe) — skipping native render, using Firecrawl", req.platform)
+            log.info("[scrape-search] %s hard-blocked (probe), skipping native render, using Firecrawl", req.platform)
             resp = await _firecrawl_fallback_response(req.platform, target_url, req.limit, cache_key)
             return resp if resp is not None else ScrapeSearchResponse(results=[])
 
@@ -1383,7 +1383,7 @@ async def scrape_search(req: ScrapeSearchRequest):
             status = getattr(result, "status_code", None)
             if status in (403, 429):
                 log.warning(
-                    "[scrape-search] %s BLOCKED (HTTP %s) for %s — datacenter-IP anti-bot",
+                    "[scrape-search] %s BLOCKED (HTTP %s) for %s, datacenter-IP anti-bot",
                     req.platform, status, target_url,
                 )
             else:
@@ -1404,21 +1404,21 @@ async def scrape_search(req: ScrapeSearchRequest):
             # from a genuinely empty search. Root-caused live 2026-08-15: the
             # actual trigger that day was Depop rotating its CSS Modules class
             # prefix (see search_page_extractors.py's extract_depop_grid
-            # docstring + PITFALLS.md), which is now fixed at the selector —
+            # docstring + PITFALLS.md), which is now fixed at the selector,
             # but a real platform-side anti-bot soft-block (page loads,
             # `wait_for` is satisfied, but the real grid never hydrates) is
             # the same observable shape and remains possible, so this branch
             # stays as a backstop for either cause.
             # Confirmed live on Depop 2026-08-15: a fresh one-off crawler with
             # the identical config succeeded every time while the long-lived
-            # pool member kept returning an empty grid — see PITFALLS.md
+            # pool member kept returning an empty grid: see PITFALLS.md
             # "Depop pooled-context soft-block". B5 session hygiene (periodic
             # recycle + post-render cookie clear, above) should make this
-            # rare; this is the backstop for whatever slips through — force a
+            # rare; this is the backstop for whatever slips through, force a
             # recycle of the pool member that served it, and get the user
             # real data this request via Firecrawl.
             log.warning(
-                "[scrape-search] %s '%s' rendered successfully but grid was empty — "
+                "[scrape-search] %s '%s' rendered successfully but grid was empty, "
                 "treating as soft-block, retrying via Firecrawl",
                 req.platform, req.query,
             )
@@ -1429,7 +1429,7 @@ async def scrape_search(req: ScrapeSearchRequest):
             if resp is not None and resp.results:
                 return resp
             # No fallback available, or it also came back empty (genuinely no
-            # results) — fall through and return the native (empty) result.
+            # results), fall through and return the native (empty) result.
 
         if req.platform == "realreal" and not listings:
             # First request after press-and-hold timeout may still be the PX
@@ -1444,7 +1444,7 @@ async def scrape_search(req: ScrapeSearchRequest):
                 with open(os.path.join(dump_dir, "realreal-last-empty.html"), "w", encoding="utf-8") as fh:
                     fh.write(raw_html[:200_000])
                 log.warning(
-                    "[realreal] zero listings — dumped HTML to debug_dumps/realreal-last-empty.html "
+                    "[realreal] zero listings, dumped HTML to debug_dumps/realreal-last-empty.html "
                     "(size=%d bytes, success=%s)",
                     len(raw_html),
                     result.success,
@@ -1453,7 +1453,7 @@ async def scrape_search(req: ScrapeSearchRequest):
                 log.exception("[realreal] failed to dump empty HTML")
 
         log.info("[scrape-search] %s '%s' → %d listings", req.platform, req.query, len(listings))
-        # Only cache non-empty results — empty likely means transient failure
+        # Only cache non-empty results: empty likely means transient failure
         # (e.g. PerimeterX, rate-limit) that we want to retry next time.
         if listings:
             with _cache_lock:
@@ -1537,7 +1537,7 @@ async def refresh_price(req: RefreshPriceRequest):
             ) as client:
                 http_resp = await client.get(url)
         if http_resp.status_code == 404:
-            # Page definitively gone — treat as sold/removed ("Gone" in UI).
+            # Page definitively gone, treat as sold/removed ("Gone" in UI).
             log.info("[refresh-price] http 404 (gone) %s %s", req.platform, url)
             return RefreshPriceResponse(price=None, isSold=True, fetched=True, tier="http", isGone=True)
         if http_resp.status_code == 200 and http_resp.text:

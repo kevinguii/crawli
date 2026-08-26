@@ -11,7 +11,7 @@ const BLOG_DIR = path.join(process.cwd(), 'content', 'blog');
 
 /** One FAQ entry, rendered on-page and mirrored into FAQPage JSON-LD. Populate
  * from a post's `faq:` frontmatter (the People Also Ask questions from the
- * content brief). Question + answer must match the visible text exactly —
+ * content brief). Question + answer must match the visible text exactly:
  * Google requires the structured data to mirror what's on the page. */
 export interface BlogFaqItem {
   question: string;
@@ -22,8 +22,8 @@ export interface PostMeta {
   slug: string;
   title: string;
   description: string;
-  date: string; // ISO yyyy-mm-dd — first published
-  updated?: string; // ISO yyyy-mm-dd — last meaningful edit, drives dateModified
+  date: string; // ISO yyyy-mm-dd, first published
+  updated?: string; // ISO yyyy-mm-dd, last meaningful edit, drives dateModified
   cover?: string;
   tags: string[];
   faq: BlogFaqItem[];
@@ -48,7 +48,7 @@ function parse(slug: string): Post | null {
   const raw = fs.readFileSync(file, 'utf8');
   const { data, content } = matter(raw);
   // marked renders bare <table> with no wrapper, so the overflow-x:auto rule on
-  // .blog-content .table-wrapper (globals.css) never applies — a wide table
+  // .blog-content .table-wrapper (globals.css) never applies: a wide table
   // (long headers, many columns) then overflows the whole page horizontally
   // on mobile instead of just scrolling within itself.
   const html = (marked.parse(content, { async: false }) as string).replace(

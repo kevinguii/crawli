@@ -1,12 +1,12 @@
 /**
- * COGS readout — cost-per-search per tier, and a debt-proof check on credit-pack
+ * COGS readout: cost-per-search per tier, and a debt-proof check on credit-pack
  * pricing. Pure model, no API calls, $0 to run.
  *
  *   node scripts/cogs-per-search.mjs
  *
  * Source of truth for the cost inputs is docs/reference/FIRECRAWL_PRICING.md (current model)
  * + docs/core/SYSTEM_DESIGN.md §6. The tier caps mirror lib/stripe.ts TIER_CAPS and the
- * packs mirror lib/creditPacks.ts — both are duplicated here as plain numbers so
+ * packs mirror lib/creditPacks.ts; both are duplicated here as plain numbers so
  * this script stays dependency-free (importing lib/stripe.ts would pull in the
  * Stripe SDK). If you change those files, update the constants below in the same
  * commit.
@@ -54,7 +54,7 @@ const CREDIT_PACKS = [
 // ── Model ───────────────────────────────────────────────────────────────────
 function costPerSearch(plan) {
   const firecrawl = firecrawlCredits * DOLLARS_PER_CREDIT[plan];
-  const openai = OPENAI_PER_SEARCH; // flat — eBay residual only; native depth is $0
+  const openai = OPENAI_PER_SEARCH; // flat, eBay residual only; native depth is $0
   return { firecrawl, openai, total: firecrawl + openai };
 }
 

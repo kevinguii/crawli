@@ -2,24 +2,24 @@
 //
 // Purpose: replace the brittle hand-maintained brand word-lists in lib/parse.ts
 // with an alias-aware layer so brand queries resolve to a platform's own spelling
-// of the brand — e.g. "bape" must match ThredUp's "A Bathing Ape" listings
+// of the brand, e.g. "bape" must match ThredUp's "A Bathing Ape" listings
 // instead of returning honest-zero or generic junk (HANDOFF §7 L).
 //
 // Two layers:
-//   1. A narrow, curated **static** alias map (ALIAS_GROUPS) — synchronous, always
+//   1. A narrow, curated **static** alias map (ALIAS_GROUPS), synchronous, always
 //      available, covers the well-known streetwear cases on the FIRST request.
 //   2. An **LLM** expander (sidecar POST /expand-query, gpt-4o-mini) that enriches
 //      the long tail. Its results are cached aggressively (in-memory + Supabase,
 //      ~30d) so we never pay per call repeatedly. parse.ts only ever reads
 //      synchronously; the LLM path runs fire-and-forget via primeExpansion().
 //
-// parse.ts is synchronous, so expandAliasesSync() never awaits — it reads the
+// parse.ts is synchronous, so expandAliasesSync() never awaits: it reads the
 // static map merged with whatever the LLM has already learned into memory.
 
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const SIDECAR_URL = process.env.CRAWL4AI_URL ?? 'http://localhost:8000';
-const EXPANSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days — brand aliases are stable
+const EXPANSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days, brand aliases are stable
 
 export interface QueryExpansion {
   // token (single word) -> alternate surface forms of the same brand
@@ -36,7 +36,7 @@ export interface QueryExpansion {
 // ── Curated static alias groups ────────────────────────────────────────────
 // Each group lists surface forms that refer to the SAME brand. Keep this narrow
 // and high-precision: only well-known aliases that are very unlikely to collide
-// with unrelated listings. (Deliberately NOT including "off-white" — colorFilter
+// with unrelated listings. (Deliberately NOT including "off-white": colorFilter
 // treats off-white as a color; mixing them would corrupt color matching.)
 const ALIAS_GROUPS: string[][] = [
   ['bape', 'a bathing ape', 'bathing ape'],
@@ -117,7 +117,7 @@ const learnedAliases = new Map<string, Set<string>>();
 // ── Synchronous lookup (consumed by parse.ts) ──────────────────────────────
 // Returns alternate surface forms for a single query token. Includes both
 // single-word aliases (matched against title tokens) and multi-word aliases
-// (matched as substrings) — parse.ts decides how to compare each.
+// (matched as substrings), parse.ts decides how to compare each.
 export function expandAliasesSync(token: string): string[] {
   const t = token.toLowerCase();
   const out = new Set<string>(STATIC_ALIASES.get(t) ?? []);
@@ -162,13 +162,13 @@ const primed = new Set<string>();
 
 // ── LLM expansion ──────────────────────────────────────────────────────────
 // Two call styles, both safe:
-//   • `void primeExpansion(query)`   — fire-and-forget (enrich cache for later).
-//   • `await primeExpansion(query)`  — block until aliases are loaded so the
+//   • `void primeExpansion(query)`   : fire-and-forget (enrich cache for later).
+//   • `await primeExpansion(query)`  : block until aliases are loaded so the
 //     CURRENT request's relevance matching sees them (seam in searchWorker).
 // Order: in-memory primed → Supabase cache → sidecar LLM → write both caches.
 // Never throws; expansion is best-effort enrichment on top of the static map,
 // and the awaited path is bounded (see fetchExpansionFromSidecar timeout) so a
-// cold/slow LLM never stalls a search beyond a few seconds — it just falls back
+// cold/slow LLM never stalls a search beyond a few seconds: it just falls back
 // to the static alias map for that request.
 export function primeExpansion(query: string): Promise<void> {
   const norm = normalizeQuery(query);
@@ -207,7 +207,7 @@ async function fetchExpansionFromSidecar(query: string): Promise<QueryExpansion 
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ query }),
       // Bounded so the awaited (first-request) path never stalls a search for
-      // long — on timeout we fall back to the static alias map and the LLM
+      // long: on timeout we fall back to the static alias map and the LLM
       // result still lands in cache for next time.
       signal: AbortSignal.timeout(5_000),
     });

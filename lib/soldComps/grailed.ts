@@ -1,7 +1,7 @@
 // Grailed sold comps via their Algolia index.
 //
 // Why not the grid scraper: Grailed's /shop page is filtered to active listings and
-// its sold toggle is login-gated — `?sold=true` is read into Next.js query state but
+// its sold toggle is login-gated: `?sold=true` is read into Next.js query state but
 // never switches the index, and clicking the checkbox logged-out fires no request at
 // all (verified 2026-08-10). The sold data lives in a separate Algolia index that
 // answers to the public search key embedded in every shop page's SSR HTML.
@@ -44,7 +44,7 @@ async function refreshSearchKey(): Promise<string | null> {
     const html = await res.text();
     const key = KEY_RE.exec(html)?.[1] ?? null;
     if (key && key !== currentKey()) {
-      console.warn('[soldComps/grailed] public search key rotated — picked up new key');
+      console.warn('[soldComps/grailed] public search key rotated, picked up new key');
     }
     cachedKey = key;
     return key;

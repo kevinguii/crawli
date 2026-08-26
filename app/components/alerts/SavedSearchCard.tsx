@@ -8,7 +8,7 @@ import type { SavedSearch } from './SearchAlertsTab';
 
 /**
  * The AND-only sourcing criteria stored on the alert, as readable chips.
- * Without this the compound conditions were invisible after creation — the card
+ * Without this the compound conditions were invisible after creation: the card
  * showed only the query, so a "size L AND under $150" alert looked identical to
  * a bare keyword one.
  */
@@ -77,7 +77,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
         opacity: alert.paused ? 0.6 : 1,
       }}
     >
-      {/* Status + content group — keeps the icon beside the text on every width */}
+      {/* Status + content group: keeps the icon beside the text on every width */}
       <div className="flex min-w-0 flex-1 items-start gap-4">
       {/* Status indicator / unread badge */}
       <div className="flex-shrink-0 mt-0.5">
@@ -135,7 +135,7 @@ export default function SavedSearchCard({ alert, onDelete, onTogglePause, onEdit
         )}
       </div>
 
-      {/* Content — clickable to open this alert's matched listings */}
+      {/* Content: clickable to open this alert's matched listings */}
       <div
         className={`flex-1 min-w-0 ${!isInitializing ? 'cursor-pointer' : ''}`}
         onClick={!isInitializing ? () => onViewMatches(alert) : undefined}

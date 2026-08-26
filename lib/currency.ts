@@ -1,4 +1,4 @@
-// Approximate exchange rates to USD — used only for display normalization.
+// Approximate exchange rates to USD, used only for display normalization.
 // Users see the original currency when they open the listing.
 const RATES_TO_USD: Record<string, number> = {
   USD: 1,

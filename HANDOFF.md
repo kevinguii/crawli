@@ -47,17 +47,18 @@ Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STAT
 
 **Tier caps (`lib/tierCaps.ts` — single source of truth; repackaged 2026-08-17 into two plans):**
 
-| | Free | Pro ($10/mo · $3/wk · $100/yr) |
+| | Free | Pro ($5/mo · $50/yr) |
 |---|---|---|
 | Searches/week | 5 | 50 — **sold as "Unlimited"** |
 | Results per native platform | **8** | 100 — **sold as "Unlimited"** |
-| Alerts | **1** | 8 |
+| Alerts | **1** | 25 — **sold as "Unlimited"** |
 | Alert cadence | daily or weekly | daily or weekly |
 | Saves | **10** | 500 |
 | Tracked listings | **10** | 500 |
 | Price summary · sold comps · flip margin | **🔒 locked** | ✅ |
 
-- **Pro's two search caps are marketed as "Unlimited" (2026-08-18) while staying finite in `TIER_CAPS`** — 50/week and 100 per native platform are anti-abuse backstops, not product limits, the same deliberate copy/cap divergence already in force for saves and tracked listings. Grounding: busiest user-week ever recorded is 13 searches, p90 is 5.9, **0 of 52 user-weeks have ever exceeded even the old cap of 40**, and break-even on one $10/mo sub is ~495 searches/mo (worst case: all 9 platforms every search on Firecrawl Hobby). At the new cap the worst case is $4.12/mo COGS against $9.41 net, so **56% margin even if someone maxes it**. Two obligations that come with the word: a paid user must never see a "you used all N searches" wall (`/api/search` carries tier-specific 402 copy and logs a `[quota] PAID user hit the abuse backstop` warning), and if anyone ever actually lands on either cap, raise it or drop the word.
+- **Pro's two search-shaped caps are marketed as "Unlimited" while staying finite in `TIER_CAPS`** — 50/week and 100 per native platform are anti-abuse backstops, not product limits, the same deliberate copy/cap divergence already in force for saves and tracked listings. Grounding: busiest user-week ever recorded is 13 searches, p90 is 5.9, **0 of 52 user-weeks have ever exceeded even the old cap of 40**. **Pro repriced $10 → $5/mo ($50/yr, weekly billing dropped) on 2026-08-21** — break-even at $5/mo is ~248 searches/mo (worst case: all 9 platforms every search on Firecrawl Hobby); the 50/wk cap (~217/mo) stays under that, but margin drops to **~10% worst-case after Stripe fees (was ~56% at $10)**. Two obligations that come with the word: a paid user must never see a "you used all N searches" wall (`/api/search` carries tier-specific 402 copy and logs a `[quota] PAID user hit the abuse backstop` warning), and if anyone ever actually lands on either cap, raise it or drop the word.
+- **Alerts joined the "Unlimited" set too (2026-08-18)** — Pro's saved-search cap went 8 → 25. Different cost shape from the two caps above: a saved alert is a *permanent recurring job* (reruns forever via the `/api/cron/run-alerts` crontab), so raising this cap is cheap-per-unit and linear, not free the way the search caps are. Grounding: alert runs never touch Firecrawl (`ALERT_EXCLUDED_PLATFORMS` excludes eBay, the only metered platform), the crontab ticks every 15 min with ~1920/day of headroom against an actual ~13 alerts across 48 users, and the busiest real user ever has 3 alerts. 25 is a backstop for that linear cost, not a felt limit — same rule: if a real user lands on it, raise it or drop the word.
 - **`nativeResultsCap` is free at any value up to 100.** `lib/searchWorker.ts` calls the sidecar with a hardcoded `limit=100` on every tier and the cap is a post-fetch `.slice()`, so a free user's 8-result search costs exactly what a Pro user's 100-result search costs. It also never touches eBay (non-native: hardcoded `slice(0, 10)` listings, and Firecrawl discovery is a hardcoded `searchLimit = 20`). Going past 100 means raising the sidecar limit, which does cost render time. See PITFALLS.
 - **`max` is retired from the pricing page** but stays in `TIER_CAPS` and `tierFromPriceId` so a legacy price ID can never downgrade anyone. **No account resolves to it** — verified by `scripts/verify-paywall.mts`.
 - **Caps moved out of `lib/stripe.ts` into `lib/tierCaps.ts`** (which imports nothing) so client components and the search worker can read them without bundling the Stripe SDK. `lib/stripe.ts` re-exports everything, so existing import sites are unchanged. See PITFALLS.

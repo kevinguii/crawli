@@ -124,7 +124,7 @@ export function ThemeSelector() {
   );
 }
 
-// Legacy default export — kept so any remaining imports don't break at build time.
+// Legacy default export, kept so any remaining imports don't break at build time.
 // It renders nothing; theme is now controlled from Settings.
 export default function ThemeToggle() {
   return null;

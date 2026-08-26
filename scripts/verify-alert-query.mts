@@ -36,7 +36,7 @@ for (const sep of ALERT_QUERY_SEPARATORS) {
 }
 
 console.log('\n=== same rule for every user: no per-tier branching in the check itself ===');
-// The validator has no notion of tier at all — that lives in the UI copy, not here.
+// The validator has no notion of tier at all. That lives in the UI copy, not here.
 check('reports separators found, nothing else', (() => {
   const p = findAlertQueryProblem('bape, supreme / jerseys');
   return p !== null && Object.keys(p).length === 1 && p.separators.length === 2;

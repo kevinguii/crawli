@@ -31,19 +31,19 @@ export async function allSettledWithConcurrency<T>(
   return results;
 }
 
-// DISABLED 2026-06-21 — user decided Depop search speed matters more than
+// DISABLED 2026-06-21: user decided Depop search speed matters more than
 // the color-accuracy gain (see HANDOFF.md). Kept, not deleted: re-enable by
 // uncommenting this function, the `extractColorFromTitle` import above, and
 // the call site below.
 //
-// Depop's native search-grid cards carry no real title text at all — the
+// Depop's native search-grid cards carry no real title text at all, the
 // title we use is synthesized from the URL slug (see
 // `_depop_title_from_slug` in search_page_extractors.py), a much weaker
 // signal than the seller's actual listing title. When a color filter is
 // active and that slug guess resolved no color, fetch the real per-listing
 // page (which has the genuine seller-written title) for a small, bounded
 // number of still-unresolved listings and retry. Gated on filters.color so
-// this never adds latency to a normal search — only fires for the specific
+// this never adds latency to a normal search, only fires for the specific
 // case the slug guess already failed. Capped at 8 to keep added latency
 // predictable; only updates `color`, leaves title/price/image untouched.
 //
@@ -103,7 +103,7 @@ export async function searchAndScrape(
       matchListingColor(l.title, filters?.color, query),
     );
     const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
-    // Depop's per-listing color refetch is disabled — speed preferred over
+    // Depop's per-listing color refetch is disabled, speed preferred over
     // the color-accuracy gain (see refetchDepopColors above, kept not deleted).
     return sortByColorMatch(priceFiltered, filters?.color).slice(0, nativeResultsCap);
   }

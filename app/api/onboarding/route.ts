@@ -3,7 +3,7 @@
 // first_name/last_name/display_name (set once, during the flow), and is the
 // single place onboarding_completed_at can be set.
 //
-// Does NOT consume a search credit. Nothing in the onboarding flow does —
+// Does NOT consume a search credit. Nothing in the onboarding flow does:
 // see the spec's cost model.
 
 import { NextResponse } from 'next/server';

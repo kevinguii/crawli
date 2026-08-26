@@ -15,7 +15,7 @@ import {
 const LISTING_URL_PATTERNS: Record<string, RegExp> = {
   grailed: /grailed\.com\/listings\//,
   depop: /depop\.com\/products\//,
-  // Single slug after stockx.com — excludes /sneakers, /mens/shoes, /news/..., etc.
+  // Single slug after stockx.com, excludes /sneakers, /mens/shoes, /news/..., etc.
   stockx: /^https?:\/\/(?:www\.)?stockx\.com\/[a-z0-9][a-z0-9-]+[a-z0-9](?:\?[^/]*)?$/i,
   vestiaire: /vestiairecollective\.com\/.*\d{5,}/,
   vinted: /vinted\.com\/items\/\d+/,
@@ -49,7 +49,7 @@ const RELEVANCE_STOPWORDS = new Set([
   // condition / generic descriptors
   'new', 'used', 'mens', 'womens', 'men', 'women', 'kids', 'unisex',
   'authentic', 'genuine', 'rare', 'vintage', 'used',
-  // clothing item types — too generic on a fashion resale platform to distinguish
+  // clothing item types, too generic on a fashion resale platform to distinguish
   // one brand/query from another. A query like "bape t shirt" → tokens {"bape"},
   // so generic-only queries ("t shirt", "basketball shorts") → empty tokens → all pass.
   'shirt', 'tshirt', 'tee', 'hoodie', 'hoody', 'sweatshirt', 'crewneck',
@@ -64,9 +64,9 @@ const RELEVANCE_STOPWORDS = new Set([
 
 // Well-known resale/streetwear brand names that double as ordinary English
 // words (so COMMON_WORDS would otherwise treat them as generic, non-required
-// tokens — e.g. "nike", "jordan", and "supreme" all rank in the top ~10k
+// tokens, e.g. "nike", "jordan", and "supreme" all rank in the top ~10k
 // English words). Forced to count as anchor tokens regardless of corpus
-// frequency. Keep this list narrow and brand-only — it exists to patch a
+// frequency. Keep this list narrow and brand-only: it exists to patch a
 // specific blind spot in the frequency heuristic, not to be a general brand
 // database.
 const BRAND_ANCHOR_OVERRIDES = new Set([
@@ -79,8 +79,8 @@ const BRAND_ANCHOR_OVERRIDES = new Set([
   // share that one word (e.g. anchoring only "lauren" would match "LC Lauren
   // Conrad" listings on a "ralph lauren" query, or only "island" would match
   // "Rhode Island" on a "stone island" query). Requiring every half costs
-  // nothing against true positives — a genuine listing for the brand
-  // contains all the words anyway — and closes that collision. 2026-08-22
+  // nothing against true positives (a genuine listing for the brand
+  // contains all the words anyway), and closes that collision. 2026-08-22
   // deep-dive audit across luxury/hypebeast/athletic/heritage-denim/mall/
   // outdoor/watch brands (see PITFALLS "Relevance filtering").
   'ralph', 'lauren', 'north', 'face',
@@ -90,7 +90,7 @@ const BRAND_ANCHOR_OVERRIDES = new Set([
 ]);
 
 // Exported for lib/soldComps, which needs the same anchoring rules but must NOT
-// go through parseScrapedListings (that path drops isSold listings — see below).
+// go through parseScrapedListings (that path drops isSold listings, see below).
 export function relevanceTokens(text: string): Set<string> {
   return new Set(
     text
@@ -106,24 +106,24 @@ export function relevanceTokens(text: string): Set<string> {
 // Returns true if the scraped title is relevant to the query.
 // Rules:
 //   1. If the query has numeric tokens (model numbers like "1", "350"),
-//      the title must contain at least one of them — "jordan 4" must not
+//      the title must contain at least one of them: "jordan 4" must not
 //      slip through a "jordan 1" search.
-//   2. Text tokens are split into "anchors" (specific/identifying terms —
+//   2. Text tokens are split into "anchors" (specific/identifying terms,
 //      not in the common-English-word corpus, e.g. "messi", "carhartt") and
 //      "soft" tokens (ordinary English words left over from the stopword
 //      pass, e.g. "soccer", "running"). If the query has any anchors, the
-//      title must contain ALL of them — this is what stops a "messi jersey"
+//      title must contain ALL of them: this is what stops a "messi jersey"
 //      search from matching a Ronaldo jersey just because both titles say
 //      "soccer jersey". Soft tokens are not required once anchors are
 //      satisfied. If the query has no anchors at all (all-generic query),
 //      fall back to "match at least one" so we don't reject everything.
 // If the query has no substantive tokens at all we pass everything through.
 // Query words shoppers type as one word but resale sellers virtually always
-// split into two in listing titles — same tokenization gap that made "tshirt"
+// split into two in listing titles, same tokenization gap that made "tshirt"
 // an unmatchable anchor before it was stopworded (see PITFALLS.md). Unlike
 // "tshirt"/"shirt", sleeve length is a real narrowing signal (a long sleeve
 // jersey isn't a short sleeve one), so it's normalized to match instead of
-// dropped as a stopword — checked as a substring against the title, same
+// dropped as a stopword, checked as a substring against the title, same
 // mechanism as multi-word brand aliases below.
 const COMPOUND_ANCHOR_FORMS: Record<string, string> = {
   longsleeve: 'long sleeve',
@@ -137,22 +137,22 @@ const COMPOUND_ANCHOR_FORMS: Record<string, string> = {
 // silently assumed every number in a title is a model number. On platforms
 // whose grid titles are synthesized from structured attributes rather than
 // written by the seller, the only number present is the garment size, and the
-// rule then compares a model number against a size — wrong in both directions:
+// rule then compares a model number against a size: wrong in both directions:
 //
-//   false negative — ThredUp writes "Levi's Blue Jeans Size 36 waist" and
+//   false negative: ThredUp writes "Levi's Blue Jeans Size 36 waist" and
 //     never writes "501" at all, so `levis 501 jeans` matched 0 of 100 rows
 //     (measured 2026-08-25) even though ThredUp's own search had just ranked
 //     those rows for exactly that query.
-//   false positive — a title reading "Jordan Retro Size 1" would satisfy a
+//   false positive: a title reading "Jordan Retro Size 1" would satisfy a
 //     "jordan 1" search on the strength of its size tag.
 //
 // So: pull the non-model numbers out, and apply rule 1 only against what's
 // left. When nothing is left, the title carries no model-number evidence
-// either way and rule 1 abstains rather than rejecting — the text anchors
+// either way and rule 1 abstains rather than rejecting: the text anchors
 // below still have to match, which is what keeps a `levis` query from
 // returning the RE/DONE jeans ThredUp mixes into the same grid.
 const NON_MODEL_NUMERIC_PATTERNS: RegExp[] = [
-  // "Size 36", "size: 8.5", and the range form "Size 26 - 27" (both ends —
+  // "Size 36", "size: 8.5", and the range form "Size 26 - 27" (both ends:
   // catching only the first left the second reading as a model number).
   /\bsizes?\b[^a-z0-9]{0,3}(\d+(?:\.\d+)?)(?:\s*[-–—/]\s*(\d+(?:\.\d+)?))?/g,
   /(\d+(?:\.\d+)?)\s*(?:in\b|inch|inches|")/g,   // "35 in x 31 in"
@@ -267,7 +267,7 @@ export function parseScrapedListings(
       size: s.size ?? null,
       // Structured color (JSON-LD) first; fall back to scanning the title
       // when the platform doesn't expose it at all (Depop/Grailed per-listing,
-      // and Mercari/Grailed/Depop's native search-grid path — see colorFilter.ts).
+      // and Mercari/Grailed/Depop's native search-grid path, see colorFilter.ts).
       color: s.color ?? extractColorFromTitle(s.title),
       seller: null,
       url: s.url,

@@ -21,7 +21,7 @@ export default function TailStep({ draft, patch, advance, busy }: StepProps) {
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {isReseller
-          ? 'Completed sales, per marketplace — not just what\'s listed today.'
+          ? 'Completed sales, per marketplace: not just what\'s listed today.'
           : 'Type something you own. We will show you what it has been selling for.'}
       </p>
       <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>

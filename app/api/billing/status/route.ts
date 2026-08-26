@@ -98,9 +98,9 @@ export async function GET() {
     tracked: profile.max_tracked_listings ?? defaults.maxTrackedListings,
     saves: profile.max_saves ?? defaults.maxSaves,
     // Exposed so the alert modal can render the real floor rather than inferring
-    // it from paid-vs-free — if this dial moves, the UI follows automatically.
+    // it from paid-vs-free. If this dial moves, the UI follows automatically.
     minAlertCadenceHours: profile.min_alert_cadence_hours ?? defaults.minAlertCadenceHours,
-    // Native results cap is the single source of truth — always derive from
+    // Native results cap is the single source of truth: always derive from
     // tier so a TIER_CAPS bump auto-applies (no DB backfill needed).
     nativeResults: defaults.nativeResultsCap,
   };
@@ -118,7 +118,7 @@ export async function GET() {
     },
     // Prepaid overage credits drawn down after the included cap is spent.
     credits: profile.search_credits ?? 0,
-    // Legacy flat fields — keep until callers migrate.
+    // Legacy flat fields: keep until callers migrate.
     used: searchesUsed,
     cap: caps.searches,
     periodEnd: profile.subscription_period_end,

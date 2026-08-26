@@ -2,7 +2,7 @@
 //
 // STALE RATIONALE, BEHAVIOUR DELIBERATELY UNCHANGED (2026-08-25): the original
 // reason was that eBay ran on the Firecrawl discover-then-scrape-each-listing
-// path — intermittent Akamai 403s on per-listing pages plus LLM extraction
+// path, intermittent Akamai 403s on per-listing pages plus LLM extraction
 // cost, unsuitable for an unattended cron. eBay now renders its own search
 // grid natively in one request (see NATIVE_PLATFORMS in lib/types.ts), which
 // removes both objections: measured 8/8 success under concurrent load from the
@@ -14,7 +14,7 @@ export const ALERT_EXCLUDED_PLATFORMS = new Set(['ebay']);
 
 // Free-tier cooldown between baseline-changing alert edits (query/platforms/
 // filters/criteria), per alert. Paid tiers are uncapped. A baseline edit
-// re-runs the search in-house (crawl4ai only — every alertable platform is on
+// re-runs the search in-house (crawl4ai only: every alertable platform is on
 // the native path), so the cost is marginal and we rate-limit
 // velocity rather than charging a search credit.
 export const FREE_BASELINE_EDIT_COOLDOWN_HOURS = 4;
@@ -26,12 +26,12 @@ export const FREE_BASELINE_EDIT_COOLDOWN_HOURS = 4;
  * `relevanceTokens` (lib/parse.ts) strips all punctuation before tokenizing, and
  * `titleMatchesQuery` then requires a listing title to contain EVERY remaining
  * anchor. So "bape, supreme, jerseys" silently becomes "find one listing that is
- * a Bape AND a Supreme AND a jersey" — which can never match. Measured on live
+ * a Bape AND a Supreme AND a jersey", which can never match. Measured on live
  * data 2026-08-20, 3 of 12 real alerts were dead for exactly this reason, each
  * having run daily for a week with zero results.
  *
  * An alert watches ONE thing. Rather than guessing at what a list meant, the UI
- * simply rejects these characters and asks for plain words — no per-item
+ * simply rejects these characters and asks for plain words: no per-item
  * splitting, no suggested fix, same message for every user.
  *
  * Apostrophes and hyphens are deliberately NOT here: "Levi's" and "wind-breaker"

@@ -18,7 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 const PENDING_SEARCH_KEY = 'crawli_pending_search';
-// Prefill only (no auto-run) — used by profile dashboard recent searches
+// Prefill only (no auto-run), used by profile dashboard recent searches
 const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
@@ -101,7 +101,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const formRef = useRef<HTMLFormElement>(null);
   const { addSearch } = useSearchHistory();
 
-  // Last-search nudge — only meaningful on the free tier, where the cap (3)
+  // Last-search nudge: only meaningful on the free tier, where the cap (3)
   // is too small for a ratio-based warning to ever fire before exhaustion.
   useEffect(() => {
     fetch('/api/billing/status')
@@ -185,10 +185,10 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           msg = quotaMessage ?? data?.error ?? msg;
         } catch {}
 
-        // 402 quota_exceeded — show a richer toast with an Upgrade CTA
+        // 402 quota_exceeded: show a richer toast with an Upgrade CTA
         // instead of routing through the generic onError red banner.
         if (res.status === 402 && errorCode === 'quota_exceeded') {
-          // Paid tiers are sold as "Unlimited searches" — the cap they just hit is
+          // Paid tiers are sold as "Unlimited searches": the cap they just hit is
           // an anti-abuse backstop, so do NOT offer them credits or an upgrade
           // (Pro is the top plan). Send them to support instead. Free users get
           // the original buy-credits path.
@@ -288,7 +288,7 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
 
   const filterHints = detectFilterHints(query);
   // Free tier with no included searches left can still search if they hold
-  // prepaid overage credits — only hard-block when both are zero.
+  // prepaid overage credits, only hard-block when both are zero.
   const isExhausted = quota?.tier === 'free' && quota.remaining === 0 && quota.credits === 0;
   const onCredits = quota?.tier === 'free' && quota.remaining === 0 && quota.credits > 0;
 

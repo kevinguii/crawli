@@ -5,8 +5,8 @@
  * /api/sold-comps -> toLockedResult) already strips every real price field
  * before it leaves the server, so these values exist purely to make a blurred
  * backdrop look like a real pricing panel instead of an obviously-empty block.
- * A CSS blur is a presentation choice, not a security boundary — it is always
- * removable via devtools — so the content it sits on top of must never be real
+ * A CSS blur is a presentation choice, not a security boundary. It is always
+ * removable via devtools, so the content it sits on top of must never be real
  * in the first place. See LockedOverlay.
  *
  * Deterministic per seed so a panel doesn't visually reshuffle on every
@@ -40,10 +40,10 @@ import type { LockedPlatformSoldStats, PlatformSoldStats } from './soldComps/typ
  * Fill in a real-but-price-stripped sold-comps row with fabricated numbers, so it
  * can be fed straight into the ordinary SoldCompsPanel as a blurred backdrop.
  *
- * `platform`, `n`, and `windowDays` pass through unchanged — sample size was
+ * `platform`, `n`, and `windowDays` pass through unchanged: sample size was
  * always safe to reveal (it proves the data exists without being the data), so
  * there's no reason to fake those specifically. Only the figures that are
- * actually the product — price, spread, days to sell — are fabricated.
+ * actually the product (price, spread, days to sell) are fabricated.
  */
 export function fakeSoldStats(locked: LockedPlatformSoldStats, seedPrefix: string): PlatformSoldStats {
   const median = fakePriceNumber(`${seedPrefix}-${locked.platform}-median`, 40, 420);

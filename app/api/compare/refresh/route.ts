@@ -16,21 +16,21 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 const DISPLAY_LIMIT = 6;   // listings stored per platform for page display
-const SCRAPE_LIMIT  = 10;  // listings requested from sidecar per platform (kept low — single browser pool)
+const SCRAPE_LIMIT  = 10;  // listings requested from sidecar per platform (kept low: single browser pool)
 const CONCURRENCY   = 4;   // platforms scraped in parallel per slug
 
 // A "brand + model" search query (e.g. "cartier tank watch") legitimately
-// surfaces listings that share those tokens but aren't the item itself — real
-// wallets, dust bags, charms — and, for luxury specifically, listings that
+// surfaces listings that share those tokens but aren't the item itself (real
+// wallets, dust bags, charms) and, for luxury specifically, listings that
 // openly signal they're not the genuine article ("dupe", "inspired", "style").
 // Left unfiltered, the page's headline "lowest price" becomes something like a
 // $39 "Rolex Datejust" that's actually a framed print ad, which is worse than
 // no data: it's a wrong answer on the exact question ("is this a counterfeit")
-// these pages exist to help answer. Scoped to this refresh path only — does
+// these pages exist to help answer. Scoped to this refresh path only. Does
 // not touch lib/parse.ts or live search, which has no equivalent problem
 // because a searcher sees full listing titles and photos, not a single
 // aggregated "floor" number.
-// Applies to every luxury category regardless of item type — an openly
+// Applies to every luxury category regardless of item type: an openly
 // not-authentic listing is never a valid comp. "shufirst" is a manufacturer
 // name specific to the replica market, not a brand; "like hermes" etc. catch
 // the "[bag] like [brand]" phrasing replica sellers use to surface in brand
@@ -44,7 +44,7 @@ const REPLICA_SIGNALS = [
   'like ysl', 'like saint laurent', 'like louis vuitton', 'like lv',
 ];
 
-// Also applies everywhere — a dust bag or a framed print ad is never the
+// Also applies everywhere: a dust bag or a framed print ad is never the
 // item, whatever category the item is. Kept separate from REPLICA_SIGNALS
 // because these are genuine products, just not the one being priced.
 const NON_ITEM_SIGNALS = ['dust bag', 'dustbag', 'print ad'];
@@ -65,7 +65,7 @@ const CATEGORY_EXCLUDE_TERMS: Record<string, string[]> = {
 
 /** Drops listings that share the query's brand/model tokens but are a
  * different item, an accessory, or an openly-not-authentic replica. Only
- * applied to `category`s registered above (the luxury set) — streetwear
+ * applied to `category`s registered above (the luxury set). Streetwear
  * items keep their existing behavior unchanged. */
 function filterAuthentic(listings: Listing[], category: string | null): Listing[] {
   const categoryTerms = category ? (CATEGORY_EXCLUDE_TERMS[category] ?? []) : [];
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
   }
 
   // Ping IndexNow with the just-refreshed compare pages so Bing recrawls the
-  // updated prices promptly. Best-effort — submitToIndexNow never throws.
+  // updated prices promptly. Best-effort: submitToIndexNow never throws.
   await submitToIndexNow(results.map((r) => `${SITE_URL}/compare/${r.slug}`));
 
   const totalErrors = results.flatMap((r) => r.errors);

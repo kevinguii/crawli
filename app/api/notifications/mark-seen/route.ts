@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Marks all of the caller's notifications as seen — clears the nav bell badge.
+// Marks all of the caller's notifications as seen: clears the nav bell badge.
 // Fired when the user opens the alerts page (i.e. has "seen" the bell).
 export async function POST() {
   const supabase = await createClient();

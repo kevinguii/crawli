@@ -17,7 +17,7 @@ python -m playwright install chromium
 crawl4ai-setup
 
 cp .env.example .env
-# edit .env when you have an LLM key — leave LLM_PROVIDER blank to start in stub mode
+# edit .env when you have an LLM key, leave LLM_PROVIDER blank to start in stub mode
 ```
 
 ## Run
@@ -62,7 +62,7 @@ Response (LLM mode):
 }
 ```
 
-Response (stub mode — no API key configured):
+Response (stub mode, no API key configured):
 ```json
 {
   "result": {
@@ -78,7 +78,7 @@ Response (stub mode — no API key configured):
 ```
 
 On any failure (crawl error, LLM error, parsing error), the response is
-`{ "result": null }` — matching the original `catch → return null` behaviour
+`{ "result": null }`, matching the original `catch → return null` behaviour
 in `lib/firecrawl.ts`.
 
 ## Switching LLM providers

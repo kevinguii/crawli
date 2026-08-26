@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/lib/shareCard';
 import { PLATFORM_NAMES } from '@/lib/types';
 
-// Node runtime (default) — the app is self-hosted on Node (Hetzner), not edge,
+// Node runtime (default): the app is self-hosted on Node (Hetzner), not edge,
 // same as app/opengraph-image.tsx.
 
 const MAX_TITLE_LENGTH = 80;
@@ -36,7 +36,7 @@ function formatPrice(rawPrice: string, currency: string): string {
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
-    // Unrecognized currency code — fall back rather than fail the whole card.
+    // Unrecognized currency code: fall back rather than fail the whole card.
     return `${amount.toFixed(0)} ${currency}`.trim();
   }
 }

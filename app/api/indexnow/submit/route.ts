@@ -5,7 +5,7 @@ import { submitToIndexNow } from '@/lib/indexnow';
 export const dynamic = 'force-dynamic';
 
 // Public, indexable URLs, derived from app/sitemap.ts rather than rebuilt here.
-// This list used to be maintained by hand and silently drifted — it omitted the
+// This list used to be maintained by hand and silently drifted. It omitted the
 // /compare hub, which Bing Webmaster Tools then flagged as "important page not
 // submitted via IndexNow". Reading the sitemap is the single source of truth,
 // so a new public route can never be in one list but not the other.

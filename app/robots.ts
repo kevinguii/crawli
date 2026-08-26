@@ -16,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
           "/login",
           "/forgot-password",
           "/check-email",
-          // Auth-gated app surface — never index logged-in views.
+          // Auth-gated app surface: never index logged-in views.
           "/search",
           "/watchlist",
           "/saves",
@@ -31,7 +31,7 @@ export default function robots(): MetadataRoute.Robots {
           "/*?*view=",
           // NOTE: the old blanket "/*?*q=" rule is gone. It existed to keep raw
           // search queries out, but /search is already fully disallowed above,
-          // so it was redundant there — and it blocked /compare/search?q=, the
+          // so it was redundant there, and it blocked /compare/search?q=, the
           // public search target declared as SearchAction in StructuredData.tsx.
           // That page is crawlable on purpose but carries robots: noindex,follow,
           // so agents can verify the search works without ?q= permutations

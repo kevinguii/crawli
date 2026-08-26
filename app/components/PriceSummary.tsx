@@ -8,6 +8,7 @@ import { useSoldComps } from '@/lib/hooks/useSoldComps';
 import { useTier } from '@/lib/hooks/useTier';
 import { canSeePriceIntelligence } from '@/lib/tierCaps';
 import { fakePriceString, fakeSoldStats } from '@/lib/fakePricing';
+import InfoTooltip from './InfoTooltip';
 import SoldCompsPanel from './SoldCompsPanel';
 import SoldSalesList from './SoldSalesList';
 import LockedOverlay from './LockedOverlay';
@@ -20,15 +21,20 @@ const fmt = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 });
 
-/** Sale rows shown alongside search results. The full list lives on /price-check —
- *  this panel sits above a grid of listings and is not the place for 50 rows. */
+/** Sale rows shown alongside search results. The full list lives on /price-check.
+ *  This panel sits above a grid of listings and is not the place for 50 rows. */
 const SEARCH_PAGE_SALE_ROWS = 5;
 
-/** Shown identically to free and Pro users on a query with no completed sales —
- *  there's nothing there to hold back from either tier, so both get the same
+/** Shown identically to free and Pro users on a query with no completed sales.
+ *  There's nothing there to hold back from either tier, so both get the same
  *  words rather than one implying the other has an answer it doesn't. */
 const SOLD_NO_DATA_TEXT =
   'Not enough completed sales for this one yet. This works best on items with a steady resale market.';
+
+/** Clarifies that Low/Average/High come from what sellers are asking right now, not
+ *  what the item has actually sold for: that's the "Recently sold" panel below. */
+const AVERAGE_TOOLTIP =
+  "Average asking price across the active listings above, not what buyers actually paid. See \"Recently sold\" below for completed-sale prices.";
 
 interface Props {
   priceRange: { min: number; max: number } | null;
@@ -60,7 +66,7 @@ export default function PriceSummary({
   const { tier } = useTier();
   const [seed, setSeed] = useState<ResaleSeed | null>(null);
 
-  // Fail closed while the tier is still resolving — but fail closed to a neutral
+  // Fail closed while the tier is still resolving, but fail closed to a neutral
   // skeleton, NOT to the paywall. Rendering the locked view during the
   // /api/billing/status round trip flashed "Upgrade to Pro" at paying users on
   // every single search (this component remounts each time, since SearchSection
@@ -73,16 +79,16 @@ export default function PriceSummary({
   const soldPlatforms: PlatformSoldStats[] =
     sold && !soldLocked && sold.available ? sold.platforms : [];
   // Individual sales carry no sample floor, so this can be populated when
-  // soldPlatforms is empty — a query with 3 sales gets rows and no median.
+  // soldPlatforms is empty: a query with 3 sales gets rows and no median.
   const soldSales: PlatformSales[] =
     sold && !soldLocked && sold.available ? (sold.sales ?? []) : [];
 
-  // Fabricated backdrop for the locked view — see lib/fakePricing.ts. Sample size
+  // Fabricated backdrop for the locked view (see lib/fakePricing.ts). Sample size
   // and window pass through real (never secret, and already folds in thin
-  // platforms with a sale or two — see toLockedResult); every price figure is
+  // platforms with a sale or two, see toLockedResult); every price figure is
   // invented. Empty when the query has no real completed sales at all: owner
   // decision 2026-08-18 is that the paywall only appears where something real is
-  // actually being withheld, not as a blanket screen over nothing — see the
+  // actually being withheld, not as a blanket screen over nothing. See the
   // shared "not enough completed sales" note below, which reads the same for
   // free and Pro alike on a query with no data.
   const fakeSoldRows: PlatformSoldStats[] = useMemo(() => {
@@ -90,7 +96,7 @@ export default function PriceSummary({
     return sold.platforms.map((p) => fakeSoldStats(p, query ?? 'x'));
   }, [sold, query]);
 
-  // Seed once from platforms[0] (Grailed when it qualified — see lib/soldComps).
+  // Seed once from platforms[0] (Grailed when it qualified, see lib/soldComps).
   // Keyed on the platform name so a new search reseeds but a re-render does not
   // clobber a value the user picked or typed.
   const primary = soldPlatforms[0] ?? null;
@@ -120,7 +126,7 @@ export default function PriceSummary({
   // it, the rows need nothing, so a thin query renders rows with no median rather
   // than the whole region collapsing.
   const hasSales = soldSales.some((g) => g.sales.length > 0);
-  // True on the locked payload too — `available` survives stripping, so the free
+  // True on the locked payload too, because `available` survives stripping, so the free
   // view can tell "we have sales for this, they're behind the lock" apart from
   // "this item has no completed sales at all".
   const soldHasData = sold?.available === true;
@@ -173,16 +179,16 @@ export default function PriceSummary({
   }
 
   if (!unlocked) {
-    // Price range and average always exist here — priceRange/totalCount are
-    // already guarded above — so that portion of the panel paywalls
+    // Price range and average always exist here (priceRange/totalCount are
+    // already guarded above), so that portion of the panel paywalls
     // unconditionally, same as always. Sold comps does not: it only renders,
     // blurred, when this specific query actually has completed sales to
     // withhold (owner decision 2026-08-18). A query with none gets the exact
     // same "not enough completed sales" note a Pro user sees, sitting OUTSIDE
-    // the blur below — there's nothing real there to sell as premium, so
+    // the blur below. There's nothing real there to sell as premium, so
     // pretending otherwise with a fabricated panel is what we're not doing.
     //
-    // One overlay, one upgrade prompt, covering the price-range panel — a grid
+    // One overlay, one upgrade prompt, covering the price-range panel. A grid
     // of real numbers under a CSS blur would be trivially unblurred via
     // devtools, so the backdrop underneath is entirely fabricated (see
     // lib/fakePricing.ts). The real priceRange/averagePrice this component
@@ -197,7 +203,7 @@ export default function PriceSummary({
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <Metric label="Low" value={fakePriceString(`${query ?? ''}-${totalCount}-low`, 20, 180)} accent />
-              <Metric label="Average" value={fakePriceString(`${query ?? ''}-${totalCount}-avg`, 60, 260)} source={countLabel} />
+              <Metric label="Average" tooltip={AVERAGE_TOOLTIP} value={fakePriceString(`${query ?? ''}-${totalCount}-avg`, 60, 260)} source={countLabel} />
               <Metric label="High" value={fakePriceString(`${query ?? ''}-${totalCount}-high`, 180, 480)} />
             </div>
             {soldHasData && (
@@ -232,6 +238,7 @@ export default function PriceSummary({
         <Metric label="Low" value={fmt.format(priceRange.min)} source={lowSource} accent />
         <Metric
           label="Average"
+          tooltip={AVERAGE_TOOLTIP}
           value={averagePrice !== null ? fmt.format(averagePrice) : '-'}
           source={countLabel}
         />
@@ -257,11 +264,13 @@ function Metric({
   value,
   source,
   accent,
+  tooltip,
 }: {
   label: string;
   value: string;
   source?: string | null;
   accent?: boolean;
+  tooltip?: string;
 }) {
   return (
     <div
@@ -271,8 +280,9 @@ function Metric({
         border: `1px solid ${accent ? 'var(--accent)' : 'var(--border)'}`,
       }}
     >
-      <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+      <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
         {label}
+        {tooltip && <InfoTooltip content={tooltip} label={`About ${label.toLowerCase()}`} />}
       </p>
       <p className="mt-1 text-2xl font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
         {value}
@@ -301,7 +311,7 @@ function SoldCompsNote({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Shown only while the tier is unknown. Deliberately holds no number at all — it
+/** Shown only while the tier is unknown. Deliberately holds no number at all: it
  *  stands in for both the paid and the locked view without committing to either. */
 function PriceSummarySkeleton() {
   return (

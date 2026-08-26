@@ -79,7 +79,7 @@ function formatBuyerLine(fee: PlatformFee): string {
   const parts: string[] = [];
   if (fee.buyerFeePct > 0) parts.push(pct(fee.buyerFeePct));
   if (fee.buyerFeeFlat > 0) parts.push(`$${fee.buyerFeeFlat.toFixed(2)}`);
-  return parts.length ? parts.join(' + ') : '—';
+  return parts.length ? parts.join(' + ') : '-';
 }
 
 // ── Delete confirmation modal ──────────────────────────────────────────────
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                         {isPaid ? 'Manage' : 'Upgrade'}
                       </Link>
                     </Row>
-                    {/* Free plan only — selling search credits to someone whose plan
+                    {/* Free plan only: selling search credits to someone whose plan
                         says "Unlimited searches" contradicts what they bought. */}
                     {!isPaid && (
                       <Row
@@ -609,7 +609,7 @@ export default function SettingsPage() {
         <Section
           id="platform-fees"
           title="Platform fees"
-          description="What each marketplace takes from a sale — the same fee data behind the flip margin calculator."
+          description="What each marketplace takes from a sale: the same fee data behind the flip margin calculator."
         >
           <div className="overflow-x-auto pt-1">
             <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
@@ -654,7 +654,7 @@ export default function SettingsPage() {
           </div>
           <p className="mt-3 text-[11px]" style={{ color: 'var(--text-dim)' }}>
             Rates verified {FEES_LAST_VERIFIED}. US market, standard (non-Store / Level-1 / non-boosted) seller
-            status — see the Notes column for tiers and exceptions.
+            status. See the Notes column for tiers and exceptions.
           </p>
         </Section>
 

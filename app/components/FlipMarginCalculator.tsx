@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { FEE_PLATFORMS, MARKETPLACE_FEES, netFlipProfit } from '@/lib/marketplaceFees';
 import { PLATFORM_NAMES, type PlatformKey } from '@/lib/types';
+import InfoTooltip from './InfoTooltip';
 
 const fmt2 = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -19,7 +20,7 @@ export interface FlipMarginQuickSet {
 export interface FlipMarginCalculatorProps {
   /** Resale price to seed the field with. Re-applied whenever `resaleSeedKey` changes,
    *  so a caller bumps the key (or swaps it) whenever the seed itself should win over
-   *  whatever the user has typed — e.g. picking a different comp. */
+   *  whatever the user has typed, e.g. picking a different comp. */
   resaleSeed: number;
   resaleSeedKey?: string | number;
   /** Sell-on platform to default to and re-apply alongside the resale seed. Omit to
@@ -27,7 +28,7 @@ export interface FlipMarginCalculatorProps {
   initialPlatform?: PlatformKey;
   /** Quick-set chips next to the Resale field. Empty hides the chip row. */
   quickSets?: FlipMarginQuickSet[];
-  /** Label on the sourcing-price field — callers phrase this differently ("What would
+  /** Label on the sourcing-price field: callers phrase this differently ("What would
    *  you pay for it?" vs "What did you pay for it?"). */
   sourcingLabel?: string;
   title?: string;
@@ -36,7 +37,7 @@ export interface FlipMarginCalculatorProps {
 
 /**
  * Sourcing price, destination platform, and resale price in, net profit/margin/ROI
- * and a fee breakdown out. All fee math comes from lib/marketplaceFees.ts — never
+ * and a fee breakdown out. All fee math comes from lib/marketplaceFees.ts, never
  * hardcoded here. Shared by the search-results panel and the standalone Price Check
  * page so there is exactly one comprehensive flip calculator in the app.
  */
@@ -56,10 +57,10 @@ export default function FlipMarginCalculator({
 
   // resaleSeedKey changing means the caller wants both fields re-synced to a new
   // comp (a different sold-comps platform picked, a different chip tapped). Platform
-  // only re-applies when the caller passes one at all — PriceSummary never does, so
+  // only re-applies when the caller passes one at all. PriceSummary never does, so
   // its "Sell on" stays purely user-driven regardless of which comp seeded the price.
   // Render-phase adjustment rather than an effect (see ResultsDisplay.tsx's viewKey
-  // pattern) — setState inside an effect body here would cascade an extra render.
+  // pattern), since setState inside an effect body here would cascade an extra render.
   const [appliedSeedKey, setAppliedSeedKey] = useState(resaleSeedKey);
   if (appliedSeedKey !== resaleSeedKey) {
     setAppliedSeedKey(resaleSeedKey);
@@ -147,8 +148,16 @@ export default function FlipMarginCalculator({
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <Stat label="Net profit" value={fmt2.format(result.netProfit)} color={profitColor} big />
-                <Stat label="Margin" value={`${result.marginPct.toFixed(0)}%`} />
-                <Stat label="ROI" value={`${result.roiPct.toFixed(0)}%`} />
+                <Stat
+                  label="Margin"
+                  value={`${result.marginPct.toFixed(0)}%`}
+                  tooltip="Net profit as a share of the resale price: how much of what the buyer pays is profit."
+                />
+                <Stat
+                  label="ROI"
+                  value={`${result.roiPct.toFixed(0)}%`}
+                  tooltip="Net profit as a share of what you paid for it: how much you made relative to your cost."
+                />
               </div>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 {fmt2.format(resaleNum)} sale − {fmt2.format(result.fees)} {fee.label} seller fees ={' '}
@@ -249,16 +258,19 @@ function Stat({
   value,
   color,
   big,
+  tooltip,
 }: {
   label: string;
   value: string;
   color?: string;
   big?: boolean;
+  tooltip?: string;
 }) {
   return (
     <div className="rounded-xl p-3" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
-      <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
+      <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-dim)' }}>
         {label}
+        {tooltip && <InfoTooltip content={tooltip} label={`About ${label.toLowerCase()}`} />}
       </p>
       <p
         className={`mt-1 font-semibold tracking-tight ${big ? 'text-xl' : 'text-lg'}`}

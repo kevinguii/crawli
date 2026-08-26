@@ -1,11 +1,11 @@
-"""Cross-platform SOLD-status audit for JSON-LD extractors — no main.py changes.
+"""Cross-platform SOLD-status audit for JSON-LD extractors, no main.py changes.
 
 For a given platform it harvests listing URLs (sold-biased where possible),
 renders each, and reports the JSON-LD signals that decide isSold:
   - Product node present?
   - offers.availability raw value
   - offers.price present? (the price-gate in _extract_from_jsonld drops the WHOLE
-    result to None when price is missing — which would also drop a sold signal)
+    result to None when price is missing, which would also drop a sold signal)
   - what the ACTUAL platform extractor returns (isSold / price / None)
 
 Harvest modes:
@@ -66,7 +66,7 @@ async def safe_arun(crawler, url):
     try:
         return await asyncio.wait_for(crawler.arun(url=url, config=CrawlerRunConfig(**RUN_CFG)), RENDER_HARD_TIMEOUT)
     except asyncio.TimeoutError:
-        print(f"  !! render exceeded {RENDER_HARD_TIMEOUT:.0f}s — skipping", flush=True)
+        print(f"  !! render exceeded {RENDER_HARD_TIMEOUT:.0f}s, skipping", flush=True)
         return None
 
 
@@ -143,7 +143,7 @@ async def main():
     async with AsyncWebCrawler(config=make_browser()) as crawler:
         urls = await harvest(crawler, args.platform, args.query, args.search_url, args.selector, args.n)
         if not urls:
-            print("\nNo URLs harvested — stop."); return
+            print("\nNo URLs harvested, stop."); return
         for i, u in enumerate(urls, 1):
             try:
                 await audit(crawler, args.platform, u, i)

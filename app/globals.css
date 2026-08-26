@@ -250,7 +250,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Credit pack / overage buttons — pricing page + settings */
+/* Credit pack / overage buttons: pricing page + settings */
 .btn-credit-pack {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -270,7 +270,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Filled grey variant — nav "Go to app" button */
+/* Filled grey variant: nav "Go to app" button */
 .btn-filled-grey {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.12);

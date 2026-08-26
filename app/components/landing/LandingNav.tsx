@@ -8,7 +8,7 @@ import CtaLink from './CtaLink';
 
 export default function LandingNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
-  // LandingNav renders on "/" and on blog pages — read the real current
+  // LandingNav renders on "/" and on blog pages, read the real current
   // path so the pricing page's close button returns to whichever one.
   const pathname = usePathname();
 

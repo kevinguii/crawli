@@ -40,7 +40,7 @@ const ranked = parsed.filter(function(r) { return r.position < 5; });
 const gaps = parsed.filter(function(r) { return r.position >= 5 && r.position <= 20; });
 const weakRanking = parsed.filter(function(r) { return r.position > 20; });
 
-let gscBlock = 'GSC DATA — https://thecrawli.com/ — last 28 days (' + startDate + ' to ' + endDate + ')\n';
+let gscBlock = 'GSC DATA: https://thecrawli.com/, last 28 days (' + startDate + ' to ' + endDate + ')\n';
 gscBlock += 'Unique queries: ' + parsed.length + ' | Clicks: ' + totalClicks + ' | Impressions: ' + totalImpressions + '\n\n';
 
 if (ranked.length > 0) {
@@ -49,7 +49,7 @@ if (ranked.length > 0) {
   gscBlock += '\n';
 }
 if (gaps.length > 0) {
-  gscBlock += 'Keyword gaps — low-hanging fruit (pos 5-20, sorted by impressions):\n';
+  gscBlock += 'Keyword gaps: low-hanging fruit (pos 5-20, sorted by impressions):\n';
   gaps.forEach(function(r) { gscBlock += '  "' + r.query + '" pos ' + r.position + ', ' + r.impressions + ' imp, ' + r.clicks + ' clicks\n'; });
   gscBlock += '\n';
 }
@@ -59,7 +59,7 @@ if (weakRanking.length > 0 && weakRanking.length <= 10) {
   gscBlock += '\n';
 }
 if (parsed.length < 5) {
-  gscBlock += 'NOTE: Site has very little GSC data — generate keyword map based on niche knowledge.\n';
+  gscBlock += 'NOTE: Site has very little GSC data: generate keyword map based on niche knowledge.\n';
 }
 
 // ---- Per-page performance (the 'page' dimension was already being fetched and
@@ -119,7 +119,7 @@ const noClicks = matched.filter(function(m) { return m.clicks === 0 && m.impress
 
 let pagePerfBlock;
 if (matched.length > 0) {
-  pagePerfBlock = 'PUBLISHED POST PERFORMANCE — last 28 days, matched to published posts:\n';
+  pagePerfBlock = 'PUBLISHED POST PERFORMANCE: last 28 days, matched to published posts:\n';
   if (performing.length > 0) {
     pagePerfBlock += 'Performing (clicks > 0, candidates for a related follow-up post):\n';
     performing.forEach(function(m) { pagePerfBlock += '  "' + m.title + '" [' + m.topic_key + '] - ' + m.clicks + ' clicks, ' + m.impressions + ' imp, avg pos ' + m.bestPosition + '\n'; });
@@ -148,7 +148,7 @@ This map will be used two ways: (1) emailed to the site owner as a reference for
 Generate the following:
 - 10-12 keyword opportunities total. Use the GSC data if there are real gaps; fill in with niche knowledge when data is sparse. Focus on queries people actually search for when buying or selling secondhand fashion.
 - 4-5 topic clusters that group related keywords.
-- Top 3 priorities for this week — the highest-opportunity targets given current site state.
+- Top 3 priorities for this week: the highest-opportunity targets given current site state.
 - A short context note for the daily content generator (what to lean toward this week, any trend worth riding). Factor in PUBLISHED POST PERFORMANCE above: do not recommend a fresh angle on a topic_key that already published and got impressions with zero clicks, unless the angle explicitly changes the hook. Topics with real clicks are good candidates for a related follow-up post.
 
 For each keyword:
@@ -156,13 +156,13 @@ For each keyword:
 - GSC position if it appears in the data above, otherwise "not ranking"
 - Search intent: informational / commercial / navigational
 - Audience: resellers / fashionistas / vintage community / all
-- One-sentence angle — the specific or counterintuitive take that would beat what's currently ranking
+- One-sentence angle: the specific or counterintuitive take that would beat what's currently ranking
 - Format fit: blog / social / both
 - Priority: high / medium / low
 
-Tone rules — same rules apply to every word you output:
+Tone rules (same rules apply to every word you output):
 - No exclamation marks
-- No em dashes (the — character). Use a comma or restructure.
+- No em dashes. Use a comma or restructure.
 - No marketing language (not "game-changing", not "ultimate", not "comprehensive guide")
 - No preambles (not "In today's world...", not "Whether you're...")
 - Angles must be specific and opinionated, not generic
@@ -182,7 +182,7 @@ Return only a JSON object, no markdown, no explanation:
       "gscPosition": "pos X.X or not ranking",
       "intent": "informational|commercial|navigational",
       "audience": "resellers|fashionistas|vintage community|all",
-      "angle": "one sentence — specific and opinionated",
+      "angle": "one sentence, specific and opinionated",
       "formatFit": "blog|social|both",
       "priority": "high|medium|low"
     }
@@ -201,7 +201,7 @@ Return only a JSON object, no markdown, no explanation:
       "angle": "the specific take to use"
     }
   ],
-  "contextNote": "2-3 sentences for the daily content generator — what to lean toward this week, any trends to ride, what the site needs most right now"
+  "contextNote": "2-3 sentences for the daily content generator: what to lean toward this week, any trends to ride, what the site needs most right now"
 }
 '''
 

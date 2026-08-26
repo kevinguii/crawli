@@ -1,6 +1,6 @@
 /**
  * Diagnostic: shows URL counts at each pipeline stage (search → URL filter).
- * No scraping — costs only 3 search API calls.
+ * No scraping, costs only 3 search API calls.
  * Run: node scripts/diagnose-counts.mjs
  */
 import { FirecrawlClient } from '@mendable/firecrawl-js';

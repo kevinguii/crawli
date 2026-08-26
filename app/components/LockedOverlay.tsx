@@ -8,7 +8,7 @@ import { track, type PaywallSurface } from '@/lib/analytics';
  * Blurs `children` and lays a crisp upgrade prompt on top of it.
  *
  * The blur is presentation, not protection: any CSS filter can be removed from
- * devtools in one click, so `children` must NEVER contain real data — only
+ * devtools in one click, so `children` must NEVER contain real data, only
  * fabricated stand-ins (see lib/fakePricing.ts). The actual numbers for a free
  * user are stripped out server-side before they ever reach the browser (see
  * /api/sold-comps), so there is nothing here for an inspect-and-unblur attempt

@@ -132,7 +132,7 @@ export default async function BlogIndex() {
 
         {posts.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
-            No posts yet — check back soon.
+            No posts yet. Check back soon.
           </p>
         ) : (
           <BlogTabsClient

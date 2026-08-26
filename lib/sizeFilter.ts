@@ -37,7 +37,7 @@ function shoeRegex(num: string): RegExp {
     }
     return new RegExp(`\\bSize\\s+${whole}\\.${frac}\\b`, 'i');
   }
-  // Whole size: "Size 7" — but NOT "Size 7.5" or "Size 7 1/2"
+  // Whole size: "Size 7", but NOT "Size 7.5" or "Size 7 1/2"
   return new RegExp(`\\bSize\\s+${num}(?!\\s*(?:\\.|\\s+1/2))\\b`, 'i');
 }
 
@@ -77,7 +77,7 @@ export function matchRawSize(rawSize: string, sizeKey: string): boolean {
 
 /**
  * Does this listing match the requested size key?
- * Checks `rawSize` (structured field) first — more reliable than title text.
+ * Checks `rawSize` (structured field) first, more reliable than title text.
  * Falls back to title regex matching for platforms (ThredUp) that embed size in the title.
  * sizeKey is a FilterState.size value like 'l', 'm7_5', or 'xxl'.
  * Returns true when no size key is provided (no-op filter).

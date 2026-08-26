@@ -31,7 +31,7 @@ ALL_PLATFORMS = [
     # "realreal"  # Disabled for now
 ]
 
-# Pricing (May 2026) — Firecrawl source of truth: docs/reference/FIRECRAWL_PRICING.md
+# Pricing (May 2026); Firecrawl source of truth: docs/reference/FIRECRAWL_PRICING.md
 GPT_4O_MINI_INPUT_PRICE = 0.15 / 1_000_000
 GPT_4O_MINI_OUTPUT_PRICE = 0.60 / 1_000_000
 # Hobby plan: $20/mo = 5,000 credits. Standard: $99/mo = 100,000 credits.
@@ -70,7 +70,7 @@ class CostAnalyzer:
         self.client = httpx.AsyncClient(timeout=120)
         # Platform-specific characteristics.
         # structured_capable: a deterministic JSON-LD / DOM extractor exists
-        # in crawl4ai-service/structured_extractors.py — no LLM tokens used.
+        # in crawl4ai-service/structured_extractors.py, no LLM tokens used.
         # avg_html_chars: typical scraped HTML size, drives LLM input tokens
         # when structured_capable is False.
         # Firecrawl cost is NOT per-URL (Firecrawl only does search today).
@@ -141,7 +141,7 @@ class CostAnalyzer:
                 input_tokens = 0
                 output_tokens = 0
             elif platform == "ebay":
-                # eBay markdown is ~50 KB and chunked into 3–4 segments,
+                # eBay markdown is ~50 KB and chunked into 3-4 segments,
                 # so input tokens are ~2× the raw HTML/4 estimate.
                 input_tokens = num_urls_processed * (html_tokens_per_url * 2 + 300)
                 output_tokens = num_urls_processed * 150

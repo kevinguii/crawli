@@ -48,8 +48,8 @@ const NATIVE_TOOLTIP = (
   </>
 );
 
-// Two plans, not three. Pro and Max previously differed only by integers — five of
-// six lines were the same feature with a bigger number — which is a volume discount
+// Two plans, not three. Pro and Max previously differed only by integers: five of
+// six lines were the same feature with a bigger number, which is a volume discount
 // rather than a tier, and 0 of 46 users ever chose the middle one. Max is retired
 // from this page but stays resolvable in lib/tierCaps so no legacy price ID
 // downgrades anyone. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
@@ -66,29 +66,29 @@ const NATIVE_TOOLTIP = (
 //    differently-ordered lists they have to cross-reference by hand.
 //
 // Saves and tracked listings say "Unlimited" on Pro as of 2026-08-17 even though
-// TIER_CAPS.pro still hard-caps both at 500 (see lib/tierCaps.ts) — 500 is a
+// TIER_CAPS.pro still hard-caps both at 500 (see lib/tierCaps.ts). 500 is a
 // practical ceiling nobody real approaches, not a felt limit, so the marketing
 // copy and the enforced cap are allowed to diverge here. If that cap ever tightens
 // enough to be reachable, this copy needs to change with it.
 //
 // As of 2026-08-18 SEARCHES and RESULTS DEPTH join that list: both read
 // "Unlimited" on Pro while TIER_CAPS.pro enforces 50/week and 100 per native
-// platform. Same reasoning, and the margin work backing it is in lib/tierCaps.ts —
+// platform. Same reasoning, and the margin work backing it is in lib/tierCaps.ts:
 // the busiest user-week ever recorded is 13 searches, nobody has ever reached even
 // the old cap of 40, and break-even on a $5/mo sub (repriced 2026-08-21, see
-// lib/tierCaps.ts) is ~248 searches/month — worst case ~10% margin after Stripe
+// lib/tierCaps.ts) is ~248 searches/month, worst case ~10% margin after Stripe
 // fees, thinner than the ~56% at the old $10 price but still positive. The
 // caps are abuse backstops. Two obligations that come with the word:
-//   1. Pro must never see a hard "you have used all N searches" wall — the 402 in
+//   1. Pro must never see a hard "you have used all N searches" wall: the 402 in
 //      app/api/search/route.ts carries tier-specific copy for this reason.
 //   2. If a real user ever lands on either cap, raise the cap or drop the word.
 //      Do not quietly leave "Unlimited" over a limit somebody actually hit.
 //
 // ALERT COUNT joined the same day: "Unlimited alerts" over TIER_CAPS.pro's real
-// cap of 25 (lib/tierCaps.ts has the cost breakdown — it's a different cost
+// cap of 25 (lib/tierCaps.ts has the cost breakdown: it's a different cost
 // shape than the two above, cheap-per-unit and recurring rather than free-at-any-
 // value, but nowhere near real usage: busiest user ever is 3, total across all
-// 48 users is 13). Same two obligations apply — /api/saved-searches/route.ts
+// 48 users is 13). Same two obligations apply: /api/saved-searches/route.ts
 // carries the tier-specific 402 copy for this one.
 //
 // If you add or reorder a Basic row on one plan, mirror it on the other or the
@@ -280,7 +280,7 @@ export function PricingCards({
         {/* ── Paid tiers ── */}
         {PAID_TIERS.map((t) => {
           const isCurrent = currentTier === t.tier;
-          // User already has a paid plan — any plan change (upgrade, downgrade,
+          // User already has a paid plan: any plan change (upgrade, downgrade,
           // or billing cycle switch) goes through the Stripe Customer Portal so
           // Stripe handles proration. Only free users go to a new checkout.
           const isOnOtherPaidPlan = !isFree && !isCurrent;
@@ -318,7 +318,7 @@ export function PricingCards({
         })}
       </div>
 
-      {/* Shared footnote — single tooltip explaining "native platform". */}
+      {/* Shared footnote: single tooltip explaining "native platform". */}
       <div className="mt-6 flex justify-center">
         <span
           className="inline-flex items-center gap-1.5 text-xs"
@@ -358,7 +358,7 @@ export function PricingCards({
           ))}
         </div>
         <p className="mt-3 text-xs" style={{ color: 'var(--text-dim)' }}>
-          Pro includes unlimited searches — packs are for the Free plan
+          Pro includes unlimited searches. Packs are for the Free plan
         </p>
       </div>
     </>
@@ -482,7 +482,7 @@ function PlanCard({
 
 // Basic rows are in identical order across plans (see BASIC_LABEL comment above
 // PAID_TIERS), so stacking each group's items in a plain vertical flow is enough
-// to keep the Free and Pro "Basic" rows lined up row-for-row — no grid/table
+// to keep the Free and Pro "Basic" rows lined up row-for-row, no grid/table
 // needed. Advanced only exists on Pro, so it simply extends below where Free's
 // list ends.
 function FeatureList({ groups, tooltips }: { groups: FeatureGroup[]; tooltips?: Record<string, React.ReactNode> }) {

@@ -1,4 +1,4 @@
-// IndexNow — pushes "these URLs changed" notifications to Bing/Yandex/Naver so
+// IndexNow: pushes "these URLs changed" notifications to Bing/Yandex/Naver so
 // they recrawl promptly instead of waiting for an organic crawl. Submitting to
 // api.indexnow.org auto-shares to all participating engines. Google does NOT
 // participate, so this has no effect on Google indexing (that's driven via GSC).
@@ -14,13 +14,13 @@ const MAX_URLS_PER_REQUEST = 10_000;
 /**
  * Notify IndexNow that the given absolute URLs changed. Best-effort only: any
  * failure (missing key, network error, non-2xx, localhost URLs the API rejects)
- * is logged and swallowed — this must never throw into a deploy step or the
+ * is logged and swallowed, this must never throw into a deploy step or the
  * compare-refresh cron. Returns true only on a confirmed 2xx submission.
  */
 export async function submitToIndexNow(urls: string[]): Promise<boolean> {
   const key = process.env.INDEXNOW_KEY;
   if (!key) {
-    console.warn('[indexnow] INDEXNOW_KEY not set — skipping submission');
+    console.warn('[indexnow] INDEXNOW_KEY not set, skipping submission');
     return false;
   }
 

@@ -46,7 +46,7 @@ export default async function LandingPage() {
   const isAuthenticated = !error && !!data.user;
   const priceGuideSlugs = getPriceGuideSlugMap();
 
-  // Narrowed for the client bundle — HeroSearch only needs what it matches on.
+  // Narrowed for the client bundle: HeroSearch only needs what it matches on.
   const searchItems = items.map(({ slug, name, query, category }) => ({
     slug,
     name,

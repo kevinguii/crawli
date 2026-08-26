@@ -24,7 +24,7 @@ export default function BlogTabsClient({
 
   return (
     <div>
-      {/* Segmented pill tabs with count badges — mirrors AlertsTabsClient */}
+      {/* Segmented pill tabs with count badges, mirrors AlertsTabsClient */}
       <div
         className="mb-8 inline-flex gap-1 rounded-xl p-1"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}

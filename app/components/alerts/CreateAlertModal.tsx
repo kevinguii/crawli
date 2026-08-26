@@ -42,7 +42,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence, setCadence] = useState<24 | 168>(editingAlert?.cadence_hours ?? 24);
-  // Optional AND-only sourcing criteria — narrows matches to size AND price<X.
+  // Optional AND-only sourcing criteria: narrows matches to size AND price<X.
   // Empty fields are omitted (no-op). critSize stores a SIZE_OPTIONS key
   // (e.g. 'l', 'm7_5'); lowercased on load so a pre-dropdown free-text value
   // like "L" still pre-selects the matching option.
@@ -50,7 +50,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   const [minPrice, setMinPrice] = useState(critField(editingAlert?.criteria, 'minPrice'));
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [isPaid, setIsPaid] = useState(false);
-  // Strictest floor until billing answers — see mayPickDaily below.
+  // Strictest floor until billing answers, see mayPickDaily below.
   const [minCadence, setMinCadence] = useState(168);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -61,11 +61,11 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   );
   // Mirror the server's cadence floor rather than inferring it from paid-vs-free,
   // so this UI follows TIER_CAPS if the dial ever moves. Free currently gets daily
-  // (floor 24), same as Pro — free alerts are limited by count, not frequency.
+  // (floor 24), same as Pro. Free alerts are limited by count, not frequency.
   //
   // Derived, not clamped through an effect: an effect would let the pre-clamp value
   // submit on the render before it lands. Starts at the strictest floor and relaxes
-  // once billing loads, so it fails closed by construction. Editing is exempt — the
+  // once billing loads, so it fails closed by construction. Editing is exempt: the
   // API only re-checks the floor when the value actually changes, so an alert
   // already on a faster cadence keeps it.
   const mayPickDaily = minCadence <= 24 || !!editingAlert;
@@ -110,7 +110,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   // rather than silently accepted and quietly returning nothing forever.
   const queryProblem = findAlertQueryProblem(query);
 
-  // The query is the first condition — criteria narrow it, they don't replace it.
+  // The query is the first condition: criteria narrow it, they don't replace it.
   function criteriaClauses(): string[] {
     const clauses: string[] = [];
     const c = buildCriteria() ?? {};
@@ -166,7 +166,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
         // A baseline-changing edit re-runs in the background. Alerts never
         // touch search quota, so no crawli:search-started event here.
         if (baselineChanged) {
-          toast.success('Alert updated — match history cleared, re-running as a new baseline.');
+          toast.success('Alert updated: match history cleared, re-running as a new baseline.');
         } else {
           toast.success('Alert updated.');
         }
@@ -198,7 +198,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
         return;
       }
       toast.success(
-        'Alert created — we’re running the first search now and will email you an initial batch of results shortly.',
+        'Alert created: we’re running the first search now and will email you an initial batch of results shortly.',
         { duration: 7000 },
       );
       onCreated(data as SavedSearch);
@@ -344,7 +344,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
 
               {priceRangeInvalid ? (
                 <p className="mt-2 text-[11px]" style={{ color: 'var(--danger)' }}>
-                  Min price is above max price — nothing can match both.
+                  Min price is above max price. Nothing can match both.
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
@@ -358,7 +358,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                       <span style={{ color: 'var(--text-muted)' }}>{c}</span>
                     </span>
                   ))}
-                  {clauses.length === 0 && ' — add a size or price to narrow it further.'}
+                  {clauses.length === 0 && ', add a size or price to narrow it further.'}
                 </p>
               )}
             </div>
@@ -377,7 +377,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   // Mirrors the server exactly: PATCH only re-checks the floor
                   // when cadence actually changes, so an existing daily alert
                   // stays togglable for its owner. Inert while the free floor is
-                  // 24 — kept so raising the floor needs no UI change.
+                  // 24. Kept so raising the floor needs no UI change.
                   const gated = h < minCadence && !mayPickDaily;
                   return (
                     <button
@@ -535,7 +535,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
             </div>
 
             {/* Alerts run entirely in-house (no Firecrawl-metered platforms), so
-                they never consume search quota — creating, editing, and every
+                they never consume search quota: creating, editing, and every
                 scheduled run are free regardless of tier. */}
             {isEditing && baselineChanged ? (
               <div
@@ -551,7 +551,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   </p>
                 )}
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  Past matches won&apos;t show anymore. The re-run emails you the new baseline — everything matching the changed search right now — and after that you&apos;ll only hear about <em>new</em> listings.
+                  Past matches won&apos;t show anymore. The re-run emails you the new baseline (everything matching the changed search right now), and after that you&apos;ll only hear about <em>new</em> listings.
                 </p>
               </div>
             ) : !isEditing ? (

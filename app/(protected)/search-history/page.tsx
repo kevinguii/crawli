@@ -8,7 +8,7 @@ import { useSearchHistory } from '@/app/components/SearchHistoryProvider';
 import { platformColor } from '@/app/components/platformColors';
 import { PLATFORM_NAMES, type SearchHistoryItem } from '@/lib/types';
 
-// Prefill only (no auto-run) — matches the key SearchForm reads for prefill-only replays.
+// Prefill only (no auto-run): matches the key SearchForm reads for prefill-only replays.
 const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 export default function SearchHistoryPage() {

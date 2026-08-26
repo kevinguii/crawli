@@ -16,7 +16,7 @@ check('thredup synthetic title, size-only numeric', 'levis 501 jeans', "Levi's B
 check('thredup, waist-suffix size', 'levis 501 jeans', "Levi's 100% Cotton Blue Jeans Size 31 waist", true);
 check('thredup, inch-pair size', 'levis 501 jeans', "Levi's Blue Jeans 35 in x 31 in", true);
 check('thredup, WxL size', 'levis 501 jeans', "Levi's Blue Jeans 32x34", true);
-// Text anchors must still bite — ThredUp mixes other brands into the same grid.
+// Text anchors must still bite: ThredUp mixes other brands into the same grid.
 check('wrong brand still rejected', 'levis 501 jeans', 'RE/DONE 100% Cotton Ivory Jeans Size 26 waist', false);
 
 // ── The precision the numeric rule was protecting must survive ──────────────
@@ -50,7 +50,7 @@ check('bare stem alone is not enough', 'victorias secret bra', 'Victoria Secret 
 //     Victoria Beckham, which is a different real brand.
 // Ordinary plural query words must not gain spurious matches:
 check('plural common word unaffected', 'nike boots', 'Nike Boot S Leather Hiking', true);
-//   ^ "Boot S" does normalize to `boot s`, so this DOES match — accepted, the
+//   ^ "Boot S" does normalize to `boot s`, so this DOES match. Accepted: the
 //     title is a Nike boot listing either way and `nike` still had to anchor.
 check('plural does not rescue a wrong brand', 'adidas boots', 'Nike Boot S Leather Hiking', false);
 

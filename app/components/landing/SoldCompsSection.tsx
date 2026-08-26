@@ -13,8 +13,8 @@ type SoldStat = {
 };
 
 const STATS: SoldStat[] = [
-  { platform: 'grailed', median: '$118', range: '$95–$140', n: 23, daysToSell: 9 },
-  { platform: 'poshmark', median: '$95', range: '$80–$110', n: 14, daysToSell: 14 },
+  { platform: 'grailed', median: '$118', range: '$95-$140', n: 23, daysToSell: 9 },
+  { platform: 'poshmark', median: '$95', range: '$80-$110', n: 14, daysToSell: 14 },
 ];
 
 function PriceCheckPanel() {
@@ -71,7 +71,7 @@ function PriceCheckPanel() {
 
         <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
           Median of completed sales, last 90 days. Poshmark shows the listed price at time of
-          sale — accepted offers are private, so its figure can read high.
+          sale. Accepted offers are private, so its figure can read high.
         </p>
       </div>
 

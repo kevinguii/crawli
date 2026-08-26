@@ -63,7 +63,7 @@ export async function getComparePageData(slug: string): Promise<ComparePageData 
 }
 
 /**
- * Cheapest listed price (USD) per slug across all platforms — for landing-page
+ * Cheapest listed price (USD) per slug across all platforms, for landing-page
  * "from $X" teasers on the compare grid. One query, best-effort: returns an
  * empty map on any error so it can never break the landing page render.
  */
@@ -90,7 +90,7 @@ export async function getCompareTeasers(): Promise<Map<string, number>> {
 }
 
 /**
- * Most-recent `scraped_at` (ISO string) per compare slug — the real last-updated
+ * Most-recent `scraped_at` (ISO string) per compare slug: the real last-updated
  * time for each /compare/[slug] page, driven by the daily refresh cron. Used by
  * the sitemap for accurate <lastmod>. Best-effort: returns an empty map on any
  * error so the sitemap can never break. Mirrors getCompareTeasers()'s pattern.
@@ -149,7 +149,7 @@ export interface CompareHeroItem {
 
 /**
  * Groups snapshot rows by slug and sorts each item's platforms cheapest-first.
- * Pure — no I/O — so it can be exercised with sample data without Supabase.
+ * Pure (no I/O), so it can be exercised with sample data without Supabase.
  * Items with fewer than 2 priced platforms are dropped: a single-platform
  * result doesn't demonstrate a cross-platform comparison.
  */
@@ -186,7 +186,7 @@ export function buildCompareHeroItems(
 /**
  * Real per-platform prices for a curated set of compare items, for the
  * landing-page hero widget. Reads only the existing daily-cron-refreshed
- * compare_snapshots cache — never triggers a live scrape. Best-effort:
+ * compare_snapshots cache, never triggers a live scrape. Best-effort:
  * returns [] on any error so the hero can never break the landing page.
  */
 export async function getCompareHeroData(slugs: string[]): Promise<CompareHeroItem[]> {

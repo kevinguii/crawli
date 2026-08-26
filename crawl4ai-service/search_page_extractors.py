@@ -73,7 +73,7 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     Returns a list of dicts; each dict has shape:
         { url, title, price, currency, isSold, condition, imageUrl }
-    Sold items pass through unchanged — caller applies the same filter the
+    Sold items pass through unchanged, caller applies the same filter the
     rest of the pipeline applies to single-listing scrapes (parseScrapedListings
     drops s.isSold === true).
     """
@@ -94,7 +94,7 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
         sku = m.group(1)
         if sku in sku_to_url:
             continue  # the DOM has two anchors per card; keep the first
-        # Strip tracking params — they cause a server-side redirect on load
+        # Strip tracking params: they cause a server-side redirect on load
         # which races with Playwright's Page.content() call.
         clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
         sku_to_url[sku] = urljoin(THREDUP_BASE, clean_href)
@@ -130,7 +130,7 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
             continue
         url = sku_to_url.get(sku)
         if not url:
-            # JSON-LD product without a matching DOM card — skip rather than
+            # JSON-LD product without a matching DOM card, skip rather than
             # synthesize a URL (the slug isn't in JSON-LD).
             continue
 
@@ -147,7 +147,7 @@ def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
             name = html_module.unescape(name)
 
         # Verified live 2026-06-21: every Product node in this JSON-LD array
-        # carries a direct top-level "color" string (e.g. "Black") — no
+        # carries a direct top-level "color" string (e.g. "Black"), no
         # additionalProperty lookup needed here, unlike per-listing pages.
         color_raw = p.get("color")
         color = color_raw.strip() if isinstance(color_raw, str) and color_raw.strip() else None
@@ -235,7 +235,7 @@ def extract_therealreal_grid(html: str, *, limit: int = 24) -> list[dict]:
     node carries name, url (absolute), price.final.usdCents (price in cents),
     availability, images[0].url.
 
-    Falls back to empty list if the GraphQL block is absent — likely indicates
+    Falls back to empty list if the GraphQL block is absent, likely indicates
     PerimeterX captcha page (no __NEXT_DATA__) or expired session.
     """
     if not html:
@@ -244,7 +244,7 @@ def extract_therealreal_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     nd = soup.find("script", id="__NEXT_DATA__")
     if not nd or not (nd.string or nd.text):
-        log.warning("[therealreal-grid] __NEXT_DATA__ missing — likely PX challenge page")
+        log.warning("[therealreal-grid] __NEXT_DATA__ missing, likely PX challenge page")
         return []
     try:
         nd_data = json.loads(nd.string or nd.text)
@@ -359,19 +359,19 @@ def extract_grailed_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract listings from a Grailed `/shop?query=...` results page.
 
     Source: DOM cards under `div[class*='UserItem_root']`. Grailed uses CSS
-    Modules — class names get hash suffixes that change every deploy, so we
+    Modules: class names get hash suffixes that change every deploy, so we
     match on the `UserItem_*` prefix.
 
     Verified card structure (2026-05-22):
         div[class*='UserItem_root']
           a[href*='/listings/']                          → URL (strip tracking params)
           img[class*='CoverPhoto']                       → imageUrl (src is real, no lazy placeholder)
-          p[class*='UserItem_designer']                  → brand (e.g. "Nike") — informational only
+          p[class*='UserItem_designer']                  → brand (e.g. "Nike"), informational only
           p[class*='UserItem_size']                      → size (e.g. "xl")
           span[class*='UserItem_title']                  → title
           span[class*='Money_root'][data-testid='Current'] → price (e.g. "$20")
 
-    The `/shop?query=` page is filtered to active listings by default — no
+    The `/shop?query=` page is filtered to active listings by default: no
     "Sold" badges observed across 40 probed cards. We set isSold=False
     universally; if Grailed later surfaces sold items here, the badge div
     `div[class*='UserItem_badge']` would carry the indicator.
@@ -382,7 +382,7 @@ def extract_grailed_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     cards = soup.select("div[class*='UserItem_root']")
     if not cards:
-        log.warning("[grailed-grid] no UserItem_root cards found — page may not have rendered")
+        log.warning("[grailed-grid] no UserItem_root cards found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -393,7 +393,7 @@ def extract_grailed_grid(html: str, *, limit: int = 24) -> list[dict]:
         href = a.get("href")
         if not isinstance(href, str):
             continue
-        # Strip Algolia tracking params (g_aidx, g_aqid) — same redirect-on-load
+        # Strip Algolia tracking params (g_aidx, g_aqid), same redirect-on-load
         # issue ThredUp had. The canonical path is /listings/<id>-<slug>.
         clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
         url = urljoin(GRAILED_BASE, clean_href)
@@ -445,7 +445,7 @@ def mercari_search_url(query: str) -> str:
 
     Verified 2026-05-27 via probe: `/search/?keyword=<urlencoded>` returns 200
     with the listing grid hydrated into the DOM (the page is client-side
-    rendered — __NEXT_DATA__ is essentially empty here, unlike item-detail
+    rendered: __NEXT_DATA__ is essentially empty here, unlike item-detail
     pages). Each card is a `div[data-testid='ItemContainer']`.
     """
     return f"{MERCARI_BASE}/search/?keyword={quote(query.strip())}"
@@ -468,13 +468,13 @@ def extract_mercari_grid(html: str, *, limit: int = 24) -> list[dict]:
           [data-testid='ProductThumbItemPrice']        → price text. When on
                                                           sale, reads "$X$Y"
                                                           (current $X, original
-                                                          $Y) — take the first
+                                                          $Y), take the first
                                                           $ amount as current.
           img                                          → imageUrl (cdn host
                                                           u-mercari-images.mercdn.net)
 
     Mercari's search default excludes sold listings (verified 2026-05-27
-    against a typical query — all 35 cards had data-is-on-sale="true" and no
+    against a typical query, all 35 cards had data-is-on-sale="true" and no
     SOLD badge). We set isSold=False; if Mercari surfaces sold cards here
     later, look for a `SOLD` text badge inside the card.
 
@@ -488,7 +488,7 @@ def extract_mercari_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     cards = soup.select("[data-testid='ItemContainer']")
     if not cards:
-        log.warning("[mercari-grid] no ItemContainer cards found — page may not have rendered")
+        log.warning("[mercari-grid] no ItemContainer cards found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -517,7 +517,7 @@ def extract_mercari_grid(html: str, *, limit: int = 24) -> list[dict]:
 
         img_el = card.find("img")
         image = img_el.get("src") if img_el else None
-        # Skip SVG-only placeholders (e.g. lazy-load shells) — real Mercari
+        # Skip SVG-only placeholders (e.g. lazy-load shells), real Mercari
         # photos are on the mercdn.net CDN.
         if isinstance(image, str) and image.startswith("data:"):
             image = None
@@ -548,7 +548,7 @@ _DEPOP_PRICE_RE = re.compile(r"\$([\d,]+(?:\.\d+)?)")
 # Depop product slugs end in a short alphanumeric id, e.g. .../<seller>-<words>-2963/
 # We treat that trailing token as the hash and the FIRST token as the seller
 # username (Depop usernames may contain underscores/digits but generally not
-# hyphens — see comment in _depop_title_from_slug).
+# hyphens, see comment in _depop_title_from_slug).
 _DEPOP_SLUG_TAIL = re.compile(r"-[a-z0-9]{3,6}/?$", re.IGNORECASE)
 
 
@@ -556,7 +556,7 @@ def depop_search_url(query: str) -> str:
     """Build the Depop onsite search URL.
 
     Verified 2026-05-27 via probe: `/search/?q=<urlencoded>` returns 200 with
-    the listing grid rendered into the DOM (no __NEXT_DATA__, no JSON-LD —
+    the listing grid rendered into the DOM (no __NEXT_DATA__, no JSON-LD,
     pure DOM cards). 24 cards per page on a typical query.
     """
     return f"{DEPOP_BASE}/search/?q={quote(query.strip())}"
@@ -565,7 +565,7 @@ def depop_search_url(query: str) -> str:
 def _depop_title_from_slug(href: str) -> Optional[str]:
     """Synthesise a title from a Depop product URL slug.
 
-    Depop search cards carry no title text — only brand + size + price are
+    Depop search cards carry no title text: only brand + size + price are
     rendered (verified 2026-05-27: img alt is empty, anchor aria-label is
     empty, no title <p>). The URL slug shape is:
 
@@ -575,7 +575,7 @@ def _depop_title_from_slug(href: str) -> Optional[str]:
     seller username token, then dehyphenate. Depop usernames may contain
     underscores and digits (e.g. `zaydh_156`) but as of 2026-05-27 we have
     not seen one with a hyphen on a search results page. If a hyphenated
-    username appears, the leading word of the resulting title gets eaten —
+    username appears, the leading word of the resulting title gets eaten,
     not ideal but the brand field still carries the canonical brand text.
 
     Examples:
@@ -603,8 +603,8 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract listings from a Depop `/search/?q=...` results page.
 
     Source: DOM cards under `div[class*='productCardRoot']`. Depop uses CSS
-    Modules — class names get a scoping prefix/hash that changes across
-    deploys — so we match on the semantic suffix only, not any particular
+    Modules: class names get a scoping prefix/hash that changes across
+    deploys, so we match on the semantic suffix only, not any particular
     prefix, and use `aria-description` on price elements (stable
     accessibility attribute) to disambiguate sale prices.
 
@@ -622,18 +622,18 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
     Class-name prefix rotated 2026-08-15: Depop shipped a build where the
     old `styles_productCardRoot__<hash>` (and sibling `styles_brandName`,
     `styles_sizeAttributeText`) scoping changed to
-    `styles-module__<hash>__productCardRoot` — a different hash *position*
+    `styles-module__<hash>__productCardRoot`, a different hash *position*
     relative to the semantic name, not just a different hash value. Matching
     on the bare prefix (`styles_...`) silently returned 0 cards despite a
     fully-rendered, 200 OK page with real listings still present (24 intact
-    `/products/` links, just not wrapped in a div our old selector matched)
-    — see PITFALLS.md "Depop CSS Modules prefix rotation". Selectors below
+    `/products/` links, just not wrapped in a div our old selector matched),
+    see PITFALLS.md "Depop CSS Modules prefix rotation". Selectors below
     intentionally drop the `styles_`/`styles-module__` prefix and match only
     on the semantic suffix, since that's the part Depop's own markup keeps
     stable across rebuilds; re-verify this docstring's structure dump if
     extraction silently drops to 0 again.
 
-    Title: Depop search cards genuinely have no title field — img alt is
+    Title: Depop search cards genuinely have no title field, img alt is
     empty, anchor aria-label is empty, no title <p>. We synthesise from the
     URL slug (see _depop_title_from_slug). The brand text is also captured
     separately for callers that need it.
@@ -647,7 +647,7 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     cards = soup.select("div[class*='productCardRoot']")
     if not cards:
-        log.warning("[depop-grid] no productCardRoot cards found — page may not have rendered")
+        log.warning("[depop-grid] no productCardRoot cards found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -660,7 +660,7 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
             continue
         url = urljoin(DEPOP_BASE, href)
 
-        # Price — prefer Discounted (current) over Price (no-sale); skip Full price.
+        # Price: prefer Discounted (current) over Price (no-sale); skip Full price.
         price_el = (
             card.select_one("p[aria-description='Discounted price']")
             or card.select_one("p[aria-description='Price']")
@@ -697,7 +697,7 @@ def extract_depop_grid(html: str, *, limit: int = 24) -> list[dict]:
             "title": title,
             "price": price,
             "currency": "USD",  # depop.com is multi-region; US site is USD. Depop ships USD
-                                 # when the geo-detected region is US — same assumption the
+                                 # when the geo-detected region is US, same assumption the
                                  # existing per-listing extractor makes.
             "isSold": False,
             "condition": None,
@@ -738,7 +738,7 @@ def vestiaire_search_url(query: str) -> str:
     """Build the Vestiaire US onsite search URL.
 
     Vestiaire uses /search/?q=<urlencoded> on the us. subdomain (verified
-    2026-06-29 via probe). www. redirects to us. — we go direct to skip the
+    2026-06-29 via probe). www. redirects to us. We go direct to skip the
     hop. The page is CSR: products load ~9s after nav via client fetch.
     wait_for: css:a[data-cy^="catalog__productCard__"]
     """
@@ -749,7 +749,7 @@ def extract_vestiaire_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract listings from a Vestiaire /search/?q= page.
 
     Source: CSR-rendered anchors a[data-cy^="catalog__productCard__"]. The
-    page has no product data in __NEXT_DATA__ (empty array) — all products
+    page has no product data in __NEXT_DATA__ (empty array), all products
     are fetched client-side after hydration, so caller must wait_for the card
     selector.
 
@@ -768,7 +768,7 @@ def extract_vestiaire_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     cards = soup.select('a[data-cy^="catalog__productCard__"]')
     if not cards:
-        log.warning("[vestiaire-grid] no productCard anchors found — page may not have rendered")
+        log.warning("[vestiaire-grid] no productCard anchors found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -867,9 +867,9 @@ def extract_vinted_grid(html: str, *, limit: int = 24) -> list[dict]:
           [data-testid$="--price-text"]     → "$35.00" price element
 
     Class-name matching is substring-based, not an exact token/dot selector
-    (found 2026-08-15, same root cause as Depop's rotation — see PITFALLS.md
+    (found 2026-08-15, same root cause as Depop's rotation, see PITFALLS.md
     "Depop CSS Modules prefix rotation"): Vinted's build now glues a scoping
-    prefix directly onto the semantic name with no separating space —
+    prefix directly onto the semantic name with no separating space,
     `class="ItemBox-module-scss-module__NoC3Da__new-item-box__container"` is
     a single class *token*, so a `div.new-item-box__container` dot-selector
     (exact-token match) stopped matching even though the substring is right
@@ -1046,7 +1046,7 @@ def stockx_search_url(query: str) -> str:
     """Build the StockX search URL.
 
     Verified 2026-06-29: /search?s=<urlencoded> returns the product grid.
-    The page is CSR — tiles hydrate after JS. 40 tiles on a typical query.
+    The page is CSR, tiles hydrate after JS. 40 tiles on a typical query.
     wait_for: css:[data-testid="ProductTile"]
     """
     return f"{STOCKX_BASE}/search?s={quote(query.strip())}"
@@ -1072,7 +1072,7 @@ def extract_stockx_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     tiles = soup.select('[data-testid="ProductTile"]')
     if not tiles:
-        log.warning("[stockx-grid] no ProductTile elements found — page may not have rendered")
+        log.warning("[stockx-grid] no ProductTile elements found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -1128,8 +1128,8 @@ def extract_stockx_grid(html: str, *, limit: int = 24) -> list[dict]:
 EBAY_BASE = "https://www.ebay.com"
 
 # eBay seeds every SRP with one or two "Shop on eBay" promo tiles that look
-# exactly like a real card — same `.su-card-container`, same `.s-card__price`
-# — but point at the placeholder item id 123456 and carry an ebaystatic house
+# exactly like a real card, same `.su-card-container`, same `.s-card__price`,
+# but point at the placeholder item id 123456 and carry an ebaystatic house
 # image. Verified 2026-08-25: exactly 2 of them on every query sampled. They
 # are not listings; letting them through puts a fake $20.00 "Shop on eBay"
 # row in the results and drags the price average down.
@@ -1149,7 +1149,7 @@ def ebay_search_url(query: str) -> str:
     """Build the eBay onsite search URL.
 
     Verified 2026-08-25: /sch/i.html?_nkw=<urlencoded> returns the full SRP
-    grid server-side — ~81 cards, complete with title, price, image, size and
+    grid server-side, ~81 cards, complete with title, price, image, size and
     condition. No JS hydration wait is needed for the cards themselves.
 
     Why this exists: eBay used to be the one platform on the Firecrawl
@@ -1164,7 +1164,7 @@ def _ebay_parse_price(text) -> tuple[Optional[float], str]:
     """Parse an eBay price cell into (amount, ISO currency).
 
     Falls back to USD for an unrecognised symbol rather than dropping the
-    price — the .com SRP is USD in the overwhelming majority of cases and a
+    price, the .com SRP is USD in the overwhelming majority of cases and a
     priced listing is more useful than a null.
     """
     if not isinstance(text, str):
@@ -1240,7 +1240,7 @@ def extract_ebay_grid(html: str, *, limit: int = 24) -> list[dict]:
 
     cards = soup.select(".su-card-container")
     if not cards:
-        log.warning("[ebay-grid] no su-card-container elements found — page may not have rendered")
+        log.warning("[ebay-grid] no su-card-container elements found, page may not have rendered")
         return []
 
     results: list[dict] = []
@@ -1263,7 +1263,7 @@ def extract_ebay_grid(html: str, *, limit: int = 24) -> list[dict]:
         img_el = card.select_one("img.s-card__image") or card.find("img")
         image = img_el.get("src") if img_el else None
 
-        # Promo tile, not a listing — see _EBAY_DECOY_ITEM_IDS above.
+        # Promo tile, not a listing, see _EBAY_DECOY_ITEM_IDS above.
         if (
             item_id in _EBAY_DECOY_ITEM_IDS
             or (title or "").strip().lower() in _EBAY_DECOY_TITLES

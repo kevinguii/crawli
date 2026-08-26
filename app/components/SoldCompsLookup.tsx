@@ -20,7 +20,7 @@ type Pane = 'sales' | 'margin';
  * Shared rendering for a sold-comps result: the per-platform panel, the individual
  * sales behind it, a buy-price input, and the resulting margin line. Fetching stays
  * with the caller (a plain useSoldComps(query) call) so callers keep control of
- * their own loading UI (e.g. disabling a Finish/submit button) — this component
+ * their own loading UI (e.g. disabling a Finish/submit button). This component
  * only renders.
  */
 export interface SoldCompsLookupProps {
@@ -38,14 +38,14 @@ export interface SoldCompsLookupProps {
   /**
    * `inline` stacks the market snapshot, sales, and margin calculator, which suits
    * a short surface like the onboarding tail. `tabbed` is for /price-check: on
-   * mobile it keeps the same two-tab split, but at `lg+` it lays out as a dashboard
-   * — sales list on the left, snapshot + margin calculator stacked on the right.
+   * mobile it keeps the same two-tab split, but at `lg+` it lays out as a dashboard:
+   * sales list on the left, snapshot + margin calculator stacked on the right.
    */
   variant?: 'inline' | 'tabbed';
   /** How many individual sale rows to render. */
   salesLimit?: number;
   /** Rows shown before a "Show all" toggle appears. Omit to always show every row
-   *  up to `salesLimit` (the default) — set this when `salesLimit` is large enough
+   *  up to `salesLimit` (the default). Set this when `salesLimit` is large enough
    *  that showing it all upfront would be overwhelming. */
   salesInitialVisible?: number;
   /** Whether the flip calculator starts expanded. Defaults closed, matching the
@@ -68,7 +68,7 @@ export default function SoldCompsLookup({
   const [picked, setPicked] = useState<PlatformSoldStats | null>(null);
   const [pane, setPane] = useState<Pane>('sales');
   // Free users receive a payload with no prices in it at all, so there is nothing
-  // here to seed the margin calculator from — the locked branch renders instead.
+  // here to seed the margin calculator from. The locked branch renders instead.
   const locked = data?.locked === true;
   const unlockedData = data && !locked ? data : null;
   const stats = picked ?? unlockedData?.platforms[0] ?? null;
@@ -79,7 +79,7 @@ export default function SoldCompsLookup({
   if (!query) return null;
 
   // Split into three pieces rather than one "sales" blob: the snapshot (per-platform
-  // median/range/sample-size cards — also the platform picker for the calculator)
+  // median/range/sample-size cards, also the platform picker for the calculator)
   // and the raw sale rows read as separate things on a wide screen, even though the
   // `tabbed` variant's mobile view still groups them under one "Recent sales" tab.
   const snapshotPane =
@@ -100,7 +100,7 @@ export default function SoldCompsLookup({
   ) : (
     // Can happen even when platforms/snapshot has data: a still-cached lookup from
     // before the individual-sales field existed normalizes to sales: [] until it
-    // naturally expires (24h TTL). This pane must never collapse to nothing — in
+    // naturally expires (24h TTL). This pane must never collapse to nothing: in
     // the tabbed variant's lg+ layout it's a standalone grid cell, not tucked
     // under a tab, so a bare null here reads as a broken left column.
     <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -150,7 +150,7 @@ export default function SoldCompsLookup({
         </p>
       )}
 
-      {/* Locked users get the panel on every query, data or not — see
+      {/* Locked users get the panel on every query, data or not: see
           SoldCompsLockedPanel. The "not enough sales" line below is therefore
           scoped to unlocked users; showing both would be contradictory, and
           telling a free user which items have no data is not the job of a
@@ -179,11 +179,11 @@ export default function SoldCompsLookup({
 
           {/* Right rail: sticky at lg+ so it stays visible while scrolling a long
               sales list on the left instead of scrolling away with it. The wrapper
-              itself is NOT hidden below lg — marginPane lives here and must still
+              itself is NOT hidden below lg: marginPane lives here and must still
               render under the mobile "Flip margin" tab. Snapshot is duplicated here
               (desktop-only, hidden below lg) rather than shared with the mobile copy
               above, since a single instance can't sit in two DOM positions across
-              the breakpoint — it's presentational (no internal state), so this is
+              the breakpoint: it's presentational (no internal state), so this is
               safe; marginPane is never duplicated since FlipMarginCalculator does
               carry internal state. */}
           <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:self-start">

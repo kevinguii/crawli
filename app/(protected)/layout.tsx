@@ -21,7 +21,7 @@ export default async function ProtectedLayout({
 
   // Onboarding gate. Blocking by design: while onboarding_completed_at is null,
   // every protected route bounces here. /onboarding lives outside this layout so
-  // it cannot catch itself — see app/onboarding/page.tsx.
+  // it cannot catch itself. See app/onboarding/page.tsx.
   const { data: profile } = await supabase
     .from('profiles')
     .select('onboarding_completed_at')

@@ -31,7 +31,7 @@ interface Props {
  *
  * Deliberately built from PER-PLATFORM AVERAGES, then trimmed, rather than the
  * raw global `min_price_usd`/`max_price_usd`. The snapshots still carry the
- * residual outliers documented in HANDOFF.md "Compare-page floors" — a $29
+ * residual outliers documented in HANDOFF.md "Compare-page floors": a $29
  * "Cartier Love Bracelet" on Depop, a $5 "Ralph Lauren Polo Shirt" on Vinted,
  * a $72,530 Grailed ask on the same bracelet. Those are exactly the numbers a
  * naive min/max would hand to Google as the headline price, so they must not
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // "Asking price" is load-bearing: these snapshots are live listings, not
   // completed sales. Sold data is a separate surface (/price-check) and covers
-  // only Grailed and Poshmark — see HANDOFF.md.
+  // only Grailed and Poshmark. See HANDOFF.md.
   const description =
     band && totalListings > 0
       ? `${totalListings} live ${item.name} listings across ${platformCount} marketplaces, typical asking price $${band.low.toLocaleString('en-US')} to $${band.high.toLocaleString('en-US')}. Compare prices and find the cheapest in one search.`
@@ -116,12 +116,12 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 
 function fmt(price: number | null): string {
-  if (price === null) return '—';
+  if (price === null) return '-';
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function fmtLocal(price: number | null, currency: string): string {
-  if (price === null) return '—';
+  if (price === null) return '-';
   const sym = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   return `${sym}${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
@@ -141,7 +141,7 @@ const NATIVE_PLATFORM_ORDER = [
   'thredup', 'vestiaire', 'stockx',
 ];
 
-// ── Read-only listing card (no auth hooks — compare page is public) ───────────
+// ── Read-only listing card (no auth hooks, compare page is public) ───────────
 function CompareListingCard({ listing }: { listing: Listing }) {
   const [imgFailed, setImgFailed] = ['imgFailed', false] as unknown as [string, boolean];
   const displayPrice = listing.price !== null
@@ -238,7 +238,7 @@ function PlatformCard({
             </span>
             {snapshot.min_price_usd !== snapshot.max_price_usd && snapshot.max_price_usd !== null && (
               <span className="ml-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                – {fmt(snapshot.max_price_usd)}
+                - {fmt(snapshot.max_price_usd)}
               </span>
             )}
           </div>
@@ -276,7 +276,7 @@ export default async function ComparePage({ params }: Props) {
     return s.scraped_at > latest ? s.scraped_at : latest;
   }, null);
 
-  // JSON-LD: Product with an AggregateOffer per platform — this is the schema
+  // JSON-LD: Product with an AggregateOffer per platform. This is the schema
   // Google actually keys its price-range rich result off of (ItemList/ListItem>Offer
   // does not render as a product snippet, only as a list/carousel result).
   const offersWithData = snapshots.filter((s) => s.min_price_usd !== null);
@@ -287,7 +287,7 @@ export default async function ComparePage({ params }: Props) {
   // Data-driven FAQ. Answers are computed from the same live snapshot the page
   // renders, so the visible text below and the FAQPage JSON-LD stay identical
   // (Google requires the structured FAQ to mirror on-page text). Built only when
-  // there is price data — an empty snapshot renders neither the block nor schema.
+  // there is price data. An empty snapshot renders neither the block nor schema.
   const lowPrice = offersWithData.length > 0 ? Math.min(...allLows) : 0;
   const highPrice = offersWithData.length > 0 ? Math.max(...allHighs) : 0;
   const marketCount = offersWithData.length;
@@ -343,14 +343,14 @@ export default async function ComparePage({ params }: Props) {
             description: `Cross-platform resale price comparison for ${item.name} across ${offersWithData.length} marketplaces.`,
             ...(item.category ? { category: item.category } : {}),
             // datePublished/dateModified give AI crawlers a machine-readable
-            // freshness signal — the page already shows "Updated Xh ago" to
+            // freshness signal. The page already shows "Updated Xh ago" to
             // users via latestScrape, but that string alone isn't parsed as a
             // date. publisher stands in for author: this is live scraped
             // market data, not an authored opinion piece, so an Organization
             // credit is accurate where a Person byline would not be.
             datePublished: item.created_at,
             ...(latestScrape ? { dateModified: latestScrape } : {}),
-            // Inlined rather than an `@id` reference to /#organization — that
+            // Inlined rather than an `@id` reference to /#organization. That
             // entity is only declared in the landing page's JSON-LD graph, and
             // this page's structured data must resolve standalone.
             publisher: { '@type': 'Organization', name: 'Crawli', url: SITE_URL },
@@ -360,7 +360,7 @@ export default async function ComparePage({ params }: Props) {
               lowPrice: Math.min(...allLows),
               highPrice: Math.max(...allHighs),
               offerCount: totalOfferCount,
-              // No per-offer `name` here — schema.org doesn't require one, and
+              // No per-offer `name` here: schema.org doesn't require one, and
               // repeating the full item name once per platform (8x) was the
               // main driver behind a "keyword stuffing" flag from GEO audits.
               // The platform's identity is already conveyed by its position
@@ -402,7 +402,7 @@ export default async function ComparePage({ params }: Props) {
 
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
 
-        {/* Breadcrumb — links back into the landing compare grid for a seamless loop */}
+        {/* Breadcrumb: links back into the landing compare grid for a seamless loop */}
         <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: 'var(--text-dim)' }}>
           <Link href="/" className="transition-opacity hover:opacity-80">Home</Link>
           <span>/</span>
@@ -461,7 +461,7 @@ export default async function ComparePage({ params }: Props) {
               className="rounded-2xl px-6 py-10 text-center text-sm"
               style={{ background: 'var(--surface)', color: 'var(--text-muted)' }}
             >
-              Snapshot not yet generated — check back after the next daily refresh (6 AM UTC).
+              Snapshot not yet generated. Check back after the next daily refresh (6 AM UTC).
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -494,7 +494,7 @@ export default async function ComparePage({ params }: Props) {
           </section>
         )}
 
-        {/* FAQ — data-driven, mirrors the FAQPage JSON-LD above. Plain server-
+        {/* FAQ: data-driven, mirrors the FAQPage JSON-LD above. Plain server-
             rendered Q&A (no JS gating) so AI answer engines can extract it. */}
         {faqItems.length > 0 && (
           <section className="mb-12">
@@ -535,7 +535,7 @@ export default async function ComparePage({ params }: Props) {
               href={searchUrl}
               className="btn-primary rounded-xl px-6 py-3 text-sm font-semibold"
             >
-              Search live — free
+              Search live for free
             </Link>
             <Link
               href={`/login?tab=signup&alert=${encodeURIComponent(item.query)}`}

@@ -3,8 +3,8 @@
  *
  * gtag is loaded in `app/layout.tsx` with `strategy="afterInteractive"` and only
  * when NEXT_PUBLIC_GA_ID is set, so it is absent in local dev and for a beat
- * after hydration in prod. Every call here no-ops safely rather than throwing —
- * analytics must never be able to break a signup or a search.
+ * after hydration in prod. Every call here no-ops safely rather than throwing,
+ * because analytics must never be able to break a signup or a search.
  *
  * Events fired here still need to be marked as key events in the GA4 UI
  * (Admin → Events) before they show up as conversions in channel reports.
@@ -35,7 +35,7 @@ type AnalyticsEvent =
   // Any click on the unified "Start comparing free" action.
   | { name: 'cta_click'; params: { location: CtaLocation } }
   // Account created. Google OAuth signups can't be distinguished from returning
-  // logins client-side, so this fires for the email path only — use
+  // logins client-side, so this fires for the email path only; use
   // onboarding_complete for a method-agnostic activation count.
   | { name: 'sign_up'; params: { method: 'email' } }
   // Every new account is gated through /onboarding regardless of auth method,
@@ -43,7 +43,7 @@ type AnalyticsEvent =
   | { name: 'onboarding_complete'; params: { persona: string } }
   // A free user was shown a locked price-intelligence panel. Without this, a null
   // conversion result cannot distinguish "nobody reached the wall" from "the wall
-  // does not persuade" — which is exactly the ambiguity that made EXP-002
+  // does not persuade", which is exactly the ambiguity that made EXP-002
   // unreadable. Fires once per surface per mount, not per render.
   | { name: 'paywall_view'; params: { surface: PaywallSurface } }
   // Click on an upgrade CTA rendered by a locked panel.

@@ -35,13 +35,13 @@ export function matchListingColor(
 
 // ── Structured-color boost sort ──────────────────────────────────────────
 //
-// Maps common color/colorway words — including resale-specific colorway
+// Maps common color/colorway words, including resale-specific colorway
 // slang seen in real listings (e.g. streetwear brands naming their own
-// shades) — to one of our COLOR_OPTIONS keys. Verified live 2026-06-21:
+// shades), to one of our COLOR_OPTIONS keys. Verified live 2026-06-21:
 // Poshmark's structured "color" field normalizes "Coral" -> "Orange";
 // "Oatmeal" and "Limo" are real Fear of God Essentials colorway names
 // observed in live Mercari/Depop listing titles. Lowercase, single-word
-// keys only — checked per-token, not substring, to avoid false matches.
+// keys only, checked per-token, not substring, to avoid false matches.
 const COLOR_SYNONYMS: Record<string, string> = {
   black: 'black', jet: 'black', onyx: 'black', tar: 'black', limo: 'black', ink: 'black',
   white: 'white', ivory: 'white', cream: 'white',
@@ -78,16 +78,16 @@ export function resolveColorKey(rawColor: string | null | undefined): string | n
 }
 
 /**
- * Title-text color fallback — used only when a listing has no structured
+ * Title-text color fallback: used only when a listing has no structured
  * `color` field at all (verified live 2026-06-21: Depop and Grailed's
  * per-listing JSON-LD never carries color, and Mercari/Grailed/Depop's
- * native search-grid path has no structured color signal whatsoever — DOM
+ * native search-grid path has no structured color signal whatsoever: DOM
  * cards only, no JSON-LD). Lower-trust than structured data since free text
  * can contain a color word for an unrelated reason, so two narrow guards:
- *   - "denim" is skipped — usually describes fabric, not reliably a blue
+ *   - "denim" is skipped: usually describes fabric, not reliably a blue
  *     garment (kept in COLOR_SYNONYMS for structured data, where a
  *     platform's own color attribute literally saying "Denim" is trustworthy).
- *   - "stone" is skipped when followed by "island" — Stone Island is a real
+ *   - "stone" is skipped when followed by "island": Stone Island is a real
  *     brand, same collision pattern as the existing Off-White guard above.
  */
 export function extractColorFromTitle(title: string | null | undefined): string | null {
@@ -107,7 +107,7 @@ export function extractColorFromTitle(title: string | null | undefined): string 
  * Boost-only sort: listings whose resolved structured color matches the
  * active color filter move first; everything else (including listings with
  * no structured color data at all) keeps its existing relative order.
- * Never drops a listing — color stays deliberately permissive per the
+ * Never drops a listing: color stays deliberately permissive per the
  * 2026-05-20 design decision (HANDOFF §7 J/K): structured data is real
  * signal where we have it, but incomplete coverage shouldn't cost a user
  * a listing they'd otherwise have seen.

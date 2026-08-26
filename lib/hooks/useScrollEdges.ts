@@ -8,7 +8,7 @@ interface ScrollEdges {
 }
 
 // Tracks whether a horizontally-scrollable element has more content hidden
-// past its left/right edge, so the UI can hint "there's more to scroll" —
+// past its left/right edge, so the UI can hint "there's more to scroll":
 // otherwise overflow-x-auto rows give no visual cue they're scrollable.
 export function useScrollEdges(ref: RefObject<HTMLElement | null>): ScrollEdges {
   const [edges, setEdges] = useState<ScrollEdges>({ left: false, right: false });
@@ -41,7 +41,7 @@ export function useScrollEdges(ref: RefObject<HTMLElement | null>): ScrollEdges 
 const FADE = '24px';
 
 // CSS mask (not a flat-color overlay) so it fades correctly over any
-// background, including gradients — only the row's own content fades out,
+// background, including gradients: only the row's own content fades out,
 // the background underneath stays untouched.
 export function scrollFadeMask(edges: ScrollEdges): string | undefined {
   if (edges.left && edges.right) {

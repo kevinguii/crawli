@@ -2,7 +2,7 @@
 
 Reads `strategy.total_usage` (a `TokenUsage` populated by crawl4ai after each
 LLM extraction call) and appends one JSONL row per scrape to
-`token_usage.jsonl`. No patching of litellm or the OpenAI client — we just
+`token_usage.jsonl`. No patching of litellm or the OpenAI client, we just
 read the already-tracked numbers crawl4ai exposes.
 
 Activated only when `TOKEN_TRACKING=1` is set. Default-off: zero impact on
@@ -39,7 +39,7 @@ def log_extraction(
 
     Reads `strategy.total_usage` (a TokenUsage with prompt_tokens /
     completion_tokens / total_tokens). Safe to call on a strategy that
-    never made an LLM call — returns None if there's no usage to log.
+    never made an LLM call, returns None if there's no usage to log.
     """
     if not is_enabled():
         return None
@@ -52,7 +52,7 @@ def log_extraction(
     completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
     total_tokens = int(getattr(usage, "total_tokens", 0) or (prompt_tokens + completion_tokens))
 
-    # If no tokens, no row — e.g. structured extractor handled it.
+    # If no tokens, no row: e.g. structured extractor handled it.
     if prompt_tokens == 0 and completion_tokens == 0:
         return None
 

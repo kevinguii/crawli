@@ -1,7 +1,7 @@
 import { FAQ_ITEMS } from "./faqData";
 
 // Server-rendered FAQ. Uses native <details> so the full Q&A is in the HTML
-// (no client JS) — important for both classic SEO and AI answer engines, which
+// (no client JS), important for both classic SEO and AI answer engines, which
 // read the server HTML directly. Paired with FAQPage JSON-LD in StructuredData.
 export default function FAQ() {
   return (

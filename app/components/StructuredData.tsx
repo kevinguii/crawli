@@ -23,7 +23,7 @@ const PLATFORMS = [
  * - SoftwareApplication describes the product (a free shopping/search app).
  * - FAQPage mirrors the on-page FAQ (see faqData.ts).
  *
- * Note: no Product schema here — that's only valid on single-item pages, not a
+ * Note: no Product schema here; that's only valid on single-item pages, not a
  * multi-result landing page.
  */
 export default function StructuredData() {

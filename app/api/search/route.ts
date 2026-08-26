@@ -36,7 +36,7 @@ const requestSchema = z.object({
 
 
 export async function POST(request: Request) {
-  // Auth gate — Crawli is a hosted service for signed-in users. Anonymous
+  // Auth gate: Crawli is a hosted service for signed-in users. Anonymous
   // requests are rejected so the quota counter has a user to attach to.
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -108,14 +108,14 @@ export async function POST(request: Request) {
   const usingCredit = used >= cap;
   if (usingCredit && credits <= 0) {
     // Paid tiers are marketed as "Unlimited searches" (see PricingCards.tsx), so
-    // the cap is an abuse backstop, not a product limit — nobody real has ever
+    // the cap is an abuse backstop, not a product limit. Nobody real has ever
     // come near it. Never tell a paying user they are out of searches or to
     // "upgrade your plan" (Pro IS the top plan); tell them to reach out, and log
     // it loudly so the ceiling gets raised rather than silently enforced.
     const isPaid = tier !== 'free';
     if (isPaid) {
       console.warn(
-        `[quota] PAID user hit the abuse backstop — tier=${tier} used=${used} cap=${cap}. ` +
+        `[quota] PAID user hit the abuse backstop: tier=${tier} used=${used} cap=${cap}. ` +
         `Raise TIER_CAPS.${tier}.maxSearchesPerPeriod or drop the "Unlimited" copy.`,
       );
     }
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
         } catch {
           // Client disconnected (ERR_INVALID_STATE). In-flight sidecar work
-          // completes naturally — no signal to abort it from here.
+          // completes naturally: no signal to abort it from here.
         }
       };
 
@@ -165,12 +165,12 @@ export async function POST(request: Request) {
 
       // A5: cap how many platforms enter the scrape phase at once. The
       // sidecar has its own semaphore (SIDECAR_MAX_CONCURRENT_RENDERS) so
-      // this is the across-platform layer — it stops 8 selected platforms
+      // this is the across-platform layer: it stops 8 selected platforms
       // × 2 per-platform scrapes = 16 concurrent Chromium renders, which
       // killed the Playwright driver on small machines. Overflow platforms
       // queue here and start as the first batch drains.
       //
-      // Firecrawl plan tier is informational only — free=2, paid=5
+      // Firecrawl plan tier is informational only: free=2, paid=5
       // concurrent search calls. Raising this above your plan won't error;
       // Firecrawl will just queue search calls on its end.
       const platformConcurrency = Math.max(
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
         // Charge the quota only when the search actually produced results.
         // Mirrors the cache-write rule: transient all-failure responses don't
         // burn a search slot. Cache hits never reach this code path (early
-        // return above), so they're also free to the user — correct UX since
+        // return above), so they're also free to the user: correct UX since
         // they cost us nothing.
         //
         // KNOWN ABUSE VECTOR (route.ts:303): a user can cancel the browser
@@ -251,7 +251,7 @@ export async function POST(request: Request) {
         // Overage: if the included cap was already spent, draw down a prepaid
         // credit instead of incrementing period usage. Otherwise charge the
         // normal included-search slot. (Same read-at-start / write-at-end race
-        // as the original increment — acceptable at current volume.)
+        // as the original increment, acceptable at current volume.)
         const charge = usingCredit
           ? { search_credits: Math.max(0, credits - 1) }
           : { searches_used_this_period: used + 1 };

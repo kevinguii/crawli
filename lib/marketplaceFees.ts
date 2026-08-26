@@ -1,5 +1,5 @@
 /**
- * Marketplace fee config — the ONE source of truth for seller-payout and
+ * Marketplace fee config: the ONE source of truth for seller-payout and
  * buyer-side fees across every destination platform Crawli can flip into.
  *
  * Rules of the road:
@@ -54,7 +54,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     // Fashion final value fee, US seller without a Store subscription. FVF is
     // inclusive of payment processing on eBay Managed Payments, so there is no
     // separate processing %. Per-order fee is $0.40 for orders over $10
-    // ($0.30 at/under $10) — we use $0.40 as the common case. Rate raised from
+    // ($0.30 at/under $10); we use $0.40 as the common case. Rate raised from
     // 13.25% to 13.6% for most categories effective 2025-02-14.
     sellerCommissionPct: 0.136,
     sellerProcessingPct: 0,
@@ -141,7 +141,7 @@ export const MARKETPLACE_FEES: Record<PlatformKey, PlatformFee> = {
     buyerFeeFlat: 0.7,
     lastVerified: '2026-08-11',
     notes:
-      'No seller fees at all — listing price is the payout. Buyer pays ~5% + $0.70 Buyer Protection.',
+      'No seller fees at all: listing price is the payout. Buyer pays ~5% + $0.70 Buyer Protection.',
   },
 
   stockx: {
@@ -175,7 +175,7 @@ export function sellerPayout(salePrice: number, platform: PlatformKey): number {
   return salePrice - sellerFee(salePrice, platform);
 }
 
-/** What the buyer pays on top of the list price (context only — not in profit). */
+/** What the buyer pays on top of the list price (context only, not in profit). */
 export function buyerCost(salePrice: number, platform: PlatformKey): number {
   const f = MARKETPLACE_FEES[platform];
   if (!f || salePrice <= 0) return salePrice;

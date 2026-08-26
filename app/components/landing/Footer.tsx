@@ -93,7 +93,7 @@ export default function Footer() {
           />
         </a>
 
-        {/* Nav links — Blog lives in the navbar. /compare is also linked here so
+        {/* Nav links: Blog lives in the navbar. /compare is also linked here so
             every page on the site carries a link into the comparison hub. */}
         <nav className="flex items-center gap-5 text-sm">
           {[

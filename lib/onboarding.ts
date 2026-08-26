@@ -1,4 +1,4 @@
-// Pure onboarding logic. No imports, no I/O — this is the only unit-testable
+// Pure onboarding logic. No imports, no I/O: this is the only unit-testable
 // surface in the feature, and scripts/verify-onboarding.mts covers it.
 //
 // The flow is BLOCKING (no skip, no exit until complete), so the step machine
@@ -30,7 +30,7 @@ export function needsOnboarding(profile: { onboarding_completed_at: string | nul
 }
 
 /** Position of a step, used for the progress indicator and for resume-after-close.
- *  Unknown values clamp to 0 rather than throwing — a corrupt persisted step must
+ *  Unknown values clamp to 0 rather than throwing: a corrupt persisted step must
  *  restart the flow, never crash a blocking page. */
 export function stepIndex(step: OnboardingStepId): number {
   const i = ONBOARDING_STEPS.indexOf(step);
@@ -56,7 +56,7 @@ export function stepFromIndex(i: number): OnboardingStepId {
   return ONBOARDING_STEPS[i];
 }
 
-/** Linear retreat, the inverse of nextStep. Clamps at 'branch' — there is
+/** Linear retreat, the inverse of nextStep. Clamps at 'branch': there is
  *  nothing before the first screen. Local navigation only: going back does
  *  not persist, so a resume-after-close still lands at the furthest step
  *  actually reached, not wherever the user last backed up to. */

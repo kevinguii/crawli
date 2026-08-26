@@ -6,7 +6,7 @@ import { packById, priceIdForPack } from '@/lib/creditPacks';
 
 /**
  * One-time Stripe Checkout for a prepaid search credit pack (the debt-proof
- * overage path). mode='payment' — cash collected up front. The matching
+ * overage path). mode='payment': cash collected up front. The matching
  * `search_credits` are granted on the `checkout.session.completed` webhook, not
  * here, so credits are only ever added after Stripe confirms payment.
  *

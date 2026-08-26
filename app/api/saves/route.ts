@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   // Saves cap. Ungated before 2026-08-17 (paywall repackaging).
   //
   // Users who were already over the new cap keep every existing save and are simply
-  // blocked from adding another until they are back under it — deleting data to
+  // blocked from adding another until they are back under it: deleting data to
   // enforce a new price plan turns a pricing change into a support incident.
   // Re-saving something already saved is idempotent, not a new save, so it is
   // allowed through even at the cap.
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('[/api/saves POST] supabase error', error);
-    // Already saved — fetch existing id.
+    // Already saved: fetch existing id.
     if (error.code === '23505') {
       const { data: existing } = await supabase
         .from('saves')
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
       .eq('is_default', true)
       .maybeSingle();
 
-    // My Collection is the "all items" view — every save shows here regardless of folder_id.
+    // My Collection is the "all items" view: every save shows here regardless of folder_id.
     // Custom folders filter strictly by folder_id.
     if (!(defaultFolder && folderIdParam === defaultFolder.id)) {
       query = query.eq('folder_id', folderIdParam);

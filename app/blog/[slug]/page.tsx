@@ -12,7 +12,7 @@ import LivePriceTable from '@/app/components/blog/LivePriceTable';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
 
 // `revalidate` has no effect while this route calls supabase.auth.getUser()
-// below (a dynamic API), which forces server-rendering on every request —
+// below (a dynamic API), which forces server-rendering on every request,
 // so live price data is already fetched fresh per-request, not on an hourly
 // cache. Kept for consistency with /compare/[slug] and in case the auth
 // check is ever made conditional, at which point this would start governing
@@ -203,7 +203,7 @@ export default async function BlogPost({ params }: Props) {
           <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
         )}
 
-        {/* On-page FAQ — collapsible accordion. Mirrors the FAQPage JSON-LD above.
+        {/* On-page FAQ: collapsible accordion. Mirrors the FAQPage JSON-LD above.
             Drives Google's People Also Ask and gives AI answer engines clean Q&A. */}
         {post.faq.length > 0 && <CollapsibleFAQ items={post.faq} />}
       </article>

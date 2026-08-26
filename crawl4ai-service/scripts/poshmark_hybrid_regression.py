@@ -1,4 +1,4 @@
-"""Offline regression for the hybrid extract_poshmark — no network.
+"""Offline regression for the hybrid extract_poshmark, no network.
 
 Runs against the 12 saved dumps in debug_dumps/poshmark_jsonld/ (6 available +
 6 sold, captured by poshmark_jsonld_probe.py). Verifies:
@@ -43,7 +43,7 @@ def strip_jsonld(html: str) -> str:
 def main() -> None:
     dumps = sorted(DUMP_DIR.glob("*.html"))
     if not dumps:
-        print(f"No dumps in {DUMP_DIR} — run poshmark_jsonld_probe.py first.")
+        print(f"No dumps in {DUMP_DIR}, run poshmark_jsonld_probe.py first.")
         return
 
     print(f"=== TIER 1 (JSON-LD): {len(dumps)} saved dumps ===")

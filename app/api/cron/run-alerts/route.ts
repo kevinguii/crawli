@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
 
 export const dynamic = 'force-dynamic';
-// Allow up to 5 minutes — alert runs do real searches which take 30-60s each
+// Allow up to 5 minutes: alert runs do real searches which take 30-60s each
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {

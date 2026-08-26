@@ -23,7 +23,7 @@ function LoginContent() {
   const turnstileRef = useRef<TurnstileHandle>(null);
   const router = useRouter();
 
-  // Already signed in? Don't show the auth form — bounce to the app. This makes
+  // Already signed in? Don't show the auth form, bounce to the app. This makes
   // the public "Get started" / "Create free account" CTAs behave correctly for
   // logged-in users (briefly land here, then auto-redirect to /search).
   useEffect(() => {
@@ -85,7 +85,7 @@ function LoginContent() {
         setError(error.message);
         return;
       }
-      // Supabase returns identities:[] for any existing account — confirmed,
+      // Supabase returns identities:[] for any existing account: confirmed,
       // unconfirmed, or Google-only with no password identity at all. It's not
       // just "unconfirmed retry": resend() also returns success (200, no-op) for
       // already-confirmed accounts, so its success/error can't tell these apart.
@@ -100,7 +100,7 @@ function LoginContent() {
         );
         return;
       }
-      // Genuinely new account — the existing-account branch above returns before
+      // Genuinely new account. The existing-account branch above returns before
       // reaching here, so this never double-counts a re-signup attempt.
       track({ name: 'sign_up', params: { method: 'email' } });
       router.push(`/check-email?mode=signup&email=${encodeURIComponent(trimmedEmail)}`);

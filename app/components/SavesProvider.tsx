@@ -74,7 +74,7 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
           return next;
         });
       } catch {
-        // silent — heart will just show as unsaved
+        // silent, heart will just show as unsaved
       }
     },
     [signedIn]
@@ -186,7 +186,7 @@ export function SavesProvider({ children }: { children: React.ReactNode }) {
 export function useSaves(): SavesContextValue {
   const ctx = useContext(SavesContext);
   if (!ctx) {
-    // Render gracefully outside provider (e.g. unprotected pages) — no-op.
+    // Render gracefully outside provider (e.g. unprotected pages): no-op.
     return {
       savedUrls: new Set(),
       isSaved: () => false,

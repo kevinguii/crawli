@@ -2,7 +2,7 @@
  * Smoke-test the crawl4ai sidecar across all 8 platforms.
  *
  * Cost: ~16 Firecrawl credits (search only, 2 per platform × 8).
- *       Zero Firecrawl scrape credits — extraction goes through the local sidecar.
+ *       Zero Firecrawl scrape credits: extraction goes through the local sidecar.
  *
  * Run: node --env-file=.env scripts/test-all-platforms.mjs
  *      (requires the sidecar to be running at http://localhost:8000)
@@ -79,7 +79,7 @@ try {
   const health = await fetch(`${SIDECAR_URL}/health`).then((r) => r.json());
   console.log(`Sidecar health: ${health.status}  llm_mode=${health.llm_mode}  provider=${health.provider}\n`);
   if (health.llm_mode !== 'active') {
-    console.error('⚠️  Sidecar is in stub mode — fix LLM_PROVIDER/API key in .env and restart.');
+    console.error('⚠️  Sidecar is in stub mode, fix LLM_PROVIDER/API key in .env and restart.');
     process.exit(1);
   }
 } catch (err) {
@@ -130,8 +130,8 @@ for (const platform of platforms) {
 }
 
 console.log(`\n── Summary ──────────────────────────────────────────────────────`);
-console.log(`✅ extracted:    ${tally.pass.join(', ') || '—'}`);
-console.log(`⚠️  null result: ${tally.scrapeNull.join(', ') || '—'}`);
-console.log(`⚠️  no URL:      ${tally.noUrl.join(', ') || '—'}`);
-console.log(`❌ errors:       ${tally.error.join(', ') || '—'}`);
+console.log(`✅ extracted:    ${tally.pass.join(', ') || '(none)'}`);
+console.log(`⚠️  null result: ${tally.scrapeNull.join(', ') || '(none)'}`);
+console.log(`⚠️  no URL:      ${tally.noUrl.join(', ') || '(none)'}`);
+console.log(`❌ errors:       ${tally.error.join(', ') || '(none)'}`);
 console.log();

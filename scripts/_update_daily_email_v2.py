@@ -230,8 +230,8 @@ try { blogBriefs = JSON.parse(blogText); } catch(e) { blogBriefs = []; }
 
 const sanitize = (s) => String(s||'')
   .replace(/!+/g, '.')
-  .replace(/—/g, ',')
-  .replace(/ – /g, ', ')
+  .replace(/\u2014/g, ',')
+  .replace(/ \u2013 /g, ', ')
   .replace(/\.{2,}/g, '.')
   .replace(/,\s*,/g, ',')
   .trim();

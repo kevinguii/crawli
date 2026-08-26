@@ -3,7 +3,7 @@
 // Runs Grailed and Poshmark in parallel and never lets one platform's failure blank
 // the panel: a platform that throws lands in `errors`, a platform with too little
 // data is simply absent, and the result is `available: false` only when nothing
-// survived. That distinction matters — a silent scrape failure must not be
+// survived. That distinction matters: a silent scrape failure must not be
 // indistinguishable from "this item never sells".
 
 import { fetchGrailedSold } from './grailed';
@@ -23,7 +23,7 @@ interface PlatformOutcome {
   comps: SoldComp[];
   /**
    * Individual sales for this platform, present whenever at least one relevant
-   * sale exists — including when `stats` is null because the sample was under
+   * sale exists, including when `stats` is null because the sample was under
    * MIN_SAMPLE. When `stats` exists these are exactly the comps behind it, so the
    * rows always add up to the median shown above them.
    */

@@ -81,7 +81,7 @@ def report(soup: BeautifulSoup, html: str) -> None:
                     sample_keys = list(sample.keys())[:15]
                     print(f"    pageProps['{k}']: list[{len(v)}], item keys={sample_keys}")
                 elif isinstance(v, dict):
-                    # nested dict — print one level of keys
+                    # nested dict, print one level of keys
                     sub_keys = list(v.keys())[:15]
                     print(f"    pageProps['{k}']: dict keys={sub_keys}")
         except Exception as exc:  # noqa: BLE001

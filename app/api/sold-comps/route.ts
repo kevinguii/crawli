@@ -2,7 +2,7 @@
 // NDJSON protocol there is fragile, and this has a completely different cost
 // profile (two plain HTTP requests, no browser, no Firecrawl).
 //
-// Does NOT consume a search credit — it is gated by tier instead. As of 2026-08-17
+// Does NOT consume a search credit: it is gated by tier instead. As of 2026-08-17
 // (paywall repackaging) this is a paid capability: free users receive a stripped
 // payload carrying platform names and sample sizes only, with every computed price
 // omitted server-side. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   const tier = resolveTier(profile?.subscription_status, profile?.subscription_tier);
   const unlocked = canSeePriceIntelligence(tier);
 
-  // Free users still run the lookup and still warm the shared cache — it is two
+  // Free users still run the lookup and still warm the shared cache: it is two
   // plain HTTP requests with no Firecrawl credit, and the locked panel needs real
   // sample counts. The stripping happens on the way out, on both the cache-hit and
   // fresh-compute paths, so there is exactly one place prices can escape.
@@ -104,8 +104,8 @@ export async function POST(request: Request) {
   }
 
   // Only cache a usable answer. Caching `available: false` would pin a transient
-  // upstream failure in place for 24h — the same reason the sidecar's search cache
-  // skips empty results.
+  // upstream failure in place for 24h (the same reason the sidecar's search cache
+  // skips empty results).
   if (result.available) {
     const { error } = await admin.from('sold_comps_cache').upsert({
       key,

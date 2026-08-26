@@ -48,7 +48,7 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
       } else {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         // quota_exceeded is a legitimate outcome for a user who already has 2
-        // alerts (free cap) — it is not a failure of the flow.
+        // alerts (free cap). It is not a failure of the flow.
         setFailed(body?.error === 'quota_exceeded'
           ? "You are already at your alert limit, so we did not add another."
           : 'We could not set that up just now.');
@@ -67,7 +67,7 @@ export default function AlertStep({ draft, patch, advance, busy }: StepProps) {
       </h1>
       <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
         {draft.alertCreated
-          ? "We're running your first search now — check your inbox in a few minutes for what matches today. After that, we check every morning and email you when something new shows up."
+          ? "We're running your first search now. Check your inbox in a few minutes for what matches today. After that, we check every morning and email you when something new shows up."
           : 'We check 8 of them every morning (eBay is search-only) and email you when something new matches.'}
       </p>
 

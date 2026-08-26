@@ -6,7 +6,7 @@ import { track } from '@/lib/analytics';
 
 /**
  * Trimmed shape of a compare_items row. The landing page already loads the full
- * catalogue for CompareSection, so this component costs no extra query — the
+ * catalogue for CompareSection, so this component costs no extra query. The
  * parent just narrows the rows before handing them to the client bundle.
  */
 export interface HeroSearchItem {
@@ -165,7 +165,7 @@ export default function HeroSearch({ items }: { items: HeroSearchItem[] }) {
           role="listbox"
           className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl text-left"
           style={{
-            // Must be OPAQUE — this floats over page content. `--surface` is
+            // Must be OPAQUE: this floats over page content. `--surface` is
             // rgba(255,255,255,0.04) in dark mode, so using it here let the
             // hero's value pillars show straight through the results.
             // `--bg-elevated` is a solid colour in both themes.

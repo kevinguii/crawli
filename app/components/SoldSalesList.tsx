@@ -20,7 +20,7 @@ interface Row extends SoldSale {
  * The individual completed sales, newest first.
  *
  * This is the answer to "the median says $99, off what?" and the only thing there
- * is to show when a query is too thin for a median at all (see MIN_SAMPLE — the
+ * is to show when a query is too thin for a median at all (see MIN_SAMPLE, the
  * floor governs the aggregate, never these rows). Every row carries its own
  * platform label rather than the list being split per platform: unlike a pooled
  * median, which would describe neither market, a dated sale attributed to its own
@@ -37,7 +37,7 @@ export default function SoldSalesList({
   /** Rows to render. Anything beyond this is the caller's to link out to. */
   limit: number;
   /** Rows shown before a "Show all" toggle appears. Omit to always show every row
-   *  up to `limit` — the search-results panel's short list has no need to collapse
+   *  up to `limit`, the search-results panel's short list has no need to collapse
    *  further; the full /price-check list does. */
   initialVisible?: number;
   footer?: React.ReactNode;

@@ -89,7 +89,7 @@ export async function setCachedEvents(
 
 // ── Cross-user listings cache (Track B) ────────────────────────────────────
 // The NDJSON events cache above is the streaming /api/search path's replay
-// cache. Alert runs don't stream — runAlert -> runSearchJob returns Listing[].
+// cache. Alert runs don't stream: runAlert -> runSearchJob returns Listing[].
 // This pair caches that Listing[] so N users watching the SAME query/platforms/
 // filters share ONE scrape (50 watchers = 1 scrape, fanned out). Keyed by the
 // same buildCacheKey, so it's user-agnostic by construction. Stored in its own

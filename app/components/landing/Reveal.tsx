@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
  * Wraps a section and lifts it into place the first time it scrolls into view.
- * Content is always opacity:1 — including in the server-rendered HTML — so a
+ * Content is always opacity:1 (including in the server-rendered HTML), so a
  * bot, crawler, screenshot, or a user who never scrolls just right always sees
  * real content, never a blank section. Only the transform animates.
  */

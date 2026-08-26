@@ -9,7 +9,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
 
 export const metadata: Metadata = {
   // Renders as "Resale Price Comparisons · Crawli" (37 chars) via the
-  // root layout's "%s · Crawli" template — well inside Bing's ~60-char cut.
+  // root layout's "%s · Crawli" template, well inside Bing's ~60-char cut.
   title: 'Resale Price Comparisons',
   description:
     'Live resale price ranges for 33 of the most-searched secondhand pieces, compared across Grailed, Depop, Poshmark, StockX, Mercari, Vinted, eBay and Vestiaire. Updated daily.',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 // `compare_items.category` is stored lowercase-kebab in Supabase. These are the
-// display labels and the section order on this page — anything not listed here
+// display labels and the section order on this page: anything not listed here
 // still renders, appended at the end under its raw slug title-cased.
 const CATEGORY_META: { key: string; label: string; blurb: string }[] = [
   {

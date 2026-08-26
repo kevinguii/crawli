@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
     .insert({ event_id: event.id, type: event.type });
   if (claimErr) {
     if (claimErr.code === '23505') {
-      console.log(`[stripe-webhook] duplicate ${event.type} ${event.id} — already processed, skipping`);
+      console.log(`[stripe-webhook] duplicate ${event.type} ${event.id}: already processed, skipping`);
       return NextResponse.json({ received: true, duplicate: true });
     }
-    // Couldn't record the claim for some other reason — log and process anyway
+    // Couldn't record the claim for some other reason: log and process anyway
     // rather than wedging a legitimate event on a bookkeeping-table hiccup.
     console.error('[stripe-webhook] event claim insert failed (processing anyway):', claimErr);
   }
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         const subscriptionId = session.subscription as string | null;
         console.log(`[stripe-webhook] checkout.session.completed userId=${userId} sub=${subscriptionId}`);
         if (!userId || !subscriptionId) {
-          console.warn('[stripe-webhook] missing userId or subscriptionId — skipping');
+          console.warn('[stripe-webhook] missing userId or subscriptionId: skipping');
           break;
         }
 
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         const userId = (sub.metadata?.supabase_user_id as string) ?? await userIdFromCustomer(admin, sub.customer as string);
         console.log(`[stripe-webhook] ${event.type} userId=${userId} customer=${sub.customer}`);
         if (!userId) {
-          console.warn('[stripe-webhook] could not resolve userId — skipping');
+          console.warn('[stripe-webhook] could not resolve userId: skipping');
           break;
         }
         await applySubscription(admin, userId, sub);
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         break;
       }
       case 'invoice.payment_succeeded': {
-        // Fires on every successful charge — initial subscription, renewals,
+        // Fires on every successful charge: initial subscription, renewals,
         // and recovery after past_due. Quota resets are now handled by a 7-day
         // rolling window in the search API, not by the billing cycle, so we
         // don't need to reset on invoice.payment_succeeded anymore.
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
         const userId = await userIdFromCustomer(admin, customerId);
         console.log(`[stripe-webhook] invoice.payment_succeeded customer=${customerId} userId=${userId}`);
         if (!userId) break;
-        // No quota reset needed — weekly resets are handled in the search API
+        // No quota reset needed: weekly resets are handled in the search API
         break;
       }
       default:
@@ -153,7 +153,7 @@ async function applySubscription(
 
   // Active/trialing subs map to a real tier via price ID. Anything else
   // (past_due, canceled, unpaid, incomplete) drops to free caps so quotas
-  // tighten immediately on failure — Stripe will re-emit an event with
+  // tighten immediately on failure: Stripe will re-emit an event with
   // a healthy status if the user recovers.
   const tier = status === 'active' ? tierFromPriceId(priceId) : 'free';
   const caps = TIER_CAPS[tier];
@@ -170,7 +170,7 @@ async function applySubscription(
     native_results_cap: caps.nativeResultsCap,
     max_saves: caps.maxSaves,
     // Per-tier via TIER_CAPS rather than hardcoded, so a future cadence-floor
-    // change here needs no code edit. Free currently matches pro at 24 (daily) —
+    // change here needs no code edit. Free currently matches pro at 24 (daily):
     // see the owner-decision note on TIER_CAPS in lib/tierCaps.ts.
     min_alert_cadence_hours: caps.minAlertCadenceHours,
   }).eq('id', userId).select();
@@ -194,7 +194,7 @@ async function grantCreditPack(
   const resolvedUserId = userId
     ?? await userIdFromCustomer(admin, session.customer as string);
   if (!resolvedUserId) {
-    console.warn('[stripe-webhook] credit pack: could not resolve userId — skipping');
+    console.warn('[stripe-webhook] credit pack: could not resolve userId, skipping');
     return;
   }
 
@@ -207,7 +207,7 @@ async function grantCreditPack(
   }
 
   if (!searches) {
-    console.warn(`[stripe-webhook] credit pack: no searches resolved for session=${session.id} — skipping`);
+    console.warn(`[stripe-webhook] credit pack: no searches resolved for session=${session.id}, skipping`);
     return;
   }
 

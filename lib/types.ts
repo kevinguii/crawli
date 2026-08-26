@@ -1,4 +1,4 @@
-// realreal disabled — PerimeterX requires manual interaction; results are
+// realreal disabled, PerimeterX requires manual interaction; results are
 // unreliable (empty on bot-detection). Not in PLATFORM_DOMAINS.
 export const PLATFORM_DOMAINS: Record<string, string> = {
   grailed: 'grailed.com',
@@ -40,10 +40,10 @@ export const NATIVE_PLATFORMS = new Set<string>([
   // Firecrawl discover-then-scrape-each-listing path, which cost ~60s and 10
   // Chromium renders per search for ~6 usable results; its own SRP renders in
   // ~5s and yields 40+. lib/firecrawl.ts still carries an `ebay` entry in
-  // PLATFORM_STRATEGY — that path is now unreachable for search and is kept
+  // PLATFORM_STRATEGY, that path is now unreachable for search and is kept
   // only so a manual Avenue B fallback stays possible.
   'ebay',
-  /* realreal — PerimeterX blocks, keep disabled */
+  /* realreal, PerimeterX blocks, keep disabled */
 ]);
 
 export function isNativePlatform(platform: string): boolean {

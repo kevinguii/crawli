@@ -23,7 +23,7 @@ interface Props {
 // is already in memory by the time this component mounts (the sidecar is called
 // with a hardcoded limit=100 per platform and TIER_CAPS.nativeResultsCap slices
 // the result server-side), so revealing more costs one setState and no network.
-// It exists because the "All" tab flatMaps every platform — at Pro's 100-per-
+// It exists because the "All" tab flatMaps every platform: at Pro's 100-per-
 // platform cap that is up to ~800 image cards in a single grid, which is a real
 // first-paint cost for listings almost nobody scrolls to.
 const PAGE_SIZE = 48;
@@ -107,7 +107,7 @@ export default function ResultsDisplay({ data, minPrice, maxPrice }: Props) {
   }, [activeTab, platformKeys, results, minPrice, maxPrice]);
 
   // Collapse back to the first page whenever the visible set changes underneath
-  // us — switching tabs, re-filtering, or a new search should not inherit the
+  // us: switching tabs, re-filtering, or a new search should not inherit the
   // previous reveal. Deliberately a render-phase adjustment rather than an
   // effect: setState inside an effect body cascades an extra render (and trips
   // react-hooks/immutability). See "adjusting state when props change" in the

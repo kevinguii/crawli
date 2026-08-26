@@ -2,7 +2,7 @@
 
 Scripts to measure and estimate OpenAI + Firecrawl costs for Crawli searches.
 
-> **Pricing source of truth:** [docs/reference/FIRECRAWL_PRICING.md](../docs/reference/FIRECRAWL_PRICING.md). The numbers below should match that file; if they don't, that file wins — update this one.
+> **Pricing source of truth:** [docs/reference/FIRECRAWL_PRICING.md](../docs/reference/FIRECRAWL_PRICING.md). The numbers below should match that file; if they don't, that file wins. Update this one.
 
 ---
 
@@ -81,7 +81,7 @@ TOTAL:    ~$0.15
 Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp.
 
 **Has cost (LLM-only):**
-- eBay: ~$0.014 / search (50 KB HTML, chunked into 3–4 segments)
+- eBay: ~$0.014 / search (50 KB HTML, chunked into 3-4 segments)
 - Vestiaire: ~$0.005 / search
 
 **Firecrawl search cost (every platform except ThredUp/RealReal):**
@@ -94,17 +94,17 @@ Grailed, Depop, Poshmark, StockX, Mercari, Vinted, ThredUp.
 ### 1. Lower the Firecrawl search `limit`
 
 ```ts
-// lib/firecrawl.ts:46 — currently
+// lib/firecrawl.ts:46 (currently)
 client.search(siteQuery, { limit: 20 })  // 4 credits
 // Try:
-client.search(siteQuery, { limit: 10 })  // 2 credits — cuts Firecrawl in half
+client.search(siteQuery, { limit: 10 })  // 2 credits, cuts Firecrawl in half
 ```
 
-Trade-off: less redundancy for the de-duper at [app/api/search/route.ts:57](../app/api/search/route.ts#L57). May be fine — run `limit_sweep.py` to find out.
+Trade-off: less redundancy for the de-duper at [app/api/search/route.ts:57](../app/api/search/route.ts#L57). May be fine. Run `limit_sweep.py` to find out.
 
 ### 2. Ship a structured extractor for eBay or Vestiaire
 
-These are the only LLM-fallback platforms. A working DOM/JSON-LD extractor drops their OpenAI cost to $0 — same trick we already use for Mercari/Vinted/StockX.
+These are the only LLM-fallback platforms. A working DOM/JSON-LD extractor drops their OpenAI cost to $0. Same trick we already use for Mercari/Vinted/StockX.
 
 ### 3. Cache same-query repeats
 
@@ -116,7 +116,7 @@ A 1-hour in-memory cache on `(query, platforms)` would catch back-to-back retrie
 
 The estimator above is, well, an estimator. To capture real numbers:
 
-### Enable the token tracker (gated — production unaffected by default)
+### Enable the token tracker (gated, production unaffected by default)
 
 ```bash
 export TOKEN_TRACKING=1
@@ -131,7 +131,7 @@ tail token_usage.jsonl
 
 You'll see one row per LLM call with real `input_tokens` and `output_tokens` from the OpenAI response. The bake-off harness reads this same log to compute per-engine real costs.
 
-**With `TOKEN_TRACKING` unset, no logging happens** — same code path as before, zero cost overhead.
+**With `TOKEN_TRACKING` unset, no logging happens**: same code path as before, zero cost overhead.
 
 ---
 
@@ -182,7 +182,7 @@ A $4.99/mo Pro tier covers the reseller at Standard plan with margin. At Hobby p
 ## FAQ
 
 **Q: Is Firecrawl still the dominant cost driver?**
-Yes, but now in the $0.13 range, not $0.44. The old README had per-URL scrape cost attributed to Firecrawl — wrong, that's crawl4ai (local, $0).
+Yes, but now in the $0.13 range, not $0.44. The old README had per-URL scrape cost attributed to Firecrawl: wrong, that's crawl4ai (local, $0).
 
 **Q: Can I reduce Firecrawl costs further?**
 Drop the search `limit` from 20 to 10 (single line change, cuts cost in half), ship an eBay structured extractor (kills the biggest OpenAI item), or move to the Standard plan ($99/mo) where per-credit pricing is 4× cheaper.

@@ -31,7 +31,7 @@ export default function SearchSection() {
   const [lastQuery, setLastQuery] = useState<{ query: string; platforms: string[] } | null>(null);
   const [nativeResultsCap, setNativeResultsCap] = useState<number | null>(null);
   const router = useRouter();
-  // Whether an alert already covers the query just run — flips the CTA above the
+  // Whether an alert already covers the query just run: flips the CTA above the
   // results from a pitch to a quiet confirmation.
   const [hasAlert, setHasAlert] = useState(false);
 

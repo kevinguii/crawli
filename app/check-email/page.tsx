@@ -15,7 +15,7 @@ function CheckEmailContent() {
   const params = useSearchParams();
   const email = params.get('email');
   const mode = params.get('mode') === 'reset' ? 'reset' : 'signup';
-  // Set when signup returned identities:[] — the email already has an account.
+  // Set when signup returned identities:[]. The email already has an account.
   // Supabase's resend() no-ops silently for confirmed accounts (still 200), so
   // we can't tell "unconfirmed, resent" from "confirmed, e.g. Google-only" apart.
   // Show both paths instead of guessing.
@@ -25,7 +25,7 @@ function CheckEmailContent() {
 
   const heading = existing ? 'Check your email' : mode === 'reset' ? 'Reset link sent' : 'Confirm your email';
   const body = existing
-    ? "If this is a new signup, we've sent a confirmation link. If you already have an account with this email, sign in instead — you may have originally signed up with Google."
+    ? "If this is a new signup, we've sent a confirmation link. If you already have an account with this email, sign in instead. You may have originally signed up with Google."
     : mode === 'reset'
       ? 'Click the link in your email to set a new password.'
       : 'Click the link in your email to verify your account and sign in.';

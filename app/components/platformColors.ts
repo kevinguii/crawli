@@ -6,7 +6,7 @@ export const PLATFORM_BG: Record<string, string> = {
   depop:     '#FF2300',
   stockx:    '#00B341',
   poshmark:  '#9B4C5C',
-  ebay:      '#0064D2', // primary eBay blue — used for the shimmer bar only
+  ebay:      '#0064D2', // primary eBay blue, used for the shimmer bar only
   mercari:   '#5E6DF2',
   vinted:    '#007782',
   vestiaire: '#C4A17A',
@@ -44,7 +44,7 @@ export function platformStyle(platform: string): PlatformStyle {
   };
 }
 
-// Bar/dot accent color — single solid color per platform for the shimmer bar.
+// Bar/dot accent color: single solid color per platform for the shimmer bar.
 // eBay uses its blue rather than the stripe gradient (too busy at 6px height).
 export function platformColor(platform: string, fallback = 'var(--accent)'): string {
   return PLATFORM_BG[platform] ?? fallback;

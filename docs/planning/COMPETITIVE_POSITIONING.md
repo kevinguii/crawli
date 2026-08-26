@@ -18,7 +18,7 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 
 | Work | State |
 |---|---|
-| **Step 0 — audience validation** | ~~skipped 2026-08-10~~ · **Q1 answered 2026-08-19 from `onboarding_persona`: 15 buyer / 8 reseller, and buyers are more engaged on every measure once the owner's own account is excluded. This contradicts §4.** Q2 still open, pending Reddit harvest. See Step 0 and [`AUDIENCE_AND_HOOKS_PLAN.md`](AUDIENCE_AND_HOOKS_PLAN.md) |
+| **Step 0 — audience validation** | ~~skipped 2026-08-10~~ · **both of Step 0's own questions now answered** (Q1 2026-08-19 from `onboarding_persona`, Q2 2026-08-25 from the Reddit harvest — see `AUDIENCE_AND_HOOKS_PLAN.md` F1/Q4). The downstream product-direction call this unblocks — follow buyers or keep the reseller position of §4 — is **deferred by Kevin 2026-08-25: leave it, more users are still coming in.** Tracked as that doc's own Q2, revisit once signup volume gives it a real answer |
 | **Step 1 — sold comps (Grailed + Poshmark)** | **shipped 2026-08-10** · EXP-004 running. Mercari and ThredUp dropped on probe evidence. |
 | Step 2 — alert CTA prominence | shipped 2026-08-10 · EXP-002 superseded (0 exposure, folded into EXP-001) |
 | Step 2 — compound criteria surfaced | shipped 2026-08-10 · folded into EXP-002, now EXP-001 |

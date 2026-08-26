@@ -106,14 +106,14 @@ console.log(`Used:      ${planCredits - remainingCredits}`);
 
 const crossedThresholds = ALERT_THRESHOLDS.filter((t) => pct <= t);
 if (crossedThresholds.length === 0) {
-  console.log(`\n✅ No alerts — above all thresholds (${ALERT_THRESHOLDS.join('%, ')}%)`);
+  console.log(`\n✅ No alerts, above all thresholds (${ALERT_THRESHOLDS.join('%, ')}%)`);
 } else {
   console.log(`\n${level === 'critical' ? '🚨' : '⚠️ '} Below threshold: ${crossedThresholds.join('%, ')}%`);
 
   if (isDryRun) {
     console.log('--dry-run: skipping email');
   } else if (!RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY not set — cannot send email');
+    console.error('❌ RESEND_API_KEY not set, cannot send email');
   } else {
     const { subject, html } = buildEmail(remainingCredits, planCredits, pct, level);
     try {

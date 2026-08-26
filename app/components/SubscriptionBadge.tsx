@@ -47,7 +47,7 @@ export default function SubscriptionBadge() {
   const isFree = data.plan === 'free';
 
   // Only show the counter once the user is down to their last search or
-  // fully exhausted — a fixed 90%-of-cap ratio never fires a warning state
+  // fully exhausted: a fixed 90%-of-cap ratio never fires a warning state
   // for the free tier (cap=3: 2/3 used is 66%, so it'd jump straight from
   // invisible to exhausted with no heads-up).
   const showCounter = remaining <= 1;

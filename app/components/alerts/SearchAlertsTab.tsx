@@ -42,7 +42,7 @@ export default function SearchAlertsTab({
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   // Prefill carried over from the results-page CTA. A ref, not state: the URL is
   // cleaned as soon as the modal opens (so a refresh doesn't reopen a dismissed
-  // form), and the showCreate state change is what re-renders — the ref only has
+  // form), and the showCreate state change is what re-renders: the ref only has
   // to hold the value across that render, never drive one.
   const prefillRef = useRef<{ query: string; platforms: string[] } | null>(null);
   const autoCreateHandled = useRef(false);
@@ -82,7 +82,7 @@ export default function SearchAlertsTab({
 
   // Arrived from the results-page CTA: open the create form pre-filled, but only
   // once the alerts list and billing have loaded, so the same quota gate a manual
-  // click goes through still applies. Runs once — the ref survives the URL clean
+  // click goes through still applies. Runs once: the ref survives the URL clean
   // and any re-render.
   useEffect(() => {
     if (!autoCreate || autoCreateHandled.current) return;
@@ -102,16 +102,16 @@ export default function SearchAlertsTab({
   function handleNewAlertClick(): boolean {
     const isFree = billing?.plan === 'free';
     const maxAlerts = billing?.alertsCap ?? 2;
-    // Paused alerts don't count toward the limit — only active ones occupy a slot.
+    // Paused alerts don't count toward the limit: only active ones occupy a slot.
     const activeAlerts = alerts.filter((a) => !a.paused).length;
 
     if (activeAlerts >= maxAlerts) {
       // Pro alerts are marketed "Unlimited" (see TIER_CAPS.pro.maxSavedSearches),
       // so a paid user landing here has hit the anti-abuse backstop, not a real
-      // limit — same rule as /api/search's 402: never tell a paying user to
+      // limit; same rule as /api/search's 402: never tell a paying user to
       // "upgrade" or that they're "out" of something Pro is sold as unlimited on.
       // The server enforces this too (POST /api/saved-searches), but a paid user
-      // should never even reach that generic wall — this client check is the one
+      // should never even reach that generic wall: this client check is the one
       // they'll actually see, so it needs the same reassurance.
       toast.error(
         isFree
@@ -224,8 +224,8 @@ export default function SearchAlertsTab({
             from us <strong>when new listings appear</strong>.
           </p>
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-            You can stack conditions on one alert — search terms <strong>AND</strong> size{' '}
-            <strong>AND</strong> a price range — so only listings worth buying reach your inbox.
+            You can stack conditions on one alert: search terms <strong>AND</strong> size{' '}
+            <strong>AND</strong> a price range, so only listings worth buying reach your inbox.
           </p>
         </div>
       )}

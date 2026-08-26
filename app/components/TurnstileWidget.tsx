@@ -26,7 +26,7 @@ interface TurnstileWidgetProps {
 }
 
 // Explicit render mode (not the auto data-sitekey div) so we can reset the
-// widget for a fresh token after every submit — Turnstile tokens are
+// widget for a fresh token after every submit: Turnstile tokens are
 // single-use and expire in ~5 minutes.
 const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
   function TurnstileWidget({ onToken }, ref) {

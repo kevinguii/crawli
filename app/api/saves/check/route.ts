@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 // Batch-check whether URLs are saved by the current user.
-// Body: { urls: string[] } — POST chosen over GET to avoid query-string length / encoding issues.
+// Body: { urls: string[] }. POST chosen over GET to avoid query-string length / encoding issues.
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

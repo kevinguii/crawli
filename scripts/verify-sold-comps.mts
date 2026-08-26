@@ -104,7 +104,7 @@ for (const q of ['carhartt wip jacket', 'supreme box logo hoodie']) {
   const p = await fetchPoshmarkSold('carhartt wip jacket');
   check('poshmark returns sales', p.length > 0, `n=${p.length}`);
   check('poshmark all sold with dates', p.every((c) => c.soldAt instanceof Date && !isNaN(c.soldAt.getTime())));
-  // Not strictly monotonic, and it doesn't need to be — windowing filters on the
+  // Not strictly monotonic, and it doesn't need to be: windowing filters on the
   // actual soldAt, not on position. What matters is that recently_sold is ordered
   // by recency well enough that 2 pages captures the newest sales.
   const ages = p.map((c) => (Date.now() - c.soldAt.getTime()) / 86400000);

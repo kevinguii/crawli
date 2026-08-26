@@ -640,7 +640,7 @@ function FolderCard({
         >
           ⋯
         </button>
-        {/* Portaled to <body> with fixed positioning — the card itself is
+        {/* Portaled to <body> with fixed positioning: the card itself is
             overflow-hidden, which clips any absolutely-positioned descendant. */}
         {menuOpen && pos && createPortal(
           <div

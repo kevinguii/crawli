@@ -105,7 +105,7 @@ export default function OnboardingFlow({
         return;
       }
       // Only fires once the gate actually cleared (ok === true above), and every
-      // new account passes through here regardless of auth method — so this is
+      // new account passes through here regardless of auth method, so this is
       // the method-agnostic activation count that sign_up can't give us for
       // Google signups.
       track({ name: 'onboarding_complete', params: { persona: draft.persona ?? 'unknown' } });
@@ -119,7 +119,7 @@ export default function OnboardingFlow({
   }, [step, draft.persona, draft.firstName, draft.lastName, draft.query, router]);
 
   // Once the alert is live, earlier answers (query/size/price) can no longer
-  // change what was already created — there is no edit-on-navigate, only a
+  // change what was already created: there is no edit-on-navigate, only a
   // fresh POST, and re-running that would create a duplicate. So back stays
   // available everywhere except leaving the alert screen backwards once it
   // exists; reviewing tail -> alert is still fine, nothing there is editable.

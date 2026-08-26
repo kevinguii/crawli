@@ -7,7 +7,7 @@ import { useSearchHistory } from '@/app/components/SearchHistoryProvider';
 import { PLATFORM_NAMES } from '@/lib/types';
 import type { SearchHistoryItem, Save, Watchlist } from '@/lib/types';
 
-// Prefill only — SearchForm fills the form without auto-running
+// Prefill only, SearchForm fills the form without auto-running
 const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 interface Stats {

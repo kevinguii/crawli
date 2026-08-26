@@ -84,7 +84,7 @@ async def safe_arun(crawler: AsyncWebCrawler, url: str):
     try:
         return await asyncio.wait_for(crawler.arun(url=url, config=cfg), RENDER_HARD_TIMEOUT)
     except asyncio.TimeoutError:
-        print(f"  !! render exceeded {RENDER_HARD_TIMEOUT:.0f}s hard timeout — skipping", flush=True)
+        print(f"  !! render exceeded {RENDER_HARD_TIMEOUT:.0f}s hard timeout, skipping", flush=True)
         return None
 
 
@@ -207,7 +207,7 @@ async def main() -> None:
     async with AsyncWebCrawler(config=make_browser()) as crawler:
         urls = await harvest_listing_urls(crawler, query, want, sold=sold)
         if not urls:
-            print("\nNo listing URLs harvested — search page may be blocked. Stop.")
+            print("\nNo listing URLs harvested, search page may be blocked. Stop.")
             return
         print(f"\nProbing {len(urls)} listings...")
         for i, u in enumerate(urls, 1):

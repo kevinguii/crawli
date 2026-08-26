@@ -27,7 +27,7 @@ export async function resolveStripeCustomerId(
       if (!(err instanceof Stripe.errors.StripeInvalidRequestError && err.code === 'resource_missing')) {
         throw err;
       }
-      // Cached ID belongs to a different Stripe mode — fall through and mint a new one.
+      // Cached ID belongs to a different Stripe mode, fall through and mint a new one.
     }
   }
   const customer = await stripe.customers.create({
@@ -38,7 +38,7 @@ export async function resolveStripeCustomerId(
   return customer.id;
 }
 
-// Pro price IDs — names kept (no `_PRO_`) to avoid touching Hetzner env.
+// Pro price IDs, names kept (no `_PRO_`) to avoid touching Hetzner env.
 export const STRIPE_PRICE_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY!;
 export const STRIPE_PRICE_YEARLY = process.env.STRIPE_PRICE_ID_YEARLY!;
 export const STRIPE_PRICE_WEEKLY = process.env.STRIPE_PRICE_ID_WEEKLY!;
@@ -49,13 +49,13 @@ export const STRIPE_PRICE_MAX_YEARLY = process.env.STRIPE_PRICE_ID_MAX_YEARLY!;
 export const STRIPE_PRICE_MAX_WEEKLY = process.env.STRIPE_PRICE_ID_MAX_WEEKLY!;
 
 // Weekly is retired from checkout (see priceIdForTier) but the price ID
-// constants above stay recognized in tierFromPriceId — a webhook event for an
+// constants above stay recognized in tierFromPriceId: a webhook event for an
 // existing weekly subscriber must resolve to 'pro'/'max', not silently
 // downgrade to free. Same pattern as the 'max' tier's retirement from the
 // pricing page: stays resolvable, is no longer offered.
 export type BillingCycle = 'monthly' | 'yearly';
 
-// Tiers and caps live in lib/tierCaps.ts, which imports nothing — this module
+// Tiers and caps live in lib/tierCaps.ts, which imports nothing: this module
 // constructs a Stripe client at import time, so client components and the search
 // worker must not pull it in. Re-exported here so existing import sites keep
 // working; prefer importing from '@/lib/tierCaps' in new code.
@@ -73,10 +73,10 @@ export function tierFromPriceId(priceId: string | null | undefined): Tier {
   if (!priceId) return 'free';
   if (priceId === STRIPE_PRICE_MAX_MONTHLY || priceId === STRIPE_PRICE_MAX_YEARLY || priceId === STRIPE_PRICE_MAX_WEEKLY) return 'max';
   if (priceId === STRIPE_PRICE_MONTHLY || priceId === STRIPE_PRICE_YEARLY || priceId === STRIPE_PRICE_WEEKLY) return 'pro';
-  // Unknown price ID — almost always a missing env var. Log loudly so the
+  // Unknown price ID, almost always a missing env var. Log loudly so the
   // webhook doesn't silently downgrade a paying customer to free.
   console.warn(
-    `[stripe] unknown price ID ${priceId} — falling back to free. ` +
+    `[stripe] unknown price ID ${priceId}, falling back to free. ` +
     `Known: pro=${STRIPE_PRICE_MONTHLY || '(unset)'}/${STRIPE_PRICE_YEARLY || '(unset)'}/${STRIPE_PRICE_WEEKLY || '(unset)'} ` +
     `max=${STRIPE_PRICE_MAX_MONTHLY || '(unset)'}/${STRIPE_PRICE_MAX_YEARLY || '(unset)'}/${STRIPE_PRICE_MAX_WEEKLY || '(unset)'}`,
   );

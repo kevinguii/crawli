@@ -141,7 +141,7 @@ export async function PATCH(
   }
 
   // Simple path: nothing baseline-invalidating changed (pause toggle, no-op
-  // edit). No re-run, no charge — just apply the fields.
+  // edit). No re-run, no charge: just apply the fields.
   if (!baselineChanged) {
     const { data, error } = await supabase
       .from('saved_searches')
@@ -156,7 +156,7 @@ export async function PATCH(
 
   // Baseline-invalidating edit: reset the baseline and re-run so the next
   // scheduled run doesn't flood the user with results that are only "new"
-  // relative to the OLD query. No search credit is charged — the re-run is
+  // relative to the OLD query. No search credit is charged: the re-run is
   // in-house crawl4ai only (eBay, the sole Firecrawl-metered platform, is
   // excluded from alerts). Free tier is rate-limited by a per-alert cooldown;
   // paid tiers are uncapped.
@@ -207,14 +207,14 @@ export async function PATCH(
     return NextResponse.json({ error: updErr?.message ?? 'update failed' }, { status: 500 });
   }
 
-  // The old query's stored matches AND run history are now stale — drop both so
+  // The old query's stored matches AND run history are now stale: drop both so
   // the user doesn't see listings/dates that don't belong to the new search.
   // notifications first (alert_matches.notification_id cascades), then
   // alert_matches by alert_id as a belt-and-braces for any orphaned rows.
   await admin.from('notifications').delete().eq('alert_id', id);
   await admin.from('alert_matches').delete().eq('alert_id', id);
 
-  // Re-run immediately (silent baseline seed — last_seen_urls is null).
+  // Re-run immediately (silent baseline seed: last_seen_urls is null).
   void runAlert(updated as SavedSearch);
 
   return NextResponse.json(updated);

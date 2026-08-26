@@ -7,7 +7,7 @@
  *   1. every TIER_CAPS field has a real `profiles` column, backfilled for every
  *      user with no nulls and no stragglers on old values
  *   2. the sold-comps free payload contains no price anywhere (a string search
- *      over the serialized body, not a field-by-field check — a future field
+ *      over the serialized body, not a field-by-field check: a future field
  *      carrying a price would slip past that)
  *   3. the paywall's own invariants: free is strictly tighter than pro on every
  *      axis, and no account sits on the retired `max` tier
@@ -40,7 +40,7 @@ function check(name: string, ok: boolean, detail = '') {
     console.log(`  ✓ ${name}`);
   } else {
     fail++;
-    console.log(`  ✗ ${name}${detail ? ` — ${detail}` : ''}`);
+    console.log(`  ✗ ${name}${detail ? `: ${detail}` : ''}`);
   }
 }
 
@@ -63,7 +63,7 @@ for (const axis of AXES) {
   );
 }
 // Free deliberately keeps DAILY alerts (owner decision 2026-08-17). Alerts are
-// gated by count, not frequency — the alert email is the main second-visit driver
+// gated by count, not frequency: the alert email is the main second-visit driver
 // and runs are cheap thanks to the cross-user cache. Asserted rather than left
 // implicit so a future "tighten the free tier" pass has to change this on purpose.
 check(
@@ -141,7 +141,7 @@ for (const leak of ['193', 'grailed.com/listings/909', 'Detroit Jacket', '2026-0
   check(`no sale-row value ${JSON.stringify(leak)} in the locked body`, !serialized.includes(leak), serialized);
 }
 
-// A thin platform — real sales, too few for a median — still gets a lock, carrying
+// A thin platform (real sales, too few for a median) still gets a lock, carrying
 // the same two non-secret facts as a fat one (how many, over what window) and no
 // row data whatsoever.
 const rowsOnly = toLockedResult({
@@ -247,7 +247,7 @@ const overCap = Object.entries(savesByUser).filter(([userId, n]) => {
   return n > cap;
 });
 
-// Existing rows above the new cap are expected and correct — enforcement is on
+// Existing rows above the new cap are expected and correct; enforcement is on
 // insert only. This check exists so a future "cleanup" that deletes them fails loudly.
 check(
   'over-cap saves still readable (enforcement is insert-only)',

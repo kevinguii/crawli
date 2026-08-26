@@ -12,7 +12,7 @@ interface WatchlistRow {
 }
 
 // Env-driven so this can be tuned per host without code changes. Same shape
-// as SEARCH_PLATFORM_CONCURRENCY — see SCALING.md tier matrix for recommended
+// as SEARCH_PLATFORM_CONCURRENCY: see SCALING.md tier matrix for recommended
 // values. Default 4 preserves pre-existing behavior.
 const CONCURRENCY = Math.max(
   1,
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           try {
             const result = await refreshListingViaSidecar(row.listing_url, row.platform, 2, signal);
             // isGone: HTTP 404 confirmed the listing no longer exists (sold or delisted).
-            // Treat as gone even though fetched signals are ambiguous — the page is definitively absent.
+            // Treat as gone even though fetched signals are ambiguous: the page is definitively absent.
             const isGone = result?.isGone === true;
             if (!result || (!result.fetched && !isGone)) {
               failed += 1;

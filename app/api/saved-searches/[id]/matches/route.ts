@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 // Returns the new listings found for this alert (newest first) so the UI can
-// render them with ListingCard. Read-only — marking seen is a separate POST
+// render them with ListingCard. Read-only: marking seen is a separate POST
 // (../mark-seen) fired when the user actually opens the matches view.
 export async function GET(
   _request: Request,

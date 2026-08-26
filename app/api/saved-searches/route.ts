@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Paused alerts don't occupy a slot — only active ones count toward the cap.
+  // Paused alerts don't occupy a slot: only active ones count toward the cap.
   const { count } = await supabase
     .from('saved_searches')
     .select('*', { count: 'exact', head: true })
@@ -109,13 +109,13 @@ export async function POST(request: Request) {
   if ((count ?? 0) >= maxAlerts) {
     // Pro alerts are marketed as "Unlimited" (see TIER_CAPS.pro.maxSavedSearches
     // in lib/tierCaps.ts) over a real backstop, same rule as /api/search: a paying
-    // user must never be told to "upgrade your plan" — Pro is the top plan — and
+    // user must never be told to "upgrade your plan" (Pro is the top plan) and
     // landing on this cap for real should raise it rather than stay silent about
     // it. `isPro` here also covers legacy `max` accounts, which is correct: no
     // paid tier should ever see upgrade copy at its own ceiling.
     if (isPro) {
       console.warn(
-        `[quota] PAID user hit the alerts abuse backstop — user=${user.id} count=${count} cap=${maxAlerts}. ` +
+        `[quota] PAID user hit the alerts abuse backstop: user=${user.id} count=${count} cap=${maxAlerts}. ` +
         `Raise TIER_CAPS.pro.maxSavedSearches or drop the "Unlimited" copy.`,
       );
     }
@@ -131,9 +131,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Insert the row — next_run_at is now so the first run fires immediately.
+  // Insert the row: next_run_at is now so the first run fires immediately.
   // The client-supplied next_run_at is the *anchored* next run (e.g. tomorrow 9 AM
-  // local) — alertRunner will overwrite next_run_at after the first run completes.
+  // local): alertRunner will overwrite next_run_at after the first run completes.
   const { data: newRow, error: insertErr } = await supabase
     .from('saved_searches')
     .insert({
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insertErr?.message ?? 'insert failed' }, { status: 500 });
   }
 
-  // Run first search immediately (silent — no notification sent)
+  // Run first search immediately (silent: no notification sent)
   void runAlert(newRow as SavedSearch);
 
   return NextResponse.json(newRow, { status: 201 });

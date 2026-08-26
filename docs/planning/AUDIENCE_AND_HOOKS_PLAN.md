@@ -39,7 +39,7 @@ Related docs, read as needed:
 | 2 | Build the Reddit harvester | **done** 2026-08-20 | `scripts/reddit-harvest.mjs` built, parse verified against a live thread. See F14 |
 | 3 | Harvest, language file, profile | **done, Kevin approved 2026-08-20** | `language-file.md` and `profile.md` written and quote-verified. Kevin: "i like the information." |
 | 4 | Channel ranking | **done 2026-08-20, but see finding** | `channels.md` written. Reddit subs ranked and picked; TikTok/IG/Shorts could NOT be honestly ranked, see F16 |
-| 5 | Idea triage and hooks | **first batch written 2026-08-20, awaiting checkpoint** | `idea-triage.md` written: full backlog triaged, 4 ideas given full hook treatment (60 hooks), 5 more staged for next batch. **Kevin checkpoint: he reads the hooks** |
+| 5 | Idea triage and hooks | **read by Kevin 2026-08-25, no objections raised** | `idea-triage.md` written and read. No specific feedback given on any hook — treat as passable, not as an enthusiastic sign-off. Next batch (5 held-back ideas) can proceed |
 | 6 | Close the measurement loop | **not started** | Proposal written. Build only on Kevin's say-so |
 
 ---
@@ -78,7 +78,9 @@ emailing all users to ask. It has been collecting into
 question 1.**
 
 Step 0's *second* question, "what do you check before you buy something to flip?",
-is still unanswered. That is the job of the Reddit harvest in phase 3.
+was answered by the phase 3 harvest — see Q4 (2026-08-25): sold price history first
+and by far the most, then reverse image search for identification, then
+cross-referencing a niche-specific pricing tool. **Step 0 is now fully closed.**
 
 ### F2. Persona split and behaviour (pulled 2026-08-19)
 
@@ -276,10 +278,14 @@ a listing or tracked one are:
 tracked anything. `kiara.julia.choi` is, apart from the owner, the most engaged user
 the product has ever had: 19 searches across 6 days spanning a month, 26 saves.
 
-This looks like a hand-seeded cohort (friends walked through the product in person)
-rather than organic signups, though that is inference from the date clustering, not
-confirmed. **If it is, then saves and tracked listings have never once been adopted
-by a user who arrived on their own.** The feature set has an organic n of 0.
+**Confirmed by Kevin 2026-08-25 (Q8): "probably yes the first 8 are me and friends."**
+This was inference from date-clustering when first written; it is now a settled fact,
+not a guess. **Consequence: saves and tracked listings have never once been adopted
+by a user who arrived on their own.** Every data point on either feature so far comes
+from a hand-walked-through friend, not an organic signup. The feature set has a
+confirmed organic n of 0 — not "probably 0," actually 0. Any future claim that saves
+or tracked listings are "working" needs a genuinely new, non-seeded user adopting
+them before it's true.
 
 ### F11. Signups have accelerated about 5x in August
 
@@ -720,13 +726,13 @@ Recorded so a future session does not reopen them without cause.
 | # | Question | Blocked on | Raised |
 |---|---|---|---|
 | Q1 | ~~Does the reseller depth advantage in F2 survive dropping the heaviest single user?~~ | **ANSWERED 2026-08-19: no.** It was entirely the owner's account. See F2b | 2026-08-19 |
-| Q2 | **Buyers are more numerous AND more engaged (F2b), which contradicts the section 4 reseller position.** Does the product follow the users, or keep chasing resellers? | **Kevin.** Informed by Phase 3 profile | 2026-08-19 |
+| Q2 | **Buyers are more numerous AND more engaged (F2b), which contradicts the section 4 reseller position.** Does the product follow the users, or keep chasing resellers? | **DEFERRED 2026-08-25 by Kevin: leave it for now, more users are still coming in.** Revisit once signup volume gives this a real answer | 2026-08-19 |
 | Q3 | ~~Is Instagram and Shorts tracking worth building, or do we accept TikTok as the only measurable channel?~~ | **ANSWERED 2026-08-20 via Q12: neither — IG/Shorts carry no independent creative decision (straight reposts of TikTok), so there's nothing separate to track.** Same answer, reached twice; see F16b | 2026-08-19 |
-| Q4 | What do people actually check before buying something to flip? Step 0's unanswered second question | Phase 3 harvest | 2026-08-19 |
-| Q5 | Are the three 0-view TikTok posts real zeros, or a Zernio reporting gap? Check TikTok's own analytics | **Kevin** (needs the logged-in app) | 2026-08-19 |
-| Q6 | Personas do not differ in query shape (F2c). Is the onboarding branch earning its place, or is it a question users answer about intent that never shows up in behaviour? | Revisit after Q2 | 2026-08-19 |
+| Q4 | ~~What do people actually check before buying something to flip?~~ | **ANSWERED 2026-08-25 — this was never blocked on Kevin, it was blocked on the Phase 3 harvest, which finished 2026-08-20. Answer was sitting in `language-file.md` §2, just not yet synthesized into a direct answer.** In order of frequency: (1) sold price history, by far the dominant theme — the "asking prices are not comps" thread; (2) identification via reverse image search when unsure what the item is; (3) cross-referencing a niche-specific pricing tool alongside general search | 2026-08-19 |
+| Q5 | ~~Are the three 0-view TikTok posts real zeros, or a Zernio reporting gap?~~ | **DROPPED 2026-08-25 by Kevin: not worth pursuing.** | 2026-08-19 |
+| Q6 | ~~Is the reseller-branded onboarding step pulling its weight?~~ | **ANSWERED 2026-08-25, DB checked live at Kevin's request.** Users who signed up after the persona branch shipped (2026-07-16), owner excluded: buyers complete onboarding 96% of the time (22/23) vs resellers 82% (9/11) — resellers drop out more, though n=11 is thin. Downstream, resellers don't out-search, out-alert, or out-save buyers either (1.0 vs 1.6 avg searches, 36% vs 39% set an alert, saves are ~0 in both). **The reseller-specific TailStep prompt doesn't complete better and doesn't produce more engaged users — no number supports keeping it as-is.** See F10 note and Q8 | 2026-08-19 |
 | Q7 | **How do you charge people who are only buying for themselves?** The paid features (sold comps, flip margin) answer a seller question, and F9 shows nobody has ever paid | **Kevin.** Analysis in "The monetisation problem" below | 2026-08-20 |
-| Q8 | Is the 2026-05-25 cohort (F10) hand-seeded friends? It decides whether saves/tracked have ever been organically adopted at all | **Kevin** (he knows who they are) | 2026-08-20 |
+| Q8 | ~~Is the 2026-05-25 cohort (F10) hand-seeded friends?~~ | **CONFIRMED 2026-08-25 by Kevin: "probably yes the first 8 are me and friends."** Saves/tracked-listings have a confirmed organic adoption count of 0 — see updated F10 | 2026-08-20 |
 | Q9 | ~~Does the alert fix jump the queue ahead of marketing work?~~ | **ANSWERED 2026-08-20: yes.** Shipped as validation, see F12b | 2026-08-20 |
 | Q12 | ~~Build IG/Shorts tracking before or after phase 5?~~ | **ANSWERED 2026-08-20: TikTok is the focus; IG Reels and YT Shorts are straight reposts of whatever ships on TikTok, no separate creative.** Since they carry no independent decision, no separate tracking is needed either — TikTok's read is the read | 2026-08-20 |
 | Q10 | ~~The 3 existing dead alerts still have unmatchable queries.~~ | **ANSWERED 2026-08-20: leave them.** No backfill, no outreach. They stay dead until their owners edit them | 2026-08-20 |
@@ -911,3 +917,29 @@ Newest last. One line per meaningful step.
   edits. Reconstructed and appended above. Verify an append actually landed
   (grep for it) before trusting it happened, don't just trust the edit call
   succeeding.**
+- **2026-08-25** Kevin followed up on the six open questions. Q2 deferred (leave it,
+  more users are still coming in). Q4 answered — it was never actually blocked on
+  Kevin, it was blocked on the phase 3 harvest, which finished 2026-08-20; the answer
+  was sitting in `language-file.md` §2 the whole time, just not synthesized into a
+  direct answer until Kevin asked "what are we waiting on me for?" **Step 0 is now
+  fully closed**, both its questions answered. Q5 dropped, not worth pursuing. Q6
+  re-scoped after checking the actual code rather than trusting the earlier
+  phrasing: `onboarding_persona` is not decorative, it branches real onboarding UI
+  (`TailStep.tsx`, `SeedStep.tsx`) — the open question is narrower than "is this
+  question pointless," it's whether that specific branch is pulling its weight given
+  F2c/F15. Q7 and Q8 re-explained, unchanged. Still open for Kevin: Q6, Q7, Q8, and
+  a read of the hooks in `idea-triage.md` (no explicit feedback given yet).
+- **2026-08-25** Kevin followed up on Q6/Q7/Q8 and confirmed reading the hooks.
+  **Q6** answered with a live DB check at his request rather than more analysis:
+  post-2026-07-16 signups, owner excluded — buyers complete onboarding 96% (22/23)
+  vs resellers 82% (9/11), and resellers don't out-search, out-alert or out-save
+  buyers afterward either. No number supports the reseller-branded TailStep prompt
+  earning its current place. **Q7** re-explained in plain terms after Kevin said he
+  still didn't follow it — dropped the doc jargon, explained as "you only charge for
+  a seller question, most users aren't sellers, here are two concrete fixes and why
+  neither matters yet at 1 real paying customer." **Q8 confirmed**, not just
+  inferred: "probably yes the first 8 are me and friends" — F10 updated from
+  inference to settled fact, saves/tracked-listings organic adoption is a confirmed
+  0, not a suspected one. Kevin read `idea-triage.md`; no specific feedback given
+  either way, logged as read-not-objected-to rather than approved. Still open: Q7
+  itself (re-explained, decision still pending).

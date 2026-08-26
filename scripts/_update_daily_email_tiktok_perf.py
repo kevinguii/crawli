@@ -2,7 +2,7 @@
 """Patch daily-content-email: add a TikTok performance signal to the social
 ideation prompt, sourced from tiktok_performance (written weekly by
 tiktok-performance-digest.json, previously read only by that one-off digest
-email — nothing fed it back into ideation).
+email; nothing fed it back into ideation).
 
 No topic_key/join key exists on tiktok_performance yet (tiktok-auto-post.json,
 which would eventually create that link, is not in use per the latest commit),

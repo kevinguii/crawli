@@ -1,7 +1,7 @@
 """Per-platform structured-data extractors.
 
 These read deterministic signals (Schema.org JSON-LD, specific data-testid
-attributes) directly from the rendered HTML — no LLM, no token cost, no
+attributes) directly from the rendered HTML, no LLM, no token cost, no
 guessing between strikethrough/related-item/listing prices.
 
 Returns a dict with the canonical ScrapedListing shape (title, price, currency,
@@ -65,7 +65,7 @@ def _iter_jsonld(soup: BeautifulSoup):
             continue
         try:
             data = json.loads(body)
-        except Exception:  # noqa: BLE001 — sites sometimes embed broken JSON-LD
+        except Exception:  # noqa: BLE001: sites sometimes embed broken JSON-LD
             continue
         if isinstance(data, list):
             yield from data
@@ -151,7 +151,7 @@ def _extract_color_from_product(product: dict) -> Optional[str]:
     Verified live 2026-06-21: Poshmark emits a top-level "color" string
     (normalized, e.g. listing titled "...Coral..." had color="Orange") and
     ThredUp's search-grid JSON-LD also carries a direct "color" field
-    ("Black", etc). Same dual-shape pattern as size — check the direct field,
+    ("Black", etc). Same dual-shape pattern as size: check the direct field,
     then additionalProperty.
     """
     raw = product.get("color")
@@ -202,7 +202,7 @@ def _extract_from_jsonld(soup: BeautifulSoup) -> Optional[dict]:
     size = _extract_size_from_product(product)
     color = _extract_color_from_product(product)
 
-    # Reject the node if it has NO price — caller should fall back to LLM.
+    # Reject the node if it has NO price, caller should fall back to LLM.
     #
     # EXCEPTION: a confirmed-sold listing (availability=OutOfStock/SoldOut/
     # Discontinued) is a VALID result even without a price. Some marketplaces
@@ -233,7 +233,7 @@ def _jsonld_product_color(soup: BeautifulSoup) -> Optional[str]:
     """Best-effort color lookup from a page's JSON-LD Product node, for
     platforms whose primary extractor doesn't go through `_extract_from_jsonld`
     (e.g. StockX/Vinted, where price lives elsewhere and the JSON-LD path was
-    never used). Purely additive — callers should not let a parse failure here
+    never used). Purely additive: callers should not let a parse failure here
     affect price/title/image extraction.
 
     Verified live 2026-06-21: both StockX and Vinted emit a direct top-level
@@ -246,7 +246,7 @@ def _jsonld_product_color(soup: BeautifulSoup) -> Optional[str]:
         if not product:
             return None
         return _extract_color_from_product(product)
-    except Exception:  # noqa: BLE001 — never let this break price/title extraction
+    except Exception:  # noqa: BLE001: never let this break price/title extraction
         return None
 
 
@@ -277,9 +277,9 @@ def extract_stockx(html: str) -> Optional[dict]:
 
     Critically, the page also contains:
       - <p data-testid='product-tile-lowest-ask-amount'>…</p> for RELATED products
-        (carousel) — these MUST be ignored.
+        (carousel), these MUST be ignored.
       - The literal string "There are no Asks at this time" in the i18n bundle,
-        ALWAYS present whether or not the listing has an ask — don't rely on it.
+        ALWAYS present whether or not the listing has an ask, don't rely on it.
 
     If 'trade-box-buy-amount' is absent → the listing has no Ask → return
     price=None (NOT a fallback to LLM; the LLM would just guess a number).
@@ -320,7 +320,7 @@ def extract_stockx(html: str) -> Optional[dict]:
     image = og_image.get("content") if og_image else None
 
     # Distinguish "page didn't render" from "listing has no Ask".
-    # If neither title nor price is present, the SPA likely hadn't painted —
+    # If neither title nor price is present, the SPA likely hadn't painted,
     # return None so the caller falls back to LLM.
     # If title IS present but the trade-box is empty, that's a valid "no Ask"
     # outcome and price=None is the correct answer.
@@ -329,7 +329,7 @@ def extract_stockx(html: str) -> Optional[dict]:
 
     return {
         "title": title,
-        "price": ask_text,  # e.g. "$74" — coerce_listing strips $ via _parse_price
+        "price": ask_text,  # e.g. "$74": coerce_listing strips $ via _parse_price
         "currency": "USD",
         "isSold": False,
         "condition": None,
@@ -339,7 +339,7 @@ def extract_stockx(html: str) -> Optional[dict]:
 
 
 def extract_poshmark(html: str) -> Optional[dict]:
-    """Poshmark listing extractor — hybrid, JSON-LD primary.
+    """Poshmark listing extractor: hybrid, JSON-LD primary.
 
     As of 2026-05-31 Poshmark DOES emit Schema.org Product JSON-LD on every
     listing page (this was NOT true on 2026-05-15, when the original og:meta +
@@ -375,7 +375,7 @@ def _extract_poshmark_legacy(soup: BeautifulSoup, html: str) -> Optional[dict]:
       - The main listing's price is in <p class="h1"><span>$68</span><span>$180</span></p>
         where $68 is the listing price and $180 is the original/MSRP.
       - data-et-prop-listing_price="68" is also present (clean number) but appears
-        only on tracking-tile elements — using the h1 is safer.
+        only on tracking-tile elements, using the h1 is safer.
       - data-et-prop-inventory_status="available"|"sold" gates isSold.
     """
     og_title = soup.find("meta", property="og:title")
@@ -400,10 +400,10 @@ def _extract_poshmark_legacy(soup: BeautifulSoup, html: str) -> Optional[dict]:
                 price = m.group(0)
                 break
 
-    # Sold detection — multiple defense-in-depth signals on Poshmark:
+    # Sold detection: multiple defense-in-depth signals on Poshmark:
     #   - data-et-prop-inventory_status="sold_out" (tracking attribute on usage element)
     #   - schema.org/OutOfStock as an availability value (embedded microdata/JSON-LD)
-    #   - An ELEMENT with class containing "listing__status-banner__title--sold" — note:
+    #   - An ELEMENT with class containing "listing__status-banner__title--sold", note:
     #     the CSS RULE for this class is in every page's <style> block, so a plain
     #     substring search false-fires. Use BeautifulSoup to query the DOM.
     sold_banner = soup.find(class_="listing__status-banner__title--sold") is not None
@@ -414,7 +414,7 @@ def _extract_poshmark_legacy(soup: BeautifulSoup, html: str) -> Optional[dict]:
     )
 
     if price is None and not is_sold:
-        # Page rendered but we couldn't find a price — let LLM try.
+        # Page rendered but we couldn't find a price, let LLM try.
         return None
 
     return {
@@ -433,7 +433,7 @@ def extract_mercari(html: str) -> Optional[dict]:
     with fields { name, price (in CENTS), originalPrice (cents), photos[].imageUrl, status }.
 
     The page's <meta property="og:image"> is a generic Mercari placeholder
-    (ogp_image_1.png) — DO NOT use it. Use photos[0].imageUrl.
+    (ogp_image_1.png), DO NOT use it. Use photos[0].imageUrl.
 
     Status enum observed: "on_sale" (available), "trading" / "sold_out" (sold).
 
@@ -499,7 +499,7 @@ def extract_mercari(html: str) -> Optional[dict]:
 # the inline <script> chunks as escaped JSON like:
 #   \"price\":{\"amount\":\"75.0\",\"currency_code\":\"USD\"}    ← listing price (USE THIS)
 #   \"price\":{\"amount\":\"40\",\"currencyCode\":\"CZK\"}       ← shipping option in Czech market (IGNORE)
-# Note the underscore in currency_code — that's the listing-pricing block.
+# Note the underscore in currency_code: that's the listing-pricing block.
 # camelCase currencyCode is the shipping-options block.
 #
 # Multiple matches with currency_code exist (item price, service fee, total);
@@ -547,7 +547,7 @@ def extract_vinted(html: str) -> Optional[dict]:
 
 def extract_thredup(html: str) -> Optional[dict]:
     """ThredUp product pages emit Schema.org Product JSON-LD with offers.price
-    and offers.availability. Same shape as Depop/Grailed — the generic
+    and offers.availability. Same shape as Depop/Grailed, the generic
     JSON-LD helper handles it. Verified against product/.../220045833.
     """
     if not html:
@@ -596,7 +596,7 @@ def extract_structured(platform: str, html: str) -> Optional[dict]:
 
     Returns dict on success, None to fall through to LLM.
     For StockX specifically, returns a dict with price=None (NOT None) when the
-    listing has no Ask — that's a successful "no price available" outcome and
+    listing has no Ask, that's a successful "no price available" outcome and
     should NOT trigger LLM fallback.
     """
     fn = PLATFORM_EXTRACTORS.get(platform)

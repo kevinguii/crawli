@@ -72,7 +72,7 @@ export default function SoldCompsPanel({
                   {fmt.format(p.medianPrice)}
                 </span>
                 <span className="block text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                  {fmt.format(p.p25)}–{fmt.format(p.p75)}
+                  {fmt.format(p.p25)}-{fmt.format(p.p75)}
                 </span>
               </span>
             </button>
@@ -80,8 +80,8 @@ export default function SoldCompsPanel({
         })}
 
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-          Median of completed sales. Poshmark shows the listed price at time of sale —
-          accepted offers are private, so its figure can read high.
+          Median of completed sales. Poshmark shows the listed price at time of sale.
+          Accepted offers are private, so its figure can read high.
         </p>
       </div>
     </div>

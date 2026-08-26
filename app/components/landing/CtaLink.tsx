@@ -9,7 +9,7 @@ import { track, type CtaLocation } from '@/lib/analytics';
  * handler has to live in a client boundary like this one rather than on the
  * sections themselves.
  *
- * Fires on click and lets navigation proceed — no preventDefault, no await. A
+ * Fires on click and lets navigation proceed: no preventDefault, no await. A
  * dropped beacon is an acceptable loss; a delayed signup is not.
  */
 export default function CtaLink({

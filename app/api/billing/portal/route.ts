@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!profile?.stripe_customer_id) {
-    return NextResponse.json({ error: 'no stripe customer — subscribe first' }, { status: 400 });
+    return NextResponse.json({ error: 'no stripe customer, subscribe first' }, { status: 400 });
   }
 
   const origin = req.headers.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';

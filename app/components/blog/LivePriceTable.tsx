@@ -9,7 +9,7 @@ interface LivePriceTableProps {
 }
 
 function fmt(price: number | null): string {
-  if (price === null) return '—';
+  if (price === null) return '-';
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 

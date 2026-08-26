@@ -1,7 +1,7 @@
 // Sold comps: completed-sale data, as opposed to the live asking prices the rest
 // of the app deals in. Rationale: docs/planning/COMPETITIVE_POSITIONING.md §5 Step 1.
 
-/** Platforms that expose usable sold data. Deliberately not PlatformKey — Mercari,
+/** Platforms that expose usable sold data. Deliberately not PlatformKey: Mercari,
  *  ThredUp, eBay and StockX are out of scope and must not be passed here. */
 export type SoldCompPlatform = 'grailed' | 'poshmark';
 
@@ -12,7 +12,7 @@ export interface SoldComp {
   url: string;
   title: string | null;
   /** Final sale price in USD. Grailed: true sold_price. Poshmark: the asking
-   *  price at time of sale — accepted offers are hidden, so this skews high. */
+   *  price at time of sale, accepted offers are hidden, so this skews high. */
   price: number;
   /** When the item sold. */
   soldAt: Date;
@@ -26,7 +26,7 @@ export interface SoldComp {
 /**
  * One completed sale as it crosses the wire.
  *
- * Distinct from SoldComp — this shape is what /api/sold-comps returns and what
+ * Distinct from SoldComp: this shape is what /api/sold-comps returns and what
  * sold_comps_cache stores, so `soldAt` is an ISO string rather than a Date. It
  * makes two JSON round trips (HTTP response, jsonb payload) and a Date survives
  * neither.
@@ -69,7 +69,7 @@ export interface PlatformSoldStats {
   p75: number;
   /** Number of sales behind these figures, after relevance filtering and outlier trim. */
   n: number;
-  /** The window these sales came from: 90, 180 or 365. Always surfaced in the UI —
+  /** The window these sales came from: 90, 180 or 365. Always surfaced in the UI:
    *  a median means nothing without knowing how far back it reaches. */
   windowDays: number;
   /** Median days from listing to sale, or null when too few rows carry a list date. */
@@ -77,7 +77,7 @@ export interface PlatformSoldStats {
 }
 
 export interface SoldCompsResult {
-  /** False only when there is nothing at all to show — no aggregate AND no rows. */
+  /** False only when there is nothing at all to show: no aggregate AND no rows. */
   available: boolean;
   /**
    * Ordered by SOLD_COMP_PLATFORMS, so `platforms[0]` is Grailed whenever it
@@ -91,13 +91,13 @@ export interface SoldCompsResult {
    */
   platforms: PlatformSoldStats[];
   /**
-   * The individual sales, per platform, with no sample floor applied — so a query
+   * The individual sales, per platform, with no sample floor applied, so a query
    * too thin for a median still has something honest to show. Ordered like
    * `platforms`. A platform can appear here and not in `platforms` (fewer than
    * MIN_SAMPLE sales), and one that appears in both lists is showing the very
    * rows its median was computed from.
    *
-   * Absent on payloads written to sold_comps_cache before this field existed —
+   * Absent on payloads written to sold_comps_cache before this field existed:
    * normalized to `[]` on the cache-hit path in /api/sold-comps.
    */
   sales: PlatformSales[];
@@ -111,14 +111,14 @@ export interface SoldCompsResult {
 /**
  * What a free user gets: proof the data exists, without the data.
  *
- * Sample size and window are deliberately retained — "Grailed, 34 sales, last 90
+ * Sample size and window are deliberately retained: "Grailed, 34 sales, last 90
  * days" makes the lock read as a withheld answer rather than a broken feature,
  * and neither figure is the thing being sold. Every computed price (median, p25,
  * p75) and daysToSell is omitted server-side, so no amount of devtools recovers
  * them.
  *
  * The individual sale rows (`SoldCompsResult.sales`) are omitted outright rather
- * than stripped field by field: every column on them — price, date, title, size —
+ * than stripped field by field: every column on them (price, date, title, size)
  * is the product. There is no locked equivalent of a sale row.
  */
 export interface LockedPlatformSoldStats {
@@ -140,7 +140,7 @@ export interface LockedSoldCompsResult {
  * The lock is shown for every platform that has ANY sale, not just the ones that
  * cleared MIN_SAMPLE: a query with 3 sales is a withheld answer and should read as
  * one. What a free user gets from a thin platform is the same pair of non-secret
- * facts as from a fat one — how many sales, over what window — with every price,
+ * facts as from a fat one (how many sales, over what window) with every price,
  * date, title and link gone.
  *
  * What it deliberately does NOT do is manufacture a lock for a query with zero

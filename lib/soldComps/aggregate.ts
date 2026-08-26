@@ -2,38 +2,38 @@
 //
 // Three guards, all earned from probe data rather than caution in the abstract:
 //
-//   Relevance — Poshmark sold, sorted by price, returns a $1,375 median for
+//   Relevance: Poshmark sold, sorted by price, returns a $1,375 median for
 //   "nike air jordan 1". Those are bundles and wrong items. Same class of problem
 //   filterAuthentic() exists for on the compare pages.
 //
-//   Window    — a median is meaningless without knowing how far back it reaches.
+//   Window: a median is meaningless without knowing how far back it reaches.
 //   Every figure carries the window that produced it.
 //
-//   Floor     — a median of three sales is an anecdote. Below MIN_SAMPLE we show
+//   Floor: a median of three sales is an anecdote. Below MIN_SAMPLE we show
 //   nothing rather than something misleading.
 
 import { relevanceTokens, titleMatchesQuery } from '@/lib/parse';
 import type { PlatformSales, PlatformSoldStats, SoldComp, SoldCompPlatform, SoldSale } from './types';
 
 /**
- * Below this many sales we publish no AGGREGATE for a platform — no median, no
+ * Below this many sales we publish no AGGREGATE for a platform: no median, no
  * spread, no days-to-sell. The individual sales are still returned (see
  * PlatformSales): the floor guards a claim we make, not data the reader judges.
  *
  * Lowered 10 → 5 on 2026-08-18. Measured against 20 real queries pulled from
  * search_history: a floor of 10 produced an aggregate for 14 of them, a floor of 5
- * for 17. The rejections at 10 were not noise — "s4lem hoodie" had 9 Grailed sales
+ * for 17. The rejections at 10 were not noise: "s4lem hoodie" had 9 Grailed sales
  * in 90 days and showed nothing.
  *
  * 5 is a hard lower bound, not a preference. trimPriceOutliers() returns its input
  * untouched below 4 comps, so a floor under that publishes an UNFENCED median, and
- * one bundle listing or fat-fingered price drags it — the exact failure this
+ * one bundle listing or fat-fingered price drags it, the exact failure this
  * constant exists to prevent. Do not lower it further; widen the row list instead.
  */
 export const MIN_SAMPLE = 5;
 
 /** Most sale rows returned per platform. Keeps the JSON response and the cached
- *  jsonb payload bounded — Poshmark alone can return ~96 relevant sales. */
+ *  jsonb payload bounded, Poshmark alone can return ~96 relevant sales. */
 export const SALES_ROW_CAP = 50;
 
 /** Tried in order. A platform stops at the first window that clears MIN_SAMPLE. */
@@ -104,7 +104,7 @@ function daysToSellOf(comps: SoldComp[]): number | null {
  *
  * `pool` must already be relevance-filtered. For Poshmark the pool is every sale we
  * fetched (newest-first, so windowing in memory is exact). For Grailed the caller
- * re-queries per window, because Algolia ranks by relevance rather than recency —
+ * re-queries per window, because Algolia ranks by relevance rather than recency,
  * narrowing a wide fetch in memory would undercount recent sales.
  */
 export function statsForPool(
@@ -134,7 +134,7 @@ export function statsForPool(
 }
 
 // There is intentionally no pooled cross-platform median here. See the note on
-// SoldCompsResult.platforms in ./types.ts — the two platforms sell materially
+// SoldCompsResult.platforms in ./types.ts: the two platforms sell materially
 // different inventory for the same query, so a combined figure is not meaningful.
 
 /**

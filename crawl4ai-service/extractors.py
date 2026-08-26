@@ -1,4 +1,4 @@
-"""Platform-specific extraction config — ported from lib/firecrawl.ts."""
+"""Platform-specific extraction config, ported from lib/firecrawl.ts."""
 
 LISTING_SCHEMA = {
     "type": "object",
@@ -26,7 +26,7 @@ PLATFORM_PROMPTS = {
         "set isSold to true. Ignore prices from suggested/related listings."
     ),
     "depop": (
-        "Extract the CURRENT sale price as the price field — this is the live price the "
+        "Extract the CURRENT sale price as the price field: this is the live price the "
         "buyer would pay right now. If both an original price and a discounted price are shown, "
         "use the discounted price (NOT the strikethrough/original). "
         "Ignore prices from 'More from this seller', 'Similar items', or 'Recently viewed' sections. "
@@ -102,5 +102,5 @@ def get_extraction_options(platform: str) -> dict:
 
 
 # Structured-data extraction (JSON-LD for Depop/Grailed/Poshmark, testid CSS
-# for StockX) lives in structured_extractors.py — that module is the primary
+# for StockX) lives in structured_extractors.py, that module is the primary
 # extraction tier. LLM extraction below remains as a last resort.

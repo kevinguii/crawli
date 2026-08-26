@@ -11,15 +11,15 @@ import type { Tier } from '@/lib/tierCaps';
  * prices from the payload rather than trusting the client to hide them).
  *
  * The in-flight promise is shared at module scope so several gated components
- * mounting in the same render — the price summary, a locked panel, an upgrade
- * banner — cost one request between them rather than one each.
+ * mounting in the same render (the price summary, a locked panel, an upgrade
+ * banner) cost one request between them rather than one each.
  */
 let inflight: Promise<Tier> | null = null;
 
 /**
  * The last tier this page session resolved, kept at module scope so a component
- * that unmounts and remounts (PriceSummary does exactly that on every new search
- * — SearchSection nulls `results` on the stream's `start` event) starts from the
+ * that unmounts and remounts (PriceSummary does exactly that on every new search;
+ * SearchSection nulls `results` on the stream's `start` event) starts from the
  * known answer instead of `null`. Without it, every search re-entered the
  * tier-loading state and a paying user was shown the upgrade paywall for the
  * length of a /api/billing/status round trip.

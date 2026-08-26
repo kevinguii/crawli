@@ -37,7 +37,7 @@ function formatRunDate(iso: string): string {
   });
 }
 
-// Stored matches are a flat snapshot — adapt to the Listing shape ListingCard
+// Stored matches are a flat snapshot: adapt to the Listing shape ListingCard
 // expects (using the row id as the listing key).
 function toListing(m: AlertMatch): Listing {
   return {
@@ -106,7 +106,7 @@ export default function AlertMatchesPage({ alertId }: { alertId: string }) {
   }
 
   // Matches accumulate (deduped against last_seen_urls, not by run) but are
-  // pruned to the most recent 500 — group by the run that found them so a run
+  // pruned to the most recent 500. Group by the run that found them so a run
   // with new_count > 0 whose matches have since been pruned still shows in
   // history, just without cards.
   const matchesByRun = (matches ?? []).reduce<Record<string, AlertMatch[]>>((acc, m) => {
@@ -155,7 +155,7 @@ export default function AlertMatchesPage({ alertId }: { alertId: string }) {
 
           {history.length === 0 ? (
             <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-              No checks run yet. This alert runs {cadenceLabel(alert.cadence_hours).toLowerCase()} — results will appear here after the next check.
+              No checks run yet. This alert runs {cadenceLabel(alert.cadence_hours).toLowerCase()}. Results will appear here after the next check.
             </div>
           ) : (
             <div className="space-y-3">
@@ -192,7 +192,7 @@ export default function AlertMatchesPage({ alertId }: { alertId: string }) {
                           </div>
                         ) : run.new_count > 0 ? (
                           <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                            No longer available — beyond the most recent 500 matches stored.
+                            No longer available (beyond the most recent 500 matches stored).
                           </p>
                         ) : null}
                       </div>

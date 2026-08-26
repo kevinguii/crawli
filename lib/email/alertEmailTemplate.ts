@@ -93,13 +93,13 @@ function emailShell({ eyebrow, body }: { eyebrow: string; body: string }): strin
 
 export interface BaselineEmailParams {
   query: string;
-  /** Everything matching right now — the alert's starting baseline. */
+  /** Everything matching right now: the alert's starting baseline. */
   totalCount: number;
   /** How many marketplaces were actually searched for this alert. */
   platformCount: number;
   /** The subset shown inline (caller slices). */
   listings: Listing[];
-  /** e.g. "daily" / "weekly" — how often this alert rechecks. */
+  /** e.g. "daily" / "weekly": how often this alert rechecks. */
   cadenceWord: string;
 }
 

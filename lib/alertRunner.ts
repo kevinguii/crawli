@@ -18,7 +18,7 @@ export { ALERT_EXCLUDED_PLATFORMS };
  * AND-only this session: every populated field must match for a listing to
  * count (e.g. brand AND size AND price < X). OR-within-a-field (brand A OR
  * brand B) is a flagged later extension. Matching happens in `applyCriteria`
- * over already-fetched listings — NEVER inside searchWorker (Session-4 owns it).
+ * over already-fetched listings. NEVER inside searchWorker (Session-4 owns it).
  */
 export interface AlertCriteria {
   size?: string | null;        // SIZE_OPTIONS key (e.g. 'l', 'm7_5'); matched via matchListingSize
@@ -77,13 +77,13 @@ export function applyCriteria(
 }
 
 // Called by /api/cron/run-alerts for each due saved search.
-// Returns the count of new matches found (0 on first run — suppressed).
+// Returns the count of new matches found (0 on first run, suppressed).
 export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   const admin = createAdminClient();
 
   // Claim this row before doing any work: an optimistic-concurrency UPDATE that
   // only succeeds if next_run_at still matches what the caller read. This is the
-  // only guard against double-processing — the real next_run_at (computed at the
+  // only guard against double-processing: the real next_run_at (computed at the
   // end of this function) isn't written until after the search + email finish,
   // so without a claim, an overlapping invocation of /api/cron/run-alerts (e.g. a
   // request that outlives nginx's proxy timeout while the batch is still running)
@@ -110,7 +110,7 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   // Owner's tier dictates the native-platform results cap on this run.
   // Derived from TIER_CAPS (single source of truth) so a tier-cap bump
-  // auto-applies without a DB backfill — see /api/search route for the same
+  // auto-applies without a DB backfill. See /api/search route for the same
   // pattern. subscription_status drives whether a profile-without-tier-set
   // counts as paid.
   const { data: ownerProfile } = await admin
@@ -168,8 +168,8 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
     })
     .eq('id', savedSearch.id);
 
-  // First run seeds the baseline. No in-app notification and no match rows —
-  // "new" is still defined strictly as "appeared after the baseline" — but we do
+  // First run seeds the baseline. No in-app notification and no match rows:
+  // "new" is still defined strictly as "appeared after the baseline", but we do
   // send one activation email showing what matches right now, so creating an
   // alert pays off immediately instead of going quiet for a day. This also fires
   // after a baseline-resetting edit (PATCH nulls last_seen_urls), which is the
@@ -183,7 +183,7 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   // Every (non-first) run produces an in-app notification, even with 0 new
   // matches. This is the "your alert ran today" signal the nav bell badge
-  // counts — users wanted confirmation the alert is alive regardless of result.
+  // counts. Users wanted confirmation the alert is alive regardless of result.
   const { data: notif } = await admin
     .from('notifications')
     .insert({
@@ -199,7 +199,7 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
 
   // Persist the new listings so they can be browsed in-app (click alert → see
   // matches), then prune to the most recent 500 per alert to bound growth.
-  // Drop rows missing the NOT NULL url first — insert() is one statement, so a
+  // Drop rows missing the NOT NULL url first: insert() is one statement, so a
   // single bad row would silently fail the whole batch otherwise (this was the
   // root cause of a real alert losing every match for weeks with no error).
   const insertRows = newListings
@@ -282,7 +282,7 @@ async function sendBaselineEmail(
     : `${total} listing${total === 1 ? '' : 's'} match "${savedSearch.query}" right now`;
 
   const listingLines = shown.map((l) =>
-    `• ${l.title ?? 'Item'} — ${l.price != null ? `$${l.price}` : 'Price unavailable'}\n  ${l.url}`,
+    `• ${l.title ?? 'Item'} - ${l.price != null ? `$${l.price}` : 'Price unavailable'}\n  ${l.url}`,
   ).join('\n\n');
 
   const text = total === 0
@@ -295,7 +295,7 @@ async function sendBaselineEmail(
         ``,
         `Edit this alert: https://thecrawli.com/alerts`,
         ``,
-        `— Crawli`,
+        `- Crawli`,
       ].join('\n')
     : [
         `Hi,`,
@@ -309,7 +309,7 @@ async function sendBaselineEmail(
         ``,
         `Manage this alert: https://thecrawli.com/alerts`,
         ``,
-        `— Crawli`,
+        `- Crawli`,
       ].join('\n');
 
   await new Resend(resendKey).emails.send({
@@ -349,7 +349,7 @@ async function sendAlertEmail(
   const resend = new Resend(resendKey);
 
   const listingLines = newListings.slice(0, 5).map((l) =>
-    `• ${l.title ?? 'Item'} — ${l.price != null ? `$${l.price}` : 'Price unavailable'}\n  ${l.url}`,
+    `• ${l.title ?? 'Item'} - ${l.price != null ? `$${l.price}` : 'Price unavailable'}\n  ${l.url}`,
   ).join('\n\n');
 
   await resend.emails.send({
@@ -366,7 +366,7 @@ async function sendAlertEmail(
       ``,
       `View all results: https://thecrawli.com/alerts`,
       ``,
-      `— Crawli`,
+      `- Crawli`,
     ].join('\n'),
     html: buildAlertEmailHtml({
       query: savedSearch.query,

@@ -69,7 +69,7 @@ export default function FilterPanel({
   }
   function setField<K extends keyof FilterState>(field: K, value: FilterState[K]) {
     const next = { ...filters, [field]: value };
-    // Footwear ↔ non-footwear uses different size sets — clear the stale pick.
+    // Footwear ↔ non-footwear uses different size sets, so clear the stale pick.
     if (field === 'category') {
       const wasFootwear = filters.category === 'footwear';
       const willBeFootwear = value === 'footwear';
@@ -90,7 +90,7 @@ export default function FilterPanel({
 
   return (
     <div className="space-y-3">
-      {/* Platform chips — always visible, brand-colored when active.
+      {/* Platform chips: always visible, brand-colored when active.
           Horizontally scrollable on mobile so 8+ chips don't wrap into a wall of rows. */}
       <div
         ref={platformsRowRef}
@@ -144,7 +144,7 @@ export default function FilterPanel({
 
       <div style={{ borderTop: '1px solid var(--border)' }} />
 
-      {/* Filter pills — always visible, never collapsed.
+      {/* Filter pills: always visible, never collapsed.
           Same horizontal-scroll treatment as the platform chips on mobile. */}
       <div
         ref={pillsRowRef}
@@ -218,7 +218,7 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
   const pos = useAnchoredPosition(open, rootRef, 200);
 
   // Click-outside + Escape to close. Panel is portaled to <body>, so it's no
-  // longer a DOM descendant of rootRef — check both.
+  // longer a DOM descendant of rootRef, so check both.
   useEffect(() => {
     if (!open) return;
     function onDocMouseDown(e: MouseEvent) {
@@ -280,7 +280,7 @@ function FilterDropdown({ label, value, options, onChange }: DropdownProps) {
         </svg>
       </button>
 
-      {/* Portaled to <body> with fixed positioning — the pill row scrolls
+      {/* Portaled to <body> with fixed positioning: the pill row scrolls
           horizontally on mobile, which clips any absolutely-positioned
           descendant (overflow-x: auto implicitly clips overflow-y too). */}
       {open && pos && createPortal(
@@ -445,7 +445,7 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
   const hasValue = minPrice !== null || maxPrice !== null;
   const displayLabel = (() => {
     if (!hasValue) return 'Any';
-    if (minPrice !== null && maxPrice !== null) return `$${minPrice}–${maxPrice}`;
+    if (minPrice !== null && maxPrice !== null) return `$${minPrice}-${maxPrice}`;
     if (minPrice !== null) return `$${minPrice}+`;
     return `up to $${maxPrice}`;
   })();
@@ -490,7 +490,7 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
         </svg>
       </button>
 
-      {/* Portaled to <body> with fixed positioning — see FilterDropdown for why
+      {/* Portaled to <body> with fixed positioning: see FilterDropdown for why
           (the pill row's overflow-x-auto on mobile clips absolute descendants). */}
       {open && pos && createPortal(
         <div
@@ -527,7 +527,7 @@ function PriceRangeDropdown({ minPrice, maxPrice, onMinChange, onMaxChange }: Pr
                 style={{ color: minPrice !== null ? 'var(--accent-text)' : 'var(--text)' }}
               />
             </div>
-            <span className="text-[13px] shrink-0 opacity-40" style={{ color: 'var(--text)' }}>{'–'}</span>
+            <span className="text-[13px] shrink-0 opacity-40" style={{ color: 'var(--text)' }}>{'-'}</span>
             <div
               className="flex flex-1 items-center gap-1 rounded-lg px-2 py-1.5"
               style={{

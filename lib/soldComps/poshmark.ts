@@ -4,7 +4,7 @@
 //
 // 1. `sort_by=recently_sold` is REQUIRED. Poshmark's default sort returns sales up
 //    to 6.6 years old (median 203 days), which makes the median meaningless. The
-//    param is genuinely validated server-side — a nonsense sort value returns zero
+//    param is genuinely validated server-side: a nonsense sort value returns zero
 //    rows, which is how this was proven real rather than silently ignored.
 //
 // 2. Parse `window.__INITIAL_STATE__`, not the DOM. Sold cards render differently
@@ -133,7 +133,7 @@ export async function fetchPoshmarkSold(query: string): Promise<SoldComp[]> {
     });
     if (!res.ok) {
       if (page === 1) throw new Error(`poshmark: HTTP ${res.status}`);
-      break; // page 1 succeeded — a later page failing just caps the sample
+      break; // page 1 succeeded, a later page failing just caps the sample
     }
 
     const state = extractInitialState(await res.text());

@@ -5,7 +5,7 @@ import type { SoldCompsResult, LockedSoldCompsResult } from '@/lib/soldComps/typ
 
 /**
  * What /api/sold-comps returns. Free users get the locked variant, which carries
- * platform names and sample sizes but no prices — the stripping happens server
+ * platform names and sample sizes but no prices, the stripping happens server
  * side, so this union is the honest shape of the response, not a UI convenience.
  * Narrow with `data.locked === true` before reading any price field.
  */
@@ -15,7 +15,7 @@ export type SoldCompsResponse = SoldCompsResult | LockedSoldCompsResult;
  * Fetch sold comps for a query.
  *
  * Fires after results are already on screen, so it never blocks the search render.
- * A failure resolves to null rather than throwing — sold comps are additive, and a
+ * A failure resolves to null rather than throwing, sold comps are additive, and a
  * dead upstream should leave the rest of the results page untouched.
  */
 export function useSoldComps(query: string | null | undefined) {

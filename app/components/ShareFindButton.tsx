@@ -11,7 +11,7 @@ import ShareCardPreviewModal from './ShareCardPreviewModal';
  * hands it to the native OS share sheet where the browser supports sharing
  * files, falling back to a plain download everywhere else.
  *
- * No incentive, no referral code, nothing persisted — the artifact is the
+ * No incentive, no referral code, nothing persisted. The artifact is the
  * whole feature.
  */
 
@@ -105,7 +105,7 @@ export default function ShareFindButton({ data }: Props) {
         URL.revokeObjectURL(objectUrl);
       }
     } catch {
-      // Cancelling the native share sheet rejects — that is normal, not an error.
+      // Cancelling the native share sheet rejects: that is normal, not an error.
     } finally {
       setSharing(false);
     }

@@ -34,7 +34,7 @@ export function nextAnchoredRunAt(
   let targetHour: number;
 
   if (daySpan === 1) {
-    // Daily: next 9 AM strictly in the future — today if still ahead, else tomorrow.
+    // Daily: next 9 AM strictly in the future, today if still ahead, else tomorrow.
     if (hour < ANCHOR_HOUR) {
       targetHour = ANCHOR_HOUR;
     } else {
@@ -129,7 +129,7 @@ export function formatNextRun(date: Date, timezone: string): string {
   if (nowDay === targetDay) return `Today at ${time}`;
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   if (dayFmt.format(tomorrow) === targetDay) return `Tomorrow at ${time}`;
-  // Further out — show date
+  // Further out: show date
   const dateLabel = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone, weekday: 'short', month: 'short', day: 'numeric',
   }).format(date);

@@ -21,7 +21,7 @@ export default function AlertsTabsClient({
   autoCreate = null,
 }: {
   initialTab: Tab;
-  /** Set when arriving from the results-page CTA — opens the create form pre-filled. */
+  /** Set when arriving from the results-page CTA: opens the create form pre-filled. */
   autoCreate?: AutoCreate | null;
 }) {
   const [active, setActive] = useState<Tab>(initialTab);

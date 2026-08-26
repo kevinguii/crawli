@@ -151,7 +151,7 @@ export default function SavesPageClient({ folderIdFromUrl }: { folderIdFromUrl: 
     (id: string) => {
       // In card view, always navigate to /saves/<id> so we enter the detail view,
       // even for the default folder (which would otherwise resolve to /saves and
-      // stay on the grid — making My Collection appear unclickable).
+      // stay on the grid, making My Collection appear unclickable).
       router.push(folderHref(id, defaultFolderId, viewMode === 'cards'));
     },
     [router, defaultFolderId, viewMode]
@@ -663,7 +663,7 @@ function FolderCard({
         >
           ⋯
         </button>
-        {/* Portaled to <body> with fixed positioning — the card itself is
+        {/* Portaled to <body> with fixed positioning: the card itself is
             overflow-hidden, which clips any absolutely-positioned descendant. */}
         {menuOpen && pos && createPortal(
           <div
