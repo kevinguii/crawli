@@ -99,7 +99,8 @@ export interface BaselineEmailParams {
   platformCount: number;
   /** The subset shown inline (caller slices). */
   listings: Listing[];
-  /** e.g. "daily" / "weekly" — how often this alert rechecks. */
+  /** e.g. "hourly" / "every 3 hours" / "every 6 hours" / "every 12 hours" /
+   *  "daily" / "weekly" — how often this alert rechecks. */
   cadenceWord: string;
 }
 
