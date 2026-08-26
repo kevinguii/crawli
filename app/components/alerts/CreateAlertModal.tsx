@@ -6,7 +6,7 @@ import { PLATFORM_NAMES } from '@/lib/types';
 import { CLOTHING_SIZE_OPTIONS, SHOE_SIZE_OPTIONS } from '@/lib/filterOptions';
 import { ALERT_EXCLUDED_PLATFORMS, FREE_BASELINE_EDIT_COOLDOWN_HOURS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { createClient } from '@/lib/supabase/client';
-import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel } from '@/lib/alertSchedule';
+import { nextAnchoredRunAt, formatNextRun, cadenceLabel, cadenceScheduleLabel, ALERT_CADENCE_PRESETS, isCadenceAllowed } from '@/lib/alertSchedule';
 import type { SavedSearch } from './SearchAlertsTab';
 
 const ALERT_PLATFORMS = Object.entries(PLATFORM_NAMES)
@@ -41,7 +41,9 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ?? prefill?.platforms?.filter((p) => !ALERT_EXCLUDED_PLATFORMS.has(p))
       ?? ['grailed', 'mercari', 'depop'],
   );
-  const [cadence, setCadence] = useState<24 | 168>(editingAlert?.cadence_hours ?? 24);
+  const [cadence, setCadence] = useState<typeof ALERT_CADENCE_PRESETS[number]>(
+    editingAlert?.cadence_hours as typeof ALERT_CADENCE_PRESETS[number] ?? 24,
+  );
   // Optional AND-only sourcing criteria — narrows matches to size AND price<X.
   // Empty fields are omitted (no-op). critSize stores a SIZE_OPTIONS key
   // (e.g. 'l', 'm7_5'); lowercased on load so a pre-dropdown free-text value
@@ -68,8 +70,13 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   // once billing loads, so it fails closed by construction. Editing is exempt — the
   // API only re-checks the floor when the value actually changes, so an alert
   // already on a faster cadence keeps it.
-  const mayPickDaily = minCadence <= 24 || !!editingAlert;
-  const effectiveCadence: 24 | 168 = !mayPickDaily && cadence === 24 ? 168 : cadence;
+  // Whether the currently-selected cadence is actually usable on this
+  // account's tier. Replaces the old two-value mayPickDaily/effectiveCadence
+  // pair: with 6 presets, "clamp 24 up to 168" doesn't generalize, but "clamp
+  // up to the floor itself" does, because the floor is always one of the
+  // legal presets (24 for free, 1 for paid).
+  const effectiveCadence: typeof ALERT_CADENCE_PRESETS[number] =
+    editingAlert || isCadenceAllowed(cadence, minCadence) ? cadence : (minCadence as typeof ALERT_CADENCE_PRESETS[number]);
 
   const nextRunDate = nextAnchoredRunAt(timezone, effectiveCadence);
 
@@ -77,8 +84,13 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
     fetch('/api/billing/status')
       .then((r) => r.json())
       .then((d) => {
-        setIsPaid(d.status === 'active' || d.status === 'past_due' || (d.tier && d.tier !== 'free'));
+        const paid = d.status === 'active' || d.status === 'past_due' || (d.tier && d.tier !== 'free');
+        setIsPaid(paid);
         if (typeof d?.caps?.minAlertCadenceHours === 'number') setMinCadence(d.caps.minAlertCadenceHours);
+        // Only a NEW alert's default moves to hourly — an alert being edited
+        // keeps whatever cadence it already has, per the spec's requirement
+        // that editing never force-changes a stored value.
+        if (!editingAlert && paid) setCadence(1);
       })
       .catch(() => {});
 
@@ -368,25 +380,25 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
                 Check frequency
               </label>
-              <div className="flex gap-2">
-                {([24, 168] as const).map((h) => {
+              <div className="flex flex-wrap gap-2">
+                {ALERT_CADENCE_PRESETS.map((h) => {
                   const selected = effectiveCadence === h;
-                  // Daily is Pro. Rendered disabled rather than hidden: a locked
-                  // option the user can see is the upgrade prompt. Hiding it just
-                  // makes the free plan look like the whole product.
-                  // Mirrors the server exactly: PATCH only re-checks the floor
-                  // when cadence actually changes, so an existing daily alert
-                  // stays togglable for its owner. Inert while the free floor is
-                  // 24 — kept so raising the floor needs no UI change.
-                  const gated = h < minCadence && !mayPickDaily;
+                  // Rendered disabled rather than hidden: a locked option the
+                  // user can see is the upgrade prompt. Hiding it just makes
+                  // the free plan look like the whole product. Mirrors the
+                  // server exactly: PATCH only re-checks the floor when
+                  // cadence actually changes, so an alert already on a faster
+                  // cadence stays togglable for its owner even if the account
+                  // is later downgraded.
+                  const gated = !isCadenceAllowed(h, minCadence) && !editingAlert;
                   return (
                     <button
                       key={h}
                       type="button"
                       onClick={() => { if (!gated) setCadence(h); }}
                       disabled={gated}
-                      title={gated ? 'Daily checks are part of Pro' : undefined}
-                      className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+                      title={gated ? `${cadenceLabel(h)} checks are part of Pro` : undefined}
+                      className="flex-1 min-w-[5.5rem] py-2 rounded-lg text-sm font-medium transition-all"
                       style={
                         selected
                           ? { background: 'var(--accent)', color: '#fff' }
@@ -405,16 +417,16 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   );
                 })}
               </div>
-              {!mayPickDaily && (
+              {!editingAlert && minCadence >= 24 && (
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  Free alerts check weekly.{' '}
+                  Free alerts check {cadenceLabel(minCadence).toLowerCase()}.{' '}
                   <a href="/pricing" className="underline" style={{ color: 'var(--text-muted)' }}>
-                    Pro checks daily
+                    Pro checks as often as hourly
                   </a>
                   .
                 </p>
               )}
-              {mayPickDaily && !isPaid && (
+              {!editingAlert && minCadence < 24 && !isPaid && (
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-dim)' }}>
                   Free includes 1 alert.{' '}
                   <a href="/pricing" className="underline" style={{ color: 'var(--text-muted)' }}>
