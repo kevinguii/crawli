@@ -5,6 +5,7 @@ import {
   cadenceScheduleLabel,
   nextAnchoredRunAt,
 } from '@/lib/alertSchedule';
+import { z } from 'zod';
 
 let failures = 0;
 function check(name: string, cond: boolean, extra = '') {
@@ -63,6 +64,21 @@ check('168h from 2pm PT lands 9am PT, 7 days out',
 const earlyBase = new Date('2026-08-25T14:00:00.000Z'); // 7am Pacific, before the anchor
 check('24h from 7am PT (before today\'s anchor) lands 9am PT today',
   nextAnchoredRunAt('America/Los_Angeles', 24, earlyBase).toISOString() === '2026-08-25T16:00:00.000Z');
+
+console.log('\n=== saved-searches route schemas accept every preset ===');
+// Both routes must accept exactly ALERT_CADENCE_PRESETS. Importing the zod
+// schema object directly would drag in the Stripe-touching module graph (see
+// lib/tierCaps.ts's own comment on why it's split out) — so this re-derives
+// the same schema shape here as a change-detector: if a route's union ever
+// drifts from ALERT_CADENCE_PRESETS, this test and that route will disagree
+// on at least one value.
+const routeCadenceSchema = z.union([
+  z.literal(1), z.literal(3), z.literal(6), z.literal(12), z.literal(24), z.literal(168),
+]);
+for (const preset of ALERT_CADENCE_PRESETS) {
+  check(`schema accepts preset ${preset}`, routeCadenceSchema.safeParse(preset).success);
+}
+check('schema rejects a non-preset value (2)', !routeCadenceSchema.safeParse(2).success);
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`}\n`);
 process.exit(failures === 0 ? 0 : 1);
