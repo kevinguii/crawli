@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { ALERT_CADENCE_PRESETS } from '@/lib/alertSchedule';
 import SavedSearchCard from './SavedSearchCard';
 import CreateAlertModal from './CreateAlertModal';
 
@@ -13,7 +14,7 @@ export interface SavedSearch {
   platforms: string[];
   filters: Record<string, unknown> | null;
   criteria: Record<string, unknown> | null;
-  cadence_hours: 24 | 168;
+  cadence_hours: typeof ALERT_CADENCE_PRESETS[number];
   last_run_at: string | null;
   next_run_at: string;
   unread_match_count: number;
@@ -220,8 +221,8 @@ export default function SearchAlertsTab({
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             The first check runs immediately and we email you everything matching right now. After that,
-            alerts recheck on your schedule (daily or weekly) at 9 AM in your timezone and you only hear
-            from us <strong>when new listings appear</strong>.
+            alerts recheck on your chosen schedule (as often as hourly on Pro, daily or weekly on Free)
+            and you only hear from us <strong>when new listings appear</strong>.
           </p>
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
             You can stack conditions on one alert: search terms <strong>AND</strong> size{' '}

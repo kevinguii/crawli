@@ -6,6 +6,7 @@ import { PLATFORM_DOMAINS } from '@/lib/types';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
 import { ALERT_EXCLUDED_PLATFORMS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { TIER_CAPS, resolveTier } from '@/lib/tierCaps';
+import { isCadenceAllowed } from '@/lib/alertSchedule';
 
 const VALID_ALERT_PLATFORMS = Object.keys(PLATFORM_DOMAINS).filter(
   (p) => !ALERT_EXCLUDED_PLATFORMS.has(p),
@@ -43,7 +44,13 @@ const createSchema = z.object({
     .partial()
     .nullable()
     .optional(),
-  cadence_hours: z.union([z.literal(24), z.literal(168)]),
+  // Every value in ALERT_CADENCE_PRESETS (lib/alertSchedule.ts) — 1/3/6/12
+  // hourly presets are Pro/Max only, enforced below via isCadenceAllowed, not
+  // by this schema. This schema only says which values EXIST, not who may
+  // use them.
+  cadence_hours: z.union([
+    z.literal(1), z.literal(3), z.literal(6), z.literal(12), z.literal(24), z.literal(168),
+  ]),
   notify_timezone: z.string().max(64).optional(),
   next_run_at: z.string().datetime().optional(),
 });
@@ -92,7 +99,7 @@ export async function POST(request: Request) {
   const isPro = resolveTier(profile?.subscription_status, profile?.subscription_tier) !== 'free';
 
   // Enforce cadence floor based on tier
-  if (parsed.data.cadence_hours < minCadence) {
+  if (!isCadenceAllowed(parsed.data.cadence_hours, minCadence)) {
     return NextResponse.json(
       { error: 'cadence_not_allowed', message: `Your plan requires a minimum ${minCadence}hr cadence.` },
       { status: 403 },

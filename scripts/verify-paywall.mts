@@ -62,14 +62,15 @@ for (const axis of AXES) {
     `free=${TIER_CAPS.free[axis]} pro=${TIER_CAPS.pro[axis]}`,
   );
 }
-// Free deliberately keeps DAILY alerts (owner decision 2026-08-17). Alerts are
-// gated by count, not frequency: the alert email is the main second-visit driver
-// and runs are cheap thanks to the cross-user cache. Asserted rather than left
-// implicit so a future "tighten the free tier" pass has to change this on purpose.
+// Free deliberately keeps DAILY alerts (owner decision 2026-08-17); Pro/Max was
+// lowered further to hourly on 2026-08-25 as the paid differentiator, so pro's
+// floor is now deliberately LOWER (looser) than free's, not merely equal to it.
+// This check asserts the direction on purpose so a future "tighten the free
+// tier" pass has to change it deliberately rather than by accident.
 check(
-  'free alert cadence is never stricter than pro',
-  TIER_CAPS.free.minAlertCadenceHours <= TIER_CAPS.pro.minAlertCadenceHours,
-  `free=${TIER_CAPS.free.minAlertCadenceHours} pro=${TIER_CAPS.pro.minAlertCadenceHours}`,
+  'pro alert cadence is never stricter than free',
+  TIER_CAPS.pro.minAlertCadenceHours <= TIER_CAPS.free.minAlertCadenceHours,
+  `pro=${TIER_CAPS.pro.minAlertCadenceHours} free=${TIER_CAPS.free.minAlertCadenceHours}`,
 );
 check('free may pick daily', TIER_CAPS.free.minAlertCadenceHours <= 24);
 check('alerts are gated by count instead', TIER_CAPS.free.maxSavedSearches < TIER_CAPS.pro.maxSavedSearches);

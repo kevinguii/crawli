@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { runAlert, SavedSearch } from '@/lib/alertRunner';
 import { FREE_BASELINE_EDIT_COOLDOWN_HOURS, findAlertQueryProblem } from '@/lib/alertConstants';
 import { TIER_CAPS } from '@/lib/tierCaps';
+import { isCadenceAllowed } from '@/lib/alertSchedule';
 
 const patchSchema = z.object({
   query: z.string().min(1).max(200).refine(
@@ -17,7 +18,13 @@ const patchSchema = z.object({
   platforms: z.array(z.string()).min(1),
   filters: z.record(z.string(), z.unknown()).nullable(),
   criteria: z.record(z.string(), z.unknown()).nullable(),
-  cadence_hours: z.union([z.literal(24), z.literal(168)]),
+  // Every value in ALERT_CADENCE_PRESETS (lib/alertSchedule.ts) — 1/3/6/12
+  // hourly presets are Pro/Max only, enforced below via isCadenceAllowed, not
+  // by this schema. This schema only says which values EXIST, not who may
+  // use them.
+  cadence_hours: z.union([
+    z.literal(1), z.literal(3), z.literal(6), z.literal(12), z.literal(24), z.literal(168),
+  ]),
   paused: z.boolean(),
 }).partial();
 
@@ -102,7 +109,7 @@ export async function PATCH(
       .single();
     const minCadence =
       cadenceProfile?.min_alert_cadence_hours ?? TIER_CAPS.free.minAlertCadenceHours;
-    if (parsed.data.cadence_hours < minCadence) {
+    if (!isCadenceAllowed(parsed.data.cadence_hours, minCadence)) {
       return NextResponse.json(
         {
           error: 'cadence_not_allowed',

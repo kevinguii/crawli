@@ -8,7 +8,7 @@ import { matchListingSize } from '@/lib/sizeFilter';
 import { Resend } from 'resend';
 import { buildAlertEmailHtml, buildBaselineEmailHtml } from '@/lib/email/alertEmailTemplate';
 import { ALERT_EXCLUDED_PLATFORMS } from '@/lib/alertConstants';
-import { nextAnchoredRunAt } from '@/lib/alertSchedule';
+import { nextAnchoredRunAt, cadenceLabel } from '@/lib/alertSchedule';
 import { TIER_CAPS, type Tier } from '@/lib/stripe';
 
 export { ALERT_EXCLUDED_PLATFORMS };
@@ -275,7 +275,7 @@ async function sendBaselineEmail(
 
   const total = listings.length;
   const shown = listings.slice(0, 5);
-  const cadenceWord = savedSearch.cadence_hours === 168 ? 'weekly' : 'daily';
+  const cadenceWord = cadenceLabel(savedSearch.cadence_hours).toLowerCase();
 
   const subject = total === 0
     ? `Your alert for "${savedSearch.query}" is live`
