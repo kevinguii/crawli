@@ -42,7 +42,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ?? ['grailed', 'mercari', 'depop'],
   );
   const [cadence, setCadence] = useState<typeof ALERT_CADENCE_PRESETS[number]>(
-    editingAlert?.cadence_hours as typeof ALERT_CADENCE_PRESETS[number] ?? 24,
+    editingAlert?.cadence_hours ?? 24,
   );
   // Optional AND-only sourcing criteria — narrows matches to size AND price<X.
   // Empty fields are omitted (no-op). critSize stores a SIZE_OPTIONS key
@@ -52,7 +52,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
   const [minPrice, setMinPrice] = useState(critField(editingAlert?.criteria, 'minPrice'));
   const [maxPrice, setMaxPrice] = useState(critField(editingAlert?.criteria, 'maxPrice'));
   const [isPaid, setIsPaid] = useState(false);
-  // Strictest floor until billing answers — see mayPickDaily below.
+  // Strictest floor until billing answers, relaxed once /api/billing/status responds.
   const [minCadence, setMinCadence] = useState(168);
   const [submitting, setSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -61,15 +61,6 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
       ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       : 'UTC'),
   );
-  // Mirror the server's cadence floor rather than inferring it from paid-vs-free,
-  // so this UI follows TIER_CAPS if the dial ever moves. Free currently gets daily
-  // (floor 24), same as Pro — free alerts are limited by count, not frequency.
-  //
-  // Derived, not clamped through an effect: an effect would let the pre-clamp value
-  // submit on the render before it lands. Starts at the strictest floor and relaxes
-  // once billing loads, so it fails closed by construction. Editing is exempt — the
-  // API only re-checks the floor when the value actually changes, so an alert
-  // already on a faster cadence keeps it.
   // Whether the currently-selected cadence is actually usable on this
   // account's tier. Replaces the old two-value mayPickDaily/effectiveCadence
   // pair: with 6 presets, "clamp 24 up to 168" doesn't generalize, but "clamp
@@ -97,7 +88,10 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
     createClient().auth.getUser().then(({ data: { user } }) => {
       setUserEmail(user?.email ?? null);
     });
-  }, []);
+    // editingAlert is stable for the lifetime of this component (the modal is
+    // unmounted/remounted between create and edit, never handed a new alert
+    // in place), so listing it here does not change when this effect runs.
+  }, [editingAlert]);
 
   function togglePlatform(key: string) {
     setPlatforms((prev) =>
@@ -390,14 +384,14 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                   // cadence actually changes, so an alert already on a faster
                   // cadence stays togglable for its owner even if the account
                   // is later downgraded.
-                  const gated = !isCadenceAllowed(h, minCadence) && !editingAlert;
+                  const gated = !isCadenceAllowed(h, minCadence) && h !== editingAlert?.cadence_hours;
                   return (
                     <button
                       key={h}
                       type="button"
                       onClick={() => { if (!gated) setCadence(h); }}
                       disabled={gated}
-                      title={gated ? `${cadenceLabel(h)} checks are part of Pro` : undefined}
+                      title={gated ? `${cadenceLabel(h)} is part of Pro` : undefined}
                       className="flex-1 min-w-[5.5rem] py-2 rounded-lg text-sm font-medium transition-all"
                       style={
                         selected
