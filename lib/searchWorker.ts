@@ -5,7 +5,7 @@ import { primeExpansion } from '@/lib/queryExpansion';
 import { Listing } from '@/lib/types';
 import type { FilterState } from '@/lib/filterOptions';
 import { detectSizeFromQuery, matchListingSize } from '@/lib/sizeFilter';
-import { matchListingColor, sortByColorMatch } from '@/lib/colorFilter';
+import { detectColorFromQuery, matchListingColor, sortByColorMatch } from '@/lib/colorFilter';
 // extractColorFromTitle: only needed by the disabled refetchDepopColors below.
 
 // Run at most `limit` promises concurrently, returns results in input order.
@@ -99,13 +99,18 @@ export async function searchAndScrape(
     const sizeFiltered = sizeKey
       ? listings.filter((l) => matchListingSize(l.title, sizeKey, l.size))
       : listings;
+    // Same typed-vs-dropdown fallback as size: a color the user typed gets the
+    // same structured-color boost and Off-White guard as one picked in the
+    // filter dropdown, rather than relying solely on the platform's own
+    // text-search relevance for that word.
+    const colorKey = filters?.color ?? detectColorFromQuery(query);
     const colorFiltered = sizeFiltered.filter((l) =>
-      matchListingColor(l.title, filters?.color, query),
+      matchListingColor(l.title, colorKey, query),
     );
     const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
     // Depop's per-listing color refetch is disabled, speed preferred over
     // the color-accuracy gain (see refetchDepopColors above, kept not deleted).
-    return sortByColorMatch(priceFiltered, filters?.color).slice(0, nativeResultsCap);
+    return sortByColorMatch(priceFiltered, colorKey).slice(0, nativeResultsCap);
   }
 
   const raw = await searchPlatform(platform, query);
@@ -132,11 +137,12 @@ export async function searchAndScrape(
   const sizeFiltered = sizeKey
     ? parsed.filter((l) => matchListingSize(l.title, sizeKey, l.size))
     : parsed;
+  const colorKey = filters?.color ?? detectColorFromQuery(query);
   const colorFiltered = sizeFiltered.filter((l) =>
-    matchListingColor(l.title, filters?.color, query),
+    matchListingColor(l.title, colorKey, query),
   );
   const priceFiltered = colorFiltered.filter((l) => matchListingPrice(l, filters));
-  return sortByColorMatch(priceFiltered, filters?.color);
+  return sortByColorMatch(priceFiltered, colorKey);
 }
 
 // Runs a full cross-platform search and returns all matched listings.

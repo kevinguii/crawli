@@ -78,21 +78,18 @@ export function resolveColorKey(rawColor: string | null | undefined): string | n
 }
 
 /**
- * Title-text color fallback: used only when a listing has no structured
- * `color` field at all (verified live 2026-06-21: Depop and Grailed's
- * per-listing JSON-LD never carries color, and Mercari/Grailed/Depop's
- * native search-grid path has no structured color signal whatsoever: DOM
- * cards only, no JSON-LD). Lower-trust than structured data since free text
- * can contain a color word for an unrelated reason, so two narrow guards:
+ * Shared token scan behind extractColorFromTitle and detectColorFromQuery:
+ * lower-trust than structured platform data since free text can contain a
+ * color word for an unrelated reason, so two narrow guards:
  *   - "denim" is skipped: usually describes fabric, not reliably a blue
  *     garment (kept in COLOR_SYNONYMS for structured data, where a
  *     platform's own color attribute literally saying "Denim" is trustworthy).
  *   - "stone" is skipped when followed by "island": Stone Island is a real
  *     brand, same collision pattern as the existing Off-White guard above.
  */
-export function extractColorFromTitle(title: string | null | undefined): string | null {
-  if (!title) return null;
-  const tokens = title.toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+function extractColorFromText(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const tokens = text.toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (token === 'denim') continue;
@@ -101,6 +98,29 @@ export function extractColorFromTitle(title: string | null | undefined): string 
     if (COLOR_SYNONYMS[token]) return COLOR_SYNONYMS[token];
   }
   return null;
+}
+
+/**
+ * Title-text color fallback: used only when a listing has no structured
+ * `color` field at all (verified live 2026-06-21: Depop and Grailed's
+ * per-listing JSON-LD never carries color, and Mercari/Grailed/Depop's
+ * native search-grid path has no structured color signal whatsoever: DOM
+ * cards only, no JSON-LD).
+ */
+export function extractColorFromTitle(title: string | null | undefined): string | null {
+  return extractColorFromText(title);
+}
+
+/**
+ * Scan the user's raw query text for a color word and return a color key if
+ * found. Used to apply the same structured-color sort boost (sortByColorMatch)
+ * and Off-White collision guard (matchListingColor) to a typed color, e.g.
+ * "black nike hoodie", as to the equivalent filter-dropdown selection.
+ * Mirrors detectSizeFromQuery's existing typed-vs-dropdown fallback pattern.
+ * Returns null if no color word is detected.
+ */
+export function detectColorFromQuery(query: string | null | undefined): string | null {
+  return extractColorFromText(query);
 }
 
 /**

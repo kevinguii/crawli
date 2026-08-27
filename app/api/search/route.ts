@@ -20,7 +20,6 @@ const filtersSchema = z
   .object({
     color: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
-    condition: z.string().nullable().optional(),
     size: z.string().nullable().optional(),
     minPrice: z.number().nullable().optional(),
     maxPrice: z.number().nullable().optional(),

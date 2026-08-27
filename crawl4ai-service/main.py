@@ -707,6 +707,14 @@ class ExpandQueryResponse(BaseModel):
     normalized: ExpandedQueryNormalized = ExpandedQueryNormalized()
 
 
+class IdentifyPhotoRequest(BaseModel):
+    image: str  # base64 JPEG, no "data:image/..." prefix
+
+
+class IdentifyPhotoResponse(BaseModel):
+    items: list[str] = []
+
+
 # ── Coercion ─────────────────────────────────────────────────────────────────
 
 _NUM_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
@@ -1092,6 +1100,95 @@ async def expand_query(req: ExpandQueryRequest):
     with _cache_lock:
         _expand_cache[key] = result
     return result
+
+
+_IDENTIFY_PHOTO_PROMPT = (
+    "You identify clothing and accessory items in a photo taken by a "
+    "secondhand-fashion shopper who wants to search for each item across "
+    "marketplaces.\n\n"
+    "List each DISTINCT clothing or accessory item clearly visible in the "
+    "photo, most prominent first, up to 4 items. Ignore background objects "
+    "that are not being worn or held. If only one item is visible, list just "
+    "that one; never combine multiple items into a single query.\n\n"
+    "For each item, write a SHORT search query (3-10 words), as SPECIFIC as "
+    "you can honestly be: garment type, color, material or fabric if "
+    "apparent, notable pattern or graphic, and silhouette.\n\n"
+    "Brand names and model names: if a brand name, logo, or product name is "
+    "clearly printed or visible as text on the item itself, read it and "
+    "include it exactly. That is reading, not guessing, and it matters. Only "
+    "infer a brand or specific model from style or silhouette alone if you "
+    "are highly confident; otherwise describe what you actually see rather "
+    "than guessing a name, since a wrong specific guess is worse than an "
+    "accurate general description.\n\n"
+    "Return STRICT JSON: {\"items\": [\"query for item 1\", \"query for item "
+    "2\", ...]}. No other keys, no prose outside the JSON."
+)
+
+
+@app.post("/identify-photo", response_model=IdentifyPhotoResponse)
+async def identify_photo(req: IdentifyPhotoRequest):
+    llm = resolve_llm()
+    if llm is None:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "no LLM configured"},
+        )
+
+    provider, api_token = llm
+    try:
+        import litellm
+
+        # litellm's own `timeout=` kwarg is not a reliable hard ceiling here.
+        # /expand-query's identical pattern is documented (PITFALLS.md) to run
+        # past its stated timeout. That's tolerable there (fire-and-forget,
+        # silently degrades). It isn't here: the caller is waiting on this
+        # response, so wrap in asyncio.wait_for for an enforced cutoff.
+        resp = await asyncio.wait_for(
+            litellm.acompletion(
+                model=provider,
+                api_key=api_token,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": _IDENTIFY_PHOTO_PROMPT},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{req.image}"},
+                            },
+                        ],
+                    },
+                ],
+                response_format={"type": "json_object"},
+                temperature=0,
+            ),
+            timeout=15,
+        )
+        content = resp["choices"][0]["message"]["content"]
+        data = json.loads(content) if isinstance(content, str) else (content or {})
+        raw_items = data.get("items") or []
+        items = [str(v).strip() for v in raw_items if str(v).strip()][:4]
+    except asyncio.TimeoutError:
+        log.warning("[identify-photo] timed out after 15s")
+        return JSONResponse(
+            status_code=504,
+            content={"error": "photo identification timed out"},
+        )
+    except Exception as exc:  # noqa: BLE001: surfaced to the caller, not swallowed
+        log.warning("[identify-photo] failed: %s", exc)
+        return JSONResponse(
+            status_code=502,
+            content={"error": "photo identification failed"},
+        )
+
+    if not items:
+        log.warning("[identify-photo] model returned no items, raw content: %r", content)
+        return JSONResponse(
+            status_code=502,
+            content={"error": "photo identification failed"},
+        )
+
+    return IdentifyPhotoResponse(items=items)
 
 
 # Helper for the three scrape endpoints. Returns a JSONResponse with HTTP 503

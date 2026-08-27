@@ -34,12 +34,6 @@ export const CATEGORY_OPTIONS = [
   { key: 'accessories', label: 'Accessories' },
 ];
 
-export const CONDITION_OPTIONS = [
-  { key: 'new',       label: 'New', queryTerm: 'new' },
-  { key: 'like-new',  label: 'Like New', queryTerm: 'like new' },
-  { key: 'used',      label: 'Used', queryTerm: 'used' },
-];
-
 export const CLOTHING_SIZE_OPTIONS = [
   { key: 'xs',  label: 'XS',  queryTerm: 'XS' },
   { key: 's',   label: 'S',   queryTerm: 'size S' },
@@ -75,14 +69,13 @@ export const SIZE_OPTIONS = [...CLOTHING_SIZE_OPTIONS, ...SHOE_SIZE_OPTIONS];
 export interface FilterState {
   color: string | null;
   category: string | null;
-  condition: string | null;
   size: string | null;
   minPrice: number | null;
   maxPrice: number | null;
 }
 
 export function emptyFilterState(): FilterState {
-  return { color: null, category: null, condition: null, size: null, minPrice: null, maxPrice: null };
+  return { color: null, category: null, size: null, minPrice: null, maxPrice: null };
 }
 
 export function filtersToQuerySuffix(filters: FilterState): string {

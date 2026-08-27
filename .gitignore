@@ -93,3 +93,12 @@ token_usage.jsonl
 # Raw Reddit harvest for the audience language file: bulky and regenerable
 # via scripts/reddit-harvest.mjs. The derived language-file.md IS tracked.
 docs/marketing/audience/raw/
+
+# Shorts production: video files, screenshots, screen recordings, audio clips
+# The .md spec files are tracked; media is not.
+docs/marketing/shorts-production/**/*.mp4
+docs/marketing/shorts-production/**/*.mov
+docs/marketing/shorts-production/**/*.png
+docs/marketing/shorts-production/**/*.jpg
+docs/marketing/shorts-production/**/*.wav
+docs/marketing/shorts-production/**/*.mp3

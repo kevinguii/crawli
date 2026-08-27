@@ -121,7 +121,6 @@ export interface SearchHistoryItem {
   filters: {
     color: string | null;
     category: string | null;
-    condition: string | null;
     size: string | null;
     minPrice: number | null;
     maxPrice: number | null;

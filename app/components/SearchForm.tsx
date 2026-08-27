@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   PlatformResults,
@@ -23,32 +23,22 @@ const PREFILL_SEARCH_KEY = 'crawli_prefill_search';
 
 const DEFAULT_PLATFORMS = ['grailed', 'mercari', 'depop'];
 
-// ── Query hint detection ──────────────────────────────────────────────────────
-// Detect when users type filter criteria (size, color, condition) into the
-// search query instead of using the filter dropdowns. Numeric model numbers
-// ("jordan 1", "air max 90") are fine; size numbers cause ambiguity.
-const FILTER_HINT_PATTERNS: Array<{ regex: RegExp; label: string }> = [
-  {
-    // "size 10", "size10", standalone US/EU/UK sizes, or clothing size words
-    regex: /\bsize\s*\d|\b(xs|xxs|xxl|xxxl|small|medium|large)\b|\b(us|eu|uk)\s*\d|\bsize\b/i,
-    label: 'size',
-  },
-  {
-    regex: /\b(black|white|grey|gray|red|blue|green|yellow|pink|purple|brown|tan|navy|olive|beige|cream|gold|silver)\b/i,
-    label: 'color',
-  },
-  {
-    regex: /\b(new with tags|nwt|deadstock|like new|pre.?owned|lightly used)\b/i,
-    label: 'condition',
-  },
-];
-
-function detectFilterHints(query: string): string[] {
-  const found: string[] = [];
-  for (const { regex, label } of FILTER_HINT_PATTERNS) {
-    if (regex.test(query)) found.push(label);
-  }
-  return found;
+// Downscale before upload: the model doesn't need full phone-camera
+// resolution to describe a garment, and this keeps the request payload and
+// image-token cost small.
+async function resizeImageToBase64(file: File, maxDim = 1024, quality = 0.8): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas unavailable');
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const dataUrl = canvas.toDataURL('image/jpeg', quality);
+  return dataUrl.split(',')[1] ?? '';
 }
 
 interface Props {
@@ -97,9 +87,47 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
   const [query, setQuery] = useState(initQuery);
   const [selected, setSelected] = useState<string[]>(initPlatforms);
   const [isLoading, setIsLoading] = useState(false);
+  const [isIdentifyingPhoto, setIsIdentifyingPhoto] = useState(false);
+  const [photoCandidates, setPhotoCandidates] = useState<string[]>([]);
   const [quota, setQuota] = useState<{ tier: string; remaining: number; credits: number } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const { addSearch } = useSearchHistory();
+
+  // Auto-fill only, never auto-submits. A single identified item lands
+  // directly in the same editable field a typed query would. Multiple items
+  // (e.g. a full outfit) surface as chips instead of guessing which one the
+  // user meant; picking a chip fills the field the same way.
+  async function handlePhotoSelected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file next time
+    if (!file) return;
+
+    setPhotoCandidates([]);
+    setIsIdentifyingPhoto(true);
+    try {
+      const image = await resizeImageToBase64(file);
+      const res = await fetch('/api/search/identify-photo', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ image }),
+      });
+      if (!res.ok) throw new Error('identify failed');
+      const data = (await res.json()) as { items?: string[] };
+      const items = data.items ?? [];
+      if (items.length === 1) {
+        setQuery(items[0]);
+      } else if (items.length > 1) {
+        setPhotoCandidates(items);
+      } else {
+        throw new Error('no items identified');
+      }
+    } catch {
+      toast.error("Couldn't identify that photo, try typing your search instead.");
+    } finally {
+      setIsIdentifyingPhoto(false);
+    }
+  }
 
   // Last-search nudge: only meaningful on the free tier, where the cap (3)
   // is too small for a ratio-based warning to ever fire before exhaustion.
@@ -286,7 +314,6 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
     }
   }
 
-  const filterHints = detectFilterHints(query);
   // Free tier with no included searches left can still search if they hold
   // prepaid overage credits, only hard-block when both are zero.
   const isExhausted = quota?.tier === 'free' && quota.remaining === 0 && quota.credits === 0;
@@ -316,19 +343,103 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
             e.currentTarget.style.boxShadow = 'none';
           }}
         />
-        <button
-          type="submit"
-          disabled={isLoading || !query.trim() || isExhausted}
-          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40"
-          style={{ background: 'linear-gradient(to right, #E24B4A, #D85A30)' }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled) e.currentTarget.style.background = 'linear-gradient(to right, #D85A30, #E84D1D)';
-          }}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'linear-gradient(to right, #E24B4A, #D85A30)')}
-        >
-          {isLoading ? 'Searching…' : 'Search'}
-        </button>
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhotoSelected}
+          className="hidden"
+        />
+        {/* Photo button + Search share a row on mobile (sm:contents dissolves this
+            wrapper into the parent flex row at the sm breakpoint, restoring the
+            original single-row desktop layout with no extra markup). */}
+        <div className="flex gap-3 sm:contents">
+          <button
+            type="button"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={isExhausted || isIdentifyingPhoto}
+            title="Search from a photo"
+            aria-label="Search from a photo"
+            className="flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            style={
+              isIdentifyingPhoto
+                ? { background: 'rgba(226, 75, 74, 0.08)', border: '1px solid rgba(226, 75, 74, 0.25)', color: 'var(--text)' }
+                : { background: 'transparent', border: '1px solid transparent', color: 'var(--text-muted)' }
+            }
+            onMouseEnter={(e) => {
+              if (e.currentTarget.disabled || isIdentifyingPhoto) return;
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={(e) => {
+              if (isIdentifyingPhoto) return;
+              e.currentTarget.style.borderColor = 'transparent';
+              e.currentTarget.style.color = 'var(--text-muted)';
+            }}
+          >
+            {isIdentifyingPhoto ? (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 animate-spin">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <span>Identifying…</span>
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 opacity-80">
+                  <path d="M4 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1.17l-.83-1.5A1 1 0 0 0 13.13 3H6.87a1 1 0 0 0-.87.5L5.17 5H4Zm6 3a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" />
+                </svg>
+                <span className="hidden sm:inline">Photo search</span>
+                <span className="sm:hidden">Photo</span>
+              </>
+            )}
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading || !query.trim() || isExhausted}
+            className="flex-1 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40 sm:flex-initial"
+            style={{ background: 'linear-gradient(to right, #E24B4A, #D85A30)' }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) e.currentTarget.style.background = 'linear-gradient(to right, #D85A30, #E84D1D)';
+            }}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'linear-gradient(to right, #E24B4A, #D85A30)')}
+          >
+            {isLoading ? 'Searching…' : 'Search'}
+          </button>
+        </div>
       </div>
+
+      {photoCandidates.length > 0 && (
+        <div className="rounded-xl px-3.5 py-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text)', opacity: 0.4 }}>
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 opacity-70">
+              <path d="M4 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1.17l-.83-1.5A1 1 0 0 0 13.13 3H6.87a1 1 0 0 0-.87.5L5.17 5H4Zm6 3a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" />
+            </svg>
+            <span>Found in your photo</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {photoCandidates.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  setQuery(item);
+                  setPhotoCandidates([]);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-3 text-xs font-medium transition-colors"
+                style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+              >
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--accent)' }} />
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {quota?.tier === 'free' && quota.remaining === 1 && (
         <p className="text-xs" style={{ color: '#d97706' }}>
@@ -363,12 +474,6 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           <Link href="/pricing?from=/search" className="font-semibold underline">
             upgrade
           </Link>.
-        </p>
-      )}
-
-      {filterHints.length > 0 && (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Tip: use the <span style={{ color: 'var(--text)' }}>filter dropdowns below</span> for {filterHints.join(', ')}, it improves result accuracy.
         </p>
       )}
 
