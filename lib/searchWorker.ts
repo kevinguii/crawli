@@ -92,9 +92,11 @@ export async function searchAndScrape(
 ): Promise<Listing[]> {
   await primeExpansion(query);
 
+  const excludeCollectibles = !!filters?.category;
+
   if (SEARCH_PAGE_PLATFORMS.has(platform)) {
     const scraped = await scrapeSearchPageViaSidecar(platform, query, 100, 2, signal);
-    const listings = parseScrapedListings(scraped, platform, query);
+    const listings = parseScrapedListings(scraped, platform, query, excludeCollectibles);
     const sizeKey = filters?.size ?? detectSizeFromQuery(query);
     const sizeFiltered = sizeKey
       ? listings.filter((l) => matchListingSize(l.title, sizeKey, l.size))
@@ -132,7 +134,7 @@ export async function searchAndScrape(
     .map((s) => s.value)
     .filter((s): s is ScrapedListing => s !== null);
 
-  const parsed = parseScrapedListings(scraped, platform, query);
+  const parsed = parseScrapedListings(scraped, platform, query, excludeCollectibles);
   const sizeKey = filters?.size ?? detectSizeFromQuery(query);
   const sizeFiltered = sizeKey
     ? parsed.filter((l) => matchListingSize(l.title, sizeKey, l.size))

@@ -130,6 +130,36 @@ const COMPOUND_ANCHOR_FORMS: Record<string, string> = {
   shortsleeve: 'short sleeve',
 };
 
+// ── Non-apparel exclusion (trading cards / collectibles) ───────────────────
+// A player/celebrity name query (e.g. "jeff teague jersey") reduces to a
+// single real anchor ("teague" — "jeff" and "jersey" are both common enough
+// to not anchor), and that anchor is satisfied just as well by that person's
+// trading cards ("2010 Panini Jeff Teague Rookie Card" contains "teague"
+// too). titleMatchesQuery's anchor check verifies WHO a listing is about,
+// never WHAT physical object it is, so cards pass straight through — reported
+// live via a "jeff teague jersey" search returning Topps/Panini card listings
+// under the Tops category filter (2026-08-29).
+//
+// Gated on a category filter being active (not applied to unfiltered
+// searches): reject a title carrying an unambiguous card/collectible signal
+// unless the query itself asks for one ("card"/"cards" present). Deliberately
+// excludes terms that collide with real fashion brands/sub-lines or
+// legitimate memorabilia — "chrome" (Chrome Hearts), "mosaic" (a real print
+// pattern on apparel, also Panini Mosaic), "relic" ("Relic by Levi's" is a
+// real sub-brand), and bare "auto"/"autograph" (a signed jersey is still
+// apparel) are NOT listed. Only brand/format words with no clothing meaning
+// made the list.
+const NON_APPAREL_SIGNAL_WORDS = [
+  'topps', 'panini', 'psa', 'bgs', 'sgc', 'prizm', 'refractor', 'donruss', 'slab',
+  'rookie card', 'trading card', 'hobby box', 'blaster box', 'card lot',
+  'jersey card', 'patch card', 'graded card',
+];
+
+function isNonApparelListing(title: string): boolean {
+  const norm = ` ${title.toLowerCase().replace(/[^a-z0-9\s]+/g, ' ').replace(/\s+/g, ' ').trim()} `;
+  return NON_APPAREL_SIGNAL_WORDS.some((w) => norm.includes(` ${w} `));
+}
+
 // Numbers a listing title uses for something that is not a model number.
 //
 // Rule 1 below rejects a title that doesn't contain one of the query's numeric
@@ -180,9 +210,16 @@ function nonModelNumerics(title: string): Set<string> {
   return found;
 }
 
-export function titleMatchesQuery(title: string | null, queryTokens: Set<string>): boolean {
+export function titleMatchesQuery(
+  title: string | null,
+  queryTokens: Set<string>,
+  excludeCollectibles = false,
+): boolean {
   if (queryTokens.size === 0) return true;
   if (!title) return false;
+  if (excludeCollectibles && !queryTokens.has('card') && !queryTokens.has('cards') && isNonApparelListing(title)) {
+    return false;
+  }
   const titleTokens = relevanceTokens(title);
 
   const queryNumerics = [...queryTokens].filter((t) => /^\d+$/.test(t));
@@ -250,14 +287,15 @@ export function titleMatchesQuery(title: string | null, queryTokens: Set<string>
 export function parseScrapedListings(
   scraped: ScrapedListing[],
   platform: string,
-  query?: string
+  query?: string,
+  excludeCollectibles = false,
 ): Listing[] {
   const queryTokens = query ? relevanceTokens(query) : new Set<string>();
 
   return scraped
     .filter((s) => !s.isSold)
     .filter((s) => s.title !== null || s.price !== null)
-    .filter((s) => titleMatchesQuery(s.title, queryTokens))
+    .filter((s) => titleMatchesQuery(s.title, queryTokens, excludeCollectibles))
     .map((s) => ({
       id: nanoid(),
       title: s.title ?? s.url,
