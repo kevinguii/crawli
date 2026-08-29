@@ -347,7 +347,6 @@ export default function SearchForm({ onResults, onError, onProgress, filters, on
           ref={photoInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handlePhotoSelected}
           className="hidden"
         />
