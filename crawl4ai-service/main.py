@@ -124,6 +124,9 @@ _PROBE_UA = (
 _render_semaphore: Optional[asyncio.Semaphore] = None
 _http_semaphore: Optional[asyncio.Semaphore] = None
 _restart_lock: Optional[asyncio.Lock] = None
+# ThredUp-only: caps concurrent fresh-browser UndetectedAdapter launches at 1,
+# independent of _render_semaphore. See _thredup_undetected_render().
+_thredup_semaphore: Optional[asyncio.Semaphore] = None
 
 # A2: when the Playwright driver subprocess dies, every subsequent
 # BrowserContext.new_page() returns one of these error strings instantly.
@@ -452,7 +455,7 @@ def resolve_llm() -> Optional[tuple[str, Optional[str]]]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global crawler, _render_semaphore, _http_semaphore, _restart_lock, _pool_cycle, _pool_pick_lock
+    global crawler, _render_semaphore, _http_semaphore, _restart_lock, _pool_cycle, _pool_pick_lock, _thredup_semaphore
     import itertools
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
@@ -461,6 +464,7 @@ async def lifespan(app: FastAPI):
     _http_semaphore = asyncio.Semaphore(SIDECAR_MAX_CONCURRENT_HTTP)
     _restart_lock = asyncio.Lock()
     _pool_pick_lock = asyncio.Lock()
+    _thredup_semaphore = asyncio.Semaphore(1)
     _pool_cycle = itertools.cycle(range(SIDECAR_BROWSER_POOL_SIZE))
 
     browser_cfg = BrowserConfig(
@@ -639,6 +643,84 @@ async def _warmup_realreal(c) -> None:
         return
     _platform_warmed.add("realreal")
     log.info("[realreal] warmup complete; PX cookies should be set")
+
+
+async def _thredup_undetected_render(url: str) -> Optional[str]:
+    """One-shot render for ThredUp: fresh UndetectedAdapter browser, launch,
+    render once, close. Cannot reuse the shared pool or a persistent
+    dedicated crawler the way every other platform (including RealReal) does.
+
+    ThredUp added Cloudflare Bot Management ~2026-08-28 (PLATFORM_STATUS.md);
+    the pool's stealth config no longer gets past it, but UndetectedAdapter
+    does — with a catch, verified live 2026-09-02: a fresh browser's FIRST
+    ThredUp request succeeds reliably (5/5 across distinct queries), but a
+    SECOND request reusing that same browser session gets a flat HTTP 403
+    every time — a harder block than the JS challenge the first request
+    would otherwise face, not a softer one. Neither headless=False nor
+    warming the session on the search page first changes this. So there is
+    no pool member to keep: every ThredUp search gets its own browser, used
+    for exactly one render, then torn down.
+
+    Gated by `_thredup_semaphore` (cap 1), separate from `_render_semaphore`
+    (the shared pool's cap): a full Chromium launch per request is real
+    memory pressure, and `SIDECAR_MAX_CONCURRENT_RENDERS` was just cut from
+    6 to 2 after the 2026-08-29 OOM incidents (see HANDOFF.md), so ThredUp
+    must not be able to stack extra concurrent launches on top of whatever
+    the rest of a 9-platform fan-out is already doing. The render itself
+    still goes through `_scheduled_render`, so it also respects the shared
+    pool's semaphore and per-domain pacing and counts toward `/health`'s
+    in-flight number.
+
+    Only reaches the search-grid path (`extract_thredup_grid`). ThredUp's
+    per-listing product pages stay hard-blocked regardless of any of the
+    above (tried headless/non-headless, fresh/warmed session — all fail), so
+    this is not used for `/refresh-price` or `/scrape`; those still fall
+    through to the LLM tier and fail there too, same as before this existed.
+
+    Returns the rendered HTML, or None on any failure — caller returns an
+    empty result, same failure mode ThredUp already had, not a worse one.
+    """
+    if _thredup_semaphore is None:
+        return None
+    from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig, UndetectedAdapter
+    from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+
+    async with _thredup_semaphore:
+        browser_cfg = BrowserConfig(headless=True, enable_stealth=False, verbose=False)
+        strategy = AsyncPlaywrightCrawlerStrategy(browser_config=browser_cfg, browser_adapter=UndetectedAdapter())
+        c = AsyncWebCrawler(crawler_strategy=strategy)
+        try:
+            await c.start()
+        except Exception:  # noqa: BLE001
+            log.exception("[thredup] undetected browser failed to start")
+            return None
+        try:
+            cfg = CrawlerRunConfig(
+                cache_mode=CacheMode.BYPASS,
+                page_timeout=45_000,
+                wait_until="domcontentloaded",
+                delay_before_return_html=5.0,
+                remove_overlay_elements=False,
+                remove_consent_popups=True,
+            )
+            async with _scheduled_render("thredup", url):
+                result = await c.arun(url=url, config=cfg)
+            if result is not None and result.success and result.html:
+                return result.html
+            log.warning(
+                "[thredup] undetected render miss: success=%s err=%s",
+                getattr(result, "success", None),
+                (getattr(result, "error_message", None) or "")[:200],
+            )
+            return None
+        except Exception:  # noqa: BLE001
+            log.exception("[thredup] undetected render error")
+            return None
+        finally:
+            try:
+                await c.close()
+            except Exception:  # noqa: BLE001
+                log.exception("[thredup] undetected browser failed to close")
 
 
 app = FastAPI(lifespan=lifespan, title="fashion-crawler crawl4ai sidecar")
@@ -1441,6 +1523,34 @@ async def scrape_search(req: ScrapeSearchRequest):
     target_url = search_url_for(req.platform, req.query)
     if not target_url:
         return ScrapeSearchResponse(results=[])
+
+    # ThredUp needs a wholly separate render path: see
+    # _thredup_undetected_render's docstring for why (Cloudflare Bot
+    # Management added ~2026-08-28 only lets a fresh browser session's FIRST
+    # request through, so it can't share the pool or a persistent dedicated
+    # crawler like every other platform, including RealReal, does). Short-
+    # circuits here rather than falling into the generic pooled-crawler /
+    # Firecrawl-fallback logic below, none of which applies to it.
+    if req.platform == "thredup":
+        raw_html = await _thredup_undetected_render(target_url)
+        items = extract_search_grid("thredup", raw_html, limit=req.limit) if raw_html else []
+        if not items:
+            # Cloudflare occasionally serves a render that looks successful
+            # (no antibot-detector error) but never actually hydrated the
+            # grid — same soft-block shape already documented for Depop/
+            # Vinted, measured here 2026-09-02 at roughly 1 in 5 renders. A
+            # second fresh browser reliably recovers it. Still sequential
+            # (awaited, not parallel) so it stays under _thredup_semaphore's
+            # cap of 1 concurrent launch rather than adding load.
+            log.info("[scrape-search] thredup '%s' empty on first attempt, retrying once", req.query)
+            raw_html = await _thredup_undetected_render(target_url)
+            items = extract_search_grid("thredup", raw_html, limit=req.limit) if raw_html else []
+        listings = [coerce_listing(item["url"], item) for item in items if isinstance(item.get("url"), str)]
+        log.info("[scrape-search] thredup '%s' → %d listings (undetected)", req.query, len(listings))
+        if listings:
+            with _cache_lock:
+                _search_cache[cache_key] = listings
+        return ScrapeSearchResponse(results=listings)
 
     # Route TRR through its managed-profile crawler with warmup.
     crawler_override = None

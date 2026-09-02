@@ -38,169 +38,132 @@ def thredup_search_url(query: str) -> str:
     return f"{THREDUP_BASE}/search/{quote(slug, safe='-')}"
 
 
-def _thredup_condition_label(value) -> Optional[str]:
-    if not isinstance(value, str):
-        return None
-    v = value.lower()
-    if "new" in v:
-        return "New"
-    if "used" in v:
-        return "Used"
-    if "refurbished" in v:
-        return "Refurbished"
-    return None
-
-
-def _thredup_availability_is_sold(value) -> bool:
-    if not isinstance(value, str):
-        return False
-    v = value.lower().replace("https://", "").replace("http://", "").replace("schema.org/", "")
-    return "soldout" in v.replace(" ", "").replace("_", "") or "outofstock" in v.replace(" ", "").replace("_", "")
-
-
 def extract_thredup_grid(html: str, *, limit: int = 24) -> list[dict]:
     """Extract up to `limit` listings from a ThredUp search-results page.
 
-    Source: a single <script type="application/ld+json"> with an array of
-    @type=Product objects (verified 2026-05-18: 119 products per page for a
-    typical query). Per-product fields used: name, sku, image[0], offers.price,
-    offers.priceCurrency, offers.itemCondition, offers.availability.
+    Rewritten 2026-09-02: ThredUp dropped the per-product JSON-LD `Product`
+    array this extractor used to read (verified live: the page's only
+    `application/ld+json` blocks now are an `ItemList` of bare
+    `{position, url}` stubs and the site-wide `SoftwareApplication` node —
+    no price/title/image/condition anywhere in JSON-LD any more). All of that
+    data now lives DOM-only, on each `div.item-card`:
+      - URL: `a[data-inp-label="link-item-card"]` href (one per card, same
+        attribute the old extractor already relied on for its DOM↔JSON-LD
+        SKU map, now used directly since there's no JSON-LD side to join).
+      - Brand (used as title): `h3` inside `.item-card-body`.
+      - Size / category: the two `<div>` children of the size/category row
+        (`div.body-copy.u:shrink-0` for size, its next sibling `<div>` for
+        category, e.g. "Size 25 waist" / "Jeans"). Category is appended to
+        the brand for a title with some real content, since the DOM no
+        longer carries a free-text title like the old JSON-LD `name` did.
+      - Price: elements carrying class `body-copy-bold` inside
+        `.item-card-body` — tag-agnostic on purpose: a discounted item shows
+        two (`<span>` original struck through via a `u:line-through` class,
+        `<span>` current price with an accent-color class), a non-discounted
+        item shows exactly one, and it's a `<strong>`, not a `<span>`.
+        Verified live across 119 cards on `levis-501-jeans` 2026-09-02: 113
+        two-price (discounted), 6 one-price (not discounted), 0 with neither
+        shape. Whichever isn't struck through is the current price.
+      - Image: the visible photo in `.item-card-image` (`img[aria-hidden="false"]`;
+        the hidden one is a second carousel frame preloaded ahead of it).
+      - Condition and color are NOT available in this DOM layout (the old
+        JSON-LD source for both is gone); both are always None now. See
+        PLATFORM_STATUS.md's color-coverage table.
 
-    URL is reconstructed from the DOM: each card is wrapped in
-    <div class="item-card" data-item-number="<sku>"> containing
-    <a data-inp-label="link-item-card" href="/product/<slug>/<sku>?...">.
-    JSON-LD does not carry the URL itself, so the SKU→href map is required.
+    None of the entity-escaping handling the old JSON-LD path needed
+    (`html_module.unescape`) applies here: BeautifulSoup's `get_text()`
+    already decodes entities, so "Levi's" reads correctly with no extra step.
 
-    Returns a list of dicts; each dict has shape:
-        { url, title, price, currency, isSold, condition, imageUrl }
-    Sold items pass through unchanged, caller applies the same filter the
-    rest of the pipeline applies to single-listing scrapes (parseScrapedListings
-    drops s.isSold === true).
+    Returns a list of dicts shaped like the canonical ScrapedListing + `size`.
     """
     if not html:
         return []
     soup = BeautifulSoup(html, "lxml")
 
-    # Build SKU → absolute URL map from DOM.
-    sku_to_url: dict[str, str] = {}
-    for a in soup.find_all("a", attrs={"data-inp-label": "link-item-card"}):
-        href = a.get("href")
-        if not isinstance(href, str) or "/product/" not in href:
-            continue
-        # /product/<slug>/<sku>?query_id=...&result_id=...
-        m = re.search(r"/product/[^/?#]+/(\d+)", href)
-        if not m:
-            continue
-        sku = m.group(1)
-        if sku in sku_to_url:
-            continue  # the DOM has two anchors per card; keep the first
-        # Strip tracking params: they cause a server-side redirect on load
-        # which races with Playwright's Page.content() call.
-        clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
-        sku_to_url[sku] = urljoin(THREDUP_BASE, clean_href)
-
-    # Find the product-array JSON-LD block.
-    products: list[dict] = []
-    for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
-        body = tag.string or tag.text
-        if not body:
-            continue
-        try:
-            data = json.loads(body)
-        except Exception:  # noqa: BLE001
-            continue
-        if not isinstance(data, list):
-            continue
-        for node in data:
-            if isinstance(node, dict) and isinstance(node.get("@type"), str) and node["@type"].lower() == "product":
-                products.append(node)
-        # First matching block is the right one (the other block is
-        # SoftwareApplication / aggregateRating noise).
-        if products:
-            break
-
-    if not products:
-        log.warning("[thredup-grid] no Product JSON-LD found")
+    cards = soup.select("div.item-card")
+    if not cards:
+        log.warning("[thredup-grid] no item-card elements found")
         return []
 
     results: list[dict] = []
-    for p in products:
-        sku = p.get("sku")
-        if not isinstance(sku, str):
+    for card in cards:
+        link = card.select_one('a[data-inp-label="link-item-card"]')
+        href = link.get("href") if link else None
+        if not isinstance(href, str) or "/product/" not in href:
             continue
-        url = sku_to_url.get(sku)
-        if not url:
-            # JSON-LD product without a matching DOM card, skip rather than
-            # synthesize a URL (the slug isn't in JSON-LD).
+        # Strip tracking params: they cause a server-side redirect on load
+        # which races with Playwright's Page.content() call.
+        clean_href = urlunparse(urlparse(href)._replace(query="", fragment=""))
+        url = urljoin(THREDUP_BASE, clean_href)
+
+        body = card.select_one(".item-card-body")
+        if body is None:
             continue
 
-        offer = p.get("offers")
-        if not isinstance(offer, dict):
-            offer = {}
-        price = offer.get("price")
-        currency = offer.get("priceCurrency") if isinstance(offer.get("priceCurrency"), str) else "USD"
-        availability = offer.get("availability")
-        condition_raw = offer.get("itemCondition")
+        brand_el = body.select_one("h3")
+        brand = brand_el.get_text(strip=True) or None if brand_el else None
 
-        name = p.get("name")
-        if isinstance(name, str):
-            name = html_module.unescape(name)
+        size_el = body.select_one("div.body-copy.u\\:shrink-0")
+        size: Optional[str] = None
+        category: Optional[str] = None
+        if size_el is not None:
+            size = size_el.get_text(strip=True) or None
+            cat_el = size_el.find_next_sibling("div")
+            if cat_el is not None:
+                category = cat_el.get_text(strip=True) or None
+        else:
+            # Fallback if the size element's classes rotate: take the first
+            # non-empty two-<div> row (badge rows above it render empty).
+            for row in body.select("div.u\\:flex.u\\:gap-1xs"):
+                children = [c.get_text(strip=True) for c in row.find_all("div", recursive=False)]
+                children = [c for c in children if c]
+                if children:
+                    size = children[0] if len(children) >= 1 else None
+                    category = children[1] if len(children) >= 2 else None
+                    break
 
-        # Verified live 2026-06-21: every Product node in this JSON-LD array
-        # carries a direct top-level "color" string (e.g. "Black"), no
-        # additionalProperty lookup needed here, unlike per-listing pages.
-        color_raw = p.get("color")
-        color = color_raw.strip() if isinstance(color_raw, str) and color_raw.strip() else None
+        name = " ".join(p for p in (brand, category) if p) or brand
 
-        # Extract brand.name from JSON-LD (format: {"@type": "Brand", "name": "..."}).
-        brand_raw = p.get("brand")
-        brand_name: Optional[str] = None
-        if isinstance(brand_raw, dict):
-            brand_name = brand_raw.get("name") if isinstance(brand_raw.get("name"), str) else None
-        elif isinstance(brand_raw, str):
-            brand_name = brand_raw
-        # MUST unescape before the containment check below. ThredUp ships the
-        # brand HTML-escaped ("Levi&apos;s") while `name` is already unescaped
-        # ("Levi's Blue Jeans Size 36 waist"), so the raw comparison never
-        # matched and every apostrophe brand got its escaped form prepended to
-        # a title that already contained it: "Levi&apos;s Levi's Blue Jeans".
-        # Measured 2026-08-25 on `levis 501 jeans`: 85 of 100 rows affected,
-        # entity visible verbatim in the results UI.
-        if isinstance(brand_name, str):
-            brand_name = html_module.unescape(brand_name).strip() or None
-        # Prepend brand to title so downstream token-matching sees the brand name.
-        # Mirrors the same pattern used by the Depop extractor.
-        if brand_name and name and brand_name.lower() not in name.lower():
-            name = f"{brand_name} {name}"
-        elif brand_name and not name:
-            name = brand_name
+        price: Optional[str] = None
+        struck: list[str] = []
+        unstruck: list[str] = []
+        for el in body.select(".body-copy-bold"):
+            m = re.search(r"[\d]+(?:\.\d+)?", el.get_text(strip=True))
+            if not m:
+                continue
+            classes = el.get("class") or []
+            (struck if any("line-through" in c for c in classes) else unstruck).append(m.group(0))
+        if unstruck:
+            price = unstruck[0]
+        elif struck:
+            price = struck[0]
 
         image = None
-        img_field = p.get("image")
-        if isinstance(img_field, list) and img_field:
-            first = img_field[0]
-            if isinstance(first, str):
-                image = first
-            elif isinstance(first, dict):
-                image = first.get("url") or first.get("@id")
-        elif isinstance(img_field, str):
-            image = img_field
+        img_container = card.select_one(".item-card-image")
+        if img_container is not None:
+            img_el = img_container.select_one('img[aria-hidden="false"]') or img_container.select_one("img[src]")
+            if img_el is not None:
+                src = img_el.get("src")
+                image = src if isinstance(src, str) else None
+
+        if price is None and not name:
+            continue
 
         results.append({
             "url": url,
             "title": name,
             "price": price,
-            "currency": currency,
-            "isSold": _thredup_availability_is_sold(availability),
-            "condition": _thredup_condition_label(condition_raw),
+            "currency": "USD",
+            "isSold": False,
+            "condition": None,
             "imageUrl": image,
-            "color": color,
+            "size": size,
         })
 
         if len(results) >= limit:
             break
 
-    log.info("[thredup-grid] extracted %d listings (out of %d products in JSON-LD)", len(results), len(products))
+    log.info("[thredup-grid] extracted %d listings (out of %d item-card elements)", len(results), len(cards))
     return results
 
 
