@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Crawli",
   },
   description:
-    "Search Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
+    "Crawli is a free app that searches Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay at once to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
   applicationName: "Crawli",
   keywords: [
     "secondhand fashion price comparison",
@@ -38,6 +38,8 @@ export const metadata: Metadata = {
     "Grailed Depop Poshmark StockX Mercari Vinted eBay",
     "streetwear resale sourcing",
     "sneaker resale comp",
+    "resale price app",
+    "secondhand shopping app",
   ],
   authors: [{ name: "Crawli" }],
   creator: "Crawli",
@@ -51,14 +53,14 @@ export const metadata: Metadata = {
     siteName: "Crawli",
     title: "Crawli: Compare Secondhand & Vintage Prices Everywhere",
     description:
-      "One search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
+      "Crawli is a free app for one search across Grailed, Depop, Poshmark, StockX, Mercari, Vinted & eBay to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "Crawli: Compare Secondhand & Vintage Prices Everywhere",
     description:
-      "One search across every resale marketplace to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
+      "Crawli is a free app for one search across every resale marketplace to find the real price on any secondhand or vintage piece, plus a flip margin calculator for resellers.",
   },
   robots: {
     index: true,

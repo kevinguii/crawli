@@ -72,7 +72,7 @@ export default function Hero({
               className="mx-auto mt-5 max-w-xl text-base sm:text-lg lg:mx-0"
               style={{ color: 'var(--text-muted)' }}
             >
-              Search 9 resale platforms at once, see what the market is really paying, and know your net flip profit after fees before you spend a dollar.
+              Crawli is a free app that searches 9 resale platforms at once, shows what the market is really paying, and calculates your net flip profit after fees before you spend a dollar.
             </p>
 
             {/* Public search: the one action an AI-referred visitor who already
