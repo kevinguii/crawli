@@ -1,6 +1,6 @@
 # Crawli — Handoff
 
-**Last updated:** 2026-09-02
+**Last updated:** 2026-09-07
 
 ## How to use this file
  
@@ -25,9 +25,9 @@
 
 ---
  
-## Current state (2026-09-02)
+## Current state (2026-09-07)
 
-**Platforms: 9 total, all 9 native and working (Avenue A) — fixed as of this session, not yet deployed to prod. Avenue B is retired.**
+**Platforms: 9 total, all 9 native and working (Avenue A) and deployed to prod. Avenue B is retired.**
 Note: Mercari, Depop and now eBay are native-first with a Firecrawl fallback — they can 403 the datacenter IP but real Chromium renders most searches, so they're free most of the time and only pay a Firecrawl credit on an actual render miss. (Mercari's misclassifying hard-block probe was removed 2026-06-29.) The other 5 working native platforms are free always. ThredUp is a special case: fixed this session via its own dedicated one-shot browser, not Firecrawl — see its row below. **eBay moved off Avenue B on 2026-08-25** — it was the last platform doing Firecrawl URL discovery + a per-listing scrape fan-out.
 
 | Platform | Avenue | Status |
@@ -35,7 +35,7 @@ Note: Mercari, Depop and now eBay are native-first with a Firecrawl fallback —
 | Grailed | A | ✅ |
 | Depop | A | ✅ (native-first, Firecrawl fallback on intermittent fingerprint block — never pre-probed) |
 | Mercari | A | ✅ (native-first, Firecrawl fallback on intermittent render miss — like Depop; probe removed 2026-06-29) |
-| ThredUp | A | ✅ **Fixed 2026-09-02, not yet deployed** — was fully broken 2026-08-28 through 2026-09-02 (Cloudflare Bot Management). Now uses a dedicated one-shot `UndetectedAdapter` browser per search, capped to 1 concurrent. Per-listing/watchlist-refresh still broken. See PLATFORM_STATUS.md. |
+| ThredUp | A | ✅ **Fixed 2026-09-02, live in prod** — was fully broken 2026-08-28 through 2026-09-02 (Cloudflare Bot Management). Now uses a dedicated one-shot `UndetectedAdapter` browser per search, capped to 1 concurrent. Per-listing/watchlist-refresh still broken. See PLATFORM_STATUS.md. |
 | Vestiaire | A | ✅ |
 | Vinted | A | ✅ |
 | Poshmark | A | ✅ |
@@ -113,9 +113,6 @@ Full per-platform details, selectors, and open issues: [`docs/core/PLATFORM_STAT
 
 ---
 
-**ACTION REQUIRED: deploy the ThredUp fix to prod (fixed locally 2026-09-02)**
-ThredUp was fully broken for 6 days (2026-08-28 through 2026-09-02, Cloudflare Bot Management) and is fixed locally but not yet deployed. The fix is a real code change, not a config flip — a dedicated one-shot `UndetectedAdapter` browser per ThredUp search (can't share the pool the way every other platform does), capped at 1 concurrent launch to protect against the memory pressure that caused the 2026-08-29 OOM incidents, plus a full rewrite of `extract_thredup_grid` since ThredUp's page structure changed independently of the anti-bot issue. Verified locally: 12 of 13 test searches succeeded on the first attempt, the 13th recovered via a built-in retry. Per-listing pages (watchlist price-refresh) remain broken — untouched, not a regression. Full detail: `docs/core/PLATFORM_STATUS.md` "Open platform issues".
-
 **ACTION REQUIRED: disable Supabase's legacy API keys (found + mostly fixed 2026-08-15)**
 A `service_role` key committed in plaintext across 7 files (still in git history — `git log -S` will find it) is now dead-tree-only: `.env` (local + prod), n8n, and all consuming scripts run on a new `sb_secret_...` key, verified working. **But the leaked JWT itself is still valid** until legacy keys are disabled in Supabase's dashboard (API Keys → "Legacy anon, service_role API keys" tab → Disable) — that's the one step left. Do it once you've confirmed nothing unexpected turns up after a normal day's traffic. Rewriting git history was considered and deliberately skipped — disabling legacy keys makes the historical copy worthless, and a force-push would break existing clones. Revisit only if the repo is ever made public.
 
@@ -133,20 +130,20 @@ Fixed 2026-07-25 for the luxury set: `filterAuthentic()` in `app/api/compare/ref
 
 ## Recent changes
 
+**2026-09-07: Confirmed the ThredUp fix was already live in prod — HANDOFF/PLATFORM_STATUS were just never updated**
+The 2026-09-02 ThredUp fix (see below) was assumed undeployed because no doc said otherwise, but `git log` showed the fix commit (`c0899d5`) was an ancestor of a later, unrelated deploy (`37b9524`, 2026-09-04) — a normal `git pull` for that deploy silently carried the ThredUp fix along with it. Verified live with a direct `/scrape-search` call against the prod sidecar: real DOM-grid results, `color: null` as expected post-redesign. No deploy action was needed, only correcting the two docs that said otherwise.
+
 **2026-09-04: "crawli app" got zero GSC impressions for 90 days — homepage copy never said "app"**
 GSC showed "crawli" ranking #1 (933 impressions, avg position 4.2, 90d) while "crawli app" had literally zero impressions — not ranking low, never appearing in that SERP at all. Live search confirmed why: that query pulls in unrelated entities that do have "app" in their name/content (a GitHub repo named `crawli`, Google Play's "Crawly wizard," an unrelated "CRAWLI ONE" app, "Crawli.net"). Root cause: the word "app" appeared nowhere in thecrawli.com's crawlable copy — `app/layout.tsx` title/description/OG/Twitter/keywords and the Hero H1/subhead all said "search"/"compare"/"platform" but never "app", despite the site already having a `SoftwareApplication` JSON-LD block and a PWA manifest (schema/manifest carry far less term-matching weight than visible title/meta/H1 text). Fixed by adding "app" naturally to the meta description, OG/Twitter descriptions, keywords array, and the hero subhead in `app/layout.tsx` and `Hero.tsx`; left the `<title>` tag untouched to avoid risking the existing #1 "crawli" ranking. `npx tsc --noEmit` clean. **Not yet visible in search** — GSC position tracking for "crawli app" needs a few weeks to show whether this moved it.
 
-**2026-09-02: Full extractor audit found ThredUp fully broken for 6 days; fixed same session (not yet deployed)**
-Ran every search-grid extractor (`search_page_extractors.py`) and per-listing extractor (`structured_extractors.py`) live via `/scrape-search` and `/refresh-price`. 8 platforms confirmed healthy, no changes needed. ThredUp had returned 0 results on every search since 2026-08-27 16:03 (Cloudflare Bot Management, added ~2026-08-28) — not caught by this file or PLATFORM_STATUS.md until now. Root-caused and fixed: verified Cloudflare's challenge is fingerprint-based, not IP-reputation (both the prod Hetzner IP and a non-hosting-provider IP hit the same block), and that `UndetectedAdapter` beats it but only for a browser's *first* request — a 2nd request in the same session hard-403s regardless of headless mode or a warmed session. Since ThredUp can't share the render pool, `_thredup_undetected_render()` in `main.py` launches a fresh one-shot browser per search, capped at 1 concurrent (separate from the shared pool's semaphore) given the 2026-08-29 OOM history. Also rewrote `extract_thredup_grid` from scratch: ThredUp's JSON-LD `Product` array is gone (replaced by a bare `ItemList` of URLs), so price/title/size/image now come from the DOM (`div.item-card`) instead. Verified locally: 119/119 cards extracted correctly on one query, 12/13 live searches succeeded on the first attempt with the 13th recovered by a built-in retry. Per-listing pages (watchlist refresh) stay broken — hard-blocked regardless of headless/session state, untouched, not a regression. **Not yet deployed to prod.** Full evidence and remaining caveats: `docs/core/PLATFORM_STATUS.md` "Open platform issues".
+**2026-09-02: Full extractor audit found ThredUp fully broken for 6 days; fixed same session, live in prod since 2026-09-04 (see 2026-09-07 entry above)**
+Ran every search-grid extractor (`search_page_extractors.py`) and per-listing extractor (`structured_extractors.py`) live via `/scrape-search` and `/refresh-price`. 8 platforms confirmed healthy, no changes needed. ThredUp had returned 0 results on every search since 2026-08-27 16:03 (Cloudflare Bot Management, added ~2026-08-28) — not caught by this file or PLATFORM_STATUS.md until now. Root-caused and fixed: verified Cloudflare's challenge is fingerprint-based, not IP-reputation (both the prod Hetzner IP and a non-hosting-provider IP hit the same block), and that `UndetectedAdapter` beats it but only for a browser's *first* request — a 2nd request in the same session hard-403s regardless of headless mode or a warmed session. Since ThredUp can't share the render pool, `_thredup_undetected_render()` in `main.py` launches a fresh one-shot browser per search, capped at 1 concurrent (separate from the shared pool's semaphore) given the 2026-08-29 OOM history. Also rewrote `extract_thredup_grid` from scratch: ThredUp's JSON-LD `Product` array is gone (replaced by a bare `ItemList` of URLs), so price/title/size/image now come from the DOM (`div.item-card`) instead. Verified locally: 119/119 cards extracted correctly on one query, 12/13 live searches succeeded on the first attempt with the 13th recovered by a built-in retry. Per-listing pages (watchlist refresh) stay broken — hard-blocked regardless of headless/session state, untouched, not a regression. Full evidence and remaining caveats: `docs/core/PLATFORM_STATUS.md` "Open platform issues".
 
 **2026-08-29: Trading cards were passing player/celebrity-name searches under a category filter**
 `titleMatchesQuery`'s anchor check verifies WHO a listing is about, not WHAT it physically is, so a "jeff teague jersey" search (single real anchor: `teague`) matched that player's trading cards too. Compounded by `filtersToQuerySuffix` appending the bare category word ("tops") onto the marketplace query text, which fuzzy-matched the "Topps" card brand and "Top Flight" streetwear brand — a category filter was actively pulling in *more* junk. Fixed with a title-text exclusion list (`NON_APPAREL_SIGNAL_WORDS` in `lib/parse.ts`), gated on a category filter being active (owner decision — unfiltered searches untouched) and skipped when the query itself asks for a card. Verified against 8 cases (signed jerseys, Chrome Hearts, Relic by Levi's, explicit card searches all still pass); `npx tsc --noEmit` clean, existing `verify-relevance-numerics.mts`/`verify-alert-query.mts` still 100%. See PITFALLS "Relevance filtering".
 
 **2026-08-29: Sidecar OOM incidents — reduced concurrent Chromium from 6 to 2, added daily memory monitoring**
 Three 503 Service Unavailable incidents in 24 hours (2026-08-28 to 2026-08-29) revealed `SIDECAR_MAX_CONCURRENT_RENDERS=6` (default) allowed too many concurrent Chromium processes, exhausting 7.6GB RAM and triggering OOM kills. Fixed by reducing to 2 via systemd drop-in `/etc/systemd/system/crawli-sidecar.service.d/override.conf` — memory immediately dropped from 7.5Gi to 4.4Gi, incidents ceased. Added daily monitoring script `/opt/crawli/monitor-memory-trend.sh` (logs to `/var/log/crawli-health-trend.log`, runs 09:00 UTC daily) to detect future memory leaks. Documented monitoring approach and two higher-fidelity alternatives (sidecar profiling, full observability) in [`docs/reference/MEMORY_LEAK_MONITORING.md`](docs/reference/MEMORY_LEAK_MONITORING.md). See that doc for incident details and escalation paths if memory creeps again.
-
-**2026-08-27: typed color now gets the same treatment as the color filter dropdown, condition filter removed (was dead)**
-Investigated whether the search page's "use the filter dropdowns, it improves result accuracy" tip was still true. For color it wasn't fully: the dropdown got a real edge (`sortByColorMatch`'s structured-color re-sort boost) that typing the same word never got, confirmed live on Poshmark (filter path: 8/8 verified-black in the top 8 from a pool that was only 13/40 black; typed path relied solely on the platform's own text search). Fixed with `detectColorFromQuery` (`lib/colorFilter.ts`), mirroring `detectSizeFromQuery`'s existing typed-vs-dropdown fallback pattern for size. Dropped the now-unnecessary tip, and its dead `FILTER_HINT_PATTERNS`/`detectFilterHints` code, from `SearchForm.tsx`. Separately, condition turned out to be fully inert, no UI ever rendered a condition dropdown, and `filters.condition` was read nowhere in the search pipeline, so removed it from `FilterState`, `CONDITION_OPTIONS`, and both `/api/search` and `/api/saved-searches`'s Zod schemas. Verified: `npx tsc --noEmit` clean, `detectColorFromQuery` unit-checked against 7 cases including both collision guards (denim, Stone Island). See PITFALLS.md for the full investigation.
 
 ## Environment setup
 

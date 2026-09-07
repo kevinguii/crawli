@@ -64,6 +64,7 @@ export function useTotalUnreadAlerts(userId: string | undefined) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('seen', false)
+        .gt('new_count', 0)
         .then(({ count }) => setUnread(count ?? 0));
     };
     load();
