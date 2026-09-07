@@ -8,7 +8,7 @@
 ---
 
 ## Shot list & timing
-
+ 
 | Time | Visual | Audio | Text overlay | On-camera direction |
 |---|---|---|---|---|
 | 0:00–0:50 | BEFORE: Screen recording — your desktop with 4–5 marketplace tabs open (Poshmark, eBay, Vinted, Depop, Grailed). Rapid cursor movement between tabs, scrolling, visible frustration. Maybe a calculator app opens. | Chaotic sound bed (optional: busy/alert sound effects, or just the sound of rapid clicking) | "Me checking comps before Crawli" — top-left or center, bold, 18–24pt | (This is screen-recorded, not you on camera yet) |
