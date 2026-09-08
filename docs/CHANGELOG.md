@@ -8,6 +8,11 @@ specific change. Current state, open issues, and the newest five sessions are in
 
 ---
 
+**2026-08-29: Sidecar OOM incidents — reduced concurrent Chromium from 6 to 2, added daily memory monitoring**
+Three 503 Service Unavailable incidents in 24 hours (2026-08-28 to 2026-08-29) revealed `SIDECAR_MAX_CONCURRENT_RENDERS=6` (default) allowed too many concurrent Chromium processes, exhausting 7.6GB RAM and triggering OOM kills. Fixed by reducing to 2 via systemd drop-in `/etc/systemd/system/crawli-sidecar.service.d/override.conf` — memory immediately dropped from 7.5Gi to 4.4Gi, incidents ceased. Added daily monitoring script `/opt/crawli/monitor-memory-trend.sh` (logs to `/var/log/crawli-health-trend.log`, runs 09:00 UTC daily) to detect future memory leaks. Documented monitoring approach and two higher-fidelity alternatives (sidecar profiling, full observability) in [`docs/reference/MEMORY_LEAK_MONITORING.md`](docs/reference/MEMORY_LEAK_MONITORING.md). See that doc for incident details and escalation paths if memory creeps again.
+
+---
+
 **2026-08-27: typed color now gets the same treatment as the color filter dropdown, condition filter removed (was dead)**
 Investigated whether the search page's "use the filter dropdowns, it improves result accuracy" tip was still true. For color it wasn't fully: the dropdown got a real edge (`sortByColorMatch`'s structured-color re-sort boost) that typing the same word never got, confirmed live on Poshmark (filter path: 8/8 verified-black in the top 8 from a pool that was only 13/40 black; typed path relied solely on the platform's own text search). Fixed with `detectColorFromQuery` (`lib/colorFilter.ts`), mirroring `detectSizeFromQuery`'s existing typed-vs-dropdown fallback pattern for size. Dropped the now-unnecessary tip, and its dead `FILTER_HINT_PATTERNS`/`detectFilterHints` code, from `SearchForm.tsx`. Separately, condition turned out to be fully inert, no UI ever rendered a condition dropdown, and `filters.condition` was read nowhere in the search pipeline, so removed it from `FilterState`, `CONDITION_OPTIONS`, and both `/api/search` and `/api/saved-searches`'s Zod schemas. Verified: `npx tsc --noEmit` clean, `detectColorFromQuery` unit-checked against 7 cases including both collision guards (denim, Stone Island). See PITFALLS.md for the full investigation.
 

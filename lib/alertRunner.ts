@@ -182,8 +182,11 @@ export async function runAlert(savedSearch: SavedSearch): Promise<number> {
   const newListings = listings.filter((l) => newUrls.includes(l.url));
 
   // Every (non-first) run produces an in-app notification, even with 0 new
-  // matches. This is the "your alert ran today" signal the nav bell badge
-  // counts. Users wanted confirmation the alert is alive regardless of result.
+  // matches, because `/api/saved-searches/[id]/history` renders its day-by-day
+  // "your alert ran" view straight off these rows and needs the quiet days too.
+  // These 0-match rows are history-only: the nav bell filters to new_count > 0
+  // (see useTotalUnreadAlerts in app/components/shell/nav-hooks.ts), so writing
+  // one here does NOT badge the user. Both facts have to stay true together.
   const { data: notif } = await admin
     .from('notifications')
     .insert({

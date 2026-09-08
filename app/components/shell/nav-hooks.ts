@@ -47,9 +47,11 @@ export function useAuthUser() {
 }
 
 /**
- * Count of unseen notifications. Each alert run creates one notification
- * (daily, regardless of new matches), so the badge lights up when an alert has
- * run since the user last visited /alerts. Refreshes in realtime.
+ * Count of unseen notifications that actually found something. Every alert run
+ * writes a notification row (including 0-match runs, which the run-history view
+ * needs), but the `.gt('new_count', 0)` filter below means the badge only lights
+ * up when there are real matches to see. Do not drop that filter: without it the
+ * bell shows a number on every quiet daily run. Refreshes in realtime.
  */
 export function useTotalUnreadAlerts(userId: string | undefined) {
   const [unread, setUnread] = useState(0);

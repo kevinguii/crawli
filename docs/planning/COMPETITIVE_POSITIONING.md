@@ -53,6 +53,15 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 usage is 1.9 searches/user/month. There is no scarcity, so there is no conversion
 pressure. The pricing page is not the bottleneck — demand is.
 
+> **PARTIALLY FALSIFIED 2026-09-07** (see the funnel audit at the top of §6c). The
+> usage facts still hold: nobody hits the cap. The *inference* does not. All 4 real
+> paying customers converted on their signup day, two of them after only 2 searches,
+> so conversion here never required scarcity at all. It is a first-impression
+> purchase off locked price intelligence plus alert setup. Do not reason from
+> "no scarcity, therefore no conversion pressure" again. The live bottleneck is
+> retention (11 of 94 users have ever been active on a second day), not demand and
+> not the paywall.
+
 **2. Retention features are inert.** Saves sit at 4 users and alerts at 2 users,
 both unchanged while the user base doubled. Every new user since late June has
 searched and left without adopting a single sticky feature. 10 of 26 searchers
@@ -598,6 +607,99 @@ statistically significant — these are directional reads, and small-n honesty i
 of the record.
 
 #### Running
+
+```
+### FUNNEL AUDIT 2026-09-07 — pre-read for EXP-006 / EXP-007, and the death of a
+### proposed weekly-pricing change
+Not an experiment. A measurement pass run at 94 users (96 auth rows) because the
+owner proposed replacing $5/mo with a high-anchor weekly plan (~$5-7/wk, monthly
+removed from checkout). The proposal was dropped before any code was written.
+Recorded here because it falsifies §1 finding 1 and the alerts-retention claim
+both EXP-006 and this document lean on.
+
+WHAT CONVERSION ACTUALLY LOOKS LIKE (the finding that killed the pricing change):
+  · 5 active Pro accounts, but one is the owner's own (owner@, legacy price
+    ID price_1Ta8Ae..., signed up on day one). REAL customer count is 4.
+  · All 4 signed up, searched, created an alert, and PAID ON THE SAME CALENDAR DAY.
+      emmeyer07  8/28, 2 searches, paid day 0
+      ginacavill 8/29, 35 searches, paid day 0  (the only genuinely active one)
+      colinkeibs 8/29, 2 searches, paid day 0
+      awolfw     9/5,  5 searches, paid day 0
+  · Two of them paid after TWO searches against a 5/week free cap. They were
+    nowhere near a wall.
+  · => §1 finding 1 ("nobody is near a paywall, so there is no conversion
+    pressure, demand is the bottleneck") is FALSIFIED as stated. Conversion here
+    is a first-impression impulse purchase off locked price intelligence plus
+    alert setup. It is not quota-driven and never was. EXP-006's hypothesis was
+    right; its stated mechanism was wrong.
+  · => A 5x effective price increase (weekly at ~$26/mo equivalent) attacks
+    exactly the thing that works. $5 is inside impulse range for a cold day-zero
+    decision; $26/mo is not, especially for buyers who then do not return. It
+    would also have overwritten EXP-006/007 nine days before their read dates.
+    Rejected. Revisit pricing after both read, and test $5 vs $9.99 (a real
+    willingness-to-pay question, given underpriced.app's $9.99 floor) rather than
+    weekly framing, which is a mobile-app trial-funnel tactic aimed at buyers who
+    are not calculating. Resellers calculate.
+
+THE ALERT EMAIL CHANNEL IS DARK (measured for the first time):
+  · 254 alert emails sent in 30d, 252 delivered, 0 opened, 0 clicked.
+  · Not a tracking gap: open AND click tracking are both enabled on
+    thecrawli.com in Resend, and lib/alertRunner.ts sets no per-send override.
+  · 0 opens alone would be explainable by pixel blocking. 0 CLICKS across 252
+    delivered messages is not: click tracking rewrites links and survives
+    privacy filters.
+  · Root cause candidate, high confidence: `dig TXT _dmarc.thecrawli.com` returns
+    NOTHING. SPF and DKIM are both correct and verified; DMARC is simply absent,
+    and Gmail/Yahoo have required it of bulk senders since Feb 2024. Sending is
+    also from the root domain (alerts@thecrawli.com) rather than a dedicated
+    sending subdomain, so alert volume shares reputation with the whole domain.
+  · In-app agrees: excluding the owner, 189 badge-worthy notifications (new_count
+    > 0), 21 ever seen (11%). One user has 72 unseen and has opened none.
+  · => Every claim of the form "the alert email is the strongest second-visit
+    driver" (HANDOFF.md, EXP-006's "deliberately NOT" note) was ASSERTED, never
+    measured, and the first measurement points the other way. Fix DMARC, then
+    re-measure before building anything else on alerts. Note this does NOT
+    invalidate alerts as a conversion signal: 5 of 5 paying accounts have an
+    alert and 0 of 66 without one pay. Alert CREATION correlates with paying.
+    Alert DELIVERY has never been shown to do anything.
+
+RETENTION IS THE REAL CONSTRAINT (and the honest error bars on it):
+  · 94 users -> 55 onboarded (~100% for cohorts after Aug 10, the flow works)
+    -> 76 ever searched (81%, activation is genuinely good) -> 28 created an
+    alert (30%) -> 11 ever active on a 2nd day -> 4 paying.
+  · Last three signup cohorts (8/17, 8/24, 8/31): 3 of 48 users came back.
+  · Concentration: 289 lifetime searches, 75 are the owner's, top 3 users are
+    45% of everything. Rising weekly search counts (25/39/53/54) hide a FALLING
+    active-user count (10/22/16/13). That is one power user, not growth.
+  · MEASUREMENT CAVEAT, read before quoting any of this: neither available
+    retention signal is clean, and they are biased in OPPOSITE directions.
+      - search_history upserts on its dedupe key (see §"A caveat on reading
+        search_history"), so a repeated identical search bumps searched_at
+        instead of adding a row. count(distinct searched_at::date) therefore
+        UNDERCOUNTS active days.
+      - auth.users.last_sign_in_at only updates on a fresh authentication, not
+        on a return visit carried by a refresh token, so it undercounts too, and
+        differently. It says 7 of 96 users ever signed in on a later day, and
+        says days_span=0 for ALL FOUR paying customers including ginacavill, who
+        demonstrably searched from 8/29 through 9/4. Do not use it alone.
+    Every independent measure (11/94 multi-day searchers, 7/96 re-auths, 12
+    signed in within 7d, 11% notification seen rate, 0% email click rate) points
+    the same way, so the DIRECTION is not in doubt. The precise rate is.
+
+CHURN EXPOSURE, NEAR-TERM:
+  · 3 of the 4 real customers have not opened the product since the day they paid
+    (emmeyer07 and colinkeibs for 9-10 days; awolfw paid 9/5 so it is too early
+    to call). Renewals land 2026-09-28, 09-29, 09-29 and 10-05.
+  · If DMARC is the reason their alert emails never arrived, the retention
+    failure and the deliverability failure are the same bug, and fixing it is
+    also the cheapest available churn intervention.
+
+Disposition:        closed (measurement pass, no change shipped)
+Follow-ups:         (1) add DMARC TXT record, then re-measure email engagement
+                    (2) do NOT change pricing before EXP-006 (9/16) and EXP-007
+                        (9/18) read out
+                    (3) reach the 3 dormant payers personally before 9/28
+```
 
 ```
 ### EXP-007 — Pro sold as "Unlimited" (searches + result depth)
