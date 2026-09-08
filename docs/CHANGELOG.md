@@ -8,6 +8,11 @@ specific change. Current state, open issues, and the newest five sessions are in
 
 ---
 
+**2026-08-29: Trading cards were passing player/celebrity-name searches under a category filter**
+`titleMatchesQuery`'s anchor check verifies WHO a listing is about, not WHAT it physically is, so a "jeff teague jersey" search (single real anchor: `teague`) matched that player's trading cards too. Compounded by `filtersToQuerySuffix` appending the bare category word ("tops") onto the marketplace query text, which fuzzy-matched the "Topps" card brand and "Top Flight" streetwear brand — a category filter was actively pulling in *more* junk. Fixed with a title-text exclusion list (`NON_APPAREL_SIGNAL_WORDS` in `lib/parse.ts`), gated on a category filter being active (owner decision — unfiltered searches untouched) and skipped when the query itself asks for a card. Verified against 8 cases (signed jerseys, Chrome Hearts, Relic by Levi's, explicit card searches all still pass); `npx tsc --noEmit` clean, existing `verify-relevance-numerics.mts`/`verify-alert-query.mts` still 100%. See PITFALLS "Relevance filtering".
+
+---
+
 **2026-08-29: Sidecar OOM incidents — reduced concurrent Chromium from 6 to 2, added daily memory monitoring**
 Three 503 Service Unavailable incidents in 24 hours (2026-08-28 to 2026-08-29) revealed `SIDECAR_MAX_CONCURRENT_RENDERS=6` (default) allowed too many concurrent Chromium processes, exhausting 7.6GB RAM and triggering OOM kills. Fixed by reducing to 2 via systemd drop-in `/etc/systemd/system/crawli-sidecar.service.d/override.conf` — memory immediately dropped from 7.5Gi to 4.4Gi, incidents ceased. Added daily monitoring script `/opt/crawli/monitor-memory-trend.sh` (logs to `/var/log/crawli-health-trend.log`, runs 09:00 UTC daily) to detect future memory leaks. Documented monitoring approach and two higher-fidelity alternatives (sidecar profiling, full observability) in [`docs/reference/MEMORY_LEAK_MONITORING.md`](docs/reference/MEMORY_LEAK_MONITORING.md). See that doc for incident details and escalation paths if memory creeps again.
 

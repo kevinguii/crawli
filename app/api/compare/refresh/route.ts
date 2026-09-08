@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { writeFile } from 'node:fs/promises';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { scrapeSearchPageViaSidecar } from '@/lib/scraper';
 import { parseScrapedListings } from '@/lib/parse';
@@ -10,6 +11,22 @@ import type { CompareItem } from '@/lib/compare';
 import type { Listing } from '@/lib/types';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://thecrawli.com';
+
+// Written at the start of the run and after every slug so the smoke-test's
+// auto-heal cron can tell "still refreshing" apart from "actually stuck" —
+// see docs/reference/SERVER_REFERENCE.md "Auto-healing cron". Best-effort:
+// a failure to write it must never break the refresh itself, and a run that
+// crashes mid-batch just lets the file go stale rather than needing explicit
+// cleanup.
+const HEARTBEAT_PATH = '/run/crawli-compare-refresh.heartbeat';
+
+async function touchHeartbeat(): Promise<void> {
+  try {
+    await writeFile(HEARTBEAT_PATH, new Date().toISOString());
+  } catch {
+    // best-effort — see comment above
+  }
+}
 
 export const dynamic = 'force-dynamic';
 // Long timeout: scraping 8 platforms × N slugs can take a while.
@@ -152,9 +169,10 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // Optional `{ "slugs": [...] }` body restricts the run to specific items. The
-  // daily cron posts no body and so still refreshes every enabled item; this is
-  // only for backfilling newly-added slugs without re-scraping the whole set
+  // Optional `{ "slugs": [...] }` body restricts the run to specific items.
+  // The weekly cron posts a curated 15-slug body (see SERVER_REFERENCE.md);
+  // an empty/omitted body refreshes every enabled item instead — used for
+  // backfilling newly-added slugs without re-scraping the whole set
   // (a full run is ~35s/slug and long outlives nginx's 300s proxy_read_timeout).
   const body = (await request.json().catch(() => null)) as { slugs?: unknown } | null;
   const slugFilter =
@@ -173,10 +191,13 @@ export async function POST(request: Request) {
 
   const results: Awaited<ReturnType<typeof refreshSlug>>[] = [];
 
+  await touchHeartbeat();
+
   // Refresh slugs one at a time (each fans out 3 parallel platform scrapes)
   for (const item of items as CompareItem[]) {
     const result = await refreshSlug(item, admin);
     results.push(result);
+    await touchHeartbeat();
   }
 
   // Ping IndexNow with the just-refreshed compare pages so Bing recrawls the

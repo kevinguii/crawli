@@ -238,10 +238,12 @@ Runs a real Grailed search for "nike air force 1" and returns 200 if ≥1 result
 ```bash
 # View current crontab:
 crontab -l
-# The line should be:
-*/15 * * * * curl -sf "https://thecrawli.com/api/smoke?token=<INTERNAL_API_TOKEN>" || (systemctl restart crawli-sidecar && echo "sidecar restarted at $(date)" >> /var/log/crawli-smoke.log)
+# The line should be (2026-09-08, heartbeat-aware — see below):
+*/15 * * * * curl -sf "https://thecrawli.com/api/smoke?token=<INTERNAL_API_TOKEN>" || (find /run/crawli-compare-refresh.heartbeat -mmin -10 2>/dev/null | grep -q . && echo "restart skipped at $(date) - compare-refresh heartbeat fresh" >> /var/log/crawli-smoke.log || (systemctl restart crawli-sidecar && echo "sidecar restarted at $(date)" >> /var/log/crawli-smoke.log))
 ```
-This restarts the sidecar automatically when the smoke test fails — no human needed for the common pool-poisoning case. Check the log occasionally: `cat /var/log/crawli-smoke.log`
+This restarts the sidecar automatically when the smoke test fails — no human needed for the common pool-poisoning case. Check the log occasionally: `cat /var/log/crawli-smoke.log`.
+
+**Heartbeat guard (2026-09-08):** `/api/compare/refresh` monopolizes the sidecar's render semaphore for its whole run (it's one job competing with everything else for `SIDECAR_MAX_CONCURRENT_RENDERS` slots), which used to starve this smoke test and get the sidecar SIGKILL'd mid-batch — the actual cause of both the near-daily forced restarts and, most likely, the original 2026-08-29 OOM incident (same job, back when RENDERS was 6). The refresh route now touches `/run/crawli-compare-refresh.heartbeat` at the start of its run and after every slug. The cron above checks that file before restarting: if it's been updated in the last 10 minutes, a refresh is actively running and the restart is skipped (logged as "skipped", not silently dropped) rather than force-killing it mid-batch. A crashed/hung refresh just lets the file go stale — no explicit cleanup needed, auto-heal resumes protecting normally once it's >10 min old.
 
 **Search-alerts cron (required — this is what makes alerts recur):**
 ```bash
@@ -252,10 +254,14 @@ There is **no Vercel Cron** — the app is systemd-hosted, so without this line 
 
 **Compare-pages refresh cron (seeds the /compare/[slug] public pages):**
 ```bash
-# Crontab line on 5.78.187.97 — add this after deploying Phase 2:
-0 6 * * * curl -sf -X POST -H "Authorization: Bearer <CRON_SECRET>" https://thecrawli.com/api/compare/refresh >> /var/log/crawli-compare.log 2>&1
+# Crontab line on 5.78.187.97 (changed 2026-09-08 — was daily/all-items, see below):
+0 6 * * 1 curl -sf -X POST -H "Authorization: Bearer <CRON_SECRET>" -H "content-type: application/json" -d '{"slugs":[...15 curated slugs...]}' https://thecrawli.com/api/compare/refresh >> /var/log/crawli-compare.log 2>&1
 ```
-Runs once a day at 6 AM UTC. Scrapes 8 native platforms for each of the 15 enabled compare slugs, computes per-platform stats, upserts to `compare_snapshots`. Pages read from the DB (ISR revalidate=3600), so each hour after the cron they pull fresh data. Pages show "No listings" before the first cron run — manually trigger with: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://thecrawli.com/api/compare/refresh`. Check the log: `cat /var/log/crawli-compare.log`.
+Runs once a **week** (Mondays, 6 AM UTC), scoped to a **curated 15 of the 33** `compare_items` via the `{"slugs":[...]}` body — picked by 30-day GSC impressions, biased toward keeping luxury-category items. All 33 pages stay live either way (the `{slugs}` filter only controls what gets refreshed, not what's `enabled` — flipping `enabled` off 404s the page, see `lib/compare.ts`/`app/compare/[slug]/page.tsx`); the 18 left out of the rotation just stop getting fresh prices and go stale over time. 9 platforms scraped per slug, stats upserted to `compare_snapshots`. Pages read from the DB (ISR revalidate=3600).
+
+**Why it changed:** the original daily/all-33-items version was 297 renders/day, monopolizing the sidecar's render semaphore for 20+ minutes straight and starving the smoke test (see "Heartbeat guard" above) — the likely root cause of the 2026-08-29 OOM incident. 30 days of GSC data showed the whole feature was earning ~5 total clicks/month, so the fix was shrinking the job (135 renders/week now, a ~94% cut) rather than just tolerating the load. `crawli-compare.log` was also silently dead from June 2026 to September 2026 — nginx's 300s `proxy_read_timeout` on this route was cutting the client connection before the (then ~20-minute) job finished, so `curl -sf` printed nothing even though the refresh completed successfully server-side every time. Not yet fixed (raising the nginx timeout, or making the endpoint properly async) — revisit once the smaller weekly job's real duration is known.
+
+Pages show "No listings" before the first cron run — manually trigger with: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://thecrawli.com/api/compare/refresh` (no body = refreshes all 33 enabled items, useful for backfilling a newly-added slug). Check the log: `cat /var/log/crawli-compare.log` (may still be empty/stale until the nginx timeout is addressed — check `compare_snapshots.scraped_at` in Supabase for actual freshness instead).
 
 **If UptimeRobot still fires after the cron restart:** the sidecar can't recover on its own (Chromium crashed hard). SSH in and investigate:
 ```bash
