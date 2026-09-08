@@ -13,6 +13,18 @@ const ALERT_PLATFORMS = Object.entries(PLATFORM_NAMES)
   .filter(([key]) => !ALERT_EXCLUDED_PLATFORMS.has(key))
   .map(([key, name]) => ({ key, name }));
 
+// Short forms for the cadence grid only — "Every 12 hours" is what wrapped
+// inside a narrow cell. cadenceLabel() itself stays untouched since prose
+// elsewhere ("Checks every 12 hours", the confirm-step sentence) needs the
+// full wording; the shortened text here is paired with a title tooltip
+// carrying the real label.
+const SHORT_CADENCE_LABELS: Record<number, string> = {
+  1: 'Hourly',
+  3: '3 hours',
+  6: '6 hours',
+  12: '12 hours',
+};
+
 interface Props {
   onClose: () => void;
   onCreated: (alert: SavedSearch) => void;
@@ -374,7 +386,14 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
               <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
                 Check frequency
               </label>
-              <div className="flex flex-wrap gap-2">
+              {/* Uniform 3-column grid, not flex-wrap: with 6 presets and
+                  mixed label lengths, flex-wrap's per-row flex-1 stretched
+                  the trailing 2-item row (Daily/Weekly) far wider than the
+                  4-item row above it, and squeezed "Every 12 hours" into a
+                  wrap. A fixed grid keeps every cell the same size regardless
+                  of row, and the short labels below guarantee no cell ever
+                  wraps; the full wording is still one tap away via title. */}
+              <div className="grid grid-cols-3 gap-2">
                 {ALERT_CADENCE_PRESETS.map((h) => {
                   const selected = effectiveCadence === h;
                   // Rendered disabled rather than hidden: a locked option the
@@ -391,8 +410,8 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                       type="button"
                       onClick={() => { if (!gated) setCadence(h); }}
                       disabled={gated}
-                      title={gated ? `${cadenceLabel(h)} is part of Pro` : undefined}
-                      className="flex-1 min-w-[5.5rem] py-2 rounded-lg text-sm font-medium transition-all"
+                      title={gated ? `${cadenceLabel(h)} is part of Pro` : cadenceLabel(h)}
+                      className="py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
                       style={
                         selected
                           ? { background: 'var(--accent)', color: '#fff' }
@@ -405,7 +424,7 @@ export default function CreateAlertModal({ onClose, onCreated, prefill, editingA
                             }
                       }
                     >
-                      {cadenceLabel(h)}
+                      {SHORT_CADENCE_LABELS[h] ?? cadenceLabel(h)}
                       {gated && ' · Pro'}
                     </button>
                   );

@@ -641,27 +641,53 @@ WHAT CONVERSION ACTUALLY LOOKS LIKE (the finding that killed the pricing change)
     weekly framing, which is a mobile-app trial-funnel tactic aimed at buyers who
     are not calculating. Resellers calculate.
 
-THE ALERT EMAIL CHANNEL IS DARK (measured for the first time):
+THE ALERT EMAIL CHANNEL SHOWS ZERO ENGAGEMENT (unexplained, NOT yet diagnosed):
+  VERIFIED FACTS:
   · 254 alert emails sent in 30d, 252 delivered, 0 opened, 0 clicked.
-  · Not a tracking gap: open AND click tracking are both enabled on
-    thecrawli.com in Resend, and lib/alertRunner.ts sets no per-send override.
-  · 0 opens alone would be explainable by pixel blocking. 0 CLICKS across 252
-    delivered messages is not: click tracking rewrites links and survives
-    privacy filters.
-  · Root cause candidate, high confidence: `dig TXT _dmarc.thecrawli.com` returns
-    NOTHING. SPF and DKIM are both correct and verified; DMARC is simply absent,
-    and Gmail/Yahoo have required it of bulk senders since Feb 2024. Sending is
-    also from the root domain (alerts@thecrawli.com) rather than a dedicated
-    sending subdomain, so alert volume shares reputation with the whole domain.
+  · Not a tracking-config gap: open AND click tracking are both enabled on
+    thecrawli.com in Resend, lib/alertRunner.ts sets no per-send override, and
+    sendAlertEmail does pass a real `html` body (so there IS a pixel to inject
+    and there ARE links to rewrite). The trivial "plaintext, nothing to track"
+    explanation is ruled out.
+  · `dig TXT _dmarc.thecrawli.com` returns NOTHING. SPF and Resend DKIM are both
+    present and verified; DMARC is simply absent, and Gmail/Yahoo have required
+    it of bulk senders since Feb 2024. Sending is also from the root domain
+    (alerts@thecrawli.com) rather than a dedicated sending subdomain, so alert
+    volume shares sender reputation with the whole domain.
   · In-app agrees: excluding the owner, 189 badge-worthy notifications (new_count
     > 0), 21 ever seen (11%). One user has 72 unseen and has opened none.
-  · => Every claim of the form "the alert email is the strongest second-visit
-    driver" (HANDOFF.md, EXP-006's "deliberately NOT" note) was ASSERTED, never
-    measured, and the first measurement points the other way. Fix DMARC, then
-    re-measure before building anything else on alerts. Note this does NOT
-    invalidate alerts as a conversion signal: 5 of 5 paying accounts have an
-    alert and 0 of 66 without one pay. Alert CREATION correlates with paying.
-    Alert DELIVERY has never been shown to do anything.
+
+  WHAT IS **NOT** ESTABLISHED (an earlier draft of this entry overstated it):
+  · That the missing DMARC record CAUSES the zero. That is inference, not
+    measurement. Do not repeat it as a finding.
+  · **254 emails is not 254 independent trials.** Excluding the owner they went
+    to ~19 people, and one user accounts for a large share. A 0% click rate
+    across ~19 mostly-dormant recipients is far less surprising than "0 of 252"
+    sounds. The signal is worth chasing; it is not proof of a delivery failure.
+  · Whether this is a regression. Resend's metrics window on this account is
+    ~30 days (a request for May-Sep silently clamped to 2026-08-10), so the
+    owner's recollection that alert emails "were working before" can be neither
+    confirmed nor refuted from available data.
+  · Inbox PLACEMENT is not directly measurable by any ESP. "Delivered" means the
+    receiving server accepted the message, never that a human could find it.
+
+  FALSIFICATION TEST — RUN 2026-09-07, RESULT: MECHANISM WORKS.
+  Owner triggered a real alert and confirmed the email arrives and is usable.
+  This rules out the trivial explanation (broken send path / dead tracking) —
+  **the zero-click number is real user behaviour or inbox placement, not a
+  broken mechanism.** It does NOT yet distinguish those two: still needed —
+  seed-send to fresh Gmail/Outlook/iCloud addresses and observe the tab;
+  mail-tester.com for a spam score; Google Postmaster Tools for ongoing Gmail
+  reputation data; DMARC `rua=` reports once the record is live. Add the DMARC
+  record regardless of what these show — it is correct either way.
+
+  · => Regardless of cause: every claim of the form "the alert email is the
+    strongest second-visit driver" (HANDOFF.md, EXP-006's "deliberately NOT"
+    note) was ASSERTED and never measured, and the first attempt to measure it
+    found nothing supporting it. Do not build on that claim until it is re-read
+    post-fix. Note this does NOT invalidate alerts as a CONVERSION signal: 5 of
+    5 paying accounts have an alert and 0 of 66 without one pay. Alert CREATION
+    correlates with paying. Alert DELIVERY has never been shown to do anything.
 
 RETENTION IS THE REAL CONSTRAINT (and the honest error bars on it):
   · 94 users -> 55 onboarded (~100% for cohorts after Aug 10, the flow works)
@@ -695,10 +721,13 @@ CHURN EXPOSURE, NEAR-TERM:
     also the cheapest available churn intervention.
 
 Disposition:        closed (measurement pass, no change shipped)
-Follow-ups:         (1) add DMARC TXT record, then re-measure email engagement
-                    (2) do NOT change pricing before EXP-006 (9/16) and EXP-007
+Follow-ups:         (1) DONE 2026-09-07 — mechanism confirmed working, see above.
+                    (2) add the DMARC TXT record regardless (it is correct, free,
+                        and it is the only way to get rua= visibility), then
+                        seed-test placement and re-measure engagement
+                    (3) do NOT change pricing before EXP-006 (9/16) and EXP-007
                         (9/18) read out
-                    (3) reach the 3 dormant payers personally before 9/28
+                    (4) reach the 3 dormant payers personally before 9/28
 ```
 
 ```
