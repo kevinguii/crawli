@@ -18,7 +18,6 @@
 | 2:30–end | (Optional: one more split-screen cut showing both sides simultaneously for 1–2 sec, then fade) | Sound fades to silence or a final "ding" | (Text fades) | — |
 
 ---
- 
 ## Shooting script for on-camera moments
 
 **Setup:** Camera on you (phone tripod is fine), neutral background (blank wall, or a clean desk/room corner). Lighting: natural window light is best, avoid harsh shadows on your face.
