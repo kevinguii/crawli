@@ -394,7 +394,7 @@ footer {
   <h4>Key wiring &mdash; what goes where</h4>
   <dl class="wiring">
     <div><dt>NEXT_PUBLIC_SUPABASE_URL<br>NEXT_PUBLIC_SUPABASE_ANON_KEY</dt><dd>Ship to the browser by design. Safe only because Row Level Security gates every row. <code>NEXT_PUBLIC_</code> is Next.js inlining the value into the client bundle at build time &mdash; a build-time substitution, not a runtime read, so changing it needs a rebuild.</dd></div>
-    <div><dt>SUPABASE_SERVICE_ROLE_KEY</dt><dd>Bypasses RLS entirely. Server-only, used by <code>createAdminClient()</code> for webhooks, crons and cache writes. <span class="chip bad">incident</span> This leaked into 7 committed files and is still in git history; you rotated to a <code>sb_secret_&hellip;</code> key but never disabled the legacy JWT in the dashboard. <strong>Still open.</strong></dd></div>
+    <div><dt>SUPABASE_SERVICE_ROLE_KEY</dt><dd>Bypasses RLS entirely. Server-only, used by <code>createAdminClient()</code> for webhooks, crons and cache writes. <span class="chip ok">resolved</span> This leaked into 7 committed files and is still in git history; you rotated to a <code>sb_secret_&hellip;</code> key everywhere it was consumed, and the legacy JWT itself was <strong>disabled in the dashboard 2026-09-15</strong> &mdash; the plaintext copy in git history is now dead.</dd></div>
     <div><dt>RESEND_API_KEY</dt><dd>Server-only. One key, used by <code>alertRunner.ts</code> for alert and baseline digests. Supabase's own auth emails (confirm / reset) go through Supabase's SMTP config, which is a <em>separate</em> Resend wiring in the Supabase dashboard &mdash; that split is why auth-email throttling was a Supabase limit, not a Resend one.</dd></div>
     <div><dt>STRIPE_SECRET_KEY<br>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY<br>STRIPE_WEBHOOK_SECRET</dt><dd>Publishable is public. Secret is server-only. The webhook secret is per-endpoint &mdash; a new endpoint (test &rarr; live) means a new <code>whsec_</code>, and forgetting it is a silent 400 on every event.</dd></div>
     <div><dt>STRIPE_PRICE_ID_*</dt><dd>Nine of them (pro/max &times; monthly/yearly/weekly, plus three credit packs). Code never creates prices. <code>tierFromPriceId()</code> logs loudly on an unknown ID rather than silently downgrading a paying customer &mdash; worth copying.</dd></div>
@@ -1269,7 +1269,7 @@ public.profiles ─┬─ saves ────── collection_folders
     <div>
       <span class="chip bad">change</span>
       <h5>Secrets hygiene from commit one</h5>
-      <p>A <code>service_role</code> key across 7 committed files, still live in git history, with the legacy-key disable still not done. Pre-commit secret scanning is ten minutes of setup.</p>
+      <p>A <code>service_role</code> key across 7 committed files, still in git history &mdash; caught and rotated same-session, and the legacy key itself was disabled a week later. Pre-commit secret scanning would have caught it before the first commit, which is ten minutes of setup.</p>
     </div>
     <div>
       <span class="chip bad">change</span>

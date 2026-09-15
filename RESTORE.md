@@ -75,9 +75,11 @@ If port 8000 is stuck: `lsof -ti:8000 | xargs kill -9`
 `.env` is present in this archive and still holds live credentials. Note:
 
 - **Treat this archive as secret-bearing.** Do not post it anywhere public.
-  `.git` history also contains a `service_role` JWT that was rotated but,
-  as of archiving, had **not** been disabled in the Supabase dashboard
-  (see `HANDOFF.md` → Open issues).
+  `.git` history contains a `service_role` JWT that was rotated to a new
+  `sb_secret_...` key everywhere it was consumed, and the legacy key itself
+  was **disabled in the Supabase dashboard on 2026-09-15** — the plaintext
+  copy in git history is dead. `.env` still holds other live credentials
+  (Stripe, Resend, Firecrawl, OpenAI) until those accounts are closed.
 - Search will not return results unless the Supabase project is active. If it
   has been paused, restore it at
   `supabase.com/dashboard/project/peyqxfijdrziqfjkxjsn`.

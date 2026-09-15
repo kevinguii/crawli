@@ -44,7 +44,7 @@ Thirteen services, in roughly the order a rebuild should provision them — seve
 | Key | Notes |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` / `ANON_KEY` | Ship to the browser by design. Safe only because RLS gates every row. `NEXT_PUBLIC_` is a **build-time** substitution — changing it needs a rebuild. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS entirely. Server-only. ⚠️ **Leaked into 7 committed files and is still in git history.** Rotated to a `sb_secret_…` key, but the legacy JWT was never disabled. Repo is private. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS entirely. Server-only. Leaked into 7 committed files; rotated to a `sb_secret_…` key everywhere it was consumed, and the legacy JWT was **disabled in the Supabase dashboard 2026-09-15** — the plaintext copy in git history is now dead. |
 | `RESEND_API_KEY` | Server-only. Supabase's *own* auth emails go through a **separate** Resend wiring in the Supabase dashboard — that split is why auth-email throttling was a Supabase limit, not a Resend one. |
 | `STRIPE_SECRET_KEY` / `WEBHOOK_SECRET` | Webhook secret is **per-endpoint** — a new endpoint (test→live) means a new `whsec_`, and forgetting it is a silent 400 on every event. |
 | `STRIPE_PRICE_ID_*` | Nine of them. Code never creates prices. `tierFromPriceId()` logs loudly on an unknown ID rather than silently downgrading a paying customer. |
@@ -525,6 +525,6 @@ scripts/                verify-*.mts, bench-*, submit-bing.mjs, cogs-per-search.
 
 **Commands** (after [`RESTORE.md`](RESTORE.md)): `npm run dev:all` · `npm run dev` · `npm run dev:sidecar` · `npm run build` · `npx tsc --noEmit`
 
-⚠️ **This archive carries secrets.** `.env` holds live credentials and git history contains a `service_role` JWT that was rotated but never disabled. **Keep this repo private.**
+⚠️ **This archive carries secrets.** `.env` holds live credentials for Stripe, Resend, Firecrawl and OpenAI until those accounts are closed. (The one credential that *was* fully closed out — the leaked `service_role` JWT in git history — had its legacy key disabled 2026-09-15, so that specific exposure is resolved.) **Keep this repo private.**
 
 **License:** MIT

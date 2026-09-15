@@ -13,7 +13,7 @@ This project is **wound down**. The repo is an archive, not a running codebase.
 - **`npx tsc --noEmit` was verified clean** immediately before stripping, so the source is known-good; you cannot re-verify without reinstalling first.
 - **`docs/superpowers/` no longer exists** — condensed into `docs/ARCHIVED_SPECS.md`, which keeps the design decisions and rejected alternatives. The Feature Implementation Workflow below still describes the correct process if work ever resumes.
 - **Live services may be gone.** Search needs an active Supabase project; Stripe/Resend/Firecrawl/OpenAI keys die with their accounts. Verify before trusting any "it works" claim in these docs.
-- **Open security item:** Supabase legacy API keys were never disabled and a `service_role` JWT is still in git history. See `HANDOFF.md` → Open issues.
+- **Security item closed 2026-09-15:** Supabase legacy API keys have been disabled. The leaked `service_role` JWT in git history is dead. See `HANDOFF.md` → Recent changes.
 
 Everything below is preserved as it was during active development.
 
