@@ -92,7 +92,7 @@ cannot downgrade someone; no account resolves to it. Do not put it in copy.
 comps, and the flip-margin calculator seeded from median sold are all Pro-only as of
 2026-08-17. `/api/sold-comps` strips every price field server-side for free users. The
 governing line is *free shows you listings, Pro tells you what they mean*.
-Full design: `docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md`.
+Full design: `docs/ARCHIVED_SPECS.md (§ earlier specs)`.
 
 ### Overage = prepaid credit packs (debt-proof)
 Once a tier's included searches are spent, additional searches draw down **prepaid credits**

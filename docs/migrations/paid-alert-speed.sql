@@ -1,5 +1,5 @@
 -- Paid alert-speed customization — applied 2026-08-26.
--- Spec: docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md
+-- Spec: docs/ARCHIVED_SPECS.md (§ 2026-08-25 paid alert-speed)
 --
 -- Pro/Max's alert-cadence floor moves 24 -> 1 (hourly allowed). Free is
 -- unchanged. Idempotent; safe to re-run.

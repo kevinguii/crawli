@@ -2,6 +2,23 @@
 
 **Read this file at the start of every session.**
 
+---
+
+## ⏹ ARCHIVED 2026-09-15 — read this before anything else
+
+This project is **wound down**. The repo is an archive, not a running codebase.
+
+- **Fastest way to understand it:** open `docs/CRAWLI_TEARDOWN.html` in a browser — self-contained walkthrough of architecture, search, filtering, caching, hosting, monitoring, payments and outcomes.
+- **Dependencies are stripped** (`node_modules`, both Python venvs, `.next` — 1.85 GB). Nothing runs until you follow `RESTORE.md`. Do not assume `npm run dev:all` works.
+- **`npx tsc --noEmit` was verified clean** immediately before stripping, so the source is known-good; you cannot re-verify without reinstalling first.
+- **`docs/superpowers/` no longer exists** — condensed into `docs/ARCHIVED_SPECS.md`, which keeps the design decisions and rejected alternatives. The Feature Implementation Workflow below still describes the correct process if work ever resumes.
+- **Live services may be gone.** Search needs an active Supabase project; Stripe/Resend/Firecrawl/OpenAI keys die with their accounts. Verify before trusting any "it works" claim in these docs.
+- **Open security item:** Supabase legacy API keys were never disabled and a `service_role` JWT is still in git history. See `HANDOFF.md` → Open issues.
+
+Everything below is preserved as it was during active development.
+
+---
+
 ## Documentation structure
 
 The project uses four focused docs. Read what's relevant to your task — don't read all four every session.
@@ -12,6 +29,9 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 | `docs/core/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase | 
 | `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
 | `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
+| `docs/CRAWLI_TEARDOWN.html` | **Full system + outcomes walkthrough (open in a browser).** Best single entry point | Orienting cold, or explaining the project to anyone |
+| `RESTORE.md` | Rebuild steps after archival | Before trying to run anything |
+| `docs/ARCHIVED_SPECS.md` | Condensed design specs + rejected alternatives | Asking "why was it built this way / why not X" |
 
 **Supporting docs:**
 - `docs/CHANGELOG.md` — session history older than the newest 5 entries in HANDOFF.md. **Do not read by default**; open it only to trace why a specific past change was made.

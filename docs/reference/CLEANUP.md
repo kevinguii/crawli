@@ -1,6 +1,8 @@
 # Cleanup Before Finishing
 
 > **Run this before declaring a session done.** Ensures ports 3000 and 8000 are free so the user can start fresh testing without "address already in use" errors.
+>
+> **2026-09-15:** repo archived. `node_modules` and both Python venvs were stripped, so nothing is listening on 3000/8000 unless you have run `RESTORE.md` first.
 
 ## Kill running services
 

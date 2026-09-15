@@ -1,6 +1,16 @@
 # Crawli — Resale Price Aggregator
 
+> **Archived 2026-09-15.** This repo was stripped of regenerable dependencies and
+> build output for storage. Source, docs, content, migrations and git history are
+> complete.
+>
+> - **To understand the project:** open [`docs/CRAWLI_TEARDOWN.html`](docs/CRAWLI_TEARDOWN.html) in a browser — a full walkthrough of the architecture, search engine, filtering, hosting, monitoring, payments and outcomes.
+> - **To run it again:** follow [`RESTORE.md`](RESTORE.md).
+> - **Heads up:** `.env` and git history both carry live credentials. Do not publish this archive.
+
 Find the best resale prices across multiple marketplaces in one search. Crawli aggregates live pricing from Grailed, Depop, StockX, Poshmark, Mercari, Vinted, eBay, and Vestiaire.
+
+*(Final state: 9 platforms — the list above plus ThredUp.)*
 
 ## Features
 

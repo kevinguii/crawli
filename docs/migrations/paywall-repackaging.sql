@@ -1,5 +1,5 @@
 -- Paywall repackaging — applied to prod 2026-08-17.
--- Spec: docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md
+-- Spec: docs/ARCHIVED_SPECS.md (§ earlier specs)
 --
 -- Three plans -> two (free, pro). Gates move off inert quotas and onto things
 -- felt on every use. Idempotent; safe to re-run.

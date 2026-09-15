@@ -3,7 +3,7 @@
 // 3 AM for a daily/weekly check. Cadences under 24h are deliberately NOT
 // anchored — the entire point of paying for a fast cadence is finding out the
 // moment something new appears, so a match found at 3 AM emails at 3 AM. See
-// docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md.
+// docs/ARCHIVED_SPECS.md.
 // Computation works from both client and server.
 
 const ANCHOR_HOUR = 9;

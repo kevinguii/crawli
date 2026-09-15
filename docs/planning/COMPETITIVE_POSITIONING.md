@@ -33,19 +33,29 @@ allowed to claim and records every experiment. Read §6b before writing any copy
 
 ## 1. Where Crawli actually stands
 
-| Signal | 2026-06-30 (GROWTH_PLAN) | 2026-08-07 | Read |
-|---|---|---|---|
-| Total users | 19 | **36** | Signups nearly doubled |
-| Paying subs | 0 | **1** (max, active) | First revenue ever |
-| New signups (30d) | 10 | **17** | ~0.57/day, improving |
-| Signed in last 7d | 3 searchers | **7** | Slight warming |
-| Lifetime searchers | 13 | **26 / 36 (72%)** | Activation still good |
-| Searches per searcher | 7.3 | **4.7** | Falling — new cohort is thinner |
-| Searches last 30d | — | **26 across 14 users** | **~1.9/user/month** |
-| Users with saves | 4 | **4** | Unchanged in 5 weeks |
-| Users with alerts | 2 | **2** | Unchanged in 5 weeks |
-| GSC impressions | ~150/day | ~160/day | **Plateaued** |
-| GSC clicks (90d) | — | **39 total, 0.48% CTR** | 8 of those are brand term |
+| Signal | 2026-06-30 (GROWTH_PLAN) | 2026-08-07 | **2026-09-15 (final)** | Read |
+|---|---|---|---|---|
+| Total users | 19 | 36 | **105** | 5.5x in 10 weeks; acquisition was never the constraint |
+| Paying subs | 0 | 1 (max, active) | **4** (+ owner's own) | All 4 converted on signup day |
+| Lifetime searchers | 13 | 26 / 36 (72%) | **84 / 105 (80%)** | Activation held up as the base grew |
+| Users with saves | 4 | 4 | **6** | 193 saves, still concentrated in a few accounts |
+| Users with alerts | 2 | 2 | **32** | **The "inert" read below is now falsified — see note** |
+| Returned on a 2nd day | — | 7 / 26 | **13 / 105 (12%)** | **The real constraint, and it got worse in share terms** |
+| GSC clicks (90d) | — | 39 total, 0.48% CTR | **176, 0.78% CTR** | 87 of those are the homepage on brand search |
+| GSC impressions (90d) | ~150/day | ~160/day | **22,540 (~250/day)** | Avg position improved 24.3 → 7.7 over the window |
+| **Copilot citations (90d)** | — | — | **6,189** | **Never measured until 2026-09-15. 35x the click count.** |
+
+> **Added 2026-09-15, not a re-baseline.** The two dated columns are left exactly as
+> recorded. Two things in them are now falsified rather than merely stale:
+>
+> 1. **"Users with alerts: unchanged in 5 weeks" became 2 → 32.** Finding 2 below
+>    ("retention features are inert") was true when written and is now wrong about
+>    alerts specifically. What did *not* change is the thing that mattered: adoption
+>    rose 16x and second-day return stayed flat. **Adopting the retention feature did
+>    not produce retention** — a sharper and more useful result than "nobody adopts it."
+> 2. **The click-based reading of the content program was measuring one of two doors.**
+>    Copilot cited the site 6,189 times over the same window, ~35x the organic click
+>    count, on a dashboard nobody opened for three months. See §5 Step 3.
 
 ### The four findings that matter
 
@@ -66,6 +76,15 @@ pressure. The pricing page is not the bottleneck — demand is.
 both unchanged while the user base doubled. Every new user since late June has
 searched and left without adopting a single sticky feature. 10 of 26 searchers
 searched exactly once, ever. Only 7 of 26 ever came back on a second day.
+
+> **FALSIFIED IN PART 2026-09-15.** Alerts went 2 users → **32 users** (37 alerts)
+> once the onboarding flow and the alert CTA work shipped, so "inert" is wrong about
+> adoption. It is still right about *effect*: second-day return moved 7/26 (27%) →
+> 13/105 (12%), i.e. the share got **worse** while alert adoption rose 16x. The
+> correct statement is therefore stronger than the original, not weaker —
+> **the sticky feature got adopted and the stickiness did not follow.** Any future
+> retention bet should treat "users adopted it" as a leading indicator that has
+> already been measured once here and did not predict retention.
 
 **3. Users are not doing what the positioning says.** Actual queries from
 `search_history`: `Xbox 1 s`, `phone`, `resident evil coins`, `assassins creed
@@ -482,6 +501,28 @@ and the July rewrite did not dislodge it.
 - **Do** keep the 33 compare pages fresh — one cron run, and the only genuinely
   citable asset. Treat them as an AI-answer-engine surface, not a click source, and
   stop measuring them on clicks.
+  - **CONFIRMED BY DATA 2026-09-15.** This call was made on instinct before any
+    citation data existed, and it was right. Bing Webmaster Tools' AI Performance
+    tab shows **6,189 Microsoft Copilot citations in 90 days** against 176 organic
+    clicks in the same window — the corpus was being actively mined at an average of
+    9 distinct pages a day. The structured data, `FAQPage` schema,
+    `Product`+`AggregateOffer` markup and real refreshed prices did exactly the job
+    they were built for.
+  - **This does NOT reopen the prohibition on new posts.** A citation is not a visit,
+    not a signup and not a dollar; these 6,189 citations coincide with the flattest
+    stretch of the funnel in the project's life. If anything the citation data
+    *explains* the missing clicks rather than contradicting them — it is the AI
+    Overview dynamic seen from the supply side. The asset was never a failed traffic
+    channel; it was a **successful citation channel with no conversion path attached**,
+    and the missing piece was never more content. It was a reason for someone reading
+    a cited answer to come to the site, which nothing in the cited pages ever gave them.
+  - **Read the caveats before quoting the number** (full version in
+    `docs/CRAWLI_TEARDOWN.html` §14): the Jul 27–Aug 6 and Aug 21–23 gaps snap back to
+    149 and 230 the next day, so they are almost certainly reporting gaps and the true
+    total is probably higher; "citation" is Microsoft's own undocumented definition and
+    does not separate a load-bearing citation from a footnote; and this is Bing/Copilot
+    **only** — ChatGPT, Perplexity, Claude and Google's AI Overviews are all invisible
+    here, so 6,189 is a floor on one surface, not a cross-engine total.
   - **Partially reopened 2026-08-17 by EXP-006 (§6c), once.** The zero-click reading
     above was taken while every compare page emitted a snippet containing no price and
     no listing count, so "the AI Overview takes the click" and "the snippet gave nobody
@@ -592,12 +633,12 @@ not for the landing page, the metadata, or a carousel.
 |---|---|---|---|
 | C1 | "Sold prices from Grailed and Poshmark in one place" | **Built, unvalidated** | Shipped 2026-08-10. **Mercari is NOT in it — do not name Mercari in copy.** Validates if sold-comps users show higher 2nd-day return than baseline 27% (EXP-004). Two hard limits on wording: never imply a single blended cross-platform price (there isn't one, and §5 explains why), and never say "what it actually sold for" about Poshmark (accepted offers are hidden — that phrasing is only true of Grailed). |
 | C2 | "We're paid by you, not by the marketplaces we rank" | **True but untested** | Factually correct today (subscription, zero affiliate code). Untested as a *motivator*. Validates if it measurably lifts signup or is volunteered by users unprompted. |
-| C3 | "Alerts with compound criteria: your search terms AND size AND a price range" | **True, unadopted** | `applyCriteria()` ships, and as of 2026-08-10 the UI exposes all of it. **It is `size` + `minPrice` + `maxPrice` only — brand and keywords live in the query string. Never write copy implying four independent criteria fields.** Still 2 users. Validates on EXP-002 / EXP-003. |
+| C3 | "Alerts with compound criteria: your search terms AND size AND a price range" | **True, unadopted** | `applyCriteria()` ships, and as of 2026-08-10 the UI exposes all of it. **It is `size` + `minPrice` + `maxPrice` only — brand and keywords live in the query string. Never write copy implying four independent criteria fields.** **32 users / 37 alerts as of 2026-09-15** (was 2 when this row was written) — so the adoption half validated. The *efficacy* half did not: second-day return fell 27% → 12% over the same period, so adoption of compound criteria never converted into retention. Treat C3 as **adopted but not efficacious**, not as unvalidated. |
 | C4 | "Covers marketplaces the extensions don't" (Grailed, Vinted, Vestiaire, Depop) | **True, unvalidated as a reason to switch** | Coverage is real vs Beni's partner list. Nobody has said it made them choose Crawli. |
 | C5 | "Know your real margin before you buy" | **True as of 2026-08-10** | `netFlipProfit()` fees were already verified; the remaining gap was that resale defaulted to average *ask*. It now defaults to the median of completed sales (`FlipMargin`, seeded from Grailed when it qualifies). Still unvalidated as a *motivator* — true is not the same as persuasive. |
 | C6 | "Best price on a secondhand item" (current landing framing) | **Falsified as a wedge** | Gem and Beni do this better and free (§3). Do not lead with it. |
 | C7 | "Unlimited searches" / "Unlimited results per platform" (Pro) | **True in practice, finite in code** | Plan-matrix fact rather than an efficacy claim, so it is not gated the way C1-C6 are — but it is the one claim here that can *become* false. `TIER_CAPS.pro` enforces 50/week and 100 per native platform as anti-abuse backstops, ~10x the busiest user-week ever recorded (13). Wording rules: never pair it with a number, never show a paid user a depleting quota meter, and never offer a paid user search credits. **If any real user lands on either cap, raise the cap or drop the word that week** (EXP-007 kill criterion). Same standing divergence already applies to "unlimited saves and tracked listings" (enforced at 500). |
-| C8 | "Unlimited alerts, checked as often as hourly" (Pro) | **Built, unvalidated** | Shipped 2026-08-25, see docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md. Free is unchanged at daily/weekly. Wording constraint: the cron ticks every 15 minutes, so "hourly" means within about an hour of a new listing appearing, not to-the-second, never imply real-time/instant delivery. Validates if paid users who pick a sub-daily cadence show measurably better retention than the alert baseline (F13, one user's 28-day-dormancy break after setting a working alert is the only existing signal alerts affect retention at all). Known limitation, accepted not fixed: a downgraded account's existing fast alerts keep running at their prior cadence until the user edits them; nothing reclamps `cadence_hours` on existing rows automatically. |
+| C8 | "Unlimited alerts, checked as often as hourly" (Pro) | **Built, unvalidated** | Shipped 2026-08-25, see docs/ARCHIVED_SPECS.md (§ 2026-08-25 paid alert-speed). Free is unchanged at daily/weekly. Wording constraint: the cron ticks every 15 minutes, so "hourly" means within about an hour of a new listing appearing, not to-the-second, never imply real-time/instant delivery. Validates if paid users who pick a sub-daily cadence show measurably better retention than the alert baseline (F13, one user's 28-day-dormancy break after setting a working alert is the only existing signal alerts affect retention at all). Known limitation, accepted not fixed: a downgraded account's existing fast alerts keep running at their prior cadence until the user edits them; nothing reclamps `cadence_hours` on existing rows automatically. |
 
 ### 6c. Experiment log
 
@@ -780,7 +821,7 @@ Started:            2026-08-17
 Claim under test:   C1 + C5 as *purchase motivators* (not as facts — both are
                     already true and shipped; what is untested is whether anyone
                     will pay for them)
-Spec:               docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md
+Spec:               docs/ARCHIVED_SPECS.md (§ earlier specs)
 
 Diagnosis this rests on (pulled 2026-08-17, 46 users):
   · 0 real paying users. The single `max` account was the owner's own.

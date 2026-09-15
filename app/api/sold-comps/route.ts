@@ -5,7 +5,7 @@
 // Does NOT consume a search credit: it is gated by tier instead. As of 2026-08-17
 // (paywall repackaging) this is a paid capability: free users receive a stripped
 // payload carrying platform names and sample sizes only, with every computed price
-// omitted server-side. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
+// omitted server-side. See docs/ARCHIVED_SPECS.md.
 //
 // Deliberately NOT a 402: the client renders a locked panel that needs the sample
 // counts to be persuasive, and an error status would leave it with nothing to draw.

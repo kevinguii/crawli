@@ -18,7 +18,7 @@ export interface TierCaps {
   /** Floor on `saved_searches.cadence_hours`. Free: 24 (daily) or 168 (weekly)
    *  only. Pro/Max: any of ALERT_CADENCE_PRESETS in lib/alertSchedule.ts,
    *  1 (hourly) through 168 (weekly) — see
-   *  docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md. */
+   *  docs/ARCHIVED_SPECS.md. */
   minAlertCadenceHours: number;
 }
 
@@ -30,7 +30,7 @@ export const UNLIMITED = 1_000_000;
 // Caps are weekly for searches.
 //
 // Revised 2026-08-17 (paywall repackaging, see
-// docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md). The previous
+// docs/ARCHIVED_SPECS.md). The previous
 // numbers were commercially inert: at ~2.18 searches/user/month exactly 1 of 46
 // users had ever reached a cap, and the free tier differed from paid only by
 // integers nobody approached. The gates that matter now are the ones felt on every
@@ -82,7 +82,7 @@ export const UNLIMITED = 1_000_000;
 // lands on it, raise it or drop the word, same rule as the other two caps.
 //
 // Revised 2026-08-25 (paid alert speed): pro/max minAlertCadenceHours 24 -> 1.
-// See docs/superpowers/specs/2026-08-25-paid-alert-speed-design.md. Free is
+// See docs/ARCHIVED_SPECS.md. Free is
 // UNCHANGED at 24, this only widens what paid tiers may pick, it does not
 // change what anyone is limited to today. Cost is bounded the same way alert
 // COUNT already is: alerts never touch Firecrawl and share the cross-user

@@ -1,6 +1,14 @@
 # Crawli — Growth & Marketing Gameplan
 
-**Created:** 2026-06-30 · **Owner:** Kevin · **Status:** living doc
+**Created:** 2026-06-30 · **Owner:** Kevin · **Status:** ⏹ **CLOSED 2026-09-15 — historical record, not a live plan**
+
+> Every number in this document is a 2026-06-30 snapshot taken at **19 users / 0 paying**.
+> Final state was **105 users / 4 paying** — see `HANDOFF.md` "Project status" and
+> `COMPETITIVE_POSITIONING.md` §1 for the closing figures. Read this for the *diagnosis
+> and reasoning*, which mostly held up, not for the figures. Its central call ("it is not
+> a features problem, it's a conversion-path problem") was correct and was later sharpened
+> by the 2026-09-07 funnel audit into a **retention** problem specifically.
+> Its TikTok section is superseded by `AUDIENCE_AND_HOOKS_PLAN.md` F6.
 
 ## How to use this doc
 

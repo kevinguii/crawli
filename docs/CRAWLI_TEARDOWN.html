@@ -1,0 +1,1299 @@
+<title>Crawli Teardown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700;900&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+:root {
+  --paper:      #EFF1EE;
+  --surface:    #F8F9F6;
+  --surface-2:  #E6EAE5;
+  --ink:        #15191A;
+  --ink-2:      #39423F;
+  --muted:      #5C6763;
+  --rule:       #D3D8D1;
+  --rule-soft:  #E2E6E0;
+  --accent:     #12595E;
+  --accent-soft:#D9E6E5;
+  --ochre:      #8A6210;
+  --ochre-soft: #F0E7CF;
+  --moss:       #2E6340;
+  --moss-soft:  #DCE8DD;
+  --rust:       #8A3220;
+  --rust-soft:  #F0DED7;
+  --shadow:     0 1px 2px rgba(21,25,26,.06);
+
+  --f-display: "Chivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #0F1312;
+    --surface:    #161B1A;
+    --surface-2:  #1F2624;
+    --ink:        #E3E8E4;
+    --ink-2:      #C0C9C4;
+    --muted:      #8C9893;
+    --rule:       #2A3331;
+    --rule-soft:  #222A28;
+    --accent:     #63B6BB;
+    --accent-soft:#17312F;
+    --ochre:      #D2A64E;
+    --ochre-soft: #2E2716;
+    --moss:       #79B48B;
+    --moss-soft:  #1A2A1F;
+    --rust:       #D08165;
+    --rust-soft:  #2E1C16;
+    --shadow:     0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:      #0F1312;
+  --surface:    #161B1A;
+  --surface-2:  #1F2624;
+  --ink:        #E3E8E4;
+  --ink-2:      #C0C9C4;
+  --muted:      #8C9893;
+  --rule:       #2A3331;
+  --rule-soft:  #222A28;
+  --accent:     #63B6BB;
+  --accent-soft:#17312F;
+  --ochre:      #D2A64E;
+  --ochre-soft: #2E2716;
+  --moss:       #79B48B;
+  --moss-soft:  #1A2A1F;
+  --rust:       #D08165;
+  --rust-soft:  #2E1C16;
+  --shadow:     0 1px 2px rgba(0,0,0,.4);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 28px 120px;
+}
+
+/* ── masthead ─────────────────────────────────────── */
+.masthead { padding: 56px 0 0; border-bottom: 2px solid var(--ink); }
+.stamp {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--rust);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.stamp::before {
+  content: "";
+  width: 22px; height: 1px; background: var(--rust);
+}
+h1 {
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(2.7rem, 7vw, 4.6rem);
+  line-height: .95;
+  letter-spacing: -.028em;
+  margin: 18px 0 0;
+  text-wrap: balance;
+}
+.dek {
+  max-width: 62ch;
+  font-size: 1.14rem;
+  color: var(--ink-2);
+  margin: 20px 0 34px;
+}
+.dek em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+/* spec strip */
+.spec {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  border-top: 1px solid var(--rule);
+  margin-bottom: -2px;
+}
+.spec div {
+  padding: 14px 16px 16px 0;
+  border-right: 1px solid var(--rule-soft);
+}
+.spec div:last-child { border-right: 0; }
+.spec dt {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.spec dd {
+  margin: 0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1.42rem;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.spec dd small { font-size: .62em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+
+/* ── layout ───────────────────────────────────────── */
+.cols { display: block; }
+@media (min-width: 1080px) {
+  .cols { display: grid; grid-template-columns: 208px minmax(0,1fr); gap: 56px; align-items: start; }
+  nav.toc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+}
+nav.toc { padding-top: 44px; }
+nav.toc p {
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 12px;
+}
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+nav.toc a {
+  display: grid; grid-template-columns: 24px 1fr; gap: 6px;
+  font-family: var(--f-display); font-size: 13.5px; font-weight: 500;
+  color: var(--ink-2); text-decoration: none;
+  padding: 5px 8px 5px 0; border-radius: 3px; line-height: 1.3;
+}
+nav.toc a span { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); padding-top: 2px; }
+nav.toc a:hover { color: var(--accent); }
+nav.toc a:hover span { color: var(--accent); }
+
+main { padding-top: 44px; min-width: 0; }
+
+section { margin-bottom: 68px; scroll-margin-top: 20px; }
+section > h2 {
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(1.6rem, 3.4vw, 2.15rem);
+  letter-spacing: -.024em;
+  line-height: 1.08;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.sec-num {
+  font-family: var(--f-mono);
+  font-size: 11px; letter-spacing: .14em;
+  color: var(--accent); text-transform: uppercase;
+  display: block; margin-bottom: 10px;
+  padding-bottom: 9px; border-bottom: 1px solid var(--rule);
+}
+.lede { color: var(--ink-2); max-width: 68ch; margin: 0 0 24px; }
+
+h3 {
+  font-family: var(--f-display);
+  font-weight: 700; font-size: 1.06rem;
+  letter-spacing: -.01em;
+  margin: 34px 0 10px;
+}
+h4 {
+  font-family: var(--f-mono);
+  font-weight: 700; font-size: 11px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 26px 0 10px;
+}
+p { margin: 0 0 15px; max-width: 72ch; }
+ul, ol.body { margin: 0 0 16px; padding-left: 20px; max-width: 72ch; }
+li { margin-bottom: 7px; }
+strong { font-weight: 600; color: var(--ink); }
+a { color: var(--accent); }
+a:focus-visible, nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+code, .m { font-family: var(--f-mono); font-size: .82em; }
+p code, li code, td code, dd code {
+  background: var(--surface-2);
+  padding: 1px 5px; border-radius: 3px;
+  color: var(--ink);
+}
+
+pre {
+  font-family: var(--f-mono); font-size: 12.5px; line-height: 1.6;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+  padding: 14px 16px; margin: 0 0 18px;
+  overflow-x: auto; white-space: pre;
+}
+pre b { color: var(--ink); font-weight: 700; }
+
+/* ── figures ──────────────────────────────────────── */
+figure { margin: 0 0 24px; }
+figure svg { display: block; width: 100%; height: auto; color: var(--ink-2); }
+figcaption {
+  font-size: .89rem; color: var(--muted);
+  border-top: 1px solid var(--rule); padding-top: 10px; margin-top: 4px;
+  max-width: 76ch;
+}
+figure.wide { overflow-x: auto; }
+figure.wide > svg { min-width: 620px; }
+
+/* ── spec list (label / value with leader) ────────── */
+dl.wiring { margin: 0 0 20px; border-top: 1px solid var(--rule); }
+dl.wiring > div {
+  display: grid; grid-template-columns: minmax(180px, 250px) 1fr; gap: 10px 22px;
+  padding: 11px 0; border-bottom: 1px solid var(--rule-soft); align-items: baseline;
+}
+dl.wiring dt { font-family: var(--f-mono); font-size: 12px; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+dl.wiring dd { margin: 0; font-size: .94rem; color: var(--ink-2); }
+@media (max-width: 620px) { dl.wiring > div { grid-template-columns: 1fr; gap: 3px; } }
+
+/* ── tables ───────────────────────────────────────── */
+.scroll { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 480px; }
+th {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); text-align: left; font-weight: 500;
+  padding: 10px 14px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+td { padding: 9px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; color: var(--ink-2); }
+tr:last-child td { border-bottom: 0; }
+td:first-child { color: var(--ink); font-weight: 500; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ── status chips ─────────────────────────────────── */
+.chip {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 2px; white-space: nowrap;
+  display: inline-block;
+}
+.chip.ok   { background: var(--moss-soft);  color: var(--moss); }
+.chip.warn { background: var(--ochre-soft); color: var(--ochre); }
+.chip.bad  { background: var(--rust-soft);  color: var(--rust); }
+.chip.neu  { background: var(--surface-2);  color: var(--muted); }
+
+/* ── callouts ─────────────────────────────────────── */
+.note {
+  border-left: 3px solid var(--ochre);
+  background: var(--surface);
+  padding: 15px 18px; margin: 0 0 20px;
+}
+.note p:last-child { margin-bottom: 0; }
+.note .tag {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ochre); display: block; margin-bottom: 6px;
+}
+.note.scar { border-left-color: var(--rust); }
+.note.scar .tag { color: var(--rust); }
+
+/* ── numbered flow ────────────────────────────────── */
+ol.flow { list-style: none; counter-reset: f; margin: 0 0 22px; padding: 0; max-width: 74ch; }
+ol.flow li {
+  counter-increment: f; position: relative;
+  padding: 0 0 16px 40px; margin: 0;
+  border-left: 1px solid var(--rule); margin-left: 11px;
+}
+ol.flow li:last-child { border-left-color: transparent; padding-bottom: 0; }
+ol.flow li::before {
+  content: counter(f);
+  position: absolute; left: -11px; top: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--paper); border: 1px solid var(--rule);
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; color: var(--accent);
+  display: grid; place-items: center;
+}
+ol.flow li b { font-family: var(--f-display); font-size: .97rem; display: block; margin-bottom: 2px; color: var(--ink); }
+ol.flow li span { font-size: .94rem; color: var(--ink-2); }
+
+/* ── verdict cards ────────────────────────────────── */
+.verdicts { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 22px; }
+@media (min-width: 720px) { .verdicts { grid-template-columns: 1fr 1fr; } }
+.verdicts > div { background: var(--surface); padding: 18px 20px; }
+.verdicts h5 {
+  font-family: var(--f-display); font-size: 1rem; font-weight: 700;
+  margin: 8px 0 7px; letter-spacing: -.01em;
+}
+.verdicts p { font-size: .93rem; margin: 0; color: var(--ink-2); }
+
+footer {
+  border-top: 2px solid var(--ink);
+  padding-top: 18px; margin-top: 30px;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em;
+  color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: space-between;
+}
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="shell">
+
+<header class="masthead">
+  <span class="stamp">Decommissioning record &middot; thecrawli.com &middot; May&ndash;Sep 2026</span>
+  <h1>Crawli Teardown</h1>
+  <p class="dek">Everything that was wired into a 9-platform resale price aggregator, in the order it was built, with the measured result of each decision. Written as a build sheet for <em>the next one</em>, not an obituary for this one.</p>
+  <dl class="spec">
+    <div><dt>Users</dt><dd>105</dd></div>
+    <div><dt>Paying</dt><dd>5 <small>(1 is you)</small></dd></div>
+    <div><dt>Searches run</dt><dd>324</dd></div>
+    <div><dt>Blog posts</dt><dd>116</dd></div>
+    <div><dt>GSC clicks <small>90d</small></dt><dd>176</dd></div>
+    <div><dt>AI citations <small>90d</small></dt><dd>6,189</dd></div>
+    <div><dt>Cost / search</dt><dd>$0.006</dd></div>
+    <div><dt>Server uptime</dt><dd>60d</dd></div>
+  </dl>
+</header>
+
+<div class="cols">
+
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1"><span>01</span>Accounts &amp; key wiring</a></li>
+    <li><a href="#s2"><span>02</span>The two-process architecture</a></li>
+    <li><a href="#s3"><span>03</span>How search actually works</a></li>
+    <li><a href="#s4"><span>04</span>JSON-LD &amp; the extraction cascade</a></li>
+    <li><a href="#s5"><span>05</span>Relevance filtering</a></li>
+    <li><a href="#s6"><span>06</span>Six caching layers</a></li>
+    <li><a href="#s7"><span>07</span>Supabase: schema, RLS, grants</a></li>
+    <li><a href="#s8"><span>08</span>Stripe payment handling</a></li>
+    <li><a href="#s9"><span>09</span>Resend &amp; the alert engine</a></li>
+    <li><a href="#s10"><span>10</span>Hosting, nginx, cron</a></li>
+    <li><a href="#s11"><span>11</span>Sentry &amp; UptimeRobot</a></li>
+    <li><a href="#s12"><span>12</span>MCPs &amp; n8n automation</a></li>
+    <li><a href="#s13"><span>13</span>The SEO &amp; blog program</a></li>
+    <li><a href="#s14"><span>14</span>The AI citation channel</a></li>
+    <li><a href="#s15"><span>15</span>What the numbers say</a></li>
+    <li><a href="#s16"><span>16</span>Carry forward</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ─────────────────────────── 01 ─────────────────────────── -->
+<section id="s1">
+  <span class="sec-num">01 &middot; Foundations</span>
+  <h2>Every account you opened, and what each key actually unlocked</h2>
+  <p class="lede">You remembered Supabase, Resend, GSC and GA4. The real list was thirteen services. Here is the whole set, in roughly the order a rebuild should provision them, because several have hard ordering dependencies.</p>
+
+  <h4>Provisioning order</h4>
+  <ol class="flow">
+    <li><b>Domain + Cloudflare</b><span>Two A records &mdash; <code>@</code> and <code>www</code> &mdash; both to the origin IP. Cloudflare proxies (orange cloud) and terminates TLS at the edge; the origin <em>also</em> holds its own Certbot cert, which is what makes it Full (strict) rather than Flexible. The <code>www</code> host 301s to bare at nginx, not at Cloudflare.</span></li>
+    <li><b>Supabase</b><span>Project first, because auth, DB, storage and every later table hang off it. Three keys, three different blast radii &mdash; see the wiring table below.</span></li>
+    <li><b>Resend</b><span>Domain verification before any key matters. SPF + DKIM records go in Cloudflare DNS. DMARC is the one you skipped, and it cost you (&sect;09).</span></li>
+    <li><b>Stripe</b><span>Products and prices are provisioned <em>by hand in the dashboard</em>; code only ever reads price IDs out of env. Test mode first, live keys swapped in at the end.</span></li>
+    <li><b>Google Search Console + GA4</b><span>GSC verification via a meta tag (<code>NEXT_PUBLIC_GSC_VERIFICATION</code>) rendered by Next's <code>metadata.verification</code>. A service account (<code>crawli-sa.json</code>) then gets Full on GSC and Viewer on GA4 so scripts and MCPs can read both without you copy-pasting dashboards.</span></li>
+    <li><b>Sentry</b><span>Org + project, then <code>npx @sentry/wizard</code>, which writes the three config files and the <code>SENTRY_AUTH_TOKEN</code> used only at build time for source-map upload.</span></li>
+    <li><b>UptimeRobot</b><span>Last, because it needs live URLs to point at.</span></li>
+  </ol>
+
+  <h4>Key wiring &mdash; what goes where</h4>
+  <dl class="wiring">
+    <div><dt>NEXT_PUBLIC_SUPABASE_URL<br>NEXT_PUBLIC_SUPABASE_ANON_KEY</dt><dd>Ship to the browser by design. Safe only because Row Level Security gates every row. <code>NEXT_PUBLIC_</code> is Next.js inlining the value into the client bundle at build time &mdash; a build-time substitution, not a runtime read, so changing it needs a rebuild.</dd></div>
+    <div><dt>SUPABASE_SERVICE_ROLE_KEY</dt><dd>Bypasses RLS entirely. Server-only, used by <code>createAdminClient()</code> for webhooks, crons and cache writes. <span class="chip bad">incident</span> This leaked into 7 committed files and is still in git history; you rotated to a <code>sb_secret_&hellip;</code> key but never disabled the legacy JWT in the dashboard. <strong>Still open.</strong></dd></div>
+    <div><dt>RESEND_API_KEY</dt><dd>Server-only. One key, used by <code>alertRunner.ts</code> for alert and baseline digests. Supabase's own auth emails (confirm / reset) go through Supabase's SMTP config, which is a <em>separate</em> Resend wiring in the Supabase dashboard &mdash; that split is why auth-email throttling was a Supabase limit, not a Resend one.</dd></div>
+    <div><dt>STRIPE_SECRET_KEY<br>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY<br>STRIPE_WEBHOOK_SECRET</dt><dd>Publishable is public. Secret is server-only. The webhook secret is per-endpoint &mdash; a new endpoint (test &rarr; live) means a new <code>whsec_</code>, and forgetting it is a silent 400 on every event.</dd></div>
+    <div><dt>STRIPE_PRICE_ID_*</dt><dd>Nine of them (pro/max &times; monthly/yearly/weekly, plus three credit packs). Code never creates prices. <code>tierFromPriceId()</code> logs loudly on an unknown ID rather than silently downgrading a paying customer &mdash; worth copying.</dd></div>
+    <div><dt>NEXT_PUBLIC_GA_ID</dt><dd>Loads gtag <code>afterInteractive</code>. Absent in dev, so <code>lib/analytics.ts</code> no-ops on every call rather than throwing. Analytics must never break a signup.</dd></div>
+    <div><dt>NEXT_PUBLIC_GSC_VERIFICATION</dt><dd>Domain-ownership meta tag. Never rotate it casually &mdash; losing verification loses the API access the whole SEO toolchain sits on.</dd></div>
+    <div><dt>NEXT_PUBLIC_SENTRY_DSN / SENTRY_DSN</dt><dd>A DSN is a public write-only ingest endpoint, not a secret. <code>SENTRY_AUTH_TOKEN</code> <em>is</em> a secret and is build-time only.</dd></div>
+    <div><dt>INDEXNOW_KEY</dt><dd>Must exactly equal both the filename and the contents of <code>public/&lt;key&gt;.txt</code>. Three things to keep in sync; break any one and submissions 403 silently.</dd></div>
+    <div><dt>BING_WMT_API_KEY</dt><dd>Separate from IndexNow. IndexNow only <em>notifies</em>; this API actively requests a recrawl. Must be generated by a human in the Bing WMT UI.</dd></div>
+    <div><dt>CRON_SECRET / INTERNAL_API_TOKEN</dt><dd>Your own invention: bearer tokens so the server's crontab and UptimeRobot can hit privileged endpoints without a session. Cheap and correct.</dd></div>
+    <div><dt>FIRECRAWL_API_KEY / OPENAI_API_KEY</dt><dd>The only two metered third-party costs left by the end. Sidecar-side, never in the browser.</dd></div>
+    <div><dt>NEXT_PUBLIC_TURNSTILE_SITE_KEY</dt><dd>Cloudflare Turnstile on auth forms. The <em>secret</em> half never entered this repo &mdash; it is pasted into Supabase's Auth &rarr; Providers panel, because Supabase validates the token, not your app. A genuinely clean split.</dd></div>
+  </dl>
+
+  <div class="note">
+    <span class="tag">Pattern worth keeping</span>
+    <p>Every key sat in one <code>.env</code> on one box, and <code>.env.example</code> carried a paragraph of prose per variable explaining what it does, what breaks without it, and what the tradeoffs of each value are. That file was effectively the ops manual. Do it again.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 02 ─────────────────────────── -->
+<section id="s2">
+  <span class="sec-num">02 &middot; Architecture</span>
+  <h2>Two processes, one box, and three clocks fighting over one semaphore</h2>
+  <p class="lede">The single most consequential structural decision: the orchestrator and the browser engine are different processes in different languages, talking over localhost. Everything the project does &mdash; live search, alerts, the public SEO surface &mdash; runs through the same narrow gate.</p>
+
+<figure>
+<svg viewBox="0 0 980 548" role="img" aria-label="System map: four trigger sources (a user search, the 15-minute alert cron, the weekly compare cron, and the 15-minute smoke test) all funnel through one shared render semaphore in the Python sidecar, which drives a Chromium pool against nine resale platforms; results return through the extraction cascade and relevance filter and split into three sinks: a streamed response to the browser, an alert email via Resend, and cached snapshots that feed the public compare pages and AI citations." style="max-width:100%;height:auto">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+    </marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <g font-family="JetBrains Mono, monospace" font-size="11.5" fill="currentColor">
+
+    <text x="14" y="28" font-size="10" opacity=".6" letter-spacing="1.4">TRIGGERS</text>
+    <text x="166" y="28" font-size="10" opacity=".6" letter-spacing="1.4">NEXT.JS :3000</text>
+    <text x="362" y="28" font-size="10" opacity=".6" letter-spacing="1.4">CACHE</text>
+    <text x="574" y="28" font-size="10" opacity=".6" letter-spacing="1.4">SIDECAR :8000</text>
+    <text x="746" y="28" font-size="10" opacity=".6" letter-spacing="1.4">TARGETS</text>
+
+    <g fill="none" stroke="currentColor" stroke-width="1.1">
+      <rect x="14"  y="60"  width="118" height="34" rx="3"/>
+      <rect x="14"  y="112" width="118" height="34" rx="3"/>
+      <rect x="14"  y="164" width="118" height="34" rx="3"/>
+      <rect x="14"  y="216" width="118" height="34" rx="3"/>
+      <rect x="166" y="60"  width="162" height="34" rx="3"/>
+      <rect x="166" y="112" width="162" height="34" rx="3"/>
+      <rect x="166" y="164" width="162" height="34" rx="3"/>
+      <rect x="166" y="216" width="162" height="34" rx="3"/>
+      <rect x="358" y="60"  width="96"  height="34" rx="3" stroke-dasharray="3 2.5"/>
+      <rect x="358" y="112" width="96"  height="34" rx="3" stroke-dasharray="3 2.5"/>
+      <rect x="574" y="112" width="104" height="70" rx="3"/>
+      <rect x="718" y="86"  width="248" height="124" rx="3"/>
+    </g>
+
+    <text x="73"  y="82" text-anchor="middle">user search</text>
+    <text x="73"  y="128" text-anchor="middle">cron */15</text>
+    <text x="73"  y="180" text-anchor="middle">cron Mon 6am</text>
+    <text x="73"  y="232" text-anchor="middle">cron */15</text>
+
+    <text x="247" y="82" text-anchor="middle">/api/search</text>
+    <text x="247" y="134" text-anchor="middle">/api/cron/run-alerts</text>
+    <text x="247" y="186" text-anchor="middle">/api/compare/refresh</text>
+    <text x="247" y="238" text-anchor="middle">/api/smoke</text>
+
+    <text x="406" y="75"  text-anchor="middle" font-size="10">search_cache</text>
+    <text x="406" y="88"  text-anchor="middle" font-size="10" opacity=".65">1 hr</text>
+    <text x="406" y="127" text-anchor="middle" font-size="10">listings_cache</text>
+    <text x="406" y="140" text-anchor="middle" font-size="10" opacity=".65">N watchers, 1 scrape</text>
+
+    <text x="626" y="142" text-anchor="middle" font-size="10.5">Chromium</text>
+    <text x="626" y="156" text-anchor="middle" font-size="10.5">pool</text>
+    <text x="626" y="172" text-anchor="middle" font-size="9.5" opacity=".65">+ domain pacer</text>
+
+    <text x="842" y="112" text-anchor="middle" font-size="10.5" opacity=".75">9 resale platforms</text>
+    <text x="842" y="138" text-anchor="middle" font-size="10">grailed · depop · mercari</text>
+    <text x="842" y="156" text-anchor="middle" font-size="10">thredup · vestiaire · vinted</text>
+    <text x="842" y="174" text-anchor="middle" font-size="10">poshmark · stockx · ebay</text>
+    <text x="842" y="196" text-anchor="middle" font-size="9.5" opacity=".65">one search-page render each</text>
+
+    <rect x="486" y="52" width="46" height="206" rx="3" fill="none" stroke="var(--rust)" stroke-width="1.8"/>
+    <text x="509" y="132" text-anchor="middle" fill="var(--rust)" font-size="10" transform="rotate(-90 509 132)">SEMAPHORE</text>
+    <text x="509" y="178" text-anchor="middle" fill="var(--rust)" font-size="9.5" transform="rotate(-90 509 178)">max 3 renders</text>
+
+    <g stroke="currentColor" stroke-width="1.1" fill="none" marker-end="url(#ar)">
+      <line x1="132" y1="77"  x2="162" y2="77"/>
+      <line x1="132" y1="129" x2="162" y2="129"/>
+      <line x1="132" y1="181" x2="162" y2="181"/>
+      <line x1="132" y1="233" x2="162" y2="233"/>
+      <line x1="328" y1="77"  x2="354" y2="77"/>
+      <line x1="328" y1="129" x2="354" y2="129"/>
+      <line x1="454" y1="77"  x2="482" y2="77"/>
+      <line x1="454" y1="129" x2="482" y2="129"/>
+      <polyline points="328,181 470,181 470,150 482,150"/>
+      <polyline points="328,233 470,233 470,214 482,214"/>
+      <line x1="532" y1="147" x2="570" y2="147"/>
+      <line x1="678" y1="147" x2="714" y2="147"/>
+    </g>
+
+    <text x="470" y="72"  text-anchor="end" font-size="9.5" opacity=".7">miss</text>
+    <text x="470" y="124" text-anchor="end" font-size="9.5" opacity=".7">miss</text>
+
+    <text x="700" y="244" text-anchor="end" fill="var(--rust)" font-size="9.5">297 renders/day here starved the smoke test &rarr; sidecar SIGKILL</text>
+    <line x1="704" y1="240" x2="740" y2="240" stroke="var(--rust)" stroke-width="1"/>
+    <path d="M740 240 L740 266 L509 266 L509 262" fill="none" stroke="var(--rust)" stroke-width="1" marker-end="url(#ar)" opacity=".85"/>
+
+    <line x1="14" y1="292" x2="966" y2="292" stroke="currentColor" stroke-width="1" opacity=".22"/>
+    <text x="966" y="316" text-anchor="end" font-size="10" opacity=".6" letter-spacing="1.4">RETURN PATH</text>
+
+    <g fill="none" stroke="currentColor" stroke-width="1.1">
+      <rect x="700" y="336" width="266" height="74" rx="3"/>
+      <rect x="430" y="336" width="220" height="74" rx="3"/>
+      <rect x="14"  y="318" width="272" height="38" rx="3"/>
+      <rect x="14"  y="368" width="272" height="38" rx="3"/>
+      <rect x="14"  y="418" width="272" height="38" rx="3"/>
+    </g>
+    <rect x="14" y="478" width="272" height="44" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+
+    <text x="833" y="358" text-anchor="middle" font-size="10.5">extraction cascade</text>
+    <text x="833" y="376" text-anchor="middle" font-size="10">T1 JSON-LD / state / testid</text>
+    <text x="833" y="392" text-anchor="middle" font-size="10" opacity=".65">T2 gpt-4o-mini · T3 stub</text>
+
+    <text x="540" y="358" text-anchor="middle" font-size="10.5">relevance filter</text>
+    <text x="540" y="376" text-anchor="middle" font-size="10">stopwords &rarr; anchors</text>
+    <text x="540" y="392" text-anchor="middle" font-size="10" opacity=".65">size · color · sold</text>
+
+    <text x="150" y="342" text-anchor="middle">NDJSON stream &rarr; browser</text>
+    <text x="150" y="392" text-anchor="middle">Resend email &rarr; inbox</text>
+    <text x="150" y="436" text-anchor="middle" font-size="10.5">compare_snapshots &rarr; /compare</text>
+    <text x="150" y="500" text-anchor="middle" fill="var(--accent)" font-size="10.5">Copilot cites it</text>
+    <text x="150" y="514" text-anchor="middle" fill="var(--accent)" font-size="10.5">6,189&times; in 90 days</text>
+
+    <g stroke="currentColor" stroke-width="1.1" fill="none" marker-end="url(#ar)">
+      <polyline points="833,214 833,300 833,332"/>
+      <line x1="696" y1="373" x2="654" y2="373"/>
+      <polyline points="426,373 396,373 396,337 290,337"/>
+      <line x1="396" y1="373" x2="290" y2="373"/>
+      <polyline points="396,373 396,437 290,437"/>
+    </g>
+    <path d="M150 456 L150 474" fill="none" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#ara)"/>
+
+    <text x="847" y="268" text-anchor="middle" font-size="9.5" opacity=".7">raw HTML</text>
+    <text x="675" y="366" text-anchor="middle" font-size="9.5" opacity=".7">listings</text>
+    <text x="196" y="470" text-anchor="middle" font-size="9.5" fill="var(--accent)" opacity=".85">weekly refresh</text>
+  </g>
+</svg>
+<figcaption>Four independent triggers &mdash; one of them a user waiting on a response, three of them crontab lines &mdash; all contend for the same render semaphore. That shared gate is the whole architecture in one object: it is what keeps the box alive under fan-out, and it is what let a background job starve the health check that was supposed to protect it.</figcaption>
+</figure>
+
+<pre>  :3000  Next.js 16 (TypeScript)          :8000  Python sidecar (FastAPI)
+  ─────────────────────────────          ────────────────────────────────
+  auth, sessions, routing                Chromium via Playwright / crawl4ai
+  API routes, NDJSON streaming           page render + extraction
+  React 19 UI                            per-domain pacer, render semaphore
+  Supabase reads/writes                  browser pool, TTLCache
+  Firecrawl calls                        OpenAI via litellm (LLM fallback)
+  Stripe, Resend                         anti-bot / stealth adapters</pre>
+
+  <p><strong>Why it was right.</strong> Scraping is a Python-ecosystem problem &mdash; crawl4ai, Playwright's Python bindings, the undetected-browser adapters have no real Node equivalent. Isolating them meant a Chromium crash killed the sidecar, not the web app: users saw degraded search, not a down site. The <code>systemctl restart crawli-sidecar</code> auto-heal (&sect;11) only works because the two are separable.</p>
+
+  <p><strong>Why it also hurt.</strong> Two runtimes, two dependency trees, two deploy paths, two sets of logs. The sidecar's in-memory caches and its per-domain pacer are <em>per-process</em>, which is precisely what caps you at one box &mdash; horizontal scaling needs Redis to move both out of process, and that refactor was specced but never needed.</p>
+
+  <h3>The streaming protocol</h3>
+  <p><code>/api/search</code> returns <strong>NDJSON</strong> &mdash; newline-delimited JSON, one event per line, streamed as platforms finish rather than a single JSON body at the end. A search takes 7&ndash;35s; without streaming the UI is a spinner for half a minute. Events: <code>platform_start</code>, <code>platform_done</code>, <code>final</code> (with min/avg/max stats).</p>
+  <div class="note scar">
+    <span class="tag">Scar tissue</span>
+    <p>Streaming endpoints <strong>buffer in <code>next dev</code></strong>. You cannot test this in a browser devtools Network tab locally &mdash; it looks broken. The only real test is <code>curl -N</code>. This cost real hours before it was written down.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 03 ─────────────────────────── -->
+<section id="s3">
+  <span class="sec-num">03 &middot; Search engine</span>
+  <h2>Avenue B, Avenue A, and the assumption that was never tested</h2>
+  <p class="lede">The single biggest performance and cost win in the project came from deleting a whole pipeline, not from optimizing one.</p>
+
+  <h4>Avenue B &mdash; the original design (retired 2026-08-25)</h4>
+  <p>Ask Firecrawl for <code>site:ebay.com &lt;query&gt;</code> &rarr; get ~20 candidate URLs &rarr; regex-filter to listing-shaped URLs &rarr; scrape the first 10 individually through the sidecar. Cost: 4 Firecrawl credits per platform per search, ten renders, and heavy exposure to per-listing anti-bot.</p>
+  <p class="num" style="color:var(--rust)">Measured: 60.2s median, ~6 usable listings.</p>
+
+  <h4>Avenue A &mdash; what replaced it</h4>
+  <p>Build the platform's own search URL, render it <strong>once</strong>, extract the whole result grid. Zero Firecrawl credits. One render. No LLM.</p>
+  <p class="num" style="color:var(--moss)">Measured: ~7s, ~75 listings. Same platform. ~10&times; cheaper, ~8&times; faster, 12&times; more results.</p>
+
+  <div class="note scar">
+    <span class="tag">The lesson that generalizes</span>
+    <p>eBay stayed on the expensive path for months on the belief that &ldquo;Akamai blocking makes a native search-page render non-viable.&rdquo; That belief was <strong>never tested</strong>. When it finally was, eBay's search page rendered fine, 8/8 concurrent, in 4.4s &mdash; it is the <em>per-listing</em> pages Akamai walls, which is exactly what the expensive path was doing ten of per search. An untested constraint hardened into architecture. Write down which of your assumptions are measured and which are inherited.</p>
+  </div>
+
+  <h4>The fan-out</h4>
+  <pre>allSettledWithConcurrency(platforms, K=3)     K = SEARCH_PLATFORM_CONCURRENCY
+
+  Round 1  [grailed] [depop] [poshmark]        ← 3 slots
+  Round 2  [stockx]  [thredup]                 ← as slots free
+      ↓
+  each platform_done → NDJSON event → UI row flips to "Done — N results"</pre>
+  <p>Three concurrency ceilings stack, deliberately: <code>SEARCH_PLATFORM_CONCURRENCY=3</code> in Next, <code>SIDECAR_MAX_CONCURRENT_RENDERS</code> in Python (a real <code>asyncio.Semaphore</code>), and <code>SIDECAR_BROWSER_POOL_SIZE</code> Chromium processes sharing that semaphore. Plus a <strong>per-domain pacer</strong> that waits <em>outside</em> the semaphore &mdash; 400ms between Grailed hits, 300ms for eBay, 150ms otherwise &mdash; so a politeness delay never burns a render slot.</p>
+  <div class="note scar">
+    <span class="tag">Why all of that exists</span>
+    <p>A bare <code>Promise.all(platforms.map(...))</code> put 16+ concurrent Playwright renders on one box. The Playwright <em>Node driver subprocess</em> died, and then every subsequent scrape returned null <strong>forever</strong>, until a manual restart. No exception, no alert, no recovery. The fix was three PRs: semaphore + driver-death detection + auto-restart (~2.3s), then the browser pool and pacer, then the same protections for watchlist refresh.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 04 ─────────────────────────── -->
+<section id="s4">
+  <span class="sec-num">04 &middot; Extraction</span>
+  <h2>JSON-LD, and the three-tier cascade behind it</h2>
+  <p class="lede">You asked specifically how JSON-LD parses each platform. The honest answer: JSON-LD is the <em>preferred</em> path, not the universal one &mdash; nine platforms needed five different extraction strategies.</p>
+
+  <h3>What JSON-LD is and why it was the first thing to try</h3>
+  <p>Retail sites embed <code>&lt;script type="application/ld+json"&gt;</code> blocks containing schema.org <code>Product</code> objects &mdash; price, currency, condition, availability, image &mdash; because that is what Google reads to build rich results. Those sites are <em>incentivized</em> to keep it accurate and present. That makes it the most stable scraping surface on the page: it survives CSS redesigns, which class-name selectors do not.</p>
+<pre>&lt;script type="application/ld+json"&gt;
+{ "@type": "Product",
+  "name": "Carhartt WIP Detroit Jacket",
+  "offers": { "@type": "Offer",
+              <b>"price": "185.00"</b>,
+              "priceCurrency": "USD",
+              "itemCondition": "https://schema.org/UsedCondition",
+              "availability": "https://schema.org/InStock" },
+  "image": { "@type": "ImageObject", "contentUrl": "https://..." } }
+&lt;/script&gt;</pre>
+
+  <h3>Strategy per platform &mdash; the grid extractors</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Platform</th><th>Search URL</th><th>Extraction surface</th><th>Yield</th></tr></thead>
+    <tbody>
+      <tr><td>ThredUp</td><td class="m">/search/&lt;slug&gt;</td><td><strong>JSON-LD</strong> <code>Product</code> array (119/page), merged with a DOM href map because JSON-LD carries no URL</td><td class="num">~119</td></tr>
+      <tr><td>Grailed</td><td class="m">/shop?query=</td><td>DOM &mdash; <code>a[href*="/listings/"]</code> Algolia cards after hydration</td><td class="num">~40</td></tr>
+      <tr><td>Vestiaire</td><td class="m">/search/?q=</td><td>DOM &mdash; <code>a[data-cy^="catalog__productCard__"]</code>; CSR, ~8s hydration, 60s page timeout</td><td class="num">~15</td></tr>
+      <tr><td>Vinted</td><td class="m">/catalog?search_text=</td><td>Overlay <code>title</code> attribute, CSV-parsed</td><td class="num">~96</td></tr>
+      <tr><td>Poshmark</td><td class="m">/search?query=</td><td>Dual-anchor DOM: meta link + price wrapper</td><td class="num">~48</td></tr>
+      <tr><td>StockX</td><td class="m">/search?s=</td><td><code>[data-testid="ProductTile"]</code>; heavy CSR</td><td class="num">~40</td></tr>
+      <tr><td>Depop</td><td class="m">/search/?q=</td><td>CSS-Module cards; title reconstructed from the URL slug</td><td class="num">~24</td></tr>
+      <tr><td>Mercari</td><td class="m">/search/?keyword=</td><td><code>data-testid="ItemContainer"</code>; price in <em>cents</em></td><td class="num">~16</td></tr>
+      <tr><td>eBay</td><td class="m">/sch/i.html</td><td><strong>JSON-LD</strong> <code>Product</code>; classes are <code>su-card-container</code>, not the <code>s-item__*</code> every tutorial says</td><td class="num">65&ndash;82</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The three-tier cascade (per-listing path)</h3>
+  <ol class="flow">
+    <li><b>Tier 1 &mdash; structured extractor &nbsp;<span class="chip ok">$0</span></b><span>A hand-written per-platform parser reading the page's own structured data: JSON-LD for Grailed / Depop / eBay / Vestiaire, <code>__NEXT_DATA__.serverState</code> for Mercari, a regex over the escaped RSC payload for Vinted, <code>og:</code> tags plus a DOM price for Poshmark, a <code>data-testid</code> for StockX. Deterministic. All 9 platforms ended up here.</span></li>
+    <li><b>Tier 2 &mdash; LLM fallback &nbsp;<span class="chip warn">~$0.001/listing</span></b><span>gpt-4o-mini via litellm, but only after scoping the markdown to <code>target_elements</code> so &ldquo;More from seller&rdquo; and &ldquo;Similar items&rdquo; rails are dropped first. Platform-specific prompts (&ldquo;StockX: Lowest Ask, not Last Sale&rdquo;). Fires only on fetch failure now.</span></li>
+    <li><b>Tier 3 &mdash; stub</b><span>Title only, price null. Never silently invents a number.</span></li>
+  </ol>
+
+  <div class="note scar">
+    <span class="tag">Why the cascade exists at all</span>
+    <p>Version one sent the whole rendered page to the LLM as markdown. With 5&ndash;10 prices visible on a typical listing page &mdash; shipping, related items, Last Sale, seller's other listings &mdash; it reliably picked the wrong one. A $45 Depop listing came back as $39.55; Mercari was off by 2&ndash;3&times;; StockX hallucinated prices for items with no asks. <strong>~30% of prices were wrong.</strong> Structured extraction took that to ~99% correct at zero marginal cost. The diagnostic that unlocked it was a <code>debug_probe.py</code> that dumped raw HTML, JSON-LD, <code>og:</code> tags and <code>__NEXT_DATA__</code> for any URL &mdash; build that <em>before</em> writing any extractor.</p>
+  </div>
+
+  <div class="note">
+    <span class="tag">The durable ranking</span>
+    <p>JSON-LD &gt; framework state (<code>__NEXT_DATA__</code>, RSC payload) &gt; <code>data-testid</code> &gt; <code>og:</code> meta &gt; CSS class names. Class names rotate &mdash; Depop's CSS-Module hashes changed and a &ldquo;block&rdquo; turned out to just be a stale selector; a follow-up audit found the identical bug sitting on Vinted. Anything you select by class name needs a scheduled re-audit, which is why the full-extractor sweep existed.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 05 ─────────────────────────── -->
+<section id="s5">
+  <span class="sec-num">05 &middot; Relevance</span>
+  <h2>Stopwords, anchors, and a filter that could not be fixed</h2>
+  <p class="lede">Platform search returns whatever it wants. Post-filtering in <code>lib/parse.ts</code> is what made results feel precise &mdash; and it is the subsystem that generated the most bugs, by a wide margin.</p>
+
+  <h4>The chain, in order</h4>
+  <ol class="body">
+    <li>Drop sold listings</li>
+    <li><strong>Title relevance</strong> (below)</li>
+    <li>Size filter &mdash; structured <code>size</code> field first, title regex as fallback</li>
+    <li>Color filter &mdash; narrow, essentially just &ldquo;white&rdquo; vs &ldquo;off-white&rdquo;</li>
+    <li>Map to <code>Listing</code>, sort by price ascending</li>
+  </ol>
+
+  <h3>Tokenize &rarr; stopword &rarr; anchor</h3>
+  <p>Lowercase, strip punctuation, split. Keep tokens of 3+ chars <em>plus</em> any pure-numeric token of any length (model numbers: &ldquo;1&rdquo;, &ldquo;4&rdquo;, &ldquo;350&rdquo;). Then drop <code>RELEVANCE_STOPWORDS</code>: articles, colors, sizes, conditions, and &mdash; the non-obvious one &mdash; <strong>every garment-type word</strong>. On a fashion resale site, &ldquo;hoodie&rdquo; and &ldquo;jacket&rdquo; distinguish nothing.</p>
+  <p>What survives is split into <strong>anchors</strong> and <strong>soft tokens</strong> by a frequency test: <code>isAnchor(t) = BRAND_ANCHOR_OVERRIDES.has(t) || !COMMON_WORDS.has(t)</code>, where <code>COMMON_WORDS</code> is an English frequency corpus. <strong>Every anchor must appear in the title.</strong> That AND-logic is what stops a &ldquo;messi jersey&rdquo; search from returning a Ronaldo jersey just because both titles say &ldquo;soccer jersey&rdquo;. If a query has no anchors at all, fall back to match-any so you never return zero.</p>
+
+  <h4>The failure modes, and which direction each one breaks</h4>
+  <div class="scroll"><table>
+    <thead><tr><th>Bug</th><th>Direction</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>&ldquo;tshirt&rdquo; kills all results</td><td><span class="chip bad">over-filters</span></td><td>Shoppers type <code>tshirt</code>; sellers write <code>t-shirt</code>, which tokenizes to <code>t</code> + <code>shirt</code>. The anchor could never be satisfied.</td><td>Stopword it</td></tr>
+      <tr><td><code>longsleeve</code> / <code>shortsleeve</code></td><td><span class="chip bad">over-filters</span></td><td>Same gap, but sleeve length is a <em>real</em> narrowing signal</td><td>Normalize to a two-word substring check, don't drop</td></tr>
+      <tr><td>&ldquo;acne jacket&rdquo; returns everything</td><td><span class="chip warn">under-filters</span></td><td>Brand words that are ordinary English (&ldquo;acne&rdquo;, &ldquo;supreme&rdquo;, &ldquo;polo&rdquo;, &ldquo;balance&rdquo;, &ldquo;gap&rdquo;) fail <code>isAnchor</code> &rarr; empty anchor set &rarr; no filtering at all</td><td><code>BRAND_ANCHOR_OVERRIDES</code>, ~40 entries</td></tr>
+      <tr><td>&ldquo;bape&rdquo; misses <em>A Bathing Ape</em></td><td><span class="chip bad">over-filters</span></td><td>Same brand, no shared token</td><td>Alias map + canonical-brand resolution</td></tr>
+      <tr><td>&ldquo;victorias secret&rdquo; matches 0 of 20</td><td><span class="chip bad">over-filters</span></td><td>Title writes <code>Victoria's</code> &rarr; splits to <code>victoria</code> + a bare <code>s</code> that gets dropped for being &lt;3 chars</td><td>Possessive rule that <em>requires</em> the apostrophe &mdash; so it matches Victoria's Secret but not Victoria Beckham</td></tr>
+      <tr><td>&ldquo;levis 501&rdquo; matches 0 of 100 on ThredUp</td><td><span class="chip bad">over-filters</span></td><td>The numeric rule assumed every number in a title is a model number. ThredUp writes &ldquo;Size 36 waist&rdquo; and &ldquo;100% Cotton&rdquo; and never writes 501.</td><td>Strip non-model numerics (sizes, inches, W32&nbsp;L34, percentages) first, then <em>abstain</em> if nothing is left</td></tr>
+      <tr><td>Trading cards in a jersey search</td><td><span class="chip warn">under-filters</span></td><td>The anchor check verifies <em>who</em> a listing is about, never <em>what physical object</em> it is. &ldquo;2010 Panini Jeff Teague Rookie Card&rdquo; satisfies <code>teague</code> perfectly.</td><td><code>NON_APPAREL_SIGNAL_WORDS</code>, gated on a category filter</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note scar">
+    <span class="tag">The limit you found &mdash; and correctly refused to paper over</span>
+    <p>A query reducing to <strong>exactly one</strong> surviving common-word token is <em>mathematically unfixable</em> by the override list. For a single-token anchor set, <code>anchors.every(satisfied)</code> and the no-anchor fallback <code>queryText.some(inTitle)</code> reduce to the identical check &mdash; &ldquo;does the title contain this word&rdquo; &mdash; so marking it an anchor changes nothing. Proved with <code>columbia jacket</code>: &ldquo;Columbia University varsity jacket&rdquo; matches before <em>and</em> after adding <code>'columbia'</code>. You left it out of the override set deliberately, because including it would advertise a fix that does not exist. That is entity disambiguation, and it needs a different mechanism entirely.</p>
+  </div>
+
+  <div class="note">
+    <span class="tag">Design smell, in hindsight</span>
+    <p>This whole subsystem is a hand-tuned heuristic pile that grew one incident at a time, and it is the part of the codebase with the most documented pitfalls. Next time: a brand <em>entity table</em> (canonical id, surface forms, category) as a first-class data structure, with the token heuristic as a fallback for the unknown tail &mdash; rather than a frequency corpus plus an ever-growing exception list.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 06 ─────────────────────────── -->
+<section id="s6">
+  <span class="sec-num">06 &middot; Caching</span>
+  <h2>Six layers, each solving a different problem</h2>
+  <p class="lede">You remembered &ldquo;caching for frequently used queries.&rdquo; There were six distinct caches, at three different lifetimes, and conflating them is how cache bugs happen.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Layer</th><th>Where</th><th>Key</th><th>TTL</th><th>Solves</th></tr></thead>
+    <tbody>
+      <tr><td>Listing render</td><td>Sidecar, in-memory <code>TTLCache</code></td><td class="m">url</td><td class="num">30 min</td><td>Re-scraping the same listing. 9.1s &rarr; 9ms.</td></tr>
+      <tr><td>Search grid</td><td>Sidecar, in-memory</td><td class="m">platform::query</td><td class="num">10 min</td><td>Two users, same query, minutes apart</td></tr>
+      <tr><td>Search events</td><td>Supabase <code>search_cache</code></td><td class="m">sha256(query+platforms+filters)</td><td class="num">1 hr</td><td>Replays the whole NDJSON stream instantly. Survives restarts and is shared across processes.</td></tr>
+      <tr><td>Alert listings</td><td>Supabase <code>search_listings_cache</code></td><td class="m">same hash</td><td class="num">1 hr</td><td>Alert runs don't stream, so they need <code>Listing[]</code> not events. 50 users watching one query &rarr; <strong>1 scrape</strong>.</td></tr>
+      <tr><td>Brand aliases</td><td>Supabase <code>query_expansion_cache</code></td><td class="m">token</td><td class="num">30 d</td><td>Never pay gpt-4o-mini twice for the same brand. 252 rows accumulated.</td></tr>
+      <tr><td>Compare snapshots</td><td>Supabase <code>compare_snapshots</code></td><td class="m">slug + platform</td><td class="num">weekly cron</td><td>Public SEO pages read from the DB, never scrape on request. ISR <code>revalidate=3600</code>.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Three rules baked in, all learned the hard way</h4>
+  <ul>
+    <li><strong>Normalize the key, send the query verbatim.</strong> Tokens are lowercased and sorted for hashing, so &ldquo;nike hoodie white&rdquo; and &ldquo;white nike hoodie&rdquo; share a row &mdash; but the platform gets the original string.</li>
+    <li><strong>Never cache an empty result.</strong> A transient zero-result run would otherwise be pinned for the whole TTL.</li>
+    <li><strong>Adding a field to a payload does not update rows already cached.</strong> Every schema change to a cached shape needs a key bump or a purge, or paying users see stale objects missing the new field.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────── 07 ─────────────────────────── -->
+<section id="s7">
+  <span class="sec-num">07 &middot; Data layer</span>
+  <h2>Supabase: what RLS does, and the three things it does not</h2>
+  <p class="lede">20 public tables by the end. Auth, Postgres, storage and realtime in one service was the right call at this size. The security model had three separate failure modes, each found the hard way.</p>
+
+  <h4>Shape</h4>
+  <pre>auth.users  (Supabase-managed)
+     │  ON INSERT → trigger handle_new_user() [SECURITY DEFINER]
+     ▼
+public.profiles ─┬─ saves ────── collection_folders
+                 ├─ watchlist         (price_at_add never changes,
+                 ├─ saved_searches     price_current updated on refresh)
+                 ├─ search_history
+                 └─ notifications ─── alert_matches</pre>
+
+  <div class="note scar">
+    <span class="tag">Failure 1 &mdash; RLS is not a grant</span>
+    <p>A correct RLS policy still returns Postgres <code>42501 permission denied</code> without an explicit <code>GRANT SELECT, INSERT, UPDATE, DELETE ON public.&lt;table&gt; TO authenticated, service_role</code>. This bit four tables. On <code>watchlist</code> it presented as &ldquo;tracked count always shows 0&rdquo; because the failing count fell back to <code>?? 0</code> &mdash; a silent wrong number, not a crash. <strong>Every new table needs both, and an audit query over <code>information_schema.role_table_grants</code> after you add one.</strong></p>
+  </div>
+  <div class="note scar">
+    <span class="tag">Failure 2 &mdash; RLS scopes rows, never columns</span>
+    <p>A self-service <code>UPDATE</code> policy on <code>profiles</code> (&ldquo;users may edit their own row&rdquo;) let a user set their own <code>subscription_tier</code>. A privilege-escalation hole that breaks nothing and therefore survives every &ldquo;is anything erroring&rdquo; audit. Fix: <strong>column-level</strong> grants. Consequence to remember: a new column then arrives with <em>no</em> grant at all and silently fails to write.</p>
+  </div>
+  <div class="note scar">
+    <span class="tag">Failure 3 &mdash; supabase-js never throws</span>
+    <p><code>.insert()</code> and <code>.update()</code> return <code>{ data, error }</code>. They do not reject. An unchecked call fails silently, forever, and looks like a product bug months later. Check <code>error</code> on every single write.</p>
+  </div>
+
+  <h4>Also worth carrying</h4>
+  <ul>
+    <li><strong>The natural key is the URL, not the scraped id.</strong> Listing ids were nanoid-generated per response &mdash; ephemeral. <code>UNIQUE (user_id, listing_url)</code> is what makes save/unsave toggling and dedup work.</li>
+    <li><strong>Snapshot vs live is a deliberate split.</strong> <code>saves</code> freezes title/price/image at save time; <code>watchlist</code> keeps <code>price_at_add</code> immutable and updates <code>price_current</code>. A refresh <em>failure</em> bumps <code>last_checked_at</code> only and leaves price alone &mdash; never overwrite good data with a failed read.</li>
+    <li><strong>Realtime needs the table added to the publication</strong>, and channel names must be unique per subscriber or subscriptions silently collide.</li>
+    <li><code>search_history</code> row counts are <em>not</em> search counts. Know what each table actually measures before quoting it.</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────── 08 ─────────────────────────── -->
+<section id="s8">
+  <span class="sec-num">08 &middot; Payments</span>
+  <h2>Stripe: checkout, webhooks, and the debt-proof overage</h2>
+  <p class="lede">Four routes under <code>/api/billing</code> (checkout, credits, portal, status) plus one webhook. The design goal throughout: never deliver a search you have not been paid for, and never let a retry double-grant.</p>
+
+  <h4>The flow</h4>
+  <ol class="flow">
+    <li><b>Customer resolution</b><span><code>resolveStripeCustomerId()</code> reads the cached <code>stripe_customer_id</code> off <code>profiles</code>, <em>verifies it against Stripe</em>, and on a <code>resource_missing</code> error mints a fresh one and overwrites. This exists because a cached live-mode ID hit with a test-mode key is otherwise a hard crash &mdash; a real hazard when you swap keys between local and prod.</span></li>
+    <li><b>Checkout</b><span>Stripe-hosted Checkout, <code>mode=subscription</code> for plans and <code>mode=payment</code> for credit packs. Price IDs come from env; code never creates a price. <code>supabase_user_id</code> rides in customer metadata, which is what lets the webhook map an event back to a user.</span></li>
+    <li><b>Webhook</b><span><code>/api/webhooks/stripe</code>, signature-verified with <code>STRIPE_WEBHOOK_SECRET</code>. Six events handled: <code>checkout.session.completed</code>, <code>customer.subscription.{created,updated,deleted}</code>, <code>invoice.payment_{succeeded,failed}</code>.</span></li>
+    <li><b>Entitlement write</b><span><code>tierFromPriceId()</code> maps the price ID to a tier and writes it to <code>profiles</code>. On an <em>unknown</em> price ID it logs loudly and returns free &mdash; the loud log is the point, because the silent version downgrades a paying customer when an env var is missing.</span></li>
+    <li><b>Portal</b><span>Stripe Billing Portal for cancels, card updates and invoices. Zero UI to build or maintain.</span></li>
+  </ol>
+
+  <h3>Webhook idempotency &mdash; the pattern to reuse verbatim</h3>
+  <p>Stripe delivers <strong>at-least-once</strong>. Granting search credits is a non-idempotent read-modify-write, so a re-delivery would double-grant. The guard is a claim-with-rollback against a <code>stripe_webhook_events</code> table:</p>
+  <pre>INSERT event_id INTO stripe_webhook_events   <b>← claim before processing</b>
+  ├─ error 23505 (unique violation) → already processed, return 200, skip
+  ├─ other error                    → log, process anyway (fail open)
+  └─ ok                             → process
+         └─ handler throws → <b>DELETE the claim</b> so Stripe's retry re-runs it</pre>
+  <p>The rollback on failure is what separates this from a naive dedup table &mdash; without it, a transient error permanently burns the event and the customer never gets what they paid for.</p>
+
+  <h4>Credit packs: cash before consumption</h4>
+  <p>Once a tier's included searches are spent, further searches draw down <strong>prepaid</strong> credits &mdash; 100 / 300 / 1,000 searches at $10 / $25 / $60, bought as a one-time Checkout. Marginal cost is ~$0.006/search, so every pack sits well above worst-case COGS. This is the right shape: an unlimited plan with no backstop is an open-ended liability, and metered post-paid billing is a collections problem. Prepaid is neither.</p>
+
+  <div class="note scar">
+    <span class="tag">Things that cost you time</span>
+    <p><strong>Stripe webhooks never reach localhost.</strong> Credits &ldquo;never granted in dev&rdquo; was not a bug &mdash; the code was always correct, Stripe simply cannot POST to your laptop without <code>stripe listen</code>. Separately: <strong>test and live are entirely separate universes</strong> &mdash; separate keys, separate products, separate prices, separate webhook endpoint and secret. Going live is a four-step swap (keys, endpoint, secret, rebuild), not a toggle.</p>
+  </div>
+
+  <div class="note">
+    <span class="tag">The pricing finding that actually mattered</span>
+    <p>All four real paying customers <strong>signed up, searched, created an alert and paid on day zero</strong> &mdash; two of them after only 2 searches against a 5/week free cap. Conversion here was a first-impression impulse buy and had <em>nothing</em> to do with hitting a quota wall. A proposed weekly-pricing change (a ~5&times; effective price increase) was killed on that number alone, before any code was written. Pull the funnel data before you touch pricing.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 09 ─────────────────────────── -->
+<section id="s9">
+  <span class="sec-num">09 &middot; Email</span>
+  <h2>Resend, the alert engine, and a channel that was dark the whole time</h2>
+  <p class="lede">Alerts were the flagship feature. The email that delivers them is also the project's sharpest lesson about measuring what you build.</p>
+
+  <h4>Two separate Resend wirings</h4>
+  <ul>
+    <li><strong>Transactional, from your app.</strong> <code>RESEND_API_KEY</code> in <code>.env</code>, called by <code>alertRunner.ts</code>, HTML built by <code>lib/email/alertEmailTemplate.ts</code> (inline styles, table layout, escaped everything &mdash; email clients are 2004).</li>
+    <li><strong>Auth emails, from Supabase.</strong> Confirmation and password-reset go through Supabase's own SMTP config, pointed at Resend <em>in the Supabase dashboard</em>. Different wiring, different throttles &mdash; auth-email rate limiting turned out to be <strong>two Supabase limits</strong>, not a Resend one, which took real investigation to establish.</li>
+  </ul>
+
+  <h4>DNS is the actual setup</h4>
+  <p>The API key is trivial. What makes mail arrive is three DNS records in Cloudflare: <strong>SPF</strong> (who may send as you), <strong>DKIM</strong> (cryptographic signature), <strong>DMARC</strong> (what receivers should do when the first two fail). You configured SPF and DKIM. <strong><code>_dmarc.thecrawli.com</code> returns nothing to this day.</strong></p>
+
+  <h3>The alert engine</h3>
+  <pre>crontab */15 * * * *  →  /api/cron/run-alerts  (Bearer CRON_SECRET)
+      ↓ pick saved_searches WHERE next_run_at &lt;= now  (≤20 per tick)
+      ↓ runSearchJob()  ← through withListingsCache: N watchers, 1 scrape
+      ↓ applyCriteria()   AND-only: size AND minPrice AND maxPrice
+      ↓ diff vs last_seen_urls  →  genuinely new listings only
+      ↓ Resend email + notifications row + alert_matches rows
+      ↓ next_run_at = nextAnchoredRunAt(cadence_hours)</pre>
+  <p><strong>There is no Vercel Cron.</strong> The app is systemd-hosted, so that one crontab line <em>is</em> the recurrence. When it was missing, every saved search's <code>next_run_at</code> froze in the past and alerts went silent with no error anywhere &mdash; a whole feature dead, invisibly.</p>
+
+  <div class="note scar">
+    <span class="tag">The finding to take into the next project</span>
+    <p><strong>254 alert emails. 252 delivered. 0 opens. 0 clicks.</strong> Meanwhile &ldquo;the alert email is the strongest driver of a second session&rdquo; sat in <code>HANDOFF.md</code> for months as a strategic assumption with <em>zero measurement behind it</em>. The first time anyone checked, it found nothing supporting it.</p>
+    <p>And the calibration matters as much as the number: 254 emails is not 254 trials &mdash; it reached ~19 people. Resend's window silently clamped to ~30 days, so whether this was a regression is unknowable. And <strong>no ESP can measure inbox placement</strong>: &ldquo;delivered&rdquo; means a server accepted the message, never that a human could find it. The correct next step was a falsification test (trigger a real alert, open it, click it, see if Resend registers), not a strategy rewrite. <em>Any feature whose value depends on an email arriving needs an engagement metric checked once before you build strategy on it.</em></p>
+  </div>
+  <p style="max-width:72ch"><span class="chip neu">for contrast</span> &nbsp;Across the last 30 days all Resend traffic combined shows <span class="num">405 sent &middot; 403 delivered &middot; 23.4% open &middot; 7.5% click</span>. So the pipe works. Something specific to the alert cohort or its placement did not.</p>
+</section>
+
+<!-- ─────────────────────────── 10 ─────────────────────────── -->
+<section id="s10">
+  <span class="sec-num">10 &middot; Hosting</span>
+  <h2>One Hetzner box, systemd, nginx, crontab</h2>
+  <p class="lede">No Vercel, no Docker, no Kubernetes, no CI. A single 8&nbsp;GB VPS at <code>5.78.187.97</code>, a git clone in <code>/opt/crawli</code>, and four cron lines. It has been up 60 days.</p>
+
+  <h4>The stack on the box</h4>
+  <dl class="wiring">
+    <div><dt>Cloudflare</dt><dd>Proxying (orange cloud), TLS termination at the edge, DNS, Turnstile. Full (strict) to the origin.</dd></div>
+    <div><dt>nginx</dt><dd>Reverse proxy :80/:443 &rarr; :3000. Own Certbot/Let's Encrypt cert for the Cloudflare&rarr;origin hop. A dedicated <code>www</code> server block 301s to bare for canonicalization.</dd></div>
+    <div><dt>systemd</dt><dd>Two units: <code>crawli-next</code> and <code>crawli-sidecar</code>. Restart policy is what makes the auto-heal cron work. <code>journalctl -u &lt;unit&gt; -f</code> is the whole logging story.</dd></div>
+    <div><dt>Deploy</dt><dd><code>git pull &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; systemctl restart crawli-next</code>. Manual, over SSH. Order matters &mdash; restarting before the build finishes loads old code.</dd></div>
+    <div><dt>n8n</dt><dd>Same box, global npm install, SQLite at <code>/root/.n8n/database.sqlite</code>, exposed at <code>n8n.thecrawli.com</code>.</dd></div>
+  </dl>
+
+  <h4>The crontab &mdash; four lines carrying real load</h4>
+  <pre><b>*/15 * * * *</b>  smoke test → auto-restart sidecar (heartbeat-guarded)
+<b>*/15 * * * *</b>  /api/cron/run-alerts        ← the entire alert recurrence
+<b>0 6 * * 1</b>     /api/compare/refresh, 15 curated slugs, weekly
+<b>0 17 * * *</b>    check-credits.mjs           ← Firecrawl balance watch
+<b>0 9 * * *</b>     monitor-memory-trend.sh</pre>
+
+  <div class="note scar">
+    <span class="tag">The best debugging story in the project</span>
+    <p>The sidecar was getting SIGKILL'd almost daily around 06:15 UTC. Not OOM &mdash; a <code>systemctl restart</code> timeout. Root cause: the 6am compare-refresh cron fanned <strong>33 items &times; 9 platforms = 297 renders</strong> through the sidecar's small render semaphore, monopolized it for 20+ minutes, and starved the <code>*/15</code> smoke test &mdash; <strong>which then auto-restarted the sidecar mid-batch.</strong> The health check was killing the thing it was protecting.</p>
+    <p>Two fixes, and the second is the interesting one. (1) A <strong>heartbeat file</strong> at <code>/run/crawli-compare-refresh.heartbeat</code>, touched per slug; the smoke cron skips the restart if it is &lt;10 minutes old, and logs the skip rather than dropping it silently. (2) Rather than tolerate the load, you <em>pulled 30 days of GSC data on the feature</em> &mdash; it was earning ~5 clicks a month &mdash; and cut the job to 15 curated slugs, weekly. <strong>297 renders/day &rarr; 135/week, a 94% cut.</strong> The right fix for an expensive job is often deleting most of it, and the usage data is what gives you permission.</p>
+  </div>
+
+  <div class="note">
+    <span class="tag">Still open on this box</span>
+    <p>nginx's 300s <code>proxy_read_timeout</code> cuts the client connection on <code>/api/compare/refresh</code> before it finishes, so <code>crawli-compare.log</code> logged <em>nothing</em> from June to September even though the job succeeded server-side every single time. A log that is silently empty is worse than no log &mdash; you trust it.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 11 ─────────────────────────── -->
+<section id="s11">
+  <span class="sec-num">11 &middot; Monitoring</span>
+  <h2>Sentry, UptimeRobot, and the gap between them</h2>
+  <p class="lede">Two tools with a clean division of labor &mdash; and one whole class of failure that neither catches, which is the part worth remembering.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Failure</th><th>UptimeRobot</th><th>Sentry</th><th>Smoke cron</th></tr></thead>
+    <tbody>
+      <tr><td>Site completely down</td><td><span class="chip ok">yes</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>Sidecar process dead</td><td><span class="chip ok">via /api/health</span></td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>One user hits a 500</td><td>&mdash;</td><td><span class="chip ok">yes</span></td><td>&mdash;</td></tr>
+      <tr><td>Stripe webhook handler throws</td><td>&mdash;</td><td><span class="chip ok">yes</span></td><td>&mdash;</td></tr>
+      <tr><td><strong>Search silently returns []</strong></td><td><span class="chip bad">blind</span></td><td><span class="chip bad">blind</span></td><td><span class="chip ok">caught</span></td></tr>
+      <tr><td><strong>Chromium pool poisoned</strong></td><td><span class="chip bad">blind</span></td><td><span class="chip bad">blind</span></td><td><span class="chip ok">caught</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Sentry</h3>
+  <p>Wizard-installed; four files do the work. <code>instrumentation-client.ts</code> (browser &mdash; and there must be <strong>only one</strong> client entry point), <code>sentry.server.config.ts</code>, <code>sentry.edge.config.ts</code>, and <code>instrumentation.ts</code> which dispatches on <code>NEXT_RUNTIME</code>. Wrapped via <code>withSentryConfig()</code> in <code>next.config.ts</code>, which is also what uploads source maps at build time using <code>SENTRY_AUTH_TOKEN</code> &mdash; without that, production stack traces are minified garbage.</p>
+  <p>Two configuration choices that earned their keep:</p>
+  <ul>
+    <li><strong><code>tunnelRoute: "/monitoring"</code></strong> &mdash; browser errors route through your own domain instead of directly to Sentry's ingest host, so ad blockers don't silently swallow them. Without it your client error rate looks great and is fiction.</li>
+    <li><strong><code>ignoreErrors</code> with a written justification per entry.</strong> Instagram's in-app-browser bridge (<code>window.webkit.messageHandlers</code>) and mobile Safari's <code>NotFoundError: The object can not be found here.</code> are browser noise, not your bugs. Each was <em>investigated</em> and the reasoning left in a comment before being silenced &mdash; that comment is what stops a future session from re-litigating it.</li>
+  </ul>
+  <p>Sampling: <code>tracesSampleRate</code> 0.1 in prod, 1 in dev. Also caught a real one &mdash; a fire-and-forget <code>fetch()</code> in a client component reports as an unhandled production error.</p>
+
+  <h3>UptimeRobot</h3>
+  <p>Two HTTP monitors, both carrying <code>?token=&lt;INTERNAL_API_TOKEN&gt;</code>:</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Monitor</th><th>Endpoint</th><th>Interval</th><th>Timeout</th><th>Asserts</th></tr></thead>
+    <tbody>
+      <tr><td>Crawli Health</td><td class="m">/api/health</td><td class="num">5 min</td><td class="num">30s</td><td>Next.js up, sidecar reachable, pool alive</td></tr>
+      <tr><td>Crawli Smoke</td><td class="m">/api/smoke</td><td class="num">15 min</td><td class="num">60s</td><td>A <em>real</em> Grailed search returns &ge;1 listing, else 503</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note scar">
+    <span class="tag">Why /api/smoke exists &mdash; the failure mode with no signal</span>
+    <p>The Chromium pool got poisoned: sidecar process alive, health check passing green, no exception thrown, and <strong>every search returning <code>{}</code></strong>. Uptime said 100%. Sentry said zero errors. The product was completely broken. Nothing that checks liveness can catch a system that is alive and wrong.</p>
+    <p>The answer is a smoke test that exercises the <em>actual business transaction</em> and asserts on the result, not the status code. And because it returns 503 on failure, the cron can <code>||</code> straight into <code>systemctl restart crawli-sidecar</code> &mdash; self-healing for the common case, with no human in the loop. <strong>Build the smoke endpoint on day one of the next project.</strong></p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 12 ─────────────────────────── -->
+<section id="s12">
+  <span class="sec-num">12 &middot; Automation</span>
+  <h2>MCPs as operating tools, n8n as the scheduler</h2>
+  <p class="lede">These were not demos. Seven MCP servers replaced dashboard-clicking during development, and seven n8n workflows ran the marketing operation on a schedule.</p>
+
+  <h3>MCP servers &mdash; what each actually replaced</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Server</th><th>Replaced</th><th>Real use</th></tr></thead>
+    <tbody>
+      <tr><td>Supabase</td><td>SQL editor tab</td><td>Schema inspection before every migration, and verifying data rather than asking &ldquo;can you check?&rdquo;. Pulled the funnel audit that killed weekly pricing.</td></tr>
+      <tr><td>GSC</td><td>Search Console UI</td><td>Query/page analytics, indexing coverage, sitemap health. The 30-day pull that justified the 94% compare-cron cut.</td></tr>
+      <tr><td>google-seo</td><td>PageSpeed + GA4 UI</td><td>CrUX field data, GA4 traffic, Lighthouse, schema validation, sitemap diffs</td></tr>
+      <tr><td>geo-optimizer</td><td>&mdash;</td><td>AEO/GEO audits: AI crawler access, <code>llms.txt</code>, citability scoring</td></tr>
+      <tr><td>n8n</td><td>n8n editor UI</td><td>Search/trigger workflows. Flaky &mdash; SSH was the reliable path.</td></tr>
+      <tr><td>Playwright</td><td>Manual clicking</td><td>UI verification, screenshots, form fills</td></tr>
+      <tr><td>Resend</td><td>Resend dashboard</td><td>Delivery metrics &mdash; how the 0-opens finding surfaced</td></tr>
+    </tbody>
+  </table></div>
+  <p>Auth for the Google side is one service account (<code>crawli-sa.json</code>): Full on GSC, Viewer on GA4. That one file is what makes &ldquo;pull the data yourself&rdquo; possible instead of &ldquo;paste me a CSV&rdquo;. It changed the working relationship more than any single feature.</p>
+
+  <h3>n8n workflows</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Workflow</th><th>Schedule</th><th>Does</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>weekly seo brief</td><td>Mon 8am PT</td><td>Refresh Google OAuth &rarr; query GSC &rarr; gpt keyword map &rarr; email + write <code>seo_context</code> to Supabase</td><td><span class="chip warn">off</span></td></tr>
+      <tr><td>content brief</td><td>daily</td><td>Generates social + blog ideas, deduped against <code>content_history</code> and <code>published_posts</code></td><td><span class="chip warn">off</span></td></tr>
+      <tr><td>reddit research</td><td>Daily 4am PT</td><td>Searches 5 subreddits &rarr; gpt scores + drafts &rarr; digest email. 1,311 rows of voice-of-customer.</td><td><span class="chip warn">off</span></td></tr>
+      <tr><td>tiktok performance digest</td><td>weekly</td><td>Pulls analytics via Zernio, upserts <code>tiktok_performance</code> (122 posts), emails the digest</td><td><span class="chip warn">off</span></td></tr>
+      <tr><td>pinterest crawli</td><td>webhook</td><td>The Pinterest posting hook</td><td><span class="chip ok">active</span></td></tr>
+      <tr><td>tiktok auto post</td><td>&mdash;</td><td>Never confirmed working on-device</td><td><span class="chip warn">off</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>n8n gotchas you paid for</h4>
+  <ul>
+    <li>The OpenAI node's output is <code>output[0].content[0].text</code>, <strong>not</strong> <code>message.content</code>. Guessing an output path is the single most common n8n bug.</li>
+    <li><code>import:workflow</code> always <strong>deactivates</strong> the workflow. Re-activate after, every time.</li>
+    <li>Activation and schedule changes only take effect after <code>systemctl restart n8n</code>.</li>
+    <li>The &ldquo;Available in MCP&rdquo; toggle is a <strong>backend bug in 2.8.4</strong> &mdash; it returns 200, echoes your value back, and reverts to <code>false</code> on reload. The only reliable fix is writing the flag straight into the SQLite <code>settings</code> column, last, after all other edits, then restarting.</li>
+    <li>The GSC OAuth refresh token is a <em>separate credential</em> from your user login and expires independently. When it does, the workflow fails at &ldquo;Refresh Google token&rdquo; with <code>invalid_grant</code> and there is a documented OAuth Playground procedure to regenerate it.</li>
+    <li>The weekly SEO email <strong>undercounts GSC totals by ~5&times;</strong>. Do not plan from a number a workflow computed unless you have reconciled it against the source.</li>
+  </ul>
+  <p>Also built: a <strong>PRAW sidecar</strong> (<code>reddit-service/</code>, FastAPI on :8100) as a drop-in replacement for Zernio's Reddit search, response-shape-compatible so no n8n node had to change. Official API, 100 queries/min, full listing access. Good migration discipline.</p>
+</section>
+
+<!-- ─────────────────────────── 13 ─────────────────────────── -->
+<section id="s13">
+  <span class="sec-num">13 &middot; Distribution</span>
+  <h2>116 blog posts, 33 compare pages, and a settled experiment</h2>
+  <p class="lede">You said you'd cover marketing. This is the engineering-and-SEO half: what was built, what it was measured on, and the standing instruction that came out of it.</p>
+
+  <h4>What exists</h4>
+  <ul>
+    <li><strong>116 markdown posts</strong> in <code>content/blog/</code>, parsed at build time by <code>lib/blog.ts</code> with gray-matter + marked. Frontmatter carries <code>faq[]</code> (mirrored into <code>FAQPage</code> JSON-LD, question and answer matching visible text exactly, because Google requires that) and <code>compareSlug</code>, which links a post to its live-price page.</li>
+    <li><strong>33 <code>/compare/[slug]</code> pages</strong> generated from a Supabase table, with <code>Product</code> + <code>AggregateOffer</code> schema and real prices refreshed by cron. ISR at <code>revalidate=3600</code>.</li>
+    <li><strong>The technical SEO surface:</strong> <code>sitemap.ts</code> with real <code>lastmod</code> dates (post <code>updated</code>, snapshot <code>scraped_at</code>, or last git commit &mdash; never <code>new Date()</code>, which destroys the freshness signal), <code>robots.ts</code>, RSS at <code>/feed.xml</code>, <code>opengraph-image.tsx</code>, a PWA manifest, <code>SoftwareApplication</code> + <code>SearchAction</code> JSON-LD, <code>llms.txt</code>, and security headers in <code>next.config.ts</code>.</li>
+    <li><strong>Two indexing channels:</strong> IndexNow (Bing/Yandex/Naver, best-effort, never throws, fired on deploy and by the compare cron) and the Bing Webmaster Submission API via <code>scripts/submit-bing.mjs</code>, which requests an actual priority recrawl. You needed the second because IndexNow alone leaves a young domain sitting in &ldquo;Discovered &mdash; currently not crawled.&rdquo;</li>
+  </ul>
+
+  <h4>What it returned</h4>
+  <p class="num" style="font-size:1.05rem">90 days: 22,540 impressions &rarr; 176 clicks &rarr; <strong>0.78% CTR</strong>, average position 13.8.</p>
+  <p>Position has improved steadily (24.3 &rarr; 7.7 over the window) and impressions have quadrupled. Clicks have not followed. The homepage alone carries <strong>87 of the 176 clicks at 7.37% CTR</strong> &mdash; that is brand search working. All 116 posts together produced the other 89. The worst single case: <code>best-secondhand-marketplaces-for-luxury-items</code> at <span class="num">4,894 impressions, 7 clicks, 0.14% CTR</span>.</p>
+
+  <div class="note scar">
+    <span class="tag">The standing instruction you wrote, and should keep</span>
+    <p><strong>&ldquo;Stop writing blog posts.&rdquo;</strong> 116 posts producing ~39 clicks in 90 days, with compare pages at zero clicks from 696 impressions at position 9, is a <em>settled experiment</em>. The AI Overview owns these SERPs; a full rewrite did not dislodge it. Ranking on page one and getting no clicks is not an optimization problem, it is a channel that has changed shape.</p>
+    <p>Two corollaries you found: a blog post and its <code>compareSlug</code> page <strong>cannibalize each other</strong> for the same query; and a large share of remaining impressions are <em>synthetic AI-tool queries</em>, which structurally deflates CTR and means the metric itself is partly fiction. Compare pages were reclassified as an <strong>AI-answer-engine surface</strong> to be kept fresh, not a click source &mdash; and explicitly stopped being measured on clicks.</p>
+  </div>
+
+  <h4>Two more findings worth carrying</h4>
+  <ul>
+    <li><strong>&ldquo;crawli app&rdquo; had literally zero impressions for 90 days</strong> &mdash; not ranking low, never appearing. Cause: the word &ldquo;app&rdquo; appeared nowhere in crawlable copy. The site had <code>SoftwareApplication</code> schema <em>and</em> a PWA manifest, and neither mattered. <strong>Schema and manifests carry far less term-matching weight than visible title, meta and H1 text.</strong> If you want to rank for a word, put the word on the page.</li>
+    <li><strong>Five public files duplicated the pricing matrix with nothing keeping them in sync</strong>, and all five drifted past a repackaging &mdash; one asserting a feature was free that the paywall had just made paid. These are exactly the files AI answer engines read to tell a prospect what you cost. A stale number there gets quoted back as fact.</li>
+  </ul>
+
+  <div class="note">
+    <span class="tag">Read the next section before acting on this one</span>
+    <p>Everything above is measured in <em>clicks</em>, which was the only number anyone was looking at. Bing's AI Performance tab tells a materially different story about whether this content was being consumed &mdash; &sect;14.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 14 ─────────────────────────── -->
+<section id="s14">
+  <span class="sec-num">14 &middot; AI citations</span>
+  <h2>The channel that was working the whole time, unmeasured</h2>
+  <p class="lede">Bing Webmaster Tools tracks how often Microsoft Copilot and its partner surfaces <em>cite</em> your pages in a generated answer. Over the same 90 days that Google sent 176 clicks, Crawli was cited <strong>6,189 times</strong>.</p>
+
+<figure class="wide">
+<svg viewBox="0 0 960 300" role="img" aria-label="Daily Microsoft Copilot citations of thecrawli.com from June 15 to September 13, 2026. Near zero through July 8, averaging 0.6 per day, then a sustained ramp from July 9 onward averaging 92 per day, peaking at 314 on September 2. Two multi-day gaps appear in late July and late August." style="max-width:100%;height:auto">
+  <g font-family="JetBrains Mono, monospace" font-size="10.5">
+    <g stroke="currentColor" stroke-width="1" opacity=".16">
+      <line x1="52" y1="252" x2="944" y2="252"/>
+      <line x1="52" y1="184.5" x2="944" y2="184.5"/>
+      <line x1="52" y1="117" x2="944" y2="117"/>
+      <line x1="52" y1="49.5" x2="944" y2="49.5"/>
+    </g>
+    <g fill="currentColor" opacity=".62" text-anchor="end">
+      <text x="42" y="256">0</text>
+      <text x="42" y="188.5">100</text>
+      <text x="42" y="121">200</text>
+      <text x="42" y="53.5">300</text>
+    </g>
+      <rect x="53.3" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 15: 0</title></rect>
+      <rect x="63.0" y="251.1" width="7.2" height="0.9" rx="0" fill="var(--accent)"><title>Jun 16: 1 citations</title></rect>
+      <rect x="72.8" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Jun 17: 3 citations</title></rect>
+      <rect x="82.6" y="251.1" width="7.2" height="0.9" rx="0" fill="var(--accent)"><title>Jun 18: 1 citations</title></rect>
+      <rect x="92.3" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Jun 19: 3 citations</title></rect>
+      <rect x="102.1" y="250.6" width="7.2" height="1.4" rx="0" fill="var(--accent)"><title>Jun 20: 2 citations</title></rect>
+      <rect x="111.8" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 21: 0</title></rect>
+      <rect x="121.6" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 22: 0</title></rect>
+      <rect x="131.3" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 23: 0</title></rect>
+      <rect x="141.1" y="250.6" width="7.2" height="1.4" rx="0" fill="var(--accent)"><title>Jun 24: 2 citations</title></rect>
+      <rect x="150.9" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 25: 0</title></rect>
+      <rect x="160.6" y="251.1" width="7.2" height="0.9" rx="0" fill="var(--accent)"><title>Jun 26: 1 citations</title></rect>
+      <rect x="170.4" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 27: 0</title></rect>
+      <rect x="180.1" y="251.1" width="7.2" height="0.9" rx="0" fill="var(--accent)"><title>Jun 28: 1 citations</title></rect>
+      <rect x="189.9" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 29: 0</title></rect>
+      <rect x="199.7" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jun 30: 0</title></rect>
+      <rect x="209.4" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 1: 0</title></rect>
+      <rect x="219.2" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 2: 0</title></rect>
+      <rect x="228.9" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 3: 0</title></rect>
+      <rect x="238.7" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 4: 0</title></rect>
+      <rect x="248.4" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 5: 0</title></rect>
+      <rect x="258.2" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 6: 0</title></rect>
+      <rect x="268.0" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 7: 0</title></rect>
+      <rect x="277.7" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 8: 0</title></rect>
+      <rect x="287.5" y="248.6" width="7.2" height="3.4" rx="0" fill="var(--accent)"><title>Jul 9: 5 citations</title></rect>
+      <rect x="297.2" y="241.2" width="7.2" height="10.8" rx="2" fill="var(--accent)"><title>Jul 10: 16 citations</title></rect>
+      <rect x="307.0" y="235.8" width="7.2" height="16.2" rx="2" fill="var(--accent)"><title>Jul 11: 24 citations</title></rect>
+      <rect x="316.8" y="244.6" width="7.2" height="7.4" rx="2" fill="var(--accent)"><title>Jul 12: 11 citations</title></rect>
+      <rect x="326.5" y="250.6" width="7.2" height="1.4" rx="0" fill="var(--accent)"><title>Jul 13: 2 citations</title></rect>
+      <rect x="336.3" y="249.3" width="7.2" height="2.7" rx="0" fill="var(--accent)"><title>Jul 14: 4 citations</title></rect>
+      <rect x="346.0" y="231.1" width="7.2" height="20.9" rx="2" fill="var(--accent)"><title>Jul 15: 31 citations</title></rect>
+      <rect x="355.8" y="227.0" width="7.2" height="25.0" rx="2" fill="var(--accent)"><title>Jul 16: 37 citations</title></rect>
+      <rect x="365.5" y="231.7" width="7.2" height="20.3" rx="2" fill="var(--accent)"><title>Jul 17: 30 citations</title></rect>
+      <rect x="375.3" y="204.7" width="7.2" height="47.3" rx="2" fill="var(--accent)"><title>Jul 18: 70 citations</title></rect>
+      <rect x="385.1" y="183.1" width="7.2" height="68.9" rx="2" fill="var(--accent)"><title>Jul 19: 102 citations</title></rect>
+      <rect x="394.8" y="197.3" width="7.2" height="54.7" rx="2" fill="var(--accent)"><title>Jul 20: 81 citations</title></rect>
+      <rect x="404.6" y="205.4" width="7.2" height="46.6" rx="2" fill="var(--accent)"><title>Jul 21: 69 citations</title></rect>
+      <rect x="414.3" y="209.5" width="7.2" height="42.5" rx="2" fill="var(--accent)"><title>Jul 22: 63 citations</title></rect>
+      <rect x="424.1" y="200.0" width="7.2" height="52.0" rx="2" fill="var(--accent)"><title>Jul 23: 77 citations</title></rect>
+      <rect x="433.9" y="164.2" width="7.2" height="87.8" rx="2" fill="var(--accent)"><title>Jul 24: 130 citations</title></rect>
+      <rect x="443.6" y="191.2" width="7.2" height="60.8" rx="2" fill="var(--accent)"><title>Jul 25: 90 citations</title></rect>
+      <rect x="453.4" y="197.3" width="7.2" height="54.7" rx="2" fill="var(--accent)"><title>Jul 26: 81 citations</title></rect>
+      <rect x="463.1" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Jul 27: 3 citations</title></rect>
+      <rect x="472.9" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Jul 28: 3 citations</title></rect>
+      <rect x="482.6" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Jul 29: 0</title></rect>
+      <rect x="492.4" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Jul 30: 3 citations</title></rect>
+      <rect x="502.2" y="239.2" width="7.2" height="12.8" rx="2" fill="var(--accent)"><title>Jul 31: 19 citations</title></rect>
+      <rect x="511.9" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Aug 1: 0</title></rect>
+      <rect x="521.7" y="250.0" width="7.2" height="2.0" rx="0" fill="var(--accent)"><title>Aug 2: 3 citations</title></rect>
+      <rect x="531.4" y="250.6" width="7.2" height="1.4" rx="0" fill="var(--accent)"><title>Aug 3: 2 citations</title></rect>
+      <rect x="541.2" y="249.3" width="7.2" height="2.7" rx="0" fill="var(--accent)"><title>Aug 4: 4 citations</title></rect>
+      <rect x="550.9" y="249.3" width="7.2" height="2.7" rx="0" fill="var(--accent)"><title>Aug 5: 4 citations</title></rect>
+      <rect x="560.7" y="250.8" width="7.2" height="1.2" fill="currentColor" opacity=".18"><title>Aug 6: 0</title></rect>
+      <rect x="570.5" y="151.4" width="7.2" height="100.6" rx="2" fill="var(--accent)"><title>Aug 7: 149 citations</title></rect>
+      <rect x="580.2" y="147.4" width="7.2" height="104.6" rx="2" fill="var(--accent)"><title>Aug 8: 155 citations</title></rect>
+      <rect x="590.0" y="191.2" width="7.2" height="60.8" rx="2" fill="var(--accent)"><title>Aug 9: 90 citations</title></rect>
+      <rect x="599.7" y="171.0" width="7.2" height="81.0" rx="2" fill="var(--accent)"><title>Aug 10: 120 citations</title></rect>
+      <rect x="609.5" y="229.0" width="7.2" height="23.0" rx="2" fill="var(--accent)"><title>Aug 11: 34 citations</title></rect>
+      <rect x="619.3" y="193.9" width="7.2" height="58.1" rx="2" fill="var(--accent)"><title>Aug 12: 86 citations</title></rect>
+      <rect x="629.0" y="186.5" width="7.2" height="65.5" rx="2" fill="var(--accent)"><title>Aug 13: 97 citations</title></rect>
+      <rect x="638.8" y="138.6" width="7.2" height="113.4" rx="2" fill="var(--accent)"><title>Aug 14: 168 citations</title></rect>
+      <rect x="648.5" y="156.8" width="7.2" height="95.2" rx="2" fill="var(--accent)"><title>Aug 15: 141 citations</title></rect>
+      <rect x="658.3" y="160.9" width="7.2" height="91.1" rx="2" fill="var(--accent)"><title>Aug 16: 135 citations</title></rect>
+      <rect x="668.0" y="160.2" width="7.2" height="91.8" rx="2" fill="var(--accent)"><title>Aug 17: 136 citations</title></rect>
+      <rect x="677.8" y="177.7" width="7.2" height="74.3" rx="2" fill="var(--accent)"><title>Aug 18: 110 citations</title></rect>
+      <rect x="687.6" y="165.6" width="7.2" height="86.4" rx="2" fill="var(--accent)"><title>Aug 19: 128 citations</title></rect>
+      <rect x="697.3" y="137.9" width="7.2" height="114.1" rx="2" fill="var(--accent)"><title>Aug 20: 169 citations</title></rect>
+      <rect x="707.1" y="247.3" width="7.2" height="4.7" rx="2" fill="var(--accent)"><title>Aug 21: 7 citations</title></rect>
+      <rect x="716.8" y="251.1" width="7.2" height="0.9" rx="0" fill="var(--accent)"><title>Aug 22: 1 citations</title></rect>
+      <rect x="726.6" y="248.6" width="7.2" height="3.4" rx="0" fill="var(--accent)"><title>Aug 23: 5 citations</title></rect>
+      <rect x="736.4" y="223.6" width="7.2" height="28.4" rx="2" fill="var(--accent)"><title>Aug 24: 42 citations</title></rect>
+      <rect x="746.1" y="96.7" width="7.2" height="155.3" rx="2" fill="var(--accent)"><title>Aug 25: 230 citations</title></rect>
+      <rect x="755.9" y="52.2" width="7.2" height="199.8" rx="2" fill="var(--accent)"><title>Aug 26: 296 citations</title></rect>
+      <rect x="765.6" y="75.1" width="7.2" height="176.9" rx="2" fill="var(--accent)"><title>Aug 27: 262 citations</title></rect>
+      <rect x="775.4" y="74.4" width="7.2" height="177.6" rx="2" fill="var(--accent)"><title>Aug 28: 263 citations</title></rect>
+      <rect x="785.1" y="121.7" width="7.2" height="130.3" rx="2" fill="var(--accent)"><title>Aug 29: 193 citations</title></rect>
+      <rect x="794.9" y="99.4" width="7.2" height="152.6" rx="2" fill="var(--accent)"><title>Aug 30: 226 citations</title></rect>
+      <rect x="804.7" y="88.6" width="7.2" height="163.4" rx="2" fill="var(--accent)"><title>Aug 31: 242 citations</title></rect>
+      <rect x="814.4" y="68.4" width="7.2" height="183.6" rx="2" fill="var(--accent)"><title>Sep 1: 272 citations</title></rect>
+      <rect x="824.2" y="40.0" width="7.2" height="212.0" rx="2" fill="var(--accent)"><title>Sep 2: 314 citations</title></rect>
+      <rect x="833.9" y="182.5" width="7.2" height="69.5" rx="2" fill="var(--accent)"><title>Sep 3: 103 citations</title></rect>
+      <rect x="843.7" y="193.3" width="7.2" height="58.7" rx="2" fill="var(--accent)"><title>Sep 4: 87 citations</title></rect>
+      <rect x="853.5" y="177.7" width="7.2" height="74.3" rx="2" fill="var(--accent)"><title>Sep 5: 110 citations</title></rect>
+      <rect x="863.2" y="170.3" width="7.2" height="81.7" rx="2" fill="var(--accent)"><title>Sep 6: 121 citations</title></rect>
+      <rect x="873.0" y="179.8" width="7.2" height="72.2" rx="2" fill="var(--accent)"><title>Sep 7: 107 citations</title></rect>
+      <rect x="882.7" y="180.4" width="7.2" height="71.6" rx="2" fill="var(--accent)"><title>Sep 8: 106 citations</title></rect>
+      <rect x="892.5" y="183.8" width="7.2" height="68.2" rx="2" fill="var(--accent)"><title>Sep 9: 101 citations</title></rect>
+      <rect x="902.2" y="169.0" width="7.2" height="83.0" rx="2" fill="var(--accent)"><title>Sep 10: 123 citations</title></rect>
+      <rect x="912.0" y="171.0" width="7.2" height="81.0" rx="2" fill="var(--accent)"><title>Sep 11: 120 citations</title></rect>
+      <rect x="921.8" y="214.2" width="7.2" height="37.8" rx="2" fill="var(--accent)"><title>Sep 12: 56 citations</title></rect>
+      <rect x="931.5" y="180.4" width="7.2" height="71.6" rx="2" fill="var(--accent)"><title>Sep 13: 106 citations</title></rect>
+    <line x1="286" y1="36" x2="286" y2="256" stroke="var(--rust)" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="292" y="44" fill="var(--rust)" font-size="10.5">Jul 9 &mdash; Bing Submission API adopted</text>
+    <text x="292" y="58" fill="var(--rust)" font-size="9.5" opacity=".8">0.6/day before &nbsp;&rarr;&nbsp; 92/day after</text>
+    <text x="828" y="27" fill="var(--accent)" text-anchor="middle" font-size="10.5">314</text>
+    <g fill="currentColor" opacity=".62">
+      <text x="52" y="274">Jun 15</text>
+      <text x="213" y="274" text-anchor="middle">Jul 1</text>
+      <text x="515" y="274" text-anchor="middle">Aug 1</text>
+      <text x="818" y="274" text-anchor="middle">Sep 1</text>
+    </g>
+    <text x="52" y="292" fill="currentColor" opacity=".5" font-size="9.5">Daily citations &middot; Microsoft Copilot and partner surfaces &middot; hover any bar for the value</text>
+  </g>
+</svg>
+<figcaption>Citations were essentially zero for the site's first three weeks in this window, then stepped up twice and held. The dashed rule marks 2026-07-09, the date <code>PITFALLS.md</code> records the Bing Webmaster Submission API being adopted because IndexNow alone was leaving pages in &ldquo;Discovered &mdash; currently not crawled.&rdquo; The alignment is exact, but this is one undated correlation on one domain, not a proven cause.</figcaption>
+</figure>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Period</th><th>Citations</th><th>Per day</th><th>Avg cited pages</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Jun 15 &ndash; Jul 8</td><td class="num">14</td><td class="num">0.6</td><td class="num">~1</td><td>Effectively invisible to Copilot</td></tr>
+      <tr><td>July</td><td class="num">951</td><td class="num">30.7</td><td class="num">1&ndash;8</td><td>First ramp, then a 10-day gap</td></tr>
+      <tr><td>August</td><td class="num">3,498</td><td class="num">112.8</td><td class="num">1&ndash;24</td><td>Step change on Aug 25 to 230+/day</td></tr>
+      <tr><td>Sep 1 &ndash; 13</td><td class="num">1,726</td><td class="num">132.8</td><td class="num">~22</td><td>Settled at a sustained plateau</td></tr>
+      <tr><td><strong>Window total</strong></td><td class="num"><strong>6,189</strong></td><td class="num"><strong>68.0</strong></td><td class="num"><strong>9 avg</strong></td><td>Peak 314 on Sep 2; peak breadth 36 pages</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>What this does and does not overturn</h3>
+  <p>Set against the same 90-day window, the comparison is stark:</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Channel</th><th>Volume</th><th>What it proves</th></tr></thead>
+    <tbody>
+      <tr><td>Google impressions</td><td class="num">22,540</td><td>The content ranks</td></tr>
+      <tr><td>Google clicks</td><td class="num">176</td><td>Almost nobody clicks through &mdash; 87 of those are the homepage on brand search</td></tr>
+      <tr><td>Copilot citations</td><td class="num">6,189</td><td><strong>An answer engine read it and judged it worth quoting &mdash; 35&times; more often than a human clicked</strong></td></tr>
+      <tr><td>Signups attributable</td><td class="num">0</td><td>No measurable user arrived from any of it</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <span class="tag">The part that was right</span>
+    <p>The call to treat compare pages as <strong>&ldquo;an AI-answer-engine surface, not a click source&rdquo;</strong> and to <em>stop measuring them on clicks</em> was made on instinct, before this data existed. It was correct. 6,189 citations at an average of 9 distinct pages per day is a corpus being actively mined &mdash; the structured data, the FAQ schema, the <code>Product</code>+<code>AggregateOffer</code> markup and the real refreshed prices did exactly the job they were built for. That work was not wasted; it was being consumed through a door nobody was watching.</p>
+  </div>
+
+  <div class="note scar">
+    <span class="tag">The part that does not follow</span>
+    <p>A citation is <strong>not a visit, not a signup, and not a dollar.</strong> These 6,189 citations coincide with the flattest stretch of the funnel in the project's life. Copilot quoting your price table answers the user's question <em>inside Copilot</em> &mdash; that is the AI Overview dynamic from &sect;13, seen from the supply side rather than the demand side. So this does not reopen &ldquo;write more blog posts&rdquo;; if anything it explains <em>why</em> the clicks never came. It reframes the asset from &ldquo;failed traffic channel&rdquo; to &ldquo;successful citation channel with no conversion path attached,&rdquo; and the missing piece was never more content. <strong>It was a reason for someone reading a cited answer to come to the site</strong> &mdash; something only the live product could offer, and nothing in the cited pages ever asked them to.</p>
+  </div>
+
+  <h4>Three things to check before trusting any of this</h4>
+  <ul>
+    <li><strong>The gaps are suspicious.</strong> Jul 27&ndash;Aug 6 and Aug 21&ndash;23 drop to near zero and then snap straight back to 149 and 230. Real demand does not do that. Those are far more likely reporting gaps or crawl pauses on Microsoft's side than genuine collapses &mdash; which means the true total is probably <em>higher</em> than 6,189.</li>
+    <li><strong>&ldquo;Citation&rdquo; is Microsoft's definition, not yours.</strong> It counts an appearance in a generated answer. It does not distinguish a load-bearing citation from a footnote in a list of eight, and there is no public methodology to audit.</li>
+    <li><strong>This is Bing and Copilot only.</strong> ChatGPT, Perplexity, Claude and Google's own AI Overviews are all invisible here. The real cross-engine citation number is unknown and unknowable from this dashboard &mdash; 6,189 is a floor on one surface, not a total.</li>
+  </ul>
+
+  <div class="note">
+    <span class="tag">Carry this forward</span>
+    <p>You had a <code>geo-optimizer</code> MCP wired up for exactly this and the GSC/GA4 dashboards checked regularly &mdash; but <strong>the Bing AI Performance tab went unexamined for three months</strong> while it accumulated the single most interesting number in the project. The lesson is the same one as the alert emails in &sect;09, in a different costume: <em>you were not short on instrumentation, you were short on the habit of looking at it.</em> Next project: one weekly review that reads every dashboard you have, including the ones you do not expect anything from.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── 14 ─────────────────────────── -->
+<section id="s15">
+  <span class="sec-num">15 &middot; Ledger</span>
+  <h2>What the numbers actually say</h2>
+  <p class="lede">Pulled live from Supabase, GSC and Resend today, not from the docs.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Stage</th><th>Count</th><th>Rate</th><th>Read</th></tr></thead>
+    <tbody>
+      <tr><td>Signed up</td><td class="num">105</td><td class="num">&mdash;</td><td>From 19 at the end of June. Acquisition is not the binding constraint.</td></tr>
+      <tr><td>Ever searched</td><td class="num">84</td><td class="num">80%</td><td><span class="chip ok">strong</span> Activation is genuinely good. The product demos itself.</td></tr>
+      <tr><td>Created an alert</td><td class="num">32</td><td class="num">30%</td><td>Healthier than the docs' older read</td></tr>
+      <tr><td>Returned a second day</td><td class="num">11</td><td class="num">~12%</td><td><span class="chip bad">the constraint</span> Only 3 of the 48 most recent signups.</td></tr>
+      <tr><td>Paid</td><td class="num">4</td><td class="num">4%</td><td>All four converted on <strong>day zero</strong>. 3 of 4 never opened it again.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>The shape is unambiguous:</strong> people arrive, try it, it works, and they do not come back. Not an acquisition problem, not an activation problem, not a pricing problem. A <em>second-session</em> problem. And the mechanism built specifically to solve it &mdash; the alert email &mdash; was never verified to be reaching anyone.</p>
+
+  <h4>The three numbers that define the project</h4>
+  <div class="scroll"><table>
+    <thead><tr><th>Measure</th><th>90-day value</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>Copilot citations</td><td class="num">6,189</td><td><span class="chip ok">the content was authoritative</span></td></tr>
+      <tr><td>Organic clicks</td><td class="num">176</td><td><span class="chip warn">almost none of it converted to a visit</span></td></tr>
+      <tr><td>Second-day returns</td><td class="num">11</td><td><span class="chip bad">and almost none of those came back</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>Read left to right, that is the whole story: <strong>a credible, well-structured, machine-readable asset with no path from being read to being used.</strong> Each stage loses more than an order of magnitude, and the losses compound in the wrong order &mdash; the strongest number is the furthest from revenue.</p>
+
+  <p>Cost was never the issue. Avenue A brought marginal cost to <strong>~$0.006/search</strong>, down from $0.128 at the start &mdash; a 21&times; reduction. 324 searches over the life of the project is roughly <strong>two dollars</strong> of variable cost. The infrastructure was engineered for a scale the distribution never delivered.</p>
+</section>
+
+<!-- ─────────────────────────── 16 ─────────────────────────── -->
+<section id="s16">
+  <span class="sec-num">16 &middot; Carry forward</span>
+  <h2>What to repeat, and what not to</h2>
+
+  <h4>Repeat</h4>
+  <div class="verdicts">
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>Diagnose before you build</h5>
+      <p><code>debug_probe.py</code> before any extractor. <code>engine_bakeoff.py</code> (72 URLs &times; 2 engines) before switching scrapers. <code>bench-sidecar-concurrency.py</code> before tuning a limit. Every one of these prevented a large wrong decision.</p>
+    </div>
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>A smoke test that asserts on the transaction</h5>
+      <p>Liveness checks cannot catch a system that is alive and wrong. One endpoint that runs a real search and asserts <code>length &gt; 0</code> caught the worst outage class you had &mdash; and self-healed it.</p>
+    </div>
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>Deferred work as specs with trigger conditions</h5>
+      <p>C1&ndash;C4 each had a written trigger (&ldquo;when p95 &gt; 30s&rdquo;, &ldquo;when success rate &lt; 70%&rdquo;). You knew exactly when to act and never built any of them prematurely. Far better than a TODO list.</p>
+    </div>
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>A pitfalls file with <em>why</em>, not just what</h5>
+      <p>The entries that saved the most time are the ones recording what was tried <em>and rejected</em>, and what a mechanism provably cannot do. That is the knowledge that otherwise dies with a session.</p>
+    </div>
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>Claim ledgers and pre-registered kill criteria</h5>
+      <p>&ldquo;Marketing copy may only use a claim at Validated&rdquo; and &ldquo;write the hypothesis and kill criterion before shipping, not after reading the result&rdquo; are both unusually disciplined for a solo project. They killed at least two bad decisions.</p>
+    </div>
+    <div>
+      <span class="chip ok">keep</span>
+      <h5>Prepaid credits over post-paid metering</h5>
+      <p>Cash before consumption. No collections, no open-ended liability, no surprise invoice. And webhook idempotency via claim-with-rollback.</p>
+    </div>
+  </div>
+
+  <h4>Change</h4>
+  <div class="verdicts">
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Instrument the funnel on day one</h5>
+      <p>GA4 has <strong>no key events configured</strong>. Alert emails ran for months with nobody checking a single open. Retention was never measured until a September audit. You cannot fix a second-session problem you have not looked at &mdash; and every metric you did eventually pull changed a decision.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Test the constraint before architecting around it</h5>
+      <p>eBay sat on a 60-second, 6-result, credit-burning path for months because of an untested belief. Keep an explicit list of load-bearing assumptions and mark which are measured.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Distribution before more surface area</h5>
+      <p>116 posts, 33 compare pages, 55 TikToks &mdash; and the homepage's brand traffic still carries half the clicks. Nine well-parsed platforms, sold comps, alerts, flip margin and onboarding all shipped while the second-session problem went untouched.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Read every dashboard you own, weekly</h5>
+      <p>6,189 Copilot citations accrued over three months in a Bing tab nobody opened, while alert-email engagement sat at zero in a Resend tab nobody opened. Both were instrumented. Neither was <em>looked at</em>. The gap was never tooling &mdash; it was the absence of a standing review.</p>
+    </div>
+    <div>
+      <span class="chip warn">reframe</span>
+      <h5>Optimize for the citation, then for the click</h5>
+      <p>Structured data, FAQ schema and real refreshed prices made the site genuinely citable &mdash; that part worked and would work again. What never existed was a reason for someone reading a cited answer to leave it and come to you. Build the hook into the cited page, not just the ranking.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Secrets hygiene from commit one</h5>
+      <p>A <code>service_role</code> key across 7 committed files, still live in git history, with the legacy-key disable still not done. Pre-commit secret scanning is ten minutes of setup.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>Entity data, not heuristic piles</h5>
+      <p>Relevance filtering grew one incident at a time into a frequency corpus plus a 40-entry exception list with a provable dead end in it. Model brands as data from the start.</p>
+    </div>
+    <div>
+      <span class="chip bad">change</span>
+      <h5>One list, not four</h5>
+      <p>The platform set lived in four places (Python, TypeScript, schema, homepage component) and the pricing matrix in five public files, none kept in sync by anything but vigilance. Generate them, or test that they match.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="tag">The one-line version</span>
+    <p>The engineering was strong and got stronger &mdash; 21&times; cheaper, 8&times; faster, self-healing, nine platforms parsed accurately. The content was strong enough that an answer engine quoted it 6,189 times. The weak leg was never building or writing; it was <strong>looking</strong> &mdash; and the two things nobody looked at (did the alert email arrive, did anyone come back a second time) are exactly the two that decided the outcome. Next project: build the retention instrument before the ninth feature, and put a standing weekly read on every dashboard you own.</p>
+  </div>
+</section>
+
+<footer>
+  <span>Compiled from HANDOFF.md, SYSTEM_DESIGN.md, PITFALLS.md, PLATFORM_STATUS.md, SERVER_REFERENCE.md, COMPETITIVE_POSITIONING.md</span>
+  <span>Live figures: Supabase &middot; GSC &middot; Resend &middot; 2026-09-15</span>
+</footer>
+
+</main>
+</div>
+</div>

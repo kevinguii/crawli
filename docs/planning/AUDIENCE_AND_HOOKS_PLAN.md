@@ -453,7 +453,9 @@ limit and must not be described as "all comments".
 exponential backoff on 429 and 5xx. Reddit did start throttling during repeated
 testing, which the backoff handled. Output is NDJSON at
 `docs/marketing/audience/raw/`, resume-safe by post id, so an interrupted run
-continues rather than re-fetching. The run prints per-subreddit yield and flags any
+continues rather than re-fetching. **(Archived 2026-09-15: the raw NDJSON was
+deleted from this repo as bulky and regenerable — rerun `scripts/reddit-harvest.mjs`
+to recreate it. The derived `docs/marketing/audience/language-file.md` is kept.)** The run prints per-subreddit yield and flags any
 sub under 20 threads as THIN, which is the plan's volume gate.
 
 ### F14b. First real run, and two defects it exposed (2026-08-20)

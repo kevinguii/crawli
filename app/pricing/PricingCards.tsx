@@ -52,7 +52,7 @@ const NATIVE_TOOLTIP = (
 // six lines were the same feature with a bigger number, which is a volume discount
 // rather than a tier, and 0 of 46 users ever chose the middle one. Max is retired
 // from this page but stays resolvable in lib/tierCaps so no legacy price ID
-// downgrades anyone. See docs/superpowers/specs/2026-08-17-paywall-repackaging-design.md.
+// downgrades anyone. See docs/ARCHIVED_SPECS.md.
 //
 // Grouped into "Basic" and "Advanced" rather than one flat list, for two reasons:
 //

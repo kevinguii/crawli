@@ -184,7 +184,7 @@ listings in bulk. Grailed does NOT use Brave or Firecrawl for URL discovery.
 
 **Note:** Firecrawl is **search-only** in this app (URL discovery, see `lib/firecrawl.ts`). Scraping is the self-hosted sidecar. The paid Firecrawl plan does NOT speed up scraping; it only allows more parallel URL-discovery searches when many platforms are selected at once.
 
-**Source-of-truth bake-off:** [scripts/search_bakeoff_results.csv](scripts/search_bakeoff_results.csv) — 20 queries × 8 platforms × 2 providers (320 calls), `--big` mode of [scripts/search_bakeoff.py](scripts/search_bakeoff.py).
+**Source-of-truth bake-off:** [archive/scripts/search_bakeoff_results.csv](archive/scripts/search_bakeoff_results.csv) — 20 queries × 8 platforms × 2 providers (320 calls), `--big` mode of [archive/scripts/search_bakeoff.py](archive/scripts/search_bakeoff.py).
 
 ### C4 — Paid anti-bot unlocker (last resort)
 
@@ -342,5 +342,5 @@ When new infrastructure features ship (new PRs):
 
 - [HANDOFF.md](HANDOFF.md) — current platform-by-platform status, known issues, recent work.
 - [.env.example](.env.example) — every env var documented inline.
-- [.claude/plans/1-3-4-sound-like-a-prancy-waterfall.md](.claude/plans/1-3-4-sound-like-a-prancy-waterfall.md) — the original scaling plan (Phase A done in PR 1, Phase B done in PR 2, Phase C captured here).
-- [.claude/plans/sleepy-wishing-snowflake.md](.claude/plans/sleepy-wishing-snowflake.md) — caching + extractor plan; caching half landed in PR 1 (A6), extractor half is the C1 reference above.
+- `.claude/plans/1-3-4-sound-like-a-prancy-waterfall.md` **(no longer in the repo — `.claude/` is gitignored and was never committed)** — the original scaling plan (Phase A done in PR 1, Phase B done in PR 2, Phase C captured here).
+- `.claude/plans/sleepy-wishing-snowflake.md` **(no longer in the repo — same reason)** — caching + extractor plan; caching half landed in PR 1 (A6), extractor half is the C1 reference above.

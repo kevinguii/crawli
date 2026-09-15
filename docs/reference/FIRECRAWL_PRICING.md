@@ -18,7 +18,7 @@ This is the source of truth for **search-provider** credit/dollar costs in this 
 | Serper.dev Starter ($50/mo) | $0.001 ($1/1,000) | 2,500 queries/mo | ~5 concurrent | ✅ on Starter+ |
 | Serper.dev free | n/a | 2,500/mo | low | ❌ **BLOCKED** (HTTP 400) — kills our pipeline |
 
-Bake-off data (20 queries × 8 platforms × Firecrawl+Brave = 320 calls) lives in [scripts/search_bakeoff_results.csv](../scripts/search_bakeoff_results.csv).
+Bake-off data (20 queries × 8 platforms × Firecrawl+Brave = 320 calls) lives in [archive/scripts/search_bakeoff_results.csv](../../archive/scripts/search_bakeoff_results.csv).
 
 ---
 
@@ -35,7 +35,7 @@ Bake-off data (20 queries × 8 platforms × Firecrawl+Brave = 320 calls) lives i
 | 50 | 10 |
 | 100 | 20 |
 
-The current production pipeline requests 20 results per platform ([lib/firecrawl.ts:46](../lib/firecrawl.ts#L46)), so each platform-search call costs **4 credits**.
+The current production pipeline requests 20 results per platform ([lib/firecrawl.ts:46](../../lib/firecrawl.ts#L46)), so each platform-search call costs **4 credits**.
 
 ### Scrape endpoint (per URL)
 
@@ -123,8 +123,8 @@ crawl4ai (our current scrape engine) has no provider-imposed concurrency cap —
 
 **As of 2026-05-22 (historical):**
 
-- **Search routes through a per-platform hybrid** ([lib/firecrawl.ts](../lib/firecrawl.ts) `searchPlatform()`). Default code path is still Firecrawl-only; production sets `SEARCH_PROVIDER=hybrid` in env to activate routing.
-- **No Firecrawl scrape.** All per-URL scraping runs through the crawl4ai sidecar ([crawl4ai-service/main.py](../crawl4ai-service/main.py) `POST /scrape`).
+- **Search routes through a per-platform hybrid** ([lib/firecrawl.ts](../../lib/firecrawl.ts) `searchPlatform()`). Default code path is still Firecrawl-only; production sets `SEARCH_PROVIDER=hybrid` in env to activate routing.
+- **No Firecrawl scrape.** All per-URL scraping runs through the crawl4ai sidecar ([crawl4ai-service/main.py](../../crawl4ai-service/main.py) `POST /scrape`).
 - **ThredUp** and **The RealReal** (when re-enabled) bypass third-party search entirely — they use the sidecar's `/scrape-search` grid extraction.
 
 ---
@@ -177,7 +177,7 @@ TOTAL: $0.015 + $0.015 + $0.0106 + $0.032 ≈ $0.073/search
 
 Per-URL scrape cost: **$0.00** (crawl4ai, not a third-party search engine).
 
-OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. See [engine_bakeoff_findings.md](engine_bakeoff_findings.md) §3 for measured token costs.
+OpenAI cost: only for eBay + Vestiaire (no structured extractors). The other 6 platforms use deterministic JSON-LD / DOM extractors — zero LLM tokens. Measured token costs came from the engine bake-off; its findings doc was never committed, but the script and raw results are at [archive/scripts/engine_bakeoff.py](../../archive/scripts/engine_bakeoff.py) and [archive/scripts/bakeoff_results.csv](../../archive/scripts/bakeoff_results.csv), and the summary table is reproduced in [SYSTEM_DESIGN.md §8 “The engine bake-off”](../core/SYSTEM_DESIGN.md).
 
 ---
 
@@ -233,4 +233,4 @@ Standard: 432 × $0.00099 = $0.428 per search
 - **Paid tier:** $3-$5 per 1,000 queries (volume-dependent). Project uses $0.005 as the conservative per-call estimate.
 - **`site:` operator:** supported on every tier (key differentiator vs Serper free).
 - **Concurrency:** Brave does not publish a hard concurrency cap on standard plans; observed behavior is "rate-limited but generous." If we ever see 429s, add an exponential-backoff layer to `lib/brave.ts`.
-- **Response shape:** `{web: {results: [{url, title, description}, ...]}}` — adapter at [lib/brave.ts](../lib/brave.ts) normalizes to `RawSearchResult[]`.
+- **Response shape:** `{web: {results: [{url, title, description}, ...]}}` — adapter at [lib/brave.ts](../../lib/brave.ts) normalizes to `RawSearchResult[]`.
