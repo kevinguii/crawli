@@ -72,7 +72,7 @@ If port 8000 is stuck: `lsof -ti:8000 | xargs kill -9`
 
 ## Before it will actually work
 
-`.env` is present in this archive and still holds live credentials. Note:
+You need a `.env` before anything works. Note:
 
 - **Secrets are not in this repo.** Every credential that ever leaked into a
   commit was revoked and then scrubbed from git history on 2026-11-22. A
