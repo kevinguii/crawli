@@ -57,7 +57,7 @@ I tried to make the big calls from measurements rather than hunches:
 - **Funnel and cohort analysis in SQL.** 80% of signups ran a search, but only about 12% came back on a second day. That showed the problem was retention, not acquisition or pricing.
 - **I killed a pricing change before writing any code.** A proposed change would have raised prices about 5×. All 4 paying customers had converted on *day zero*, not when they hit the free-tier limit, so I didn't ship it.
 - **I cut a background job by 94%** after 30 days of Search Console data showed the feature earned about 5 clicks a month.
-- **I found 6,189 Microsoft Copilot citations** in Bing data, against 176 Google clicks over the same 90 days. That changed how I judged the whole SEO program (see [§14](#14--the-ai-citation-channel)).
+- **I found 6,189 Microsoft Copilot citations** in Bing data, against 224 Google clicks over roughly the same three months. That changed how I judged the whole SEO program (see [§14](#14--the-ai-citation-channel)).
 - **Marketing ran as logged experiments**, each with a kill criterion written down before launch. → [`docs/planning/COMPETITIVE_POSITIONING.md`](docs/planning/COMPETITIVE_POSITIONING.md) §6
 
 ![Google Search Console: clicks and impressions, Jun 29 – Sep 28 2026](docs/images/gsc-performance.png)
@@ -128,7 +128,7 @@ archive/                retired experiments and bake-off data
 | | | | |
 |---|---|---|---|
 | **Users** 105 | **Paying** 4 (+owner) | **Searches** 324 | **Blog posts** 116 |
-| **GSC clicks** 176 | **AI citations** 6,189 | **Cost/search** $0.006 | **Uptime** 60 days |
+| **GSC clicks** 224 | **AI citations** 6,189 | **Cost/search** $0.006 | **Uptime** 60 days |
 
 
 ## Contents
@@ -496,9 +496,9 @@ Also built: a **PRAW sidecar** (`reddit-service/`, FastAPI :8100) as a response-
 
 **What exists.** 116 markdown posts parsed at build time, with `faq[]` frontmatter mirrored into `FAQPage` JSON-LD and `compareSlug` linking to live-price pages. 33 `/compare/[slug]` pages with `Product` + `AggregateOffer` schema and ISR. Real `lastmod` dates in the sitemap (never `new Date()`, which destroys the freshness signal). Two indexing channels: IndexNow, and the Bing Submission API for actual priority recrawls.
 
-**What it returned:** 90 days → **22,540 impressions → 176 clicks → 0.78% CTR**, avg position 13.8.
+**What it returned:** 3 months (Jun 29 – Sep 28) → **26.6K impressions → 224 clicks → 0.8% CTR**, avg position 10.5.
 
-Position improved steadily (24.3 → 7.7) and impressions quadrupled. Clicks did not follow. The homepage alone carries **87 of the 176 clicks at 7.37% CTR** — that's brand search. All 116 posts together produced the other 89. Worst case: one post at **4,894 impressions, 7 clicks, 0.14% CTR**.
+Position improved steadily (24.3 → 7.7) and impressions quadrupled. Clicks did not follow. About half of all clicks were brand search: in a mid-September 90-day pull, the homepage alone carried **87 of 176 clicks at 7.37% CTR**, and all 116 posts together produced the other 89. Worst case: one post at **4,894 impressions, 7 clicks, 0.14% CTR**.
 
 > 🔴 **The standing instruction: stop writing blog posts.** 116 posts producing ~39 clicks in 90 days, with compare pages at zero clicks from 696 impressions at position 9, is a *settled experiment*. The AI Overview owns these SERPs. **Ranking on page one and getting no clicks is not an optimization problem — it's a channel that changed shape.**
 >
@@ -512,7 +512,7 @@ Position improved steadily (24.3 → 7.7) and impressions quadrupled. Clicks did
 
 ## 14 · The AI citation channel
 
-Bing Webmaster Tools tracks how often Microsoft Copilot and partner surfaces **cite** your pages in a generated answer. Over the same 90 days Google sent 176 clicks, Crawli was cited **6,189 times**.
+Bing Webmaster Tools tracks how often Microsoft Copilot and partner surfaces **cite** your pages in a generated answer. Over roughly the same three months Google sent 224 clicks; Crawli was cited **6,189 times**.
 
 ```mermaid
 xychart-beta
@@ -534,9 +534,9 @@ Citations ran **0.6/day before 2026-07-09 and 92/day after.** July 9 is the date
 
 | Channel | 90-day volume | What it proves |
 |---|---|---|
-| Google impressions | 22,540 | The content ranks |
-| Google clicks | 176 | Almost nobody clicks — 87 are the homepage on brand search |
-| **Copilot citations** | **6,189** | **An answer engine judged it worth quoting — 35× more often than a human clicked** |
+| Google impressions | 26.6K | The content ranks |
+| Google clicks | 224 | Almost nobody clicks — about half are the homepage on brand search |
+| **Copilot citations** | **6,189** | **An answer engine judged it worth quoting — ~28× more often than a human clicked** |
 | Signups attributable | 0 | No measurable user arrived from any of it |
 
 > 💡 **The part that was right.** Treating compare pages as *"an AI-answer-engine surface, not a click source"* and refusing to measure them on clicks was decided **on instinct, before this data existed.** It was correct. 6,189 citations at 9 distinct pages/day is a corpus being actively mined — the structured data, FAQ schema, `Product`+`AggregateOffer` markup and refreshed prices did exactly the job they were built for. **That work was not wasted; it was consumed through a door nobody was watching.**
@@ -564,7 +564,7 @@ Citations ran **0.6/day before 2026-07-09 and 92/day after.** July 9 is the date
 | Measure | 90-day value | Verdict |
 |---|---|---|
 | Copilot citations | 6,189 | ✅ the content was authoritative |
-| Organic clicks | 176 | ⚠️ almost none converted to a visit |
+| Organic clicks | 224 | ⚠️ almost none converted to a visit |
 | Second-day returns | 13 | 🔴 and almost none of those came back |
 
 Read left to right, that's the whole story: **a credible, well-structured, machine-readable asset with no path from being read to being used.** Each stage loses more than an order of magnitude, and the losses compound in the wrong order — *the strongest number is the furthest from revenue.*
