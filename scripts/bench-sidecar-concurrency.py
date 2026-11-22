@@ -265,7 +265,7 @@ def main():
 
     if not args.confirm:
         print("Dry run only. Re-run with --confirm to actually execute against production.")
-        print("Recommended: run during low-traffic hours (check active-user patterns in HANDOFF.md).")
+        print("Recommended: run during low-traffic hours (check active-user patterns in docs/HANDOFF.md).")
         return
 
     results: list[TrialResult] = []

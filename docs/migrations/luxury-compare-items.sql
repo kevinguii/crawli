@@ -51,5 +51,5 @@ on conflict (slug) do nothing;
 -- filterAuthentic() in app/api/compare/refresh/route.ts (2026-07-25), scoped to
 -- this refresh path only. Residual edge cases that survive title-text matching
 -- are disclosed directly in each item's dedicated blog post
--- (content/blog/<slug>-resale-price.md) rather than filtered. See HANDOFF.md
+-- (content/blog/<slug>-resale-price.md) rather than filtered. See docs/HANDOFF.md
 -- "Open issues" for what's caught vs residual.

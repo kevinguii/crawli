@@ -74,12 +74,10 @@ If port 8000 is stuck: `lsof -ti:8000 | xargs kill -9`
 
 `.env` is present in this archive and still holds live credentials. Note:
 
-- **Treat this archive as secret-bearing.** Do not post it anywhere public.
-  `.git` history contains a `service_role` JWT that was rotated to a new
-  `sb_secret_...` key everywhere it was consumed, and the legacy key itself
-  was **disabled in the Supabase dashboard on 2026-09-15** — the plaintext
-  copy in git history is dead. `.env` still holds other live credentials
-  (Stripe, Resend, Firecrawl, OpenAI) until those accounts are closed.
+- **Secrets are not in this repo.** Every credential that ever leaked into a
+  commit was revoked and then scrubbed from git history on 2026-11-22. A
+  restore needs your own `.env` (start from `.env.example`). The original
+  local `.env` was never committed.
 - Search will not return results unless the Supabase project is active. If it
   has been paused, restore it at
   `supabase.com/dashboard/project/peyqxfijdrziqfjkxjsn`.
@@ -98,11 +96,11 @@ ended up saying. Everything else is reference:
 
 | File | What it holds |
 |---|---|
-| `HANDOFF.md` | Current state at shutdown, open issues |
+| `docs/HANDOFF.md` | Current state at shutdown, open issues |
 | `docs/core/SYSTEM_DESIGN.md` | Architecture and search internals, long form |
 | `docs/core/PITFALLS.md` | Every gotcha, with the reasoning |
 | `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method and status |
 | `docs/reference/SERVER_REFERENCE.md` | SSH, nginx, cron, n8n, deployment |
 | `docs/ARCHIVED_SPECS.md` | Condensed design specs + rejected alternatives |
 | `docs/CHANGELOG.md` | Full session history |
-| `SCALING.md` | Tier playbook for hosting and throughput |
+| `docs/SCALING.md` | Tier playbook for hosting and throughput |

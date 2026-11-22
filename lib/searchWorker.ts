@@ -32,7 +32,7 @@ export async function allSettledWithConcurrency<T>(
 }
 
 // DISABLED 2026-06-21: user decided Depop search speed matters more than
-// the color-accuracy gain (see HANDOFF.md). Kept, not deleted: re-enable by
+// the color-accuracy gain (see docs/HANDOFF.md). Kept, not deleted: re-enable by
 // uncommenting this function, the `extractColorFromTitle` import above, and
 // the call site below.
 //

@@ -26,13 +26,13 @@ One-shot diagnostic / legacy scripts:
 |---|---|
 | `debug-platforms.mjs` | Zero references anywhere |
 | `test-scrape.mjs`, `test-scrape-2.mjs`, `test-vestiaire.mjs` | Zero references; superseded by `scripts/test-all-platforms.mjs` |
-| `discover-thredup.mjs` | HANDOFF.md flagged "safe to delete" — one-off Firecrawl probe |
-| `diagnose-parallel.mjs` | HANDOFF.md flagged "legacy; avoid" — reproduces an old timeout bug |
-| `diagnose-scrape.mjs` | HANDOFF.md flagged "legacy, uses old Firecrawl scraping; avoid" |
+| `discover-thredup.mjs` | docs/HANDOFF.md flagged "safe to delete" — one-off Firecrawl probe |
+| `diagnose-parallel.mjs` | docs/HANDOFF.md flagged "legacy; avoid" — reproduces an old timeout bug |
+| `diagnose-scrape.mjs` | docs/HANDOFF.md flagged "legacy, uses old Firecrawl scraping; avoid" |
 | `measure_tokens.py` | `scripts/README_TOKENS.md` flagged "superseded; kept for backwards-compat" — replaced by `token_cost_analysis.py` |
 
 ### Still active in `scripts/` (not archived)
 For reference, these are the scripts that remained in their original location because they are still useful or referenced:
-- `diagnose-counts.mjs`, `diagnose-grailed.mjs`, `test-all-platforms.mjs` — referenced in HANDOFF.md as active diagnostic tools
+- `diagnose-counts.mjs`, `diagnose-grailed.mjs`, `test-all-platforms.mjs` — referenced in docs/HANDOFF.md as active diagnostic tools
 - `engine_bakeoff.py`, `limit_sweep.py`, `token_cost_analysis.py` — current cost/quality measurement toolkit
 - `README_TOKENS.md`, `bakeoff_fixture.json`, `bakeoff_results.csv`, `limit_sweep_gucci_bag.json` — companion docs and fixtures

@@ -394,7 +394,7 @@ footer {
   <h4>Key wiring &mdash; what goes where</h4>
   <dl class="wiring">
     <div><dt>NEXT_PUBLIC_SUPABASE_URL<br>NEXT_PUBLIC_SUPABASE_ANON_KEY</dt><dd>Ship to the browser by design. Safe only because Row Level Security gates every row. <code>NEXT_PUBLIC_</code> is Next.js inlining the value into the client bundle at build time &mdash; a build-time substitution, not a runtime read, so changing it needs a rebuild.</dd></div>
-    <div><dt>SUPABASE_SERVICE_ROLE_KEY</dt><dd>Bypasses RLS entirely. Server-only, used by <code>createAdminClient()</code> for webhooks, crons and cache writes. <span class="chip ok">resolved</span> This leaked into 7 committed files and is still in git history; you rotated to a <code>sb_secret_&hellip;</code> key everywhere it was consumed, and the legacy JWT itself was <strong>disabled in the dashboard 2026-09-15</strong> &mdash; the plaintext copy in git history is now dead.</dd></div>
+    <div><dt>SUPABASE_SERVICE_ROLE_KEY</dt><dd>Bypasses RLS entirely. Server-only, used by <code>createAdminClient()</code> for webhooks, crons and cache writes. <span class="chip ok">resolved</span> This leaked into 7 committed files; you rotated to a <code>sb_secret_&hellip;</code> key everywhere it was consumed, the legacy JWT itself was <strong>disabled in the dashboard 2026-09-15</strong>, and every copy was scrubbed from git history before the repo went public.</dd></div>
     <div><dt>RESEND_API_KEY</dt><dd>Server-only. One key, used by <code>alertRunner.ts</code> for alert and baseline digests. Supabase's own auth emails (confirm / reset) go through Supabase's SMTP config, which is a <em>separate</em> Resend wiring in the Supabase dashboard &mdash; that split is why auth-email throttling was a Supabase limit, not a Resend one.</dd></div>
     <div><dt>STRIPE_SECRET_KEY<br>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY<br>STRIPE_WEBHOOK_SECRET</dt><dd>Publishable is public. Secret is server-only. The webhook secret is per-endpoint &mdash; a new endpoint (test &rarr; live) means a new <code>whsec_</code>, and forgetting it is a silent 400 on every event.</dd></div>
     <div><dt>STRIPE_PRICE_ID_*</dt><dd>Nine of them (pro/max &times; monthly/yearly/weekly, plus three credit packs). Code never creates prices. <code>tierFromPriceId()</code> logs loudly on an unknown ID rather than silently downgrading a paying customer &mdash; worth copying.</dd></div>
@@ -827,7 +827,7 @@ public.profiles ─┬─ saves ────── collection_folders
 
   <div class="note scar">
     <span class="tag">The finding to take into the next project</span>
-    <p><strong>254 alert emails. 252 delivered. 0 opens. 0 clicks.</strong> Meanwhile &ldquo;the alert email is the strongest driver of a second session&rdquo; sat in <code>HANDOFF.md</code> for months as a strategic assumption with <em>zero measurement behind it</em>. The first time anyone checked, it found nothing supporting it.</p>
+    <p><strong>254 alert emails. 252 delivered. 0 opens. 0 clicks.</strong> Meanwhile &ldquo;the alert email is the strongest driver of a second session&rdquo; sat in <code>docs/HANDOFF.md</code> for months as a strategic assumption with <em>zero measurement behind it</em>. The first time anyone checked, it found nothing supporting it.</p>
     <p>And the calibration matters as much as the number: 254 emails is not 254 trials &mdash; it reached ~19 people. Resend's window silently clamped to ~30 days, so whether this was a regression is unknowable. And <strong>no ESP can measure inbox placement</strong>: &ldquo;delivered&rdquo; means a server accepted the message, never that a human could find it. The correct next step was a falsification test (trigger a real alert, open it, click it, see if Resend registers), not a strategy rewrite. <em>Any feature whose value depends on an email arriving needs an engagement metric checked once before you build strategy on it.</em></p>
   </div>
   <p style="max-width:72ch"><span class="chip neu">for contrast</span> &nbsp;Across the last 30 days all Resend traffic combined shows <span class="num">405 sent &middot; 403 delivered &middot; 23.4% open &middot; 7.5% click</span>. So the pipe works. Something specific to the alert cohort or its placement did not.</p>
@@ -1269,7 +1269,7 @@ public.profiles ─┬─ saves ────── collection_folders
     <div>
       <span class="chip bad">change</span>
       <h5>Secrets hygiene from commit one</h5>
-      <p>A <code>service_role</code> key across 7 committed files, still in git history &mdash; caught and rotated same-session, and the legacy key itself was disabled a week later. Pre-commit secret scanning would have caught it before the first commit, which is ten minutes of setup.</p>
+      <p>A <code>service_role</code> key across 7 committed files &mdash; caught and rotated same-session, the legacy key disabled a week later, and every copy scrubbed from history before publishing. Pre-commit secret scanning would have caught it before the first commit, which is ten minutes of setup.</p>
     </div>
     <div>
       <span class="chip bad">change</span>
@@ -1290,7 +1290,7 @@ public.profiles ─┬─ saves ────── collection_folders
 </section>
 
 <footer>
-  <span>Compiled from HANDOFF.md, SYSTEM_DESIGN.md, PITFALLS.md, PLATFORM_STATUS.md, SERVER_REFERENCE.md, COMPETITIVE_POSITIONING.md</span>
+  <span>Compiled from docs/HANDOFF.md, SYSTEM_DESIGN.md, PITFALLS.md, PLATFORM_STATUS.md, SERVER_REFERENCE.md, COMPETITIVE_POSITIONING.md</span>
   <span>Live figures: Supabase &middot; GSC &middot; Resend &middot; 2026-09-15</span>
 </footer>
 

@@ -206,7 +206,7 @@ content, so it's the cleanest A/B in this batch: same script, different opener.
 **Fee figures checked 2026-08-20 against `lib/marketplaceFees.ts`
 (`FEES_LAST_VERIFIED`): last verified 2026-08-11, 9 days ago — current, no
 re-verification needed before reposting. (Earlier in this session I cited a stale
-"verified 2026-06-28" figure from a HANDOFF.md excerpt read before the 2026-08-11
+"verified 2026-06-28" figure from a docs/HANDOFF.md excerpt read before the 2026-08-11
 Pro-repricing work touched this file — checking the code directly, not the doc,
 caught it.)
 

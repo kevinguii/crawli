@@ -31,7 +31,7 @@ interface Props {
  *
  * Deliberately built from PER-PLATFORM AVERAGES, then trimmed, rather than the
  * raw global `min_price_usd`/`max_price_usd`. The snapshots still carry the
- * residual outliers documented in HANDOFF.md "Compare-page floors": a $29
+ * residual outliers documented in docs/HANDOFF.md "Compare-page floors": a $29
  * "Cartier Love Bracelet" on Depop, a $5 "Ralph Lauren Polo Shirt" on Vinted,
  * a $72,530 Grailed ask on the same bracelet. Those are exactly the numbers a
  * naive min/max would hand to Google as the headline price, so they must not
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // "Asking price" is load-bearing: these snapshots are live listings, not
   // completed sales. Sold data is a separate surface (/price-check) and covers
-  // only Grailed and Poshmark. See HANDOFF.md.
+  // only Grailed and Poshmark. See docs/HANDOFF.md.
   const description =
     band && totalListings > 0
       ? `${totalListings} live ${item.name} listings across ${platformCount} marketplaces, typical asking price $${band.low.toLocaleString('en-US')} to $${band.high.toLocaleString('en-US')}. Compare prices and find the cheapest in one search.`

@@ -9,11 +9,11 @@
 This project is **wound down**. The repo is an archive, not a running codebase.
 
 - **Fastest way to understand it:** open `docs/CRAWLI_TEARDOWN.html` in a browser — self-contained walkthrough of architecture, search, filtering, caching, hosting, monitoring, payments and outcomes.
-- **Dependencies are stripped** (`node_modules`, both Python venvs, `.next` — 1.85 GB). Nothing runs until you follow `RESTORE.md`. Do not assume `npm run dev:all` works.
+- **Dependencies are stripped** (`node_modules`, both Python venvs, `.next` — 1.85 GB). Nothing runs until you follow `docs/RESTORE.md`. Do not assume `npm run dev:all` works.
 - **`npx tsc --noEmit` was verified clean** immediately before stripping, so the source is known-good; you cannot re-verify without reinstalling first.
 - **`docs/superpowers/` no longer exists** — condensed into `docs/ARCHIVED_SPECS.md`, which keeps the design decisions and rejected alternatives. The Feature Implementation Workflow below still describes the correct process if work ever resumes.
 - **Live services may be gone.** Search needs an active Supabase project; Stripe/Resend/Firecrawl/OpenAI keys die with their accounts. Verify before trusting any "it works" claim in these docs.
-- **Security item closed 2026-09-15:** Supabase legacy API keys have been disabled. The leaked `service_role` JWT in git history is dead. See `HANDOFF.md` → Recent changes.
+- **Security item closed 2026-09-15:** Supabase legacy API keys have been disabled. The leaked `service_role` JWT is dead, and on 2026-11-22 it and every other leaked credential were scrubbed from git history so the repo could go public. See `docs/HANDOFF.md` → Recent changes.
 
 Everything below is preserved as it was during active development.
 
@@ -25,17 +25,17 @@ The project uses four focused docs. Read what's relevant to your task — don't 
 
 | File | What's in it | Read when |
 |---|---|---| 
-| `HANDOFF.md` | Current platform state, open issues, recent changes, env setup | Every session |
+| `docs/HANDOFF.md` | Current platform state, open issues, recent changes, env setup | Every session |
 | `docs/core/PITFALLS.md` | Gotchas that will bite you if you don't know them | Before touching scraping, filtering, n8n, or Supabase | 
 | `docs/core/PLATFORM_STATUS.md` | Per-platform scraping method, selectors, status, open issues | Before touching any platform extraction |
 | `docs/core/SYSTEM_DESIGN.md` | Architecture, search engine internals, cost model, data layer | When adding new features or understanding flow |
 | `docs/CRAWLI_TEARDOWN.html` | **Full system + outcomes walkthrough (open in a browser).** Best single entry point | Orienting cold, or explaining the project to anyone |
-| `RESTORE.md` | Rebuild steps after archival | Before trying to run anything |
+| `docs/RESTORE.md` | Rebuild steps after archival | Before trying to run anything |
 | `docs/ARCHIVED_SPECS.md` | Condensed design specs + rejected alternatives | Asking "why was it built this way / why not X" |
 
 **Supporting docs:**
-- `docs/CHANGELOG.md` — session history older than the newest 5 entries in HANDOFF.md. **Do not read by default**; open it only to trace why a specific past change was made.
-- `SCALING.md` (repo root) — tier playbook: hosting, throughput, infra choices at scale X. **Read before answering any scaling/hosting/throughput question and quote it — do not improvise scaling advice from training data.** Referenced from `app/api/watchlist/refresh/route.ts`.
+- `docs/CHANGELOG.md` — session history older than the newest 5 entries in docs/HANDOFF.md. **Do not read by default**; open it only to trace why a specific past change was made.
+- `docs/SCALING.md` — tier playbook: hosting, throughput, infra choices at scale X. **Read before answering any scaling/hosting/throughput question and quote it — do not improvise scaling advice from training data.** Referenced from `app/api/watchlist/refresh/route.ts`.
 - `docs/reference/SERVER_REFERENCE.md` — SSH, n8n workflow edits, deployment
 - `docs/reference/B2B_FEATURE_TRUTH.md` — what features actually exist (source of truth for landing copy)
 - `docs/reference/FIRECRAWL_PRICING.md` — Firecrawl credit costs
@@ -86,11 +86,11 @@ These MCP servers are connected in this project. Use them instead of manual API 
 - Did platform extraction change? → update `docs/core/PLATFORM_STATUS.md`
 - Did you hit a new gotcha or fix one? → update `docs/core/PITFALLS.md`
 - Did the architecture or data flow change? → update `docs/core/SYSTEM_DESIGN.md`
-- Always update `HANDOFF.md` "Current state" and "Recent changes" sections
+- Always update `docs/HANDOFF.md` "Current state" and "Recent changes" sections
 
-**What NOT to do:** Don't append a big "Latest change (date): ..." block to HANDOFF.md. The new system is current-state only. Put details in the relevant doc, put a one-line bullet in "Recent changes".
+**What NOT to do:** Don't append a big "Latest change (date): ..." block to docs/HANDOFF.md. The new system is current-state only. Put details in the relevant doc, put a one-line bullet in "Recent changes".
 
-**Keep HANDOFF.md short.** It is read every session, so it is a context budget, not an archive. After adding your bullet, move any entry beyond the newest 5 into `docs/CHANGELOG.md` verbatim. Entries are one to three sentences: what changed and why. The details belong in PITFALLS/PLATFORM_STATUS/SYSTEM_DESIGN, not in a changelog paragraph.
+**Keep docs/HANDOFF.md short.** It is read every session, so it is a context budget, not an archive. After adding your bullet, move any entry beyond the newest 5 into `docs/CHANGELOG.md` verbatim. Entries are one to three sentences: what changed and why. The details belong in PITFALLS/PLATFORM_STATUS/SYSTEM_DESIGN, not in a changelog paragraph.
 
 **4. Do NOT modify:**
 - `/api/` endpoints unless explicitly told (streaming NDJSON protocol is fragile)
@@ -102,7 +102,7 @@ These MCP servers are connected in this project. Use them instead of manual API 
 **Tech stack:** Next.js 16.2.6 App Router + React 19 + Tailwind v4 + TypeScript · Python sidecar (crawl4ai + Playwright) at `crawl4ai-service/` · Firecrawl for eBay search only (all other platforms use native Avenue A)
 
 **Key files:**
-- `HANDOFF.md` — current state hub
+- `docs/HANDOFF.md` — current state hub
 - `lib/types.ts` — platform sets (NATIVE_PLATFORMS, PLATFORM_DOMAINS, etc.)
 - `lib/scraper.ts` — HTTP client for sidecar, SEARCH_PAGE_PLATFORMS set
 - `crawl4ai-service/search_page_extractors.py` — Avenue A grid extractors
@@ -166,7 +166,7 @@ For medium tasks (3-4 hours of estimated work), always follow this workflow:
 
 ## Before starting any task
 
-1. Read `HANDOFF.md` — what's the current state? Any open issues that affect my task?
+1. Read `docs/HANDOFF.md` — what's the current state? Any open issues that affect my task?
 2. Read the relevant doc (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN) based on what I'm touching
 3. What files do I actually need to modify?
 4. What does success look like, and how will I verify it before saying done?
@@ -179,7 +179,7 @@ For medium tasks (3-4 hours of estimated work), always follow this workflow:
 - [ ] No console errors; network requests succeed
 - [ ] Behavior matches task description exactly
 - [ ] Relevant doc updated (PLATFORM_STATUS / PITFALLS / SYSTEM_DESIGN)
-- [ ] HANDOFF.md "Current state" + "Recent changes" updated
+- [ ] docs/HANDOFF.md "Current state" + "Recent changes" updated
 - [ ] Ports 3000 and 8000 freed before finishing (see `docs/reference/CLEANUP.md`)
 
 <!-- BEGIN:nextjs-agent-rules -->

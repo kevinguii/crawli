@@ -24,7 +24,7 @@ rate in a component.
   fee-calculator's scope only — NOT total platform coverage. **Search spans 9 platforms**: these 7
   plus **Vestiaire** and **ThredUp**, which are source-from (buy-side) only and intentionally absent
   from the fee calc (ThredUp is source-only; Vestiaire has no flip-margin entry). RealReal is
-  disabled (PerimeterX). See `HANDOFF.md` "Current state" for the live search roster.
+  disabled (PerimeterX). See `docs/HANDOFF.md` "Current state" for the live search roster.
 - **Seller-payout fees are separated from buyer-side fees.** Net profit uses seller-side only;
   buyer-side fees are stored for context (`buyerCost()`).
 - Per-platform `lastVerified` date (all `2026-08-11`) + `FEES_LAST_VERIFIED`. Shown in the UI.

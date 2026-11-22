@@ -34,7 +34,7 @@ series. No URL or "download" link appears on the slide itself; the plain name is
 ## Content policy
 
 Whichever slide names Crawli must describe something Crawli actually ships — verified
-against `docs/reference/B2B_FEATURE_TRUTH.md` and `HANDOFF.md` before writing, not invented
+against `docs/reference/B2B_FEATURE_TRUTH.md` and `docs/HANDOFF.md` before writing, not invented
 for the post. The other tool slides must be genuinely useful, real, and independently
 verifiable (an actual product feature, an actual filter/setting that exists today) — not a
 strawman or a made-up trick that doesn't really work, since the whole premise depends on

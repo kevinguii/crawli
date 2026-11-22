@@ -10,7 +10,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thecrawli.com";
 // This route has no dynamic API calls, so 3600 genuinely gives it real ISR
 // (unlike /compare/[slug] and /blog/[slug], which build as fully dynamic ƒ
 // routes because they call supabase.auth.getUser(): their own `revalidate`
-// exports are inert; see HANDOFF.md 2026-07-07). 1h just needs to comfortably
+// exports are inert; see docs/HANDOFF.md 2026-07-07). 1h just needs to comfortably
 // beat the daily 6am compare-refresh cron so lastmod updates the same day.
 export const revalidate = 3600;
 

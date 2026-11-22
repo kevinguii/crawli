@@ -144,7 +144,7 @@ _driver_dead: bool = False
 # ── Crawler pool (B1) ────────────────────────────────────────────────────────
 # B1: how many independent Chromium browsers to run in parallel. Default 1
 # behaves identically to pre-B1. Flip to 2+ on a server with enough CPU/RAM
-# to power multiple browsers (see SCALING.md for per-tier recommendations).
+# to power multiple browsers (see docs/SCALING.md for per-tier recommendations).
 # All pool members share the global SIDECAR_MAX_CONCURRENT_RENDERS semaphore,
 # so total Chromium load on the box is bounded regardless of pool size: the
 # pool only splits *where* renders run, not *how many*. A driver crash in one
@@ -203,7 +203,7 @@ def _truncate_url(url: str, max_len: int = 100) -> str:
 
 # ── Per-domain pacing (B2) ───────────────────────────────────────────────────
 # Min-interval between consecutive renders against the same host. Defends
-# anti-bot triggers on platforms HANDOFF.md §7 F flags as 403-sensitive
+# anti-bot triggers on platforms docs/HANDOFF.md §7 F flags as 403-sensitive
 # (Depop, Grailed) without slowing typical multi-platform searches.
 # Tune by editing this dict; new entries auto-pick up next render.
 DOMAIN_MIN_INTERVAL_MS: dict[str, int] = {
@@ -664,7 +664,7 @@ async def _thredup_undetected_render(url: str) -> Optional[str]:
     Gated by `_thredup_semaphore` (cap 1), separate from `_render_semaphore`
     (the shared pool's cap): a full Chromium launch per request is real
     memory pressure, and `SIDECAR_MAX_CONCURRENT_RENDERS` was just cut from
-    6 to 2 after the 2026-08-29 OOM incidents (see HANDOFF.md), so ThredUp
+    6 to 2 after the 2026-08-29 OOM incidents (see docs/HANDOFF.md), so ThredUp
     must not be able to stack extra concurrent launches on top of whatever
     the rest of a 9-platform fan-out is already doing. The render itself
     still goes through `_scheduled_render`, so it also respects the shared

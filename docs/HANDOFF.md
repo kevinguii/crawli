@@ -4,7 +4,7 @@
 
 ## How to use this file
  
-**HANDOFF.md is the current-state hub** — what is true right now, what is broken, what is open. It is NOT a changelog.
+**docs/HANDOFF.md is the current-state hub** — what is true right now, what is broken, what is open. It is NOT a changelog.
 
 - Architecture and search internals → [`docs/core/SYSTEM_DESIGN.md`](docs/core/SYSTEM_DESIGN.md)
 - Per-platform scraping status → [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md)
@@ -33,7 +33,7 @@ Nothing below describes a broken system; it describes a working one being retire
 
 - **Read this first if you are new or returning:** [`docs/CRAWLI_TEARDOWN.html`](docs/CRAWLI_TEARDOWN.html) — a self-contained browser walkthrough of the whole system and what the numbers ended up saying.
 - **To run it again:** [`RESTORE.md`](RESTORE.md). `node_modules`, both Python venvs and `.next` were stripped for archival (1.85 GB); source, docs, content, migrations and git history are complete. `npx tsc --noEmit` was verified clean immediately before stripping.
-- **Last open security item is now closed:** Supabase legacy API keys were disabled 2026-09-15. The leaked `service_role` JWT still sitting in git history is dead. See Recent changes.
+- **Last open security item is now closed:** Supabase legacy API keys were disabled 2026-09-15. The leaked `service_role` JWT is dead and has been scrubbed from git history. See Recent changes.
 
 **Final numbers (2026-09-15, pulled live):** 105 users · 4 paying customers plus the
 owner's own account · 84 users ever searched · 13 ever returned on a second day ·
@@ -147,12 +147,15 @@ Fixed 2026-07-25 for the luxury set: `filterAuthentic()` in `app/api/compare/ref
 
 ## Recent changes
 
+**2026-11-22: Git history scrubbed and repo published as a portfolio piece**
+Rewrote all history with `git filter-repo` before going public: removed the `archive/db/` shutdown DB dump (user emails), redacted every leaked credential (Supabase `service_role` and n8n JWTs, Google OAuth client secret + refresh token; the Google client was also deleted), replaced the owner's personal email and handles with placeholders, and dropped screenshots containing personal or third-party data. Recreated the GitHub repo as `kevinguii/crawli` so no pre-rewrite commit stays reachable; moved HANDOFF/RESTORE/SCALING into `docs/` and rewrote the README as a reviewer-facing overview above the full teardown.
+
 **2026-09-15: Supabase legacy API keys disabled — closes the last open security item**
 The `service_role` key that was committed in plaintext across 7 files (2026-08-15) had already been rotated to a new `sb_secret_...` key everywhere it was consumed (`.env`, n8n, scripts). The one remaining step — disabling the legacy JWT itself in Supabase's dashboard (API Keys → "Legacy anon, service_role API keys" tab) — is now done. The old key is dead; its plaintext copy still sits in git history but is worthless. Rewriting history remains deliberately skipped (a force-push would break existing clones, and the repo is private) — revisit only if the repo is ever made public.
 
 
 **2026-09-15: Bing AI Performance found 6,189 Copilot citations; repo archived and stripped for storage**
-Owner supplied Bing Webmaster Tools AI Performance data that had gone unexamined for three months. Over the same 90 days GSC recorded 176 organic clicks, Microsoft Copilot and partner surfaces cited thecrawli.com **6,189 times** (avg 9 distinct pages/day, peak 314 on 2026-09-02) — **35x more citations than clicks.** Citations were 0.6/day before 2026-07-09 and 92/day after, and 2026-07-09 is the date `PITFALLS.md` records the Bing Submission API being adopted; the alignment is exact but is one undated correlation on one domain, not a proven cause. This **validates the Step 3 decision** to treat compare pages as an AI-answer-engine surface and stop measuring them on clicks (see `COMPETITIVE_POSITIONING.md` §5 Step 3), and **does not reopen** writing posts — a citation is not a visit, and these citations coincide with the flattest stretch of the funnel. Caveats recorded: the Jul 27-Aug 6 and Aug 21-23 gaps snap back to 149 and 230 so are almost certainly reporting gaps (true total likely higher), "citation" is Microsoft's undocumented definition, and this covers Bing/Copilot only. Also this session: wrote `docs/CRAWLI_TEARDOWN.html` (full system walkthrough), condensed `docs/superpowers/` into `docs/ARCHIVED_SPECS.md` and repointed all 10 references to it including 6 in source comments and 2 pre-existing dangles, and stripped 1.85 GB of regenerable dependencies with restore steps in `RESTORE.md`. `npx tsc --noEmit` clean before stripping.
+Owner supplied Bing Webmaster Tools AI Performance data that had gone unexamined for three months. Over the same 90 days GSC recorded 176 organic clicks, Microsoft Copilot and partner surfaces cited thecrawli.com **6,189 times** (avg 9 distinct pages/day, peak 314 on 2026-09-02) — **35x more citations than clicks.** Citations were 0.6/day before 2026-07-09 and 92/day after, and 2026-07-09 is the date `PITFALLS.md` records the Bing Submission API being adopted; the alignment is exact but is one undated correlation on one domain, not a proven cause. This **validates the Step 3 decision** to treat compare pages as an AI-answer-engine surface and stop measuring them on clicks (see `COMPETITIVE_POSITIONING.md` §5 Step 3), and **does not reopen** writing posts — a citation is not a visit, and these citations coincide with the flattest stretch of the funnel. Caveats recorded: the Jul 27-Aug 6 and Aug 21-23 gaps snap back to 149 and 230 so are almost certainly reporting gaps (true total likely higher), "citation" is Microsoft's undocumented definition, and this covers Bing/Copilot only. Also this session: wrote `docs/CRAWLI_TEARDOWN.html` (full system walkthrough), condensed `docs/superpowers/` into `docs/ARCHIVED_SPECS.md` and repointed all 10 references to it including 6 in source comments and 2 pre-existing dangles, and stripped 1.85 GB of regenerable dependencies with restore steps in `docs/RESTORE.md`. `npx tsc --noEmit` clean before stripping.
 
 
 
@@ -164,10 +167,6 @@ The sidecar was getting force-killed almost daily around 06:15-06:30 UTC — not
 **2026-09-07: Funnel audit at 94 users killed a proposed weekly-pricing change and found the alert email channel is dark**
 Owner asked to add a high-anchor weekly plan (~$5-7/wk, monthly removed). Pulled the real numbers first and the change was dropped before any code was written. Findings, in order of consequence: (1) all 4 real paying customers (a 5th Pro account is the owner's own) signed up, searched, created an alert and **paid on day zero**, two of them after only 2 searches against a 5/week free cap, so conversion here is a first-impression impulse buy and has nothing to do with quota exhaustion; (2) **254 alert emails, 252 delivered, 0 opens, 0 clicks**, root cause almost certainly the missing DMARC record (see Open issues); (3) retention is the actual constraint, 76 of 94 users ever searched but only 11 ever returned on a second day, and just 3 of the 48 users in the last three signup cohorts did; (4) 3 of the 4 paying customers have not opened the product since the day they paid, with renewals landing 2026-09-28 and 09-29. Weekly pricing was rejected because day-zero impulse conversion is exactly what a 5x effective price increase breaks, and because it would have overwritten EXP-006/EXP-007 nine days before their scheduled reads. Full writeup and the corrected baseline: `docs/planning/COMPETITIVE_POSITIONING.md` §6c. No behavior change shipped this session; two stale code comments about the notification badge were corrected (the bell already filters to `new_count > 0`, which is not what either comment said).
 
-
-
-**2026-09-07: Confirmed the ThredUp fix was already live in prod — HANDOFF/PLATFORM_STATUS were just never updated**
-The 2026-09-02 ThredUp fix (see below) was assumed undeployed because no doc said otherwise, but `git log` showed the fix commit (`c0899d5`) was an ancestor of a later, unrelated deploy (`37b9524`, 2026-09-04) — a normal `git pull` for that deploy silently carried the ThredUp fix along with it. Verified live with a direct `/scrape-search` call against the prod sidecar: real DOM-grid results, `color: null` as expected post-redesign. No deploy action was needed, only correcting the two docs that said otherwise.
 
 
 ## Environment setup

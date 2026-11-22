@@ -12,7 +12,7 @@ interface WatchlistRow {
 }
 
 // Env-driven so this can be tuned per host without code changes. Same shape
-// as SEARCH_PLATFORM_CONCURRENCY: see SCALING.md tier matrix for recommended
+// as SEARCH_PLATFORM_CONCURRENCY: see docs/SCALING.md tier matrix for recommended
 // values. Default 4 preserves pre-existing behavior.
 const CONCURRENCY = Math.max(
   1,

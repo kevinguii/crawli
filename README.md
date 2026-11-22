@@ -1,20 +1,135 @@
-# Crawli — Teardown
+# Crawli
 
-A resale price aggregator. One search fanned out to 9 secondhand fashion marketplaces, scraped each one live, and returned a unified price comparison.
+**One search across 9 secondhand fashion marketplaces: scraped live, filtered for relevance and price-compared in about 7 seconds.**
 
-**Built May 2026 · Archived September 2026 · 105 users · 4 paying customers**
+I built and ran Crawli solo, in production, from May to September 2026. It had **105 users and 4 paying customers**, and all 9 platforms were still working when I shut it down. I archived it on purpose and wrote up what worked and what didn't. That write-up is the [full teardown](#full-teardown) below.
 
-> **This repo is archived.** It was fully operational at archive time — 9/9 platforms working, server up 60 days, all crons firing. This document is the complete record of what was built, how, and what the numbers said. It exists as a build sheet for the next project, not an obituary for this one.
->
-> **To run it again:** see [`RESTORE.md`](RESTORE.md). Dependencies (1.85 GB) were stripped; source, docs, content, migrations and git history are complete.
-> **Nicer formatting:** [`docs/CRAWLI_TEARDOWN.html`](docs/CRAWLI_TEARDOWN.html) is the same content as a styled page — download and open in a browser.
+![Crawli alert results: matched listings from Mercari and Depop for "bape japan tshirt"](docs/images/alerts-matches.png)
+
+**Jump to:** [What I built](#what-i-built) · [Engineering highlights](#engineering-highlights) · [Data & decisions](#data--decisions) · [Building with AI](#building-with-ai) · [Results & lessons](#results--lessons) · [Stack & repo map](#stack--repo-map) · [Full teardown](#full-teardown)
+
+---
+
+## What I built
+
+- **A search engine over 9 marketplaces:** Grailed, Depop, Mercari, ThredUp, Vestiaire, Vinted, Poshmark, StockX and eBay. A Next.js app fans each query out to a Python scraping sidecar (crawl4ai + Playwright) and streams results back over NDJSON as each platform returns.
+- **Product features on top of search:** price alerts on a 15-minute cron, saved searches, a watchlist that detects sold or removed listings, sold-price comps, and a resale margin calculator covering 7 platforms' fee structures.
+- **A real business layer:** Stripe subscriptions plus prepaid credit packs, Supabase auth and Postgres with row-level security, and transactional email through Resend.
+- **An SEO and AI-search surface:** 33 live-price compare pages and a 116-post blog, all with structured data.
+- **Production operations, by myself:** one Hetzner VPS running nginx and systemd, monitored with Sentry, UptimeRobot and a self-healing smoke test.
+
+## Engineering highlights
+
+**1. Rebuilt the search pipeline: about 10× cheaper, 8× faster, 12× more results.**
+The first version used Firecrawl to find around 20 listing URLs per platform, then scraped 10 of them one by one. That took a 60-second median and returned about 6 usable listings. I replaced it with one render of each platform's own search page and a per-platform grid extractor: about 7 seconds, about 75 listings, and zero paid API credits.
+→ [`crawl4ai-service/search_page_extractors.py`](crawl4ai-service/search_page_extractors.py) · [`lib/scraper.ts`](lib/scraper.ts)
+
+**2. Took price accuracy from about 70% to about 99% by putting deterministic parsing ahead of the LLM.**
+Sending whole pages to an LLM picked the wrong price about 30% of the time, because shipping costs, related items and "last sale" prices sat on the same page. I built a three-tier cascade:
+1. **Structured parsers first**, five strategies across nine sites: JSON-LD, `__NEXT_DATA__` framework state, RSC payload regex, `data-testid` and `og:` tags.
+2. **gpt-4o-mini as a fallback**, run only on scoped page regions.
+3. **A stub** that never invents a price.
+
+→ [`crawl4ai-service/structured_extractors.py`](crawl4ai-service/structured_extractors.py)
+
+**3. Relevance filtering that understands brands.**
+Each query goes through tokenization, then stopwords, then *anchor* tokens that must all appear in a listing title. That's what stops "messi jersey" from matching a Ronaldo jersey. Brand aliases like *bape* = *A Bathing Ape* are expanded by an LLM and cached for 30 days. I worked through a long tail of edge cases: possessives, model numbers versus size numbers, and trading cards showing up in jersey searches. I also documented the one query shape that is *provably* unfixable with this design, instead of shipping a fake fix.
+→ [`lib/parse.ts`](lib/parse.ts) · [`lib/queryExpansion.ts`](lib/queryExpansion.ts)
+
+**4. Concurrency control and self-healing.**
+An unbounded `Promise.all` over the platforms crashed Playwright's driver, and every scrape after that returned null with no error. I added three stacked concurrency limits and a per-domain politeness pacer that waits *outside* the render semaphore. I also added a smoke endpoint that runs a real search and returns 503 on an empty result, wired to auto-restart the sidecar. It catches the "alive but wrong" failures that uptime checks and Sentry both miss.
+→ [`crawl4ai-service/main.py`](crawl4ai-service/main.py) · [`app/api/smoke/route.ts`](app/api/smoke/route.ts)
+
+**5. Payments that never double-grant.**
+Stripe delivers webhooks at least once, and granting credits isn't idempotent. Each event is recorded in a ledger table *before* it's processed, and that record is deleted if processing fails, so Stripe's retry runs it again instead of being silently skipped.
+→ [`app/api/webhooks/stripe/route.ts`](app/api/webhooks/stripe/route.ts) · [`docs/migrations/stripe-webhook-idempotency.sql`](docs/migrations/stripe-webhook-idempotency.sql)
+
+**6. Six caching layers, from in-memory to Postgres.**
+Cache keys are normalized while the query is sent to platforms unchanged, and empty results are never cached. Repeat renders dropped from 9.1s to 9ms, and 50 alert subscribers on the same query cost one scrape.
+→ [`lib/searchCache.ts`](lib/searchCache.ts)
+
+## Data & decisions
+
+I tried to make the big calls from measurements rather than hunches:
+
+- **Benchmarks before switching anything.** I ran a bake-off over 72 URLs across 2 scraping engines before changing scrapers, and a concurrency benchmark before tuning limits. → [`archive/scripts/engine_bakeoff.py`](archive/scripts/engine_bakeoff.py) · [`scripts/bench-sidecar-concurrency.py`](scripts/bench-sidecar-concurrency.py)
+- **Unit economics.** I modeled cost per search from real usage and brought it from $0.128 down to **$0.006**, a 21× reduction. → [`scripts/cogs-per-search.mjs`](scripts/cogs-per-search.mjs)
+- **Funnel and cohort analysis in SQL.** 80% of signups ran a search, but only about 12% came back on a second day. That showed the problem was retention, not acquisition or pricing.
+- **I killed a pricing change before writing any code.** A proposed change would have raised prices about 5×. All 4 paying customers had converted on *day zero*, not when they hit the free-tier limit, so I didn't ship it.
+- **I cut a background job by 94%** after 30 days of Search Console data showed the feature earned about 5 clicks a month.
+- **I found 6,189 Microsoft Copilot citations** in Bing data, against 176 Google clicks over the same 90 days. That changed how I judged the whole SEO program (see [§14](#14--the-ai-citation-channel)).
+- **Marketing ran as logged experiments**, each with a kill criterion written down before launch. → [`docs/planning/COMPETITIVE_POSITIONING.md`](docs/planning/COMPETITIVE_POSITIONING.md) §6
+
+![Google Search Console: clicks and impressions, Jun 29 – Sep 28 2026](docs/images/gsc-performance.png)
+
+## Building with AI
+
+I built Crawli with Claude Code as my main development environment, and I treated the AI workflow as something to engineer, not just a chat window:
+
+- **Project memory.** [`CLAUDE.md`](CLAUDE.md) plus a four-doc system means every session starts from the current state and known pitfalls instead of rediscovering them. The four docs are [`HANDOFF`](docs/HANDOFF.md), [`PITFALLS`](docs/core/PITFALLS.md), [`PLATFORM_STATUS`](docs/core/PLATFORM_STATUS.md) and [`SYSTEM_DESIGN`](docs/core/SYSTEM_DESIGN.md). The pitfalls file records *why*, not just what, so mistakes don't repeat.
+- **Spec → plan → subagent execution.** Medium-sized features went through these steps: brainstorm, written spec, task-by-task plan, isolated git worktree, then an implementer subagent per task with a review gate for spec compliance and code quality. The condensed specs, including the alternatives I rejected, are in [`docs/ARCHIVED_SPECS.md`](docs/ARCHIVED_SPECS.md).
+- **Tools instead of copy-paste.** I connected 7 MCP servers (Supabase, Search Console, GA4/PageSpeed, Playwright, Resend, n8n and a GEO auditor), so the agent queried production data itself. Most of the decisions above started as one of those queries.
+- **LLMs inside the product, used narrowly.** gpt-4o-mini serves as a scoped fallback extractor and powers brand-alias expansion. Both are cached and capped on cost, and deterministic code runs first.
+- **LLM automation.** n8n pipelines turned Search Console, Reddit and TikTok data into daily content briefs. → [`docs/workflows/`](docs/workflows/)
+- **Building for AI answer engines.** Structured data, `llms.txt` and GEO audits made the compare pages citable, which is where the 6,189 Copilot citations came from.
+
+## Results & lessons
+
+| Signed up | Searched | Created an alert | Returned a 2nd day | Paid |
+|---|---|---|---|---|
+| 105 | 84 (80%) | 32 (30%) | **13 (~12%)** | 4 (4%) |
+
+People arrived, tried it, it worked, and most didn't come back. Infrastructure cost was never the problem: 324 searches cost about $2 in variable spend. The bottleneck was retention, and I shut the project down rather than keep adding features to a product people weren't returning to. What I'd carry into the next project:
+
+- **Instrument retention before building the ninth feature.** Every metric I eventually pulled changed a decision, and I should have pulled them earlier.
+- **Test a constraint before building architecture around it.** eBay stayed on the slow, expensive path for months because of a blocking assumption nobody had tested. It turned out to be false.
+- **Read every dashboard you own, weekly.** The two most important numbers in the project, 0 alert-email opens and 6,189 citations, sat unread in dashboards that were already set up.
+
+The rest of this README is the full teardown, with the details behind each of these points.
+
+## Stack & repo map
+
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Python (FastAPI, crawl4ai, Playwright) · Supabase (Postgres, auth, RLS, realtime) · Stripe · Resend · OpenAI · n8n · Sentry · Cloudflare · Hetzner VPS + nginx + systemd
+
+```
+app/                    Next.js App Router
+├── (protected)/        Auth-gated: search, alerts, saves, watchlist, price-check
+├── api/                search (NDJSON), billing, cron, webhooks, compare, sold-comps
+├── blog/  compare/     Public SEO surfaces
+└── components/         React 19 components
+lib/                    parse.ts (filtering) · scraper.ts · searchCache.ts
+                        queryExpansion.ts · alertRunner.ts · tierCaps.ts · stripe.ts
+crawl4ai-service/       Python sidecar: main.py, search_page_extractors.py,
+                        structured_extractors.py
+reddit-service/         PRAW sidecar for the n8n Reddit monitor
+content/blog/           116 markdown posts
+docs/                   handoff, pitfalls, system design, specs, migrations, workflows
+scripts/                verification, benchmarks, cost model, indexing
+archive/                retired experiments and bake-off data
+```
+
+| Doc | What it holds |
+|---|---|
+| [`docs/CRAWLI_TEARDOWN.html`](docs/CRAWLI_TEARDOWN.html) | The teardown below as a styled page (download and open in a browser) |
+| [`docs/core/SYSTEM_DESIGN.md`](docs/core/SYSTEM_DESIGN.md) | Architecture, long form |
+| [`docs/core/PITFALLS.md`](docs/core/PITFALLS.md) | Every gotcha, with reasoning |
+| [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md) | Per-platform scraping method and status |
+| [`docs/ARCHIVED_SPECS.md`](docs/ARCHIVED_SPECS.md) | Design specs and rejected alternatives |
+| [`docs/HANDOFF.md`](docs/HANDOFF.md) | Final state and open issues |
+| [`docs/SCALING.md`](docs/SCALING.md) | Playbook for hosting and throughput at each scale tier |
+| [`docs/RESTORE.md`](docs/RESTORE.md) | How to run it again (dependencies were stripped for the archive) |
+
+---
+
+# Full teardown
+
+> The complete record of what was built, how, and what the numbers said. It was written at shutdown as a build sheet for the next project, not an obituary for this one.
 
 | | | | |
 |---|---|---|---|
 | **Users** 105 | **Paying** 4 (+owner) | **Searches** 324 | **Blog posts** 116 |
 | **GSC clicks** 176 | **AI citations** 6,189 | **Cost/search** $0.006 | **Uptime** 60 days |
 
----
 
 ## Contents
 
@@ -44,7 +159,7 @@ Thirteen services, in roughly the order a rebuild should provision them — seve
 | Key | Notes |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` / `ANON_KEY` | Ship to the browser by design. Safe only because RLS gates every row. `NEXT_PUBLIC_` is a **build-time** substitution — changing it needs a rebuild. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS entirely. Server-only. Leaked into 7 committed files; rotated to a `sb_secret_…` key everywhere it was consumed, and the legacy JWT was **disabled in the Supabase dashboard 2026-09-15** — the plaintext copy in git history is now dead. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS entirely. Server-only. Leaked into 7 committed files; rotated to a `sb_secret_…` key everywhere it was consumed, the legacy JWT **disabled in the Supabase dashboard 2026-09-15**, and every copy scrubbed from git history before this repo went public. |
 | `RESEND_API_KEY` | Server-only. Supabase's *own* auth emails go through a **separate** Resend wiring in the Supabase dashboard — that split is why auth-email throttling was a Supabase limit, not a Resend one. |
 | `STRIPE_SECRET_KEY` / `WEBHOOK_SECRET` | Webhook secret is **per-endpoint** — a new endpoint (test→live) means a new `whsec_`, and forgetting it is a silent 400 on every event. |
 | `STRIPE_PRICE_ID_*` | Nine of them. Code never creates prices. `tierFromPriceId()` logs loudly on an unknown ID rather than silently downgrading a paying customer. |
@@ -480,7 +595,7 @@ Read left to right, that's the whole story: **a credible, well-structured, machi
 | **Read every dashboard you own, weekly** | 6,189 citations accrued in a Bing tab nobody opened while alert engagement sat at zero in a Resend tab nobody opened. Both instrumented. Neither looked at. |
 | **Distribution before more surface area** | 116 posts, 33 compare pages, 55 TikToks — and brand traffic still carries half the clicks. Nine platforms, sold comps, alerts, flip margin and onboarding all shipped while the second-session problem went untouched. |
 | **Optimize for the citation, then the click** | Structured data made the site genuinely citable and that would work again. What never existed was a reason for someone reading a cited answer to leave it. **Build the hook into the cited page, not just the ranking.** |
-| **Secrets hygiene from commit one** | A `service_role` key across 7 committed files, still in git history. Pre-commit secret scanning is ten minutes of setup. |
+| **Secrets hygiene from commit one** | A `service_role` key across 7 committed files. It was rotated, disabled and scrubbed from history before publishing — cleanup that pre-commit secret scanning (ten minutes of setup) would have made unnecessary. |
 | **Entity data, not heuristic piles** | Relevance filtering grew into a frequency corpus plus a 40-entry exception list with a provable dead end in it. Model brands as data from the start. |
 | **One list, not four** | The platform set lived in four places and the pricing matrix in five public files, kept in sync by nothing but vigilance. Generate them, or test that they match. |
 
@@ -491,40 +606,6 @@ Read left to right, that's the whole story: **a credible, well-structured, machi
 
 ---
 
-## Repo map
-
-```
-app/                    Next.js App Router
-├── (protected)/        Auth-gated: search, alerts, saves, watchlist, price-check
-├── api/                search (NDJSON), billing, cron, webhooks, compare, sold-comps
-├── blog/  compare/     Public SEO surfaces
-└── components/         React 19 components
-lib/                    parse.ts (filtering) · scraper.ts · searchCache.ts
-                        queryExpansion.ts · alertRunner.ts · tierCaps.ts · stripe.ts
-crawl4ai-service/       Python sidecar — main.py, search_page_extractors.py,
-                        structured_extractors.py
-reddit-service/         PRAW sidecar for the n8n reddit monitor
-content/blog/           116 markdown posts
-docs/                   core/ reference/ planning/ migrations/ workflows/ marketing/
-scripts/                verify-*.mts, bench-*, submit-bing.mjs, cogs-per-search.mjs
-```
-
-| Doc | What it holds |
-|---|---|
-| [`RESTORE.md`](RESTORE.md) | Rebuild steps after archival |
-| [`HANDOFF.md`](HANDOFF.md) | Final state, open issues |
-| [`docs/core/SYSTEM_DESIGN.md`](docs/core/SYSTEM_DESIGN.md) | Architecture long-form |
-| [`docs/core/PITFALLS.md`](docs/core/PITFALLS.md) | Every gotcha, with reasoning |
-| [`docs/core/PLATFORM_STATUS.md`](docs/core/PLATFORM_STATUS.md) | Per-platform scraping status |
-| [`docs/reference/SERVER_REFERENCE.md`](docs/reference/SERVER_REFERENCE.md) | SSH, nginx, cron, n8n, deploy |
-| [`docs/ARCHIVED_SPECS.md`](docs/ARCHIVED_SPECS.md) | Design specs + rejected alternatives |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Full session history |
-| [`SCALING.md`](SCALING.md) | Tier playbook for hosting and throughput |
-
-**Stack:** Next.js 16.2.6 (App Router) · React 19 · Tailwind v4 · TypeScript · Python sidecar (crawl4ai + Playwright) · Supabase (auth/Postgres/storage/realtime) · Stripe · Resend · Sentry · Cloudflare · Hetzner VPS + systemd + nginx
-
-**Commands** (after [`RESTORE.md`](RESTORE.md)): `npm run dev:all` · `npm run dev` · `npm run dev:sidecar` · `npm run build` · `npx tsc --noEmit`
-
-⚠️ **This archive carries secrets.** `.env` holds live credentials for Stripe, Resend, Firecrawl and OpenAI until those accounts are closed. (The one credential that *was* fully closed out — the leaked `service_role` JWT in git history — had its legacy key disabled 2026-09-15, so that specific exposure is resolved.) **Keep this repo private.**
+---
 
 **License:** MIT

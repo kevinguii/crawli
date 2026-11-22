@@ -3,7 +3,7 @@
 **Created:** 2026-06-30 · **Owner:** Kevin · **Status:** ⏹ **CLOSED 2026-09-15 — historical record, not a live plan**
 
 > Every number in this document is a 2026-06-30 snapshot taken at **19 users / 0 paying**.
-> Final state was **105 users / 4 paying** — see `HANDOFF.md` "Project status" and
+> Final state was **105 users / 4 paying** — see `docs/HANDOFF.md` "Project status" and
 > `COMPETITIVE_POSITIONING.md` §1 for the closing figures. Read this for the *diagnosis
 > and reasoning*, which mostly held up, not for the figures. Its central call ("it is not
 > a features problem, it's a conversion-path problem") was correct and was later sharpened
@@ -15,9 +15,9 @@
 This is the **strategic plan for getting Crawli from ~0 traction to first paying
 customers.** It exists so any future session can pick up the work without the
 original chat. It is current-state + forward-plan: when you complete a phase,
-update its status here and drop a one-liner in `HANDOFF.md` "Recent changes".
+update its status here and drop a one-liner in `docs/HANDOFF.md` "Recent changes".
 
-Read order for a cold session: this doc → `HANDOFF.md` → the specific file you're
+Read order for a cold session: this doc → `docs/HANDOFF.md` → the specific file you're
 touching. The *product* is feature-complete; this plan is about **distribution
 and conversion**, not new features.
 
@@ -146,7 +146,7 @@ backlink/Reddit/PH/SEO/AEO asset every other channel needs.
 - **Generation:** cached snapshots in Supabase `compare_snapshots`, refreshed by
   a daily cron (`/api/compare/refresh`, 6 AM UTC) — see
   `docs/reference/SERVER_REFERENCE.md` "Compare-pages refresh cron". Currently
-  15 enabled slugs (curated, per `HANDOFF.md`).
+  15 enabled slugs (curated, per `docs/HANDOFF.md`).
 - **SEO/AEO:** server-rendered JSON-LD `@graph` with `BreadcrumbList` +
   `Product`/`AggregateOffer` (per-platform `Offer` array with `lowPrice`/
   `highPrice`/`offerCount`) — see `app/compare/[slug]/page.tsx` lines ~214-259.

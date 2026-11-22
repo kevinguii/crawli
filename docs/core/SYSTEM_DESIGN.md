@@ -775,7 +775,7 @@ are tier-triggered, not always-on wins:
 
 The highest-leverage non-cost work right now is product:
 background searches + price-alert notifications (Phase 2D),
-both spec'd in HANDOFF.md.
+both spec'd in docs/HANDOFF.md.
 ```
 
 ---
@@ -998,7 +998,7 @@ WHAT WORKS
 4. Gate unfinished work behind env vars
    REALREAL_ENABLED=1 — broken platforms don't affect users.
 
-5. HANDOFF.md as the contract between sessions
+5. docs/HANDOFF.md as the contract between sessions
    Full sync at end of every session — what worked, what failed,
    what's still broken. Next session reads it before touching anything.
 
@@ -1008,7 +1008,7 @@ WHAT WORKS
 NEXT STEPS IN PRIORITY ORDER
 ──────────────────────────────────────────────────────────
 1. Background searches + notification
-   Design fully spec'd in HANDOFF.md.
+   Design fully spec'd in docs/HANDOFF.md.
    search_jobs table → Supabase Realtime → in-app toast.
    ~1.5 days for smallest viable cut. Currently highest user
    leverage — searches take ~30s+ and people leave the tab.
@@ -1019,7 +1019,7 @@ NEXT STEPS IN PRIORITY ORDER
 
 3. RealReal re-enable
    Extractor + dispatch already written, gated behind env var.
-   Blocker: PerimeterX. Re-enable checklist in HANDOFF.md.
+   Blocker: PerimeterX. Re-enable checklist in docs/HANDOFF.md.
 
 ✅ C1 — eBay + Vestiaire structured extractors (shipped 2026-05-21)
 ```

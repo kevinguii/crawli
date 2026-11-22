@@ -223,7 +223,7 @@ ssh -L 5678:localhost:5678 root@5.78.187.97
 - Organic posting API is gated (TikTok partner program required) — manual posting is fine for now
 - Zernio has TikTok support for when automation is needed later
 
-**Update (2026-06-18):** Zernio's TikTok slot (freed from Reddit, which moved to PRAW — see HANDOFF §0) is now live and connected to `@thecrawli` with `video.publish`/`video.upload`/`video.list`/`user.info.stats` scopes already granted. Posting is still 100% manual (all posts so far are `isExternal: true`), but analytics are now being tracked: **"tiktok performance digest"** workflow (`9QUnEUbl66Zxwl7D`, weekly Monday 8am PT) pulls Zernio's `/v1/analytics`, ranks posts, breaks out top hashtags + format performance, and emails + saves to `tiktok_performance`. Full details in HANDOFF.md top entry. Agreed next steps in order: (1) this digest — done, (2) wire `reddit_research` pain points into the content-brief generator — done, and the resulting batch was turned into 13 social posts + 7 blog posts the same day (see HANDOFF.md top entry), (3) automated posting via `video.publish` — not started. Native-video-vs-carousel A/B testing is paused until the digest has a few weeks of data — the account is too new (3 followers, ~3 days of posts) to separate format effect from cold-start effect.
+**Update (2026-06-18):** Zernio's TikTok slot (freed from Reddit, which moved to PRAW — see HANDOFF §0) is now live and connected to `@thecrawli` with `video.publish`/`video.upload`/`video.list`/`user.info.stats` scopes already granted. Posting is still 100% manual (all posts so far are `isExternal: true`), but analytics are now being tracked: **"tiktok performance digest"** workflow (`9QUnEUbl66Zxwl7D`, weekly Monday 8am PT) pulls Zernio's `/v1/analytics`, ranks posts, breaks out top hashtags + format performance, and emails + saves to `tiktok_performance`. Full details in docs/HANDOFF.md top entry. Agreed next steps in order: (1) this digest — done, (2) wire `reddit_research` pain points into the content-brief generator — done, and the resulting batch was turned into 13 social posts + 7 blog posts the same day (see docs/HANDOFF.md top entry), (3) automated posting via `video.publish` — not started. Native-video-vs-carousel A/B testing is paused until the digest has a few weeks of data — the account is too new (3 followers, ~3 days of posts) to separate format effect from cold-start effect.
 
 **Update (2026-07-06): TikTok's Zernio connection was replaced by Threads.** See 1H below — `tiktok auto post` and `tiktok performance digest` will 403/return stale data until TikTok is reconnected on a paid Zernio slot.
 
@@ -376,12 +376,12 @@ UptimeRobot: X incidents (if any)
 - Delivers weekly "product insights" brief
 
 #### 3D. Architecture Doc Maintenance
-- Auto-updates HANDOFF.md + CLAUDE.md after significant changes land
+- Auto-updates docs/HANDOFF.md + CLAUDE.md after significant changes land
 - Keeps service inventory current (new APIs added, services changed)
 - Prevents context loss between Claude Code sessions
 
 **Chat prompt to start:**
-> "I want to set up a development workflow agent for Crawli that: (1) monitors Sentry + scraper logs and creates GitHub issues/PRs for bugs, (2) runs weekly dependency vulnerability scans, (3) scans fashion subreddits for feature ideas, (4) auto-updates HANDOFF.md after significant changes. Here's the repo: [repo URL]. Walk me through setting this up with Hermes or n8n."
+> "I want to set up a development workflow agent for Crawli that: (1) monitors Sentry + scraper logs and creates GitHub issues/PRs for bugs, (2) runs weekly dependency vulnerability scans, (3) scans fashion subreddits for feature ideas, (4) auto-updates docs/HANDOFF.md after significant changes. Here's the repo: [repo URL]. Walk me through setting this up with Hermes or n8n."
 
 ---
 

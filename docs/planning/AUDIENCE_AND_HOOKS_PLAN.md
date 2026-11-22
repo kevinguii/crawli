@@ -33,7 +33,7 @@ Related docs, read as needed:
 
 | # | Phase | State | Done when |
 |---|---|---|---|
-| 0 | Stand up this doc | **done** 2026-08-19 | Doc exists, linked from HANDOFF.md and CLAUDE.md, findings loaded |
+| 0 | Stand up this doc | **done** 2026-08-19 | Doc exists, linked from docs/HANDOFF.md and CLAUDE.md, findings loaded |
 | 1 | Mine existing first-party data | **done** 2026-08-19 | Persona cross-tab (F2b), query language (F2c), TikTok sync checked (F7). Step 0 q1 marked answered in COMPETITIVE_POSITIONING.md |
 | 1.5 | **Fix F12: alert matching** | **done** 2026-08-20 | Validation shipped (client + server), simplified to one message for all tiers per owner call (F12d). 3 existing dead alerts NOT backfilled by design (Q10), 2 other causes (non-English query, shoe+clothing-size mismatch) still open |
 | 2 | Build the Reddit harvester | **done** 2026-08-20 | `scripts/reddit-harvest.mjs` built, parse verified against a live thread. See F14 |
@@ -685,7 +685,7 @@ risk and softened to generic phrasing.
 
 **I made and caught my own stale-data error while flagging Idea D's fee figures.** I
 initially wrote "verify before reposting, `lib/marketplaceFees.ts` verified
-2026-06-28, two months old" — that figure came from a HANDOFF.md excerpt read at the
+2026-06-28, two months old" — that figure came from a docs/HANDOFF.md excerpt read at the
 *start* of this session, before the 2026-08-11 Pro-repricing work touched that file.
 Checking the actual code (`FEES_LAST_VERIFIED`) instead of the doc found it was
 reverified 2026-08-11, 9 days ago. Went further and checked every specific number

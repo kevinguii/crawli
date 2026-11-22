@@ -1,12 +1,15 @@
 # Crawli — Changelog
 
-Archive of session entries rotated out of [`HANDOFF.md`](../HANDOFF.md)'s "Recent changes".
+Archive of session entries rotated out of [`HANDOFF.md`](HANDOFF.md)'s "Recent changes".
 HANDOFF.md keeps only the newest five; everything older lands here, newest first.
 
 **This file is not read every session.** Read it only when you need the history behind a
 specific change. Current state, open issues, and the newest five sessions are in HANDOFF.md.
 
 ---
+
+**2026-09-07: Confirmed the ThredUp fix was already live in prod — HANDOFF/PLATFORM_STATUS were just never updated**
+The 2026-09-02 ThredUp fix (see below) was assumed undeployed because no doc said otherwise, but `git log` showed the fix commit (`c0899d5`) was an ancestor of a later, unrelated deploy (`37b9524`, 2026-09-04) — a normal `git pull` for that deploy silently carried the ThredUp fix along with it. Verified live with a direct `/scrape-search` call against the prod sidecar: real DOM-grid results, `color: null` as expected post-redesign. No deploy action was needed, only correcting the two docs that said otherwise.
 
 **2026-09-02: Full extractor audit found ThredUp fully broken for 6 days; fixed same session, live in prod since 2026-09-04 (see 2026-09-07 entry above)**
 Ran every search-grid extractor (`search_page_extractors.py`) and per-listing extractor (`structured_extractors.py`) live via `/scrape-search` and `/refresh-price`. 8 platforms confirmed healthy, no changes needed. ThredUp had returned 0 results on every search since 2026-08-27 16:03 (Cloudflare Bot Management, added ~2026-08-28) — not caught by this file or PLATFORM_STATUS.md until now. Root-caused and fixed: verified Cloudflare's challenge is fingerprint-based, not IP-reputation (both the prod Hetzner IP and a non-hosting-provider IP hit the same block), and that `UndetectedAdapter` beats it but only for a browser's *first* request — a 2nd request in the same session hard-403s regardless of headless mode or a warmed session. Since ThredUp can't share the render pool, `_thredup_undetected_render()` in `main.py` launches a fresh one-shot browser per search, capped at 1 concurrent (separate from the shared pool's semaphore) given the 2026-08-29 OOM history. Also rewrote `extract_thredup_grid` from scratch: ThredUp's JSON-LD `Product` array is gone (replaced by a bare `ItemList` of URLs), so price/title/size/image now come from the DOM (`div.item-card`) instead. Verified locally: 119/119 cards extracted correctly on one query, 12/13 live searches succeeded on the first attempt with the 13th recovered by a built-in retry. Per-listing pages (watchlist refresh) stay broken — hard-blocked regardless of headless/session state, untouched, not a regression. Full evidence and remaining caveats: `docs/core/PLATFORM_STATUS.md` "Open platform issues".
