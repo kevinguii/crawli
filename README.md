@@ -4,7 +4,7 @@
 
 I built and ran Crawli solo, in production, from May to September 2026. It had **105 users and 4 paying customers**, and all 9 platforms were still working when I shut it down. I archived it on purpose and wrote up what worked and what didn't. That write-up is the [full teardown](#full-teardown) below.
 
-![Crawli alert results: matched listings from Mercari and Depop for "bape japan tshirt"](docs/images/alerts-matches.png)
+![Crawli search results for "north face nuptse jacket": live listings across 7 marketplaces with low, average and high price](docs/images/search-dark.png)
 
 **Jump to:** [What I built](#what-i-built) · [Engineering highlights](#engineering-highlights) · [Data & decisions](#data--decisions) · [Building with AI](#building-with-ai) · [Results & lessons](#results--lessons) · [Stack & repo map](#stack--repo-map) · [Full teardown](#full-teardown)
 
