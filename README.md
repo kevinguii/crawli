@@ -6,13 +6,15 @@ I built and ran Crawli solo, in production, from May to September 2026. All 9 pl
 
 ![Crawli search results for "north face nuptse jacket": live listings across 7 marketplaces with low, average and high price](docs/images/search-dark.png)
 
+<br>
+
 <p align="center">
-  <a href="#what-i-built"><img src="https://img.shields.io/badge/What_I_built-2B2B29?style=for-the-badge" alt="What I built"></a>
-  <a href="#engineering-highlights"><img src="https://img.shields.io/badge/Engineering_highlights-2B2B29?style=for-the-badge" alt="Engineering highlights"></a>
-  <a href="#data--decisions"><img src="https://img.shields.io/badge/Data_%26_decisions-2B2B29?style=for-the-badge" alt="Data & decisions"></a>
-  <a href="#building-with-ai"><img src="https://img.shields.io/badge/Building_with_AI-2B2B29?style=for-the-badge" alt="Building with AI"></a>
-  <a href="#results--lessons"><img src="https://img.shields.io/badge/Results_%26_lessons-2B2B29?style=for-the-badge" alt="Results & lessons"></a>
-  <a href="#stack--repo-map"><img src="https://img.shields.io/badge/Stack_%26_repo_map-2B2B29?style=for-the-badge" alt="Stack & repo map"></a>
+  <a href="#what-i-built"><img src="https://img.shields.io/badge/What_I_built-4A4A46?style=for-the-badge" alt="What I built"></a>
+  <a href="#engineering-highlights"><img src="https://img.shields.io/badge/Engineering_highlights-4A4A46?style=for-the-badge" alt="Engineering highlights"></a>
+  <a href="#data--decisions"><img src="https://img.shields.io/badge/Data_%26_decisions-4A4A46?style=for-the-badge" alt="Data & decisions"></a>
+  <a href="#building-with-ai"><img src="https://img.shields.io/badge/Building_with_AI-4A4A46?style=for-the-badge" alt="Building with AI"></a>
+  <a href="#results--lessons"><img src="https://img.shields.io/badge/Results_%26_lessons-4A4A46?style=for-the-badge" alt="Results & lessons"></a>
+  <a href="#stack--repo-map"><img src="https://img.shields.io/badge/Stack_%26_repo_map-4A4A46?style=for-the-badge" alt="Stack & repo map"></a>
   <a href="#full-teardown"><img src="https://img.shields.io/badge/Full_teardown-E24B4A?style=for-the-badge" alt="Full teardown"></a>
 </p>
 
