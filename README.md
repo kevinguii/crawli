@@ -15,7 +15,7 @@ I built and ran Crawli solo, in production, from May to September 2026. All 9 pl
   <a href="#building-with-ai"><img src="https://img.shields.io/badge/Building_with_AI-4A4A46?style=for-the-badge" alt="Building with AI"></a>
   <a href="#results--lessons"><img src="https://img.shields.io/badge/Results_%26_lessons-4A4A46?style=for-the-badge" alt="Results & lessons"></a>
   <a href="#stack--repo-map"><img src="https://img.shields.io/badge/Stack_%26_repo_map-4A4A46?style=for-the-badge" alt="Stack & repo map"></a>
-  <a href="#full-teardown"><img src="https://img.shields.io/badge/Full_teardown-E24B4A?style=for-the-badge" alt="Full teardown"></a>
+  <a href="#full-teardown"><img src="https://img.shields.io/badge/Full_teardown-4A4A46?style=for-the-badge" alt="Full teardown"></a>
 </p>
 
 ---
