@@ -337,9 +337,9 @@ footer {
   <h1>Crawli Teardown</h1>
   <p class="dek">Everything that was wired into a 9-platform resale price aggregator, in the order it was built, with the measured result of each decision. Written as a build sheet for <em>the next one</em>, not an obituary for this one.</p>
   <dl class="spec">
-    <div><dt>Users</dt><dd>105</dd></div>
-    <div><dt>Paying</dt><dd>5 <small>(1 is you)</small></dd></div>
-    <div><dt>Searches run</dt><dd>324</dd></div>
+    <div><dt>Searched</dt><dd>80%</dd></div>
+    <div><dt>Paid</dt><dd>4%</dd></div>
+    <div><dt>2nd-day return</dt><dd>~12%</dd></div>
     <div><dt>Blog posts</dt><dd>116</dd></div>
     <div><dt>GSC clicks <small>3 mo</small></dt><dd>224</dd></div>
     <div><dt>AI citations <small>90d</small></dt><dd>6,189</dd></div>
@@ -796,7 +796,7 @@ public.profiles ─┬─ saves ────── collection_folders
 
   <div class="note">
     <span class="tag">The pricing finding that actually mattered</span>
-    <p>All four real paying customers <strong>signed up, searched, created an alert and paid on day zero</strong> &mdash; two of them after only 2 searches against a 5/week free cap. Conversion here was a first-impression impulse buy and had <em>nothing</em> to do with hitting a quota wall. A proposed weekly-pricing change (a ~5&times; effective price increase) was killed on that number alone, before any code was written. Pull the funnel data before you touch pricing.</p>
+    <p>Every real paying customer <strong>signed up, searched, created an alert and paid on day zero</strong> &mdash; some after only 2 searches against a 5/week free cap. Conversion here was a first-impression impulse buy and had <em>nothing</em> to do with hitting a quota wall. A proposed weekly-pricing change (a ~5&times; effective price increase) was killed on that number alone, before any code was written. Pull the funnel data before you touch pricing.</p>
   </div>
 </section>
 
@@ -828,7 +828,7 @@ public.profiles ─┬─ saves ────── collection_folders
   <div class="note scar">
     <span class="tag">The finding to take into the next project</span>
     <p><strong>254 alert emails. 252 delivered. 0 opens. 0 clicks.</strong> Meanwhile &ldquo;the alert email is the strongest driver of a second session&rdquo; sat in <code>docs/HANDOFF.md</code> for months as a strategic assumption with <em>zero measurement behind it</em>. The first time anyone checked, it found nothing supporting it.</p>
-    <p>And the calibration matters as much as the number: 254 emails is not 254 trials &mdash; it reached ~19 people. Resend's window silently clamped to ~30 days, so whether this was a regression is unknowable. And <strong>no ESP can measure inbox placement</strong>: &ldquo;delivered&rdquo; means a server accepted the message, never that a human could find it. The correct next step was a falsification test (trigger a real alert, open it, click it, see if Resend registers), not a strategy rewrite. <em>Any feature whose value depends on an email arriving needs an engagement metric checked once before you build strategy on it.</em></p>
+    <p>And the calibration matters as much as the number: 254 emails is not 254 trials &mdash; they went to a small handful of people. Resend's window silently clamped to ~30 days, so whether this was a regression is unknowable. And <strong>no ESP can measure inbox placement</strong>: &ldquo;delivered&rdquo; means a server accepted the message, never that a human could find it. The correct next step was a falsification test (trigger a real alert, open it, click it, see if Resend registers), not a strategy rewrite. <em>Any feature whose value depends on an email arriving needs an engagement metric checked once before you build strategy on it.</em></p>
   </div>
   <p style="max-width:72ch"><span class="chip neu">for contrast</span> &nbsp;Across the last 30 days all Resend traffic combined shows <span class="num">405 sent &middot; 403 delivered &middot; 23.4% open &middot; 7.5% click</span>. So the pipe works. Something specific to the alert cohort or its placement did not.</p>
 </section>
@@ -1174,13 +1174,13 @@ public.profiles ─┬─ saves ────── collection_folders
   <p class="lede">Pulled live from Supabase, GSC and Resend today, not from the docs.</p>
 
   <div class="scroll"><table>
-    <thead><tr><th>Stage</th><th>Count</th><th>Rate</th><th>Read</th></tr></thead>
+    <thead><tr><th>Stage</th><th>Rate</th><th>Read</th></tr></thead>
     <tbody>
-      <tr><td>Signed up</td><td class="num">105</td><td class="num">&mdash;</td><td>From 19 at the end of June. Acquisition is not the binding constraint.</td></tr>
-      <tr><td>Ever searched</td><td class="num">84</td><td class="num">80%</td><td><span class="chip ok">strong</span> Activation is genuinely good. The product demos itself.</td></tr>
-      <tr><td>Created an alert</td><td class="num">32</td><td class="num">30%</td><td>Healthier than the docs' older read</td></tr>
-      <tr><td>Returned a second day</td><td class="num">11</td><td class="num">~12%</td><td><span class="chip bad">the constraint</span> Only 3 of the 48 most recent signups.</td></tr>
-      <tr><td>Paid</td><td class="num">4</td><td class="num">4%</td><td>All four converted on <strong>day zero</strong>. 3 of 4 never opened it again.</td></tr>
+      <tr><td>Signed up</td><td class="num">&mdash;</td><td>Grew about 5&times; from the end of June. Acquisition is not the binding constraint.</td></tr>
+      <tr><td>Ever searched</td><td class="num">80%</td><td><span class="chip ok">strong</span> Activation is genuinely good. The product demos itself.</td></tr>
+      <tr><td>Created an alert</td><td class="num">30%</td><td>Healthier than the docs' older read</td></tr>
+      <tr><td>Returned a second day</td><td class="num">~12%</td><td><span class="chip bad">the constraint</span> Only about 6% of the most recent half of signups.</td></tr>
+      <tr><td>Paid</td><td class="num">4%</td><td>Every one converted on <strong>day zero</strong>. Most never opened it again.</td></tr>
     </tbody>
   </table></div>
 
@@ -1197,7 +1197,7 @@ public.profiles ─┬─ saves ────── collection_folders
   </table></div>
   <p>Read left to right, that is the whole story: <strong>a credible, well-structured, machine-readable asset with no path from being read to being used.</strong> Each stage loses more than an order of magnitude, and the losses compound in the wrong order &mdash; the strongest number is the furthest from revenue.</p>
 
-  <p>Cost was never the issue. Avenue A brought marginal cost to <strong>~$0.006/search</strong>, down from $0.128 at the start &mdash; a 21&times; reduction. 324 searches over the life of the project is roughly <strong>two dollars</strong> of variable cost. The infrastructure was engineered for a scale the distribution never delivered.</p>
+  <p>Cost was never the issue. Avenue A brought marginal cost to <strong>~$0.006/search</strong>, down from $0.128 at the start &mdash; a 21&times; reduction. Total variable cost over the life of the project came to roughly <strong>two dollars</strong>. The infrastructure was engineered for a scale the distribution never delivered.</p>
 </section>
 
 <!-- ─────────────────────────── 16 ─────────────────────────── -->

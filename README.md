@@ -2,11 +2,19 @@
 
 **One search across 9 secondhand fashion marketplaces: scraped live, filtered for relevance and price-compared in about 7 seconds.**
 
-I built and ran Crawli solo, in production, from May to September 2026. It had **105 users and 4 paying customers**, and all 9 platforms were still working when I shut it down. I archived it on purpose and wrote up what worked and what didn't. That write-up is the [full teardown](#full-teardown) below.
+I built and ran Crawli solo, in production, from May to September 2026. All 9 platforms were still fully functional when I voluntarily shut it down. I wrote up what worked and what didn't. That write-up is the [full teardown](#full-teardown) below.
 
 ![Crawli search results for "north face nuptse jacket": live listings across 7 marketplaces with low, average and high price](docs/images/search-dark.png)
 
-**Jump to:** [What I built](#what-i-built) · [Engineering highlights](#engineering-highlights) · [Data & decisions](#data--decisions) · [Building with AI](#building-with-ai) · [Results & lessons](#results--lessons) · [Stack & repo map](#stack--repo-map) · [Full teardown](#full-teardown)
+<p align="center">
+  <a href="#what-i-built"><img src="https://img.shields.io/badge/What_I_built-2B2B29?style=for-the-badge" alt="What I built"></a>
+  <a href="#engineering-highlights"><img src="https://img.shields.io/badge/Engineering_highlights-2B2B29?style=for-the-badge" alt="Engineering highlights"></a>
+  <a href="#data--decisions"><img src="https://img.shields.io/badge/Data_%26_decisions-2B2B29?style=for-the-badge" alt="Data & decisions"></a>
+  <a href="#building-with-ai"><img src="https://img.shields.io/badge/Building_with_AI-2B2B29?style=for-the-badge" alt="Building with AI"></a>
+  <a href="#results--lessons"><img src="https://img.shields.io/badge/Results_%26_lessons-2B2B29?style=for-the-badge" alt="Results & lessons"></a>
+  <a href="#stack--repo-map"><img src="https://img.shields.io/badge/Stack_%26_repo_map-2B2B29?style=for-the-badge" alt="Stack & repo map"></a>
+  <a href="#full-teardown"><img src="https://img.shields.io/badge/Full_teardown-E24B4A?style=for-the-badge" alt="Full teardown"></a>
+</p>
 
 ---
 
@@ -55,7 +63,7 @@ I tried to make the big calls from measurements rather than hunches:
 - **Benchmarks before switching anything.** I ran a bake-off over 72 URLs across 2 scraping engines before changing scrapers, and a concurrency benchmark before tuning limits. → [`archive/scripts/engine_bakeoff.py`](archive/scripts/engine_bakeoff.py) · [`scripts/bench-sidecar-concurrency.py`](scripts/bench-sidecar-concurrency.py)
 - **Unit economics.** I modeled cost per search from real usage and brought it from $0.128 down to **$0.006**, a 21× reduction. → [`scripts/cogs-per-search.mjs`](scripts/cogs-per-search.mjs)
 - **Funnel and cohort analysis in SQL.** 80% of signups ran a search, but only about 12% came back on a second day. That showed the problem was retention, not acquisition or pricing.
-- **I killed a pricing change before writing any code.** A proposed change would have raised prices about 5×. All 4 paying customers had converted on *day zero*, not when they hit the free-tier limit, so I didn't ship it.
+- **I killed a pricing change before writing any code.** A proposed change would have raised prices about 5×. Every paying customer had converted on *day zero*, not when they hit the free-tier limit, so I didn't ship it.
 - **I cut a background job by 94%** after 30 days of Search Console data showed the feature earned about 5 clicks a month.
 - **I found 6,189 Microsoft Copilot citations** in Bing data, against 224 Google clicks over roughly the same three months. That changed how I judged the whole SEO program (see [§14](#14--the-ai-citation-channel)).
 - **Marketing ran as logged experiments**, each with a kill criterion written down before launch. → [`docs/planning/COMPETITIVE_POSITIONING.md`](docs/planning/COMPETITIVE_POSITIONING.md) §6
@@ -77,9 +85,9 @@ I built Crawli with Claude Code as my main development environment, and I treate
 
 | Signed up | Searched | Created an alert | Returned a 2nd day | Paid |
 |---|---|---|---|---|
-| 105 | 84 (80%) | 32 (30%) | **13 (~12%)** | 4 (4%) |
+| 100% | 80% | 30% | **~12%** | 4% |
 
-People arrived, tried it, it worked, and most didn't come back. Infrastructure cost was never the problem: 324 searches cost about $2 in variable spend. The bottleneck was retention, and I shut the project down rather than keep adding features to a product people weren't returning to. What I'd carry into the next project:
+People arrived, tried it, it worked, and most didn't come back. Infrastructure cost was never the problem: variable spend was about $0.006 per search. The bottleneck was retention, and I shut the project down rather than keep adding features to a product people weren't returning to. What I'd carry into the next project:
 
 - **Instrument retention before building the ninth feature.** Every metric I eventually pulled changed a decision, and I should have pulled them earlier.
 - **Test a constraint before building architecture around it.** eBay stayed on the slow, expensive path for months because of a blocking assumption nobody had tested. It turned out to be false.
@@ -127,7 +135,7 @@ archive/                retired experiments and bake-off data
 
 | | | | |
 |---|---|---|---|
-| **Users** 105 | **Paying** 4 (+owner) | **Searches** 324 | **Blog posts** 116 |
+| **Searched** 80% | **2nd-day return** ~12% | **Paid** 4% | **Blog posts** 116 |
 | **GSC clicks** 224 | **AI citations** 6,189 | **Cost/search** $0.006 | **Uptime** 60 days |
 
 
@@ -381,7 +389,7 @@ The **rollback on failure** is what separates this from a naive dedup table — 
 
 > 🔴 **Stripe webhooks never reach localhost.** "Credits never granted in dev" was not a bug — Stripe simply cannot POST to your laptop without `stripe listen`. Separately, **test and live are entirely separate universes**: separate keys, products, prices, endpoint and secret.
 
-> 💡 **The pricing finding that mattered.** All four paying customers **signed up, searched, created an alert and paid on day zero** — two after only 2 searches against a 5/week free cap. Conversion was a first-impression impulse buy with **nothing to do with hitting a quota wall.** A proposed weekly-pricing change (~5× effective increase) was killed on that number alone, before any code was written.
+> 💡 **The pricing finding that mattered.** Every paying customer **signed up, searched, created an alert and paid on day zero**, some after only 2 searches against a 5/week free cap. Conversion was a first-impression impulse buy with **nothing to do with hitting a quota wall.** A proposed weekly-pricing change (~5× effective increase) was killed on that number alone, before any code was written.
 
 ---
 
@@ -405,7 +413,7 @@ crontab */15 * * * *  →  /api/cron/run-alerts  (Bearer CRON_SECRET)
 
 > 🔴 **The finding to take forward. 254 alert emails. 252 delivered. 0 opens. 0 clicks.** Meanwhile *"the alert email is the strongest driver of a second session"* sat in `HANDOFF.md` for months as a strategic assumption with **zero measurement behind it**. The first time anyone checked, it found nothing supporting it.
 >
-> The calibration matters as much as the number: 254 emails is not 254 trials — it reached ~19 people. Resend's window silently clamped to ~30 days, so whether this was a *regression* is unknowable. And **no ESP can measure inbox placement** — "delivered" means a server accepted the message, never that a human could find it. The correct next step was a falsification test, not a strategy rewrite.
+> The calibration matters as much as the number: 254 emails is not 254 trials — they went to a small handful of people. Resend's window silently clamped to ~30 days, so whether this was a *regression* is unknowable. And **no ESP can measure inbox placement** — "delivered" means a server accepted the message, never that a human could find it. The correct next step was a falsification test, not a strategy rewrite.
 >
 > *Any feature whose value depends on an email arriving needs an engagement metric checked once before you build strategy on it.*
 
@@ -551,13 +559,13 @@ Citations ran **0.6/day before 2026-07-09 and 92/day after.** July 9 is the date
 
 ## 15 · What the numbers say
 
-| Stage | Count | Rate | Read |
-|---|---|---|---|
-| Signed up | 105 | — | From 19 at end of June. Acquisition was never the constraint |
-| Ever searched | 84 | **80%** | ✅ Activation is genuinely good — the product demos itself |
-| Created an alert | 32 | 30% | Rose 16× from 2 users after onboarding shipped |
-| **Returned a 2nd day** | **13** | **~12%** | 🔴 **The constraint.** Share got *worse* as the base grew |
-| Paid | 4 | 4% | All four converted on **day zero**. 3 of 4 never opened it again |
+| Stage | Rate | Read |
+|---|---|---|
+| Signed up | — | Grew about 5× from the end of June. Acquisition was never the constraint |
+| Ever searched | **80%** | ✅ Activation is genuinely good — the product demos itself |
+| Created an alert | 30% | Rose 16× after onboarding shipped |
+| **Returned a 2nd day** | **~12%** | 🔴 **The constraint.** Share got *worse* as the base grew |
+| Paid | 4% | Every one converted on **day zero**. Most never opened it again |
 
 **The shape is unambiguous:** people arrive, try it, it works, and they don't come back. Not an acquisition problem, not activation, not pricing. A **second-session** problem. And the mechanism built to solve it — the alert email — was never verified to reach anyone.
 
@@ -569,7 +577,7 @@ Citations ran **0.6/day before 2026-07-09 and 92/day after.** July 9 is the date
 
 Read left to right, that's the whole story: **a credible, well-structured, machine-readable asset with no path from being read to being used.** Each stage loses more than an order of magnitude, and the losses compound in the wrong order — *the strongest number is the furthest from revenue.*
 
-**Cost was never the issue.** Avenue A brought marginal cost to **~$0.006/search**, down from $0.128 — a 21× reduction. 324 searches over the project's life is roughly **two dollars** of variable cost. The infrastructure was engineered for a scale the distribution never delivered.
+**Cost was never the issue.** Avenue A brought marginal cost to **~$0.006/search**, down from $0.128 — a 21× reduction. Total variable cost over the project's life came to roughly **two dollars**. The infrastructure was engineered for a scale the distribution never delivered.
 
 ---
 
